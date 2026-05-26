@@ -1,0 +1,76 @@
+{
+  "tool_id": "education-savings-projector",
+  "al_id": "AL-05",
+  "version": "1.0.0",
+  "title": "Education Savings Projector",
+  "description": "Projects 529 plan growth to a target year and models the impact of plan assets on FAFSA Student Aid Index (SAI). Tab 1: 529 balance projection with state tax deduction benefit and investment growth. Tab 2: SAI asset impact modeler — shows how 529 and non-529 assets shift the SAI and estimated financial aid eligibility. Covers SECURE 2.0 Roth rollover provision (IRC §529(c)(3)(E)).",
+  "category": "student_finance_debt",
+  "journeys": ["education_path"],
+  "personas": ["student", "parent", "counselor"],
+  "tags": ["529", "education savings", "fafsa", "sai", "college", "tax deduction", "secure 2.0", "roth rollover", "financial aid"],
+  "status": "shipped",
+  "shipped_date": "2026-05-19",
+  "display_num": "#24",
+  "maintenance": "very_low",
+  "data_vintage": "IRS Pub. 970 (2025) · State 529 rules Jan 2026 · NCES IPEDS 2023-24 · SECURE 2.0 Act",
+  "frozen_baseline": false,
+  "input_schema": {
+    "type": "object",
+    "required": ["current_balance", "years_to_enrollment"],
+    "properties": {
+      "current_balance": { "type": "number", "minimum": 0, "description": "Current 529 balance in USD" },
+      "annual_contribution": { "type": "number", "minimum": 0, "description": "Annual 529 contribution in USD" },
+      "years_to_enrollment": { "type": "integer", "minimum": 1, "maximum": 25, "description": "Years until first college enrollment" },
+      "growth_rate_pct": { "type": "number", "minimum": 0, "maximum": 20, "default": 6.0, "description": "Assumed annual investment growth rate %" },
+      "state": { "type": "string", "description": "Two-letter state code for state deduction benefit" },
+      "state_marginal_rate_pct": { "type": "number", "minimum": 0, "description": "State marginal income tax rate %" },
+      "non_529_assets": { "type": "number", "minimum": 0, "description": "Non-529 parent assets for SAI calculation (Tab 2)" },
+      "parent_income": { "type": "number", "minimum": 0, "description": "Parent AGI for SAI estimation (Tab 2)" }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "projected_balance": { "type": "number", "description": "Projected 529 balance at enrollment" },
+      "total_contributions": { "type": "number", "description": "Total contributions over projection period" },
+      "investment_growth": { "type": "number", "description": "Accumulated investment growth" },
+      "state_tax_savings": { "type": "number", "description": "Cumulative state tax deduction benefit" },
+      "sai_with_529": { "type": "number", "description": "Estimated SAI including 529 assets (Tab 2)" },
+      "sai_without_529": { "type": "number", "description": "Estimated SAI without 529 assets (Tab 2)" },
+      "aid_delta": { "type": "number", "description": "Estimated change in financial aid eligibility from 529 ownership (Tab 2)" }
+    }
+  },
+  "mcp_tool_definition": {
+    "name": "project_education_savings",
+    "description": "Project 529 plan growth and model SAI/financial-aid impact. Tab 1: projects balance at enrollment using compound growth and state tax deduction. Tab 2: estimates SAI shift from 529 vs. non-529 asset treatment under FAFSA formula. Covers SECURE 2.0 Roth rollover provision.",
+    "inputSchema": {
+      "type": "object",
+      "required": ["current_balance", "years_to_enrollment"],
+      "properties": {
+        "current_balance": { "type": "number", "description": "Current 529 balance" },
+        "annual_contribution": { "type": "number", "description": "Annual contribution" },
+        "years_to_enrollment": { "type": "integer", "description": "Years until college" },
+        "growth_rate_pct": { "type": "number", "default": 6.0, "description": "Annual growth rate %" }
+      }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "runTab1",
+    "secondary_function_names": ["runTab2"],
+    "timeout_ms": 3000
+  },
+  "ap2_export": true,
+  "ap2_mandate_types": ["education_savings_record"],
+  "ap2_inbound_mandate_types": ["fafsa_sai_estimate"],
+  "downstream_handoff_candidates": ["AL-32", "AL-17"],
+  "regulatory_citations": [
+    "IRS Publication 970 (2025 edition)",
+    "SECURE 2.0 Act §126 (IRC §529(c)(3)(E))",
+    "NCES IPEDS 2023-24 average COA by institution type"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+}

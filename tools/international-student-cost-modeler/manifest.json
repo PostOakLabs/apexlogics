@@ -1,0 +1,89 @@
+{
+  "tool_id": "international-student-cost-modeler",
+  "al_id": "AL-31",
+  "version": "1.0.0",
+  "title": "International Student Cost Modeler",
+  "description": "Models full F-1 visa costs, OPT/STEM OPT earnings window, and H-1B lottery probability for international students. Tab 1 (US programs): F-1 visa fees (SEVIS + consular), 12-month OPT earnings at BLS regional rate, STEM OPT extension (24 months), H-1B FY2020-FY2024 approval rates by cap-subject vs. cap-exempt. Tab 2 (international comparison): side-by-side cost comparison between US and non-US programs using QS 2024 rankings and regional CPI. Legal disclaimer prominently displayed.",
+  "category": "education_path_roi",
+  "journeys": ["education_path"],
+  "personas": ["student", "parent", "counselor"],
+  "tags": ["f-1 visa", "sevis", "opt", "stem opt", "h-1b", "international student", "uscis", "study abroad", "program comparison"],
+  "status": "shipped",
+  "shipped_date": "2026-05-19",
+  "display_num": "#19",
+  "maintenance": "low",
+  "data_vintage": "US Dept of State 2024 · USCIS H-1B FY2020-FY2024 · BLS regional CPI · QS 2024",
+  "frozen_baseline": false,
+  "legal_disclaimer_required": true,
+  "content_filter_risk": "low_medium",
+  "input_schema": {
+    "type": "object",
+    "required": ["program_type"],
+    "properties": {
+      "program_type": {
+        "type": "string",
+        "enum": ["stem", "non_stem"],
+        "description": "STEM or non-STEM degree for OPT duration and H-1B cap exemption eligibility"
+      },
+      "annual_tuition": { "type": "number", "minimum": 0, "description": "Annual tuition and fees in USD" },
+      "annual_living": { "type": "number", "minimum": 0, "description": "Annual living expenses in USD" },
+      "program_years": { "type": "integer", "minimum": 1, "maximum": 6, "default": 2 },
+      "state": { "type": "string", "description": "State for BLS regional wage lookup during OPT" },
+      "degree_field": { "type": "string", "description": "Degree field for post-OPT salary estimation" },
+      "comparison_country": {
+        "type": "string",
+        "description": "Country for non-US program comparison (Tab 2)"
+      },
+      "comparison_program_cost": { "type": "number", "minimum": 0, "description": "Non-US program total cost in USD for comparison (Tab 2)" }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "f1_visa_cost": { "type": "number", "description": "Total F-1 visa fees (SEVIS + consular)" },
+      "total_us_program_cost": { "type": "number", "description": "Full program cost including visa fees" },
+      "opt_earnings_12mo": { "type": "number", "description": "Estimated 12-month OPT earnings at BLS regional rate" },
+      "stem_opt_earnings_24mo": { "type": "number", "description": "Additional 24-month STEM OPT earnings (if applicable)" },
+      "h1b_approval_rate": { "type": "number", "description": "H-1B FY2020-24 average approval rate for profile" },
+      "h1b_cap_subject": { "type": "boolean", "description": "Whether subject to H-1B annual cap lottery" },
+      "net_us_cost_post_opt": { "type": "number", "description": "Total US program cost minus OPT earnings" },
+      "comparison_net_cost": { "type": "number", "description": "Non-US program net cost for comparison (Tab 2)" },
+      "us_vs_intl_delta": { "type": "number", "description": "Net cost difference US vs. international program (Tab 2)" }
+    }
+  },
+  "mcp_tool_definition": {
+    "name": "model_international_student_cost",
+    "description": "Model F-1 visa costs, OPT/STEM OPT earnings window, and H-1B approval rates for international students. Tab 1: US total cost net of OPT income. Tab 2: US vs. non-US program cost comparison using QS 2024 and BLS regional CPI. NOT immigration legal advice.",
+    "inputSchema": {
+      "type": "object",
+      "required": ["program_type"],
+      "properties": {
+        "program_type": { "type": "string", "enum": ["stem", "non_stem"] },
+        "annual_tuition": { "type": "number" },
+        "annual_living": { "type": "number" },
+        "program_years": { "type": "integer", "default": 2 },
+        "state": { "type": "string" }
+      }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "runUS",
+    "secondary_function_names": ["runCompare"],
+    "timeout_ms": 5000
+  },
+  "ap2_export": true,
+  "ap2_mandate_types": ["international_student_cost_record"],
+  "ap2_inbound_mandate_types": [],
+  "downstream_handoff_candidates": ["AL-26", "AL-29", "AL-30"],
+  "regulatory_citations": [
+    "8 CFR 214.2",
+    "USCIS SEVIS fee schedule 2024",
+    "USCIS H-1B FY2020-FY2024 approval rate data",
+    "BLS Occupational Employment and Wage Statistics (OEWS) 2024"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+}
