@@ -1412,8 +1412,11 @@ function buildTab2AP2() {
       financial_runway_weeks:     r.runwayWeeks,
       ap2_inbound_source: window._ap2InboundSource || null
     },
+    summary: 'Accept vs. continue search: NPV ' +
+             (r.verdict === 'continue' ? 'favors continuing — ' + fmtUSD(r.npvDelta) + ' upside over ' + r.expectedWeeksRemaining.toFixed(0) + ' more weeks.'
+                                       : 'favors accepting now — break-even on the $' + r.monthlyDelta.toFixed(0) + '/mo salary delta in ' + fmtMo(r.breakEvenMonths) + '.'),
     regulatory_citations: ['BLS JOLTS 2024', 'O*NET Occupational Data 2024'],
-    downstream_handoff_candidates: ['AL-25', 'AL-05'],
+    downstream_handoff_candidates: ['AL-25', 'AL-28'],
     audit_metadata: {
       client_side_executed: true,
       zero_pii_verified: true,
@@ -1421,13 +1424,53 @@ function buildTab2AP2() {
       data_vintage: 'BLS JOLTS Q3 2024'
     }
   };
+  return mandate;
 }
 
-function exportTab2AP2() {
+function downloadT2AP2() {
   if (!window._tab2Result) { showToast('Run the Tab 2 analysis first.', 'warn'); return; }
-  const mandate = buildTab2AP2();
-  downloadFile('al27-accept-vs-continue.ap2.json', JSON.stringify(mandate, null, 2), 'application/json');
-  showToast('AP2 JSON downloaded.', 'success');
+  var mandate = buildTab2AP2();
+  var errors  = AP2Schema.validate(mandate);
+  if (errors.length > 0) { showToast('AP2 validation error: ' + errors[0]); return; }
+  downloadJSON(mandate, 'AL-27-accept-vs-continue.ap2.json');
+}
+
+function downloadT2Markdown() {
+  if (!window._tab2Result) { showToast('Run the Tab 2 analysis first.', 'warn'); return; }
+  var r = window._tab2Result;
+  var verdict = r.verdict === 'continue' ? 'Continue Searching' : 'Accept Offer';
+  var lines = [
+    '# Job Search ROI Tracker — AL-27 · Apex Logics',
+    '## Tab 2: Accept vs. Continue',
+    '',
+    '**Verdict:** ' + verdict + '  (NPV ' + (r.npvDelta >= 0 ? 'favors continuing' : 'favors accepting') + ')',
+    '',
+    '| Metric | Value |',
+    '|---|---|',
+    '| Offer Salary | ' + fmtUSD(r.offerSalary) + ' |',
+    '| Target Salary (if continue) | ' + fmtUSD(r.targetSalary2) + ' |',
+    '| Monthly Salary Delta | ' + fmtUSD(r.monthlyDelta) + '/mo |',
+    '| Expected Weeks Remaining | ' + r.expectedWeeksRemaining.toFixed(1) + ' wks |',
+    '| Total Remaining Search Cost | ' + fmtUSD(r.totalRemainingSearchCost) + ' |',
+    '| Break-even Period | ' + fmtMo(r.breakEvenMonths) + ' |',
+    '| Financial Runway | ' + (isFinite(r.runwayWeeks) ? fmtWks(r.runwayWeeks) : '∞ wks') + ' |',
+    '',
+    '## NPV Comparison',
+    '',
+    '| Path | NPV |',
+    '|---|---|',
+    '| Accept Now | ' + fmtUSD(r.npvAccept) + ' |',
+    '| Continue Searching | ' + fmtUSD(r.npvContinue) + ' |',
+    '| **NPV Delta** | **' + fmtUSD(r.npvDelta) + '** |',
+    '',
+    '---',
+    '*AL-27 · Apex Logics · CC BY 4.0 · apexlogics.org*'
+  ];
+  downloadText(lines.join('\n'), 'AL-27-accept-vs-continue.md');
+}
+
+function downloadJSON(obj, name) {
+  downloadFile(name, JSON.stringify(obj, null, 2), 'application/json');
 }
 
 function downloadFile(name, content, mime) {
