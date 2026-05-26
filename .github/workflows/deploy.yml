@@ -59,10 +59,12 @@ jobs:
           fetch-depth: 1
 
       - name: 🔐 Setup SSH Key & Host
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DH_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          # Strip Windows line endings from the key before writing
-          echo "${{ secrets.DH_SSH_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
+          # Write key via env var (preserves newlines reliably)
+          printf '%s\n' "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ secrets.DH_SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
@@ -70,6 +72,7 @@ jobs:
           echo "Key header : $(head -1 ~/.ssh/deploy_key)"
           echo "Key footer : $(tail -1 ~/.ssh/deploy_key)"
           echo "Permissions: $(stat -c %a ~/.ssh/deploy_key)"
+          echo "Key size   : $(wc -c < ~/.ssh/deploy_key) bytes"
 
       - name: 🔌 Test SSH connection to DreamHost
         # Hard-fail early if the key is wrong — prevents rsync from running
