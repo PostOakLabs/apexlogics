@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Education Savings Projector — Apex Logics</title>
+<meta name="description" content="Project 529 plan growth, calculate state tax savings, and find your required monthly contribution for college. Browser-only. Zero PII.">
+<link rel="canonical" href="https://apexlogics.org/tools/education-savings-projector/">
+<link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   AL-05 Education Savings Projector
+   Apex Logics — apexlogics.org · CONTRACT v1.2 · CC BY 4.0
+   Category: Student Finance & Debt · Accent: Teal (#14B8A6)
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --bg:#0b0e14; --bg-2:#0C1220; --bg-3:#111A2E; --bg-4:#162238;
+  --border:#232b3e; --border-2:#2e3a52;
+  --muted:#6b7a99; --body:#c8d0e0; --text:#A8C4DE; --bright:#D4E8F8; --white:#EEF6FD;
+  --amber:#E8A838; --amber-dim:rgba(232,168,56,.10); --amber-lt:#F0BD5E;
+  --teal:#14B8A6; --teal-dim:rgba(20,184,166,.10); --teal-lt:#2DD4BF;
+  --coral:#F07167; --coral-dim:rgba(240,113,103,.10);
+  --lavender:#A78BFA; --lavender-dim:rgba(167,139,250,.10);
+  --green:#34D399; --green-dim:rgba(52,211,153,.10);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,.10);
+  --red:#F87171; --red-dim:rgba(248,113,113,.10);
+  --warn:#FBBF24;
+  /* Tool accent = teal for Student Finance & Debt */
+  --accent:var(--teal); --accent-dim:var(--teal-dim); --accent-lt:var(--teal-lt);
+  --radius:6px; --radius-lg:10px; --shadow:0 4px 24px rgba(0,0,0,.45);
+  --font-sans:'Sora',sans-serif; --font-mono:'JetBrains Mono',monospace; --font-serif:'DM Serif Display',serif;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+html[dir="rtl"] body { direction:rtl; text-align:right; }
+body { background:var(--bg); color:var(--text); font-family:var(--font-sans); font-size:.875rem; line-height:1.6; -webkit-font-smoothing:antialiased; min-height:100vh; }
+a { color:var(--teal-lt); text-decoration:none; }
+a:hover { text-decoration:underline; }
+button { cursor:pointer; font-family:inherit; }
+
+/* ════ NAV ════ */
+nav { position:sticky; top:0; z-index:100; background:rgba(7,11,20,.92); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+.nav-inner { max-width:1024px; margin:0 auto; display:flex; align-items:center; gap:16px; padding:0 24px; height:58px; }
+.logo { display:flex; align-items:center; gap:10px; flex-shrink:0; text-decoration:none; }
+.logo-mark { width:32px; height:32px; flex-shrink:0; }
+.logo-mark svg { width:100%; height:100%; }
+.logo-text { display:flex; flex-direction:column; gap:2px; }
+.logo-name { font-family:var(--font-mono); font-size:.95rem; font-weight:500; color:var(--bright); letter-spacing:-.02em; line-height:1; }
+.logo-apex { color:var(--amber); }
+.logo-org { color:var(--muted); font-size:.8rem; }
+.logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-family:var(--font-mono); line-height:1; }
+.nav-right { display:flex; align-items:center; gap:8px; margin-left:auto; flex-shrink:0; }
+.nav-pill { background:none; border:1px solid var(--border-2); border-radius:var(--radius); color:var(--body); font-size:.62rem; padding:.3rem .65rem; font-family:var(--font-mono); letter-spacing:.04em; transition:border-color .15s,color .15s; text-decoration:none; display:inline-block; }
+.nav-pill:hover { border-color:var(--amber); color:var(--text); text-decoration:none; }
+@media(max-width:600px){ .logo-tag,.nav-pill{display:none;} }
+
+/* ════ LANG BAR ════ */
+.lang-bar { background:var(--bg-2); border-bottom:1px solid var(--border); padding:.5rem 0; }
+.lang-inner { max-width:1024px; margin:0 auto; padding:0 24px; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+.lang-btn { background:none; border:1px solid var(--border); color:var(--muted); font-family:var(--font-mono); font-size:.6rem; letter-spacing:.06em; padding:.25rem .55rem; border-radius:var(--radius); transition:all .15s; }
+.lang-btn:hover { border-color:var(--border-2); color:var(--body); }
+.lang-btn.active { border-color:var(--teal); color:var(--teal); background:var(--teal-dim); }
+
+/* ════ SUB-NAV ════ */
+.sub-nav { background:var(--bg-2); border-bottom:1px solid var(--border); }
+.sub-nav-inner { max-width:1024px; margin:0 auto; padding:.35rem 1.5rem; display:flex; align-items:center; gap:1.25rem; flex-wrap:wrap; }
+.sub-nav-crumb { display:flex; align-items:center; gap:.5rem; font-family:var(--font-mono); font-size:.62rem; color:var(--muted); }
+.sub-nav-crumb a { color:var(--muted); text-decoration:none; transition:color .15s; }
+.sub-nav-crumb a:hover { color:var(--teal); }
+.sub-nav-sep { color:var(--border-2); }
+.sub-nav-cat { color:var(--teal); }
+.sub-nav-links { margin-left:auto; display:flex; gap:1rem; }
+.sub-nav-links a { font-family:var(--font-mono); font-size:.6rem; letter-spacing:.06em; color:var(--muted); text-decoration:none; transition:color .15s; }
+.sub-nav-links a:hover { color:var(--amber); }
+
+/* ════ CONTAINER ════ */
+.container { max-width:1024px; margin:0 auto; padding:24px; }
+
+/* ════ TOOL HEADER ════ */
+.tool-header { padding:32px 0 20px; }
+.tool-eyebrow { font-family:var(--font-mono); font-size:.55rem; letter-spacing:.18em; text-transform:uppercase; color:var(--teal); margin-bottom:8px; }
+.tool-title { font-family:var(--font-serif); font-size:2rem; line-height:1.15; color:var(--bright); margin-bottom:10px; }
+.tool-subtitle { color:var(--body); font-size:.95rem; max-width:680px; margin-bottom:14px; }
+.tool-vintage-banner { display:inline-flex; align-items:center; gap:8px; background:var(--teal-dim); border:1px solid rgba(20,184,166,.25); border-radius:var(--radius); padding:.35rem .75rem; font-family:var(--font-mono); font-size:.6rem; letter-spacing:.07em; color:var(--teal); text-transform:uppercase; }
+.tool-vintage-banner::before { content:"◆"; font-size:.5rem; }
+
+/* ════ PII BANNER ════ */
+.pii-notice { display:flex; align-items:flex-start; gap:10px; background:rgba(20,184,166,.06); border:1px solid rgba(20,184,166,.2); border-left:3px solid var(--teal); border-radius:var(--radius); padding:.75rem 1rem; color:var(--body); font-size:.78rem; line-height:1.5; margin-bottom:20px; }
+
+/* ════ TABS ════ */
+.tab-bar { display:flex; gap:4px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:0; }
+.tab-btn { background:none; border:none; border-bottom:2px solid transparent; padding:.6rem 1rem; font-family:var(--font-mono); font-size:.68rem; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin-bottom:-1px; transition:all .15s; }
+.tab-btn:hover { color:var(--body); }
+.tab-btn.active { color:var(--teal); border-bottom-color:var(--teal); }
+.tab-pane { display:none; }
+.tab-pane.active { display:block; }
+
+/* ════ PANEL / INPUTS ════ */
+.panel { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; margin-bottom:14px; }
+.panel-title { font-family:var(--font-mono); font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; color:var(--teal); margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+.input-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.input-grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+@media(max-width:700px){ .input-grid{grid-template-columns:1fr 1fr;} }
+@media(max-width:480px){ .input-grid,.input-grid-2{grid-template-columns:1fr;} }
+.panel-row { margin-bottom:14px; }
+.panel-row:last-child { margin-bottom:0; }
+.panel-label { display:block; font-size:.72rem; color:var(--text); margin-bottom:5px; font-weight:500; }
+.panel-label span { color:var(--muted); font-weight:400; }
+.input-hint { font-size:.67rem; color:var(--muted); margin-top:4px; }
+select, input[type="number"], input[type="text"] { width:100%; background:var(--bg-3); border:1px solid var(--border-2); color:var(--bright); border-radius:var(--radius); padding:.5rem .75rem; font-family:var(--font-sans); font-size:.82rem; transition:border-color .15s; -webkit-appearance:none; appearance:none; }
+select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%233E5675'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right .75rem center; padding-right:2rem; }
+select:focus, input:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 2px rgba(20,184,166,.12); }
+select option { background:var(--bg-3); color:var(--bright); }
+
+/* ════ RUN BUTTON ════ */
+.run-row { display:flex; justify-content:center; margin:20px 0; }
+.run-btn { background:var(--teal); color:#0b0e14; border:none; font-family:var(--font-sans); font-size:.88rem; font-weight:600; padding:.75rem 2.5rem; border-radius:var(--radius); letter-spacing:.03em; transition:all .15s; min-width:220px; }
+.run-btn:hover { background:var(--teal-lt); }
+.run-btn:active { transform:scale(.98); }
+.run-btn:disabled { opacity:.5; cursor:not-allowed; }
+
+/* ════ RESULTS ════ */
+.results-panel { display:none; }
+.results-panel.visible { display:block; }
+.results-section { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:16px; overflow:hidden; }
+.results-section-head { background:var(--bg-3); padding:12px 18px; border-bottom:1px solid var(--border); font-family:var(--font-mono); font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; color:var(--teal); display:flex; align-items:center; gap:8px; }
+.results-section-head::before { content:"▸"; font-size:.7rem; }
+.results-section-body { padding:18px; }
+
+/* ════ METRICS GRID ════ */
+.metrics-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-bottom:4px; }
+.metric-card { background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius); padding:14px; }
+.metric-label { font-family:var(--font-mono); font-size:.56rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+.metric-val { font-family:var(--font-mono); font-size:1.05rem; font-weight:500; color:var(--teal); }
+.metric-val.neutral { color:var(--bright); }
+.metric-val.positive { color:var(--green); }
+.metric-val.negative { color:var(--coral); }
+.metric-sub { font-size:.65rem; color:var(--muted); margin-top:2px; }
+
+/* ════ PROJECTION BARS ════ */
+.proj-timeline { display:flex; flex-direction:column; gap:8px; }
+.proj-row { display:flex; flex-direction:column; gap:3px; }
+.proj-row-head { display:flex; justify-content:space-between; align-items:baseline; }
+.proj-label { font-size:.74rem; color:var(--text); }
+.proj-val { font-family:var(--font-mono); font-size:.72rem; color:var(--bright); flex-shrink:0; margin-left:8px; }
+.proj-track { height:7px; background:var(--bg-4); border-radius:4px; overflow:hidden; }
+.proj-fill-balance { height:100%; border-radius:4px; background:var(--teal); transition:width .5s ease; }
+.proj-fill-target { height:100%; border-radius:4px; background:var(--muted); opacity:.4; }
+
+/* ════ SCHOOL TIERS TABLE ════ */
+.tier-table { width:100%; border-collapse:collapse; }
+.tier-table th { text-align:left; padding:8px 12px; font-family:var(--font-mono); font-size:.58rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); background:var(--bg-3); }
+.tier-table td { padding:9px 12px; border-bottom:1px solid var(--border); font-size:.8rem; color:var(--text); }
+.tier-table tr:last-child td { border-bottom:none; }
+.tier-table .surplus { color:var(--green); font-family:var(--font-mono); font-size:.82rem; }
+.tier-table .gap { color:var(--coral); font-family:var(--font-mono); font-size:.82rem; }
+.tier-table .exact { color:var(--teal); font-family:var(--font-mono); font-size:.82rem; }
+
+/* ════ SENSITIVITY TABLE ════ */
+.sens-table { width:100%; border-collapse:collapse; margin-top:8px; }
+.sens-table th { text-align:center; padding:7px 10px; font-family:var(--font-mono); font-size:.58rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); background:var(--bg-3); }
+.sens-table th:first-child { text-align:left; }
+.sens-table td { text-align:center; padding:8px 10px; border-bottom:1px solid var(--border); font-family:var(--font-mono); font-size:.75rem; color:var(--text); }
+.sens-table td:first-child { text-align:left; color:var(--muted); font-size:.68rem; }
+.sens-table tr:last-child td { border-bottom:none; }
+.sens-table .highlight-cell { background:rgba(20,184,166,.08); color:var(--teal); font-weight:500; }
+
+/* ════ INFO BOX ════ */
+.info-box { background:var(--teal-dim); border:1px solid rgba(20,184,166,.25); border-radius:var(--radius); padding:12px 14px; font-size:.78rem; color:var(--text); line-height:1.55; }
+.info-box strong { color:var(--teal); }
+.info-box.warn-box { background:rgba(251,191,36,.07); border-color:rgba(251,191,36,.2); }
+.info-box.warn-box strong { color:var(--warn); }
+
+/* ════ EXPORT ROW ════ */
+.results-export-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:14px 18px; background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:16px; }
+.export-label { font-size:.65rem; color:var(--muted); font-family:var(--font-mono); letter-spacing:.08em; text-transform:uppercase; margin-right:4px; }
+.export-btn { display:inline-flex; flex-direction:column; align-items:center; gap:1px; background:none; border:1px solid var(--border-2); border-radius:var(--radius); color:var(--body); padding:.45rem .9rem; font-family:var(--font-mono); font-size:.65rem; transition:all .15s; line-height:1.2; }
+.export-btn:hover:not(:disabled) { border-color:var(--teal); color:var(--teal); }
+.export-btn.ready { border-color:var(--teal); color:var(--teal); background:var(--teal-dim); }
+.export-btn:disabled { opacity:.28; cursor:not-allowed; }
+.export-btn-sub { font-size:.55rem; color:var(--muted); display:block; }
+.export-btn.ready .export-btn-sub { color:rgba(20,184,166,.7); }
+.btn-help { background:none; border:1px solid var(--border); border-radius:50%; color:var(--muted); width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-size:.72rem; font-family:var(--font-mono); transition:all .15s; flex-shrink:0; padding:0; }
+.btn-help:hover { border-color:var(--teal); color:var(--teal); }
+
+/* ════ HANDOFF ROW ════ */
+.handoff-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+.handoff-btn { background:none; border:1px solid var(--border-2); border-radius:var(--radius); color:var(--body); padding:.4rem .85rem; font-size:.65rem; font-family:var(--font-mono); letter-spacing:.04em; transition:all .15s; display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
+.handoff-btn:hover { border-color:var(--teal); color:var(--teal); }
+.handoff-btn-sub { font-size:.55rem; color:var(--muted); }
+
+/* ════ TOGGLE PANELS (manifest / ap2 inbound) ════ */
+.toggle-wrap { margin-top:1.25rem; }
+.toggle-header { display:flex; align-items:center; gap:.5rem; cursor:pointer; user-select:none; padding:.5rem 0; }
+.toggle-header svg { transition:transform .2s; flex-shrink:0; }
+.toggle-header.open svg { transform:rotate(90deg); }
+.toggle-label { font-family:var(--font-mono); font-size:.65rem; letter-spacing:.07em; color:var(--muted); text-transform:uppercase; }
+.toggle-body { display:none; padding:.75rem; background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius); margin-top:.25rem; }
+.toggle-body.open { display:block; }
+.toggle-body pre { font-family:var(--font-mono); font-size:.68rem; color:var(--body); line-height:1.55; overflow-x:auto; white-space:pre-wrap; word-break:break-word; }
+.toggle-body textarea { width:100%; min-height:80px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); color:var(--body); font-family:var(--font-mono); font-size:.72rem; padding:.5rem; resize:vertical; }
+.toggle-body textarea:focus { outline:none; border-color:var(--teal); }
+.load-btn { margin-top:.5rem; background:none; border:1px solid var(--teal); color:var(--teal); border-radius:var(--radius); padding:.35rem .85rem; font-family:var(--font-mono); font-size:.65rem; transition:all .15s; }
+.load-btn:hover { background:var(--teal-dim); }
+
+/* ════ IMPORT BADGE ════ */
+.import-badge { background:var(--green-dim); border:1px solid var(--green); color:var(--green); border-radius:var(--radius); font-family:var(--font-mono); font-size:.65rem; padding:.25rem .6rem; display:inline-block; margin-bottom:.75rem; }
+
+/* ════ TOAST ════ */
+.toast { position:fixed; bottom:24px; right:24px; z-index:9999; max-width:380px; padding:.75rem 1rem; background:var(--bg-4); border:1px solid var(--border-2); border-radius:var(--radius); box-shadow:var(--shadow); font-size:.78rem; color:var(--text); opacity:0; transform:translateY(8px); transition:all .25s; pointer-events:none; }
+.toast.show { opacity:1; transform:translateY(0); }
+.toast.error { border-color:var(--red); color:var(--red); }
+.toast.success { border-color:var(--green); color:var(--green); }
+
+/* ════ POPOVER ════ */
+.popover-overlay { display:none; position:fixed; inset:0; z-index:9998; background:rgba(7,11,20,.65); backdrop-filter:blur(4px); align-items:center; justify-content:center; }
+.popover-overlay.show { display:flex; }
+.popover-box { background:var(--bg-3); border:1px solid var(--border-2); border-radius:var(--radius-lg); padding:24px; max-width:440px; box-shadow:var(--shadow); color:var(--text); font-size:.82rem; line-height:1.6; }
+.popover-box h4 { color:var(--bright); font-size:.95rem; margin-bottom:10px; font-family:var(--font-mono); }
+.popover-close { margin-top:14px; background:none; border:1px solid var(--border-2); border-radius:var(--radius); color:var(--muted); padding:.35rem .75rem; font-size:.75rem; font-family:var(--font-mono); cursor:pointer; transition:all .15s; }
+.popover-close:hover { border-color:var(--teal); color:var(--teal); }
+
+/* ════ VINTAGE / FOOTER ════ */
+.vintage-note { font-family:var(--font-mono); font-size:.62rem; color:var(--muted); margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--border); }
+.tool-footer { text-align:center; padding:24px; border-top:1px solid var(--border); font-size:.68rem; color:var(--muted); font-family:var(--font-mono); letter-spacing:.04em; line-height:1.8; }
+.tool-footer a { color:var(--amber-lt); }
+
+@media(max-width:480px){
+  .tool-title{font-size:1.5rem;}
+  .results-export-row{flex-direction:column;align-items:flex-start;}
+  .metrics-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- LANG BAR — CONTRACT §1.1 -->
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<!-- NAV — sticky, amber logo, nav-pills right (AL-29+ pattern) -->
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-right">
+      <a href="https://apexadvisory.site" class="nav-pill" target="_blank" rel="noopener">ApexAdvisory.site</a>
+      <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    </div>
+  </div>
+</nav>
+
+<!-- SUB-NAV — AL-13+ pattern, teal category accent -->
+<div class="sub-nav">
+  <div class="sub-nav-inner">
+    <div class="sub-nav-crumb">
+      <a href="../../index.html">← Apex Logics</a>
+      <span class="sub-nav-sep">/</span>
+      <span class="sub-nav-cat" data-i18n="cat_label">Student Finance &amp; Debt</span>
+      <span class="sub-nav-sep">/</span>
+      <span>#24 · AL · 05</span>
+    </div>
+    <div class="sub-nav-links">
+      <a href="https://apexadvisory.site" target="_blank" rel="noopener">ApexAdvisory.site ↗</a>
+      <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co ↗</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- TOOL HEADER -->
+  <header class="tool-header">
+    <div class="tool-eyebrow" data-i18n="eyebrow">#24 · AL · 05 · Student Finance &amp; Debt</div>
+    <h1 class="tool-title" data-i18n="tool_title">Education Savings Projector</h1>
+    <p class="tool-subtitle" data-i18n="tool_subtitle">Project your 529 plan growth, calculate state tax deduction savings, and find your required monthly contribution to meet any college cost target. Browser-only. No data leaves your tab.</p>
+    <div class="tool-vintage-banner">IRS Publication 970 · IRS Rev. Proc. 2023-34 · HHS FPL 2026 · NCES IPEDS 2023-24 · SECURE 2.0 Act (2022)</div>
+  </header>
+
+  <!-- PII BANNER — exact text per CONTRACT §1.3 -->
+  <div class="pii-notice" role="note" aria-label="Privacy notice">
+    🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+  </div>
+
+  <!-- TAB BAR -->
+  <div class="tab-bar" role="tablist">
+    <button class="tab-btn active" id="tab-btn-1" role="tab" aria-selected="true" aria-controls="tab-1" onclick="switchTab(1)" data-i18n="tab1">529 Growth Projector</button>
+    <button class="tab-btn" id="tab-btn-2" role="tab" aria-selected="false" aria-controls="tab-2" onclick="switchTab(2)" data-i18n="tab2">Contribution Optimizer</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       TAB 1 — 529 GROWTH PROJECTOR
+       ══════════════════════════════════════════════════════ -->
+  <div class="tab-pane active" id="tab-1" role="tabpanel" aria-labelledby="tab-btn-1">
+
+    <div id="importBadge1" style="display:none;"></div>
+
+    <!-- INPUTS -->
+    <div class="panel">
+      <div class="panel-title" data-i18n="panel_child">Child &amp; Account Details</div>
+      <div class="input-grid">
+        <div class="panel-row">
+          <label class="panel-label" for="childAge" data-i18n="lbl_child_age">Child's Current Age <span>(years)</span></label>
+          <input type="number" id="childAge" min="0" max="17" value="5" step="1">
+          <div class="input-hint" data-i18n="hint_child_age">Age 0–17</div>
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="startAge" data-i18n="lbl_start_age">College Start Age <span>(default 18)</span></label>
+          <input type="number" id="startAge" min="1" max="25" value="18" step="1">
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="currentBalance" data-i18n="lbl_balance">Current 529 Balance <span>($)</span></label>
+          <input type="number" id="currentBalance" min="0" value="5000" step="100">
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="monthlyContrib" data-i18n="lbl_monthly">Monthly Contribution <span>($)</span></label>
+          <input type="number" id="monthlyContrib" min="0" value="300" step="50" oninput="syncAnnualContrib()">
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="annualReturn" data-i18n="lbl_return">Expected Annual Return <span>(%)</span></label>
+          <input type="number" id="annualReturn" min="0" max="15" value="6" step="0.5">
+          <div class="input-hint" data-i18n="hint_return">Historical 529 age-based portfolios: 4–8%</div>
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="schoolTier" data-i18n="lbl_school_tier">Target School Tier</label>
+          <select id="schoolTier">
+            <option value="public_is">Public University — In-State (~$28k/yr)</option>
+            <option value="public_oos">Public University — Out-of-State (~$46k/yr)</option>
+            <option value="private_ns" selected>Private Non-Selective (~$55k/yr)</option>
+            <option value="private_sel">Private Selective / T50 (~$80k/yr)</option>
+            <option value="private_t20">Highly Selective / T20 (~$88k/yr)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title" data-i18n="panel_state">State Tax Deduction</div>
+      <div class="input-grid">
+        <div class="panel-row">
+          <label class="panel-label" for="stateSelect" data-i18n="lbl_state">State of Residence</label>
+          <select id="stateSelect" onchange="onStateChange()">
+            <option value="">-- Select State --</option>
+          </select>
+          <div class="input-hint" id="stateDeductionNote"></div>
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="filingStatus" data-i18n="lbl_filing">Filing Status</label>
+          <select id="filingStatus" onchange="onStateChange()">
+            <option value="single" data-i18n="opt_single">Single</option>
+            <option value="mfj" selected data-i18n="opt_mfj">Married Filing Jointly</option>
+          </select>
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="annualContrib" data-i18n="lbl_annual_contrib">Annual 529 Contribution <span>(auto-filled)</span></label>
+          <input type="number" id="annualContrib" min="0" value="3600" step="100">
+          <div class="input-hint" data-i18n="hint_annual_contrib">Used for deduction calculation; can override</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="run-row">
+      <button class="run-btn" onclick="runTab1()" data-i18n="btn_run1">Project My 529 Growth</button>
+    </div>
+
+    <!-- RESULTS TAB 1 -->
+    <div class="results-panel" id="results-tab1">
+
+      <!-- KEY METRICS -->
+      <div class="results-section">
+        <div class="results-section-head" data-i18n="head_projection">Projection Summary</div>
+        <div class="results-section-body">
+          <div class="metrics-grid" id="metricsGrid1"></div>
+        </div>
+      </div>
+
+      <!-- PROJECTION TIMELINE -->
+      <div class="results-section">
+        <div class="results-section-head" data-i18n="head_timeline">Balance Milestones</div>
+        <div class="results-section-body">
+          <div class="proj-timeline" id="projTimeline"></div>
+        </div>
+      </div>
+
+      <!-- STATE TAX SAVINGS -->
+      <div class="results-section" id="taxSavingsSection">
+        <div class="results-section-head" data-i18n="head_tax">State Tax Deduction Savings</div>
+        <div class="results-section-body">
+          <div id="taxSavingsBody"></div>
+        </div>
+      </div>
+
+      <!-- SCHOOL TIER COVERAGE -->
+      <div class="results-section">
+        <div class="results-section-head" data-i18n="head_coverage">College Cost Coverage Analysis</div>
+        <div class="results-section-body">
+          <div style="overflow-x:auto;"><table class="tier-table" id="coverageTable">
+            <thead><tr>
+              <th data-i18n="col_tier">School Tier</th>
+              <th data-i18n="col_4yr_cost">4-Year COA Est.</th>
+              <th data-i18n="col_projected">Projected Balance</th>
+              <th data-i18n="col_gap">Gap / Surplus</th>
+            </tr></thead>
+            <tbody id="coverageBody"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- SECURE 2.0 NOTE -->
+      <div class="info-box" id="secure2Note" style="margin-bottom:16px;">
+        <strong>SECURE 2.0 Act — Unused 529 → Roth IRA Rollover (2024+)</strong><br>
+        If your 529 has excess funds after college, you may roll unused amounts into a Roth IRA for the beneficiary — up to <strong>$35,000 lifetime</strong>, subject to a 15-year holding rule (account must be open ≥15 years) and annual Roth contribution limits. Rollovers are tax-free and penalty-free. Source: SECURE 2.0 Act §126 (IRC §529(c)(3)(E)).
+      </div>
+
+      <!-- FAFSA SAI IMPACT NOTE (shown when AP2 inbound from AL-17) -->
+      <div class="info-box warn-box" id="saiBadge" style="display:none;margin-bottom:16px;">
+        <strong>⚠ FAFSA Impact:</strong> 529 plan assets owned by a parent are counted at up to <strong>5.64%</strong> in the SAI (Student Aid Index) calculation. Your projected balance at college start may reduce need-based aid eligibility. Use AL-17 (FAFSA SAI Simulator) to model the impact alongside your savings plan.
+      </div>
+
+      <!-- AP2 INBOUND (AL-17 data imported badge) -->
+      <div id="ap2ImportBadgeTab1"></div>
+
+      <!-- EXPORT ROW — Markdown first, AP2 second (CONTRACT §4) -->
+      <div class="results-export-row">
+        <span class="export-label" data-i18n="lbl_export">Export</span>
+        <button class="export-btn" id="mdBtn1" onclick="exportMarkdown1()" disabled data-i18n="btn_md">
+          Markdown
+          <span class="export-btn-sub">report</span>
+        </button>
+        <button class="export-btn" id="ap2Btn1" onclick="exportAP2Tab1()" disabled data-i18n="btn_ap2">
+          AP2 JSON
+          <span class="export-btn-sub">education_savings_record</span>
+        </button>
+        <button class="btn-help" onclick="showExportHelp()" aria-label="What is AP2?">?</button>
+      </div>
+
+      <!-- HANDOFF -->
+      <div style="margin-bottom:16px;">
+        <div style="font-family:var(--font-mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;" data-i18n="lbl_handoff">Continue With</div>
+        <div class="handoff-row">
+          <button class="handoff-btn" onclick="handoffTo('al32')" data-i18n="handoff_al32">
+            AL-32 · Parent College ROI Planner
+            <span class="handoff-btn-sub">Carry savings projection into full cost analysis</span>
+          </button>
+          <button class="handoff-btn" onclick="handoffTo('al17')" data-i18n="handoff_al17">
+            AL-17 · FAFSA SAI Simulator
+            <span class="handoff-btn-sub">Model how 529 assets affect your Expected Family Contribution</span>
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /results-tab1 -->
+  </div><!-- /tab-1 -->
+
+  <!-- ══════════════════════════════════════════════════════
+       TAB 2 — CONTRIBUTION OPTIMIZER
+       ══════════════════════════════════════════════════════ -->
+  <div class="tab-pane" id="tab-2" role="tabpanel" aria-labelledby="tab-btn-2">
+
+    <div class="panel">
+      <div class="panel-title" data-i18n="panel_target">Savings Target</div>
+      <div class="input-grid">
+        <div class="panel-row">
+          <label class="panel-label" for="targetCost" data-i18n="lbl_target_cost">Target College Cost <span>($, total 4 years)</span></label>
+          <input type="number" id="targetCost" min="0" value="220000" step="5000">
+          <div class="input-hint" data-i18n="hint_target_cost">Use school tier estimates from Tab 1 as a guide</div>
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="yearsToSave" data-i18n="lbl_years">Years Until College</label>
+          <input type="number" id="yearsToSave" min="1" max="20" value="13" step="1">
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="existingBalance2" data-i18n="lbl_existing">Existing 529 Balance <span>($)</span></label>
+          <input type="number" id="existingBalance2" min="0" value="5000" step="100">
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="returnRate2" data-i18n="lbl_return2">Expected Annual Return <span>(%)</span></label>
+          <input type="number" id="returnRate2" min="0" max="15" value="6" step="0.5">
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="coveragePct" data-i18n="lbl_coverage_pct">Target Coverage <span>(%)</span></label>
+          <select id="coveragePct">
+            <option value="1.0" selected>100% — Full coverage</option>
+            <option value="0.75">75% — With loans / aid top-up</option>
+            <option value="0.50">50% — Split with other funding</option>
+            <option value="0.25">25% — Partial starter fund</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="run-row">
+      <button class="run-btn" onclick="runTab2()" data-i18n="btn_run2">Calculate Required Contribution</button>
+    </div>
+
+    <!-- RESULTS TAB 2 -->
+    <div class="results-panel" id="results-tab2">
+
+      <!-- REQUIRED CONTRIBUTION -->
+      <div class="results-section">
+        <div class="results-section-head" data-i18n="head_required">Required Monthly Contribution</div>
+        <div class="results-section-body">
+          <div class="metrics-grid" id="metricsGrid2"></div>
+        </div>
+      </div>
+
+      <!-- SENSITIVITY TABLE -->
+      <div class="results-section">
+        <div class="results-section-head" data-i18n="head_sensitivity">Sensitivity Table — Monthly Contribution by Years &amp; Return</div>
+        <div class="results-section-body">
+          <div style="overflow-x:auto;"><table class="sens-table" id="sensitivityTable">
+            <thead id="sensHead"></thead>
+            <tbody id="sensBody"></tbody>
+          </table></div>
+          <div class="input-hint" style="margin-top:8px;" data-i18n="hint_sensitivity">Highlighted cell = your current inputs</div>
+        </div>
+      </div>
+
+      <!-- EXPORT ROW -->
+      <div class="results-export-row">
+        <span class="export-label" data-i18n="lbl_export">Export</span>
+        <button class="export-btn" id="mdBtn2" onclick="exportMarkdown2()" disabled data-i18n="btn_md">
+          Markdown
+          <span class="export-btn-sub">report</span>
+        </button>
+        <button class="export-btn" id="ap2Btn2" onclick="exportAP2Tab2()" disabled data-i18n="btn_ap2">
+          AP2 JSON
+          <span class="export-btn-sub">education_savings_record</span>
+        </button>
+        <button class="btn-help" onclick="showExportHelp()" aria-label="What is AP2?">?</button>
+      </div>
+
+    </div><!-- /results-tab2 -->
+  </div><!-- /tab-2 -->
+
+  <!-- MANIFEST TOGGLE — always visible, outside results (CONTRACT pattern) -->
+  <div class="toggle-wrap">
+    <div class="toggle-header" onclick="toggleSection('manifest')" id="manifest-hdr">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="toggle-label">manifest.json · Tool Discovery &amp; MCP</span>
+    </div>
+    <div class="toggle-body" id="manifest">
+      <pre id="manifest-content"></pre>
+    </div>
+  </div>
+
+  <!-- AP2 INBOUND TOGGLE — below manifest (AL-13+ pattern, CONTRACT §6.4) -->
+  <div class="toggle-wrap">
+    <div class="toggle-header" onclick="toggleSection('ap2-in')" id="ap2-in-hdr">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="toggle-label" data-i18n="ap2_inbound_label">AP2 Inbound — Load from AL-17 (FAFSA SAI Simulator)</span>
+    </div>
+    <div class="toggle-body" id="ap2-in">
+      <div class="input-hint" style="margin-bottom:.5rem;" data-i18n="ap2_inbound_hint">Paste an AP2 mandate from AL-17 to pre-fill state and filing status.</div>
+      <textarea id="ap2InText" placeholder='{"ap2_version":"1.0","mandate_type":"fafsa_sai_estimate","payload":{...}}'></textarea>
+      <button class="load-btn" onclick="loadAP2Inbound()" data-i18n="ap2_load_btn">Load AP2 Payload</button>
+    </div>
+  </div>
+
+  <!-- VINTAGE NOTE -->
+  <div class="vintage-note">
+    ◆ Data vintage: IRS Pub. 970 (2025 ed.) · State 529 deduction rules as of Jan 2026 (verify with state revenue department) · NCES IPEDS average COA 2023-24 · SECURE 2.0 Act §126 · HHS FPL 2026. This tool is for educational planning purposes only and does not constitute financial or tax advice.
+  </div>
+
+</div><!-- /container -->
+
+<!-- EXPORT HELP POPOVER -->
+<div class="popover-overlay" id="popExportHelp" onclick="closePopover()">
+  <div class="popover-box" onclick="event.stopPropagation()">
+    <h4 data-i18n="pop_export_title">Export Formats</h4>
+    <p><strong style="color:var(--teal)" data-i18n="pop_md_head">Markdown</strong> — <span data-i18n="pop_md_body">Human-readable projection report. Paste into any document, email, or notes app.</span></p>
+    <p style="margin-top:8px"><strong style="color:var(--teal)" data-i18n="pop_ap2_head">AP2 JSON</strong> — <span data-i18n="pop_ap2_body">Structured export in Agent Purchase Protocol 2.0 format. Carries your full scenario state to AL-32 (Parent College ROI Planner) or any compatible agent tool. Learn more: <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">ap2-protocol.org</a></span></p>
+    <button class="popover-close" onclick="closePopover()" data-i18n="btn_close">Close</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- FOOTER — CONTRACT §6.2 attribution -->
+<footer class="tool-footer">
+  <div>Built by <a href="https://apexadvisory.site" target="_blank" rel="noopener">Apex Advisors</a> · Sister suite: <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> · CC 4.0 BY · AL-05 · Data as of Jan 2026</div>
+  <div style="margin-top:4px;font-size:.6rem;opacity:.6">Educational planning tool only. State 529 rules vary — verify deduction caps with your state tax authority. Not financial or tax advice.</div>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   AL-05 Education Savings Projector
+   Apex Logics — apexlogics.org
+   CONTRACT: Zero network calls post-load · Zero PII · CC BY 4.0
+   Data: IRS Pub.970 (2025) · State 529 rules Jan 2026 · NCES IPEDS 2023-24
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── STATE 529 DATA ──────────────────────────────────────────
+   Fields per state:
+     n  : State name
+     b  : Bucket — 'N'=no income tax, 'U'=unlimited deduction,
+                   'C'=capped deduction, 'X'=no deduction, 'K'=credit
+     r  : Approximate effective state income tax rate (middle income ~$80k)
+     cs : Deduction cap, single filer (null = unlimited)
+     cm : Deduction cap, MFJ (null = unlimited)
+     cr : Credit rate (only for 'K' bucket) — fraction of contribution
+     mc : Max credit benefit (only for 'K' bucket)
+     note: Short note for UI
+   ─────────────────────────────────────────────────────────────── */
+const STATE_529 = {
+  AL:{n:"Alabama",         b:"C",r:.045,cs:5000,  cm:10000, note:"$5,000 single / $10,000 MFJ per year"},
+  AK:{n:"Alaska",          b:"N",r:0,   cs:0,     cm:0,     note:"No state income tax — no deduction benefit"},
+  AZ:{n:"Arizona",         b:"C",r:.025,cs:2500,  cm:5000,  note:"2.5% flat rate · $2,500 / $5,000 cap"},
+  AR:{n:"Arkansas",        b:"C",r:.047,cs:5000,  cm:10000, note:"$5,000 single / $10,000 MFJ per year"},
+  CA:{n:"California",      b:"X",r:.093,cs:0,     cm:0,     note:"No state 529 deduction available"},
+  CO:{n:"Colorado",        b:"U",r:.044,cs:null,  cm:null,  note:"Unlimited deduction · 4.4% flat rate"},
+  CT:{n:"Connecticut",     b:"X",r:.065,cs:0,     cm:0,     note:"No state 529 deduction available"},
+  DC:{n:"Washington D.C.", b:"C",r:.085,cs:4000,  cm:8000,  note:"$4,000 single / $8,000 MFJ per year"},
+  DE:{n:"Delaware",        b:"C",r:.066,cs:2000,  cm:4000,  note:"$2,000 single / $4,000 MFJ per year"},
+  FL:{n:"Florida",         b:"N",r:0,   cs:0,     cm:0,     note:"No state income tax — no deduction benefit"},
+  GA:{n:"Georgia",         b:"C",r:.055,cs:4000,  cm:8000,  note:"$4,000 single / $8,000 MFJ per year"},
+  HI:{n:"Hawaii",          b:"X",r:.07, cs:0,     cm:0,     note:"No state 529 deduction available"},
+  ID:{n:"Idaho",           b:"C",r:.058,cs:6000,  cm:12000, note:"$6,000 single / $12,000 MFJ per year"},
+  IL:{n:"Illinois",        b:"C",r:.0495,cs:10000,cm:20000, note:"$10,000 single / $20,000 MFJ · 4.95% flat"},
+  IN:{n:"Indiana",         b:"K",r:.0305,cs:5000, cm:10000, cr:.20,mc:1000, note:"20% tax credit · max $1,000 credit/year"},
+  IA:{n:"Iowa",            b:"C",r:.060,cs:3785,  cm:7571,  note:"$3,785 single / $7,571 MFJ (inflation-adjusted)"},
+  KS:{n:"Kansas",          b:"C",r:.057,cs:3000,  cm:6000,  note:"$3,000 single / $6,000 MFJ per year"},
+  KY:{n:"Kentucky",        b:"X",r:.04, cs:0,     cm:0,     note:"No state 529 deduction available"},
+  LA:{n:"Louisiana",       b:"C",r:.03, cs:2400,  cm:4800,  note:"$2,400 per beneficiary per year"},
+  ME:{n:"Maine",           b:"X",r:.075,cs:0,     cm:0,     note:"No state 529 deduction available"},
+  MD:{n:"Maryland",        b:"C",r:.0575,cs:2500, cm:5000,  note:"$2,500 single / $5,000 MFJ per year"},
+  MA:{n:"Massachusetts",   b:"X",r:.05, cs:0,     cm:0,     note:"No state 529 deduction available"},
+  MI:{n:"Michigan",        b:"C",r:.0425,cs:5000, cm:10000, note:"$5,000 single / $10,000 MFJ per year"},
+  MN:{n:"Minnesota",       b:"K",r:.0985,cs:1500, cm:3000,  cr:.05,mc:150, note:"5% tax credit · max $150 single / $300 MFJ"},
+  MS:{n:"Mississippi",     b:"U",r:.05, cs:null,  cm:null,  note:"Unlimited deduction · 5% flat rate"},
+  MO:{n:"Missouri",        b:"C",r:.049,cs:8000,  cm:16000, note:"$8,000 single / $16,000 MFJ per year"},
+  MT:{n:"Montana",         b:"C",r:.069,cs:3000,  cm:6000,  note:"$3,000 single / $6,000 MFJ per year"},
+  NE:{n:"Nebraska",        b:"C",r:.065,cs:10000, cm:10000, note:"$10,000 per filer (not doubled for MFJ)"},
+  NV:{n:"Nevada",          b:"N",r:0,   cs:0,     cm:0,     note:"No state income tax — no deduction benefit"},
+  NH:{n:"New Hampshire",   b:"N",r:0,   cs:0,     cm:0,     note:"No income tax on wages — no deduction benefit"},
+  NJ:{n:"New Jersey",      b:"X",r:.0637,cs:0,    cm:0,     note:"No state 529 deduction available"},
+  NM:{n:"New Mexico",      b:"U",r:.049,cs:null,  cm:null,  note:"Unlimited deduction · up to ~4.9% rate"},
+  NY:{n:"New York",        b:"C",r:.0685,cs:5000, cm:10000, note:"$5,000 single / $10,000 MFJ per year"},
+  NC:{n:"North Carolina",  b:"X",r:.0475,cs:0,    cm:0,     note:"No state 529 deduction (removed 2012)"},
+  ND:{n:"North Dakota",    b:"C",r:.029,cs:5000,  cm:10000, note:"$5,000 single / $10,000 MFJ per year"},
+  OH:{n:"Ohio",            b:"C",r:.04, cs:4000,  cm:4000,  note:"$4,000 per beneficiary (same for all filers)"},
+  OK:{n:"Oklahoma",        b:"U",r:.0475,cs:null, cm:null,  note:"Unlimited deduction · 4.75% top rate"},
+  OR:{n:"Oregon",          b:"K",r:.099,cs:2500,  cm:5000,  cr:.05,mc:150, note:"Max $150 credit single / $300 MFJ (5% of up to $3,000)"},
+  PA:{n:"Pennsylvania",    b:"U",r:.0307,cs:null, cm:null,  note:"Unlimited deduction · any 529 plan · 3.07% flat"},
+  RI:{n:"Rhode Island",    b:"X",r:.0599,cs:0,    cm:0,     note:"No state 529 deduction available"},
+  SC:{n:"South Carolina",  b:"U",r:.07, cs:null,  cm:null,  note:"Unlimited deduction · up to 7% top rate"},
+  SD:{n:"South Dakota",    b:"N",r:0,   cs:0,     cm:0,     note:"No state income tax — no deduction benefit"},
+  TN:{n:"Tennessee",       b:"N",r:0,   cs:0,     cm:0,     note:"No state income tax — no deduction benefit"},
+  TX:{n:"Texas",           b:"N",r:0,   cs:0,     cm:0,     note:"No state income tax — no deduction benefit"},
+  UT:{n:"Utah",            b:"K",r:.0455,cs:2290, cm:4580,  cr:.05,mc:114, note:"5% nonrefundable tax credit · max $114 single / $228 MFJ"},
+  VT:{n:"Vermont",         b:"K",r:.0866,cs:2500, cm:5000,  cr:.10,mc:250, note:"10% tax credit · max $250 single / $500 MFJ"},
+  VA:{n:"Virginia",        b:"C",r:.0575,cs:4000, cm:4000,  note:"$4,000 per beneficiary per year (unlimited if age 70+)"},
+  WA:{n:"Washington",      b:"N",r:0,   cs:0,     cm:0,     note:"No state income tax — no deduction benefit"},
+  WV:{n:"West Virginia",   b:"U",r:.04, cs:null,  cm:null,  note:"Unlimited deduction · 4% top rate"},
+  WI:{n:"Wisconsin",       b:"C",r:.0535,cs:3860, cm:3860,  note:"$3,860 per beneficiary per account owner"},
+  WY:{n:"Wyoming",         b:"N",r:0,   cs:0,     cm:0,     note:"No state income tax — no deduction benefit"}
+};
+
+/* ─── SCHOOL TIER DATA ─────────────────────────────────────────
+   4-year total Cost of Attendance estimates, NCES IPEDS 2023-24 avg.
+   Annual cost × 4, with ~4% annual escalation baked in for years 1-4.
+   ─────────────────────────────────────────────────────────────── */
+const SCHOOL_TIERS = {
+  public_is:   {name:"Public University — In-State",        cost4yr:112000},
+  public_oos:  {name:"Public University — Out-of-State",    cost4yr:184000},
+  private_ns:  {name:"Private Non-Selective",               cost4yr:220000},
+  private_sel: {name:"Private Selective / T50",             cost4yr:320000},
+  private_t20: {name:"Highly Selective / T20",              cost4yr:352000}
+};
+
+/* ─── I18N STRINGS ─────────────────────────────────────────────── */
+const STRINGS = {
+  en:{
+    eyebrow:"#24 · AL · 05 · Student Finance & Debt",
+    tool_title:"Education Savings Projector",
+    tool_subtitle:"Project your 529 plan growth, calculate state tax deduction savings, and find your required monthly contribution to meet any college cost target. Browser-only. No data leaves your tab.",
+    tab1:"529 Growth Projector", tab2:"Contribution Optimizer",
+    cat_label:"Student Finance & Debt",
+    panel_child:"Child & Account Details",
+    panel_state:"State Tax Deduction",
+    panel_target:"Savings Target",
+    lbl_child_age:"Child's Current Age", hint_child_age:"Age 0–17",
+    lbl_start_age:"College Start Age",
+    lbl_balance:"Current 529 Balance",
+    lbl_monthly:"Monthly Contribution",
+    lbl_return:"Expected Annual Return", hint_return:"Historical 529 age-based portfolios: 4–8%",
+    lbl_school_tier:"Target School Tier",
+    lbl_state:"State of Residence",
+    lbl_filing:"Filing Status",
+    opt_single:"Single", opt_mfj:"Married Filing Jointly",
+    lbl_annual_contrib:"Annual 529 Contribution", hint_annual_contrib:"Used for deduction calculation; can override",
+    btn_run1:"Project My 529 Growth",
+    btn_run2:"Calculate Required Contribution",
+    lbl_target_cost:"Target College Cost", hint_target_cost:"Use school tier estimates from Tab 1 as a guide",
+    lbl_years:"Years Until College",
+    lbl_existing:"Existing 529 Balance",
+    lbl_return2:"Expected Annual Return",
+    lbl_coverage_pct:"Target Coverage",
+    head_projection:"Projection Summary",
+    head_timeline:"Balance Milestones",
+    head_tax:"State Tax Deduction Savings",
+    head_coverage:"College Cost Coverage Analysis",
+    head_required:"Required Monthly Contribution",
+    head_sensitivity:"Sensitivity Table — Monthly Contribution by Years & Return",
+    col_tier:"School Tier", col_4yr_cost:"4-Year COA Est.", col_projected:"Projected Balance", col_gap:"Gap / Surplus",
+    lbl_export:"Export", btn_md:"Markdown", btn_ap2:"AP2 JSON",
+    lbl_handoff:"Continue With",
+    handoff_al32:"AL-32 · Parent College ROI Planner",
+    handoff_al17:"AL-17 · FAFSA SAI Simulator",
+    ap2_inbound_label:"AP2 Inbound — Load from AL-17 (FAFSA SAI Simulator)",
+    ap2_inbound_hint:"Paste an AP2 mandate from AL-17 to pre-fill state and filing status.",
+    ap2_load_btn:"Load AP2 Payload",
+    hint_sensitivity:"Highlighted cell = your current inputs",
+    pop_export_title:"Export Formats",
+    pop_md_head:"Markdown", pop_md_body:"Human-readable projection report. Paste into any document, email, or notes app.",
+    pop_ap2_head:"AP2 JSON", pop_ap2_body:"Structured export in Agent Purchase Protocol 2.0 format. Carries your full scenario to AL-32 (Parent College ROI Planner) or any compatible agent tool.",
+    btn_close:"Close",
+    toast_md:"Markdown report downloaded.",
+    toast_ap2:"AP2 mandate downloaded.",
+    toast_ap2_err:"AP2 validation failed",
+    toast_loaded:"AP2 payload loaded.",
+    lbl_mo_contrib:"Required Monthly Contribution",
+    lbl_annual_contrib_needed:"Annual Contribution Needed",
+    lbl_proj_balance:"Projected Balance at College Start",
+    lbl_savings_horizon:"Savings Horizon",
+    lbl_annual_savings:"Annual State Tax Savings",
+    lbl_10yr_savings:"10-Year Cumulative Tax Savings",
+    lbl_deduction_type:"Deduction Type",
+    lbl_coverage_pct_label:"Coverage %"
+  },
+  es:{
+    tab1:"Proyector de 529", tab2:"Optimizador de Aportaciones",
+    btn_run1:"Proyectar mi plan 529", btn_run2:"Calcular aportación requerida",
+    lbl_state:"Estado de residencia", lbl_filing:"Estado civil fiscal",
+    opt_single:"Soltero/a", opt_mfj:"Casado/a declaración conjunta",
+    lbl_export:"Exportar", btn_md:"Markdown", btn_ap2:"AP2 JSON",
+    btn_close:"Cerrar", toast_md:"Informe descargado.", toast_ap2:"Mandato AP2 descargado."
+  },
+  fr:{
+    tab1:"Projecteur 529", tab2:"Optimiseur de cotisations",
+    btn_run1:"Projeter mon plan 529", btn_run2:"Calculer la cotisation requise",
+    lbl_state:"État de résidence", lbl_filing:"Statut fiscal",
+    opt_single:"Célibataire", opt_mfj:"Marié(e) déclaration commune",
+    lbl_export:"Exporter", btn_md:"Markdown", btn_ap2:"AP2 JSON",
+    btn_close:"Fermer", toast_md:"Rapport téléchargé.", toast_ap2:"Mandat AP2 téléchargé."
+  },
+  ar:{
+    lang_dir:"rtl",
+    tab1:"مُسقِط خطة 529", tab2:"محسِّن المساهمات",
+    btn_run1:"احسب نمو خطة 529", btn_run2:"احسب المساهمة المطلوبة",
+    lbl_export:"تصدير", btn_close:"إغلاق"
+  },
+  pt:{
+    tab1:"Projetor 529", tab2:"Otimizador de Contribuições",
+    btn_run1:"Projetar meu plano 529", btn_run2:"Calcular contribuição necessária",
+    lbl_state:"Estado de residência", lbl_filing:"Estado civil fiscal",
+    opt_single:"Solteiro(a)", opt_mfj:"Casado(a) declaração conjunta",
+    lbl_export:"Exportar", btn_md:"Markdown", btn_ap2:"AP2 JSON",
+    btn_close:"Fechar", toast_md:"Relatório baixado.", toast_ap2:"Mandato AP2 baixado."
+  },
+  zh:{
+    tab1:"529计划预测器", tab2:"供款优化器",
+    btn_run1:"预测529计划增长", btn_run2:"计算所需月供款",
+    lbl_state:"居住州", lbl_filing:"报税状态",
+    opt_single:"单身", opt_mfj:"已婚联合申报",
+    lbl_export:"导出", btn_md:"Markdown", btn_ap2:"AP2 JSON",
+    btn_close:"关闭", toast_md:"报告已下载。", toast_ap2:"AP2授权已下载。"
+  }
+};
+
+/* ─── I18N ENGINE ──────────────────────────────────────────────── */
+let currentLang = 'en';
+function t(key){ return (STRINGS[currentLang]||{})[key] || STRINGS.en[key] || key; }
+
+function setLang(lang){
+  const L = STRINGS[lang]; if(!L) return;
+  currentLang = lang;
+  document.documentElement.dir = (L.lang_dir==='rtl') ? 'rtl' : 'ltr';
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.dataset.i18n; const v=L[k]||STRINGS.en[k];
+    if(v) el.textContent=v;
+  });
+  document.querySelectorAll('.lang-btn').forEach(b=>{
+    b.classList.toggle('active', b.textContent.trim().toLowerCase()===lang || (lang==='zh'&&b.textContent==='中文'));
+  });
+  sessionStorage.setItem('apex_lang', lang);
+}
+
+(function initLang(){
+  const saved=sessionStorage.getItem('apex_lang');
+  const fb=(navigator.language||'en').slice(0,2);
+  setLang(saved||(STRINGS[fb]?fb:'en'));
+})();
+
+/* ─── STATE SELECT POPULATION ──────────────────────────────────── */
+(function populateStates(){
+  const sel=document.getElementById('stateSelect');
+  const sorted=Object.entries(STATE_529).sort((a,b)=>a[1].n.localeCompare(b[1].n));
+  sorted.forEach(([code,s])=>{
+    const opt=document.createElement('option');
+    opt.value=code; opt.textContent=`${s.n} (${code})`;
+    sel.appendChild(opt);
+  });
+})();
+
+/* ─── STATE CHANGE HANDLER ─────────────────────────────────────── */
+function onStateChange(){
+  const code=document.getElementById('stateSelect').value;
+  const note=document.getElementById('stateDeductionNote');
+  if(!code){note.textContent='';return;}
+  const s=STATE_529[code];
+  note.textContent=s.note;
+}
+
+/* ─── SYNC ANNUAL CONTRIBUTION ─────────────────────────────────── */
+function syncAnnualContrib(){
+  const monthly=parseFloat(document.getElementById('monthlyContrib').value)||0;
+  document.getElementById('annualContrib').value=Math.round(monthly*12);
+}
+
+/* ─── 529 FUTURE VALUE FORMULA ─────────────────────────────────── */
+// FV = PV×(1+r)^n + PMT×((1+r)^n−1)/r   [monthly compounding]
+function fv529(pv, monthlyPmt, annualRate, years){
+  if(years<=0) return pv;
+  const r=annualRate/12;
+  const n=Math.round(years*12);
+  if(Math.abs(r)<1e-10) return pv + monthlyPmt*n;
+  const g=Math.pow(1+r,n);
+  return pv*g + monthlyPmt*(g-1)/r;
+}
+
+/* ─── REQUIRED MONTHLY CONTRIBUTION (reverse solve) ────────────── */
+function requiredMonthly(targetFV, pv, annualRate, years){
+  if(years<=0) return 0;
+  const r=annualRate/12;
+  const n=Math.round(years*12);
+  const fvExisting=pv*Math.pow(1+r,n);
+  const gap=targetFV-fvExisting;
+  if(gap<=0) return 0;
+  if(Math.abs(r)<1e-10) return gap/n;
+  return gap*r/(Math.pow(1+r,n)-1);
+}
+
+/* ─── STATE TAX SAVINGS CALCULATOR ─────────────────────────────── */
+function calcStateSavings(annualContrib, stateCode, filing){
+  if(!stateCode) return {annual:0,type:'unknown',note:'Select a state to see tax savings'};
+  const s=STATE_529[stateCode];
+  if(s.b==='N') return {annual:0,type:'no_tax',note:s.note};
+  if(s.b==='X') return {annual:0,type:'no_deduction',note:s.note};
+  if(s.b==='U'){
+    return {annual:annualContrib*s.r,type:'unlimited',note:s.note};
+  }
+  if(s.b==='C'){
+    const cap=(filing==='mfj'?s.cm:s.cs);
+    const deductible=Math.min(annualContrib,cap);
+    return {annual:deductible*s.r,type:'capped',cap,note:s.note};
+  }
+  if(s.b==='K'){
+    // Credit states: benefit = min(contribution × credit_rate, max_credit) for filing
+    const maxCred=(filing==='mfj'?s.mc*2:s.mc);
+    const credit=Math.min(annualContrib*s.cr, maxCred);
+    return {annual:credit,type:'credit',note:s.note};
+  }
+  return {annual:0,type:'unknown',note:''};
+}
+
+/* ─── FORMAT HELPERS ────────────────────────────────────────────── */
+function fmtDollar(n){ return '$'+(Math.round(n)).toLocaleString(); }
+function fmtDollarK(n){ return n>=1000?'$'+(n/1000).toFixed(1)+'k':'$'+Math.round(n); }
+function tsCompact(){
+  const d=new Date();
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}${String(d.getSeconds()).padStart(2,'0')}`;
+}
+function uuidv4(){
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
+    const r=Math.random()*16|0; return (c==='x'?r:(r&0x3|0x8)).toString(16);
+  });
+}
+
+/* ─── DOWNLOAD HELPERS ──────────────────────────────────────────── */
+function downloadText(content, filename, mime){
+  const blob=new Blob([content],{type:mime||'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ─── TOAST ─────────────────────────────────────────────────────── */
+function showToast(msg, type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast'+(type?' '+type:'');
+  void el.offsetWidth;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),3200);
+}
+
+/* ─── POPOVER ───────────────────────────────────────────────────── */
+function showExportHelp(){ document.getElementById('popExportHelp').classList.add('show'); }
+function closePopover(){ document.getElementById('popExportHelp').classList.remove('show'); }
+
+/* ─── TAB SWITCHER ──────────────────────────────────────────────── */
+function switchTab(n){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===n-1));
+  document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===n-1));
+}
+
+/* ─── TOGGLE PANELS ─────────────────────────────────────────────── */
+function toggleSection(id){
+  const body=document.getElementById(id);
+  const hdr=document.getElementById(id+'-hdr');
+  body.classList.toggle('open');
+  hdr.classList.toggle('open');
+}
+
+/* ─── RUN TAB 1 ─────────────────────────────────────────────────── */
+let lastTab1Results = null;
+
+function runTab1(){
+  // Parse inputs
+  const childAge=parseFloat(document.getElementById('childAge').value)||0;
+  const startAge=parseFloat(document.getElementById('startAge').value)||18;
+  const balance=parseFloat(document.getElementById('currentBalance').value)||0;
+  const monthly=parseFloat(document.getElementById('monthlyContrib').value)||0;
+  const annReturn=parseFloat(document.getElementById('annualReturn').value)/100||0.06;
+  const schoolKey=document.getElementById('schoolTier').value;
+  const stateCode=document.getElementById('stateSelect').value;
+  const filing=document.getElementById('filingStatus').value;
+  const annContrib=parseFloat(document.getElementById('annualContrib').value)||monthly*12;
+
+  const yearsToCollege=Math.max(startAge-childAge,0);
+  if(yearsToCollege<0){showToast('College start age must be greater than child age','error');return;}
+
+  // Project balance at college start
+  const projectedBalance=fv529(balance,monthly,annReturn,yearsToCollege);
+
+  // State tax savings
+  const savings=calcStateSavings(annContrib,stateCode,filing);
+  const annual10yr=savings.annual*10;
+
+  // Build milestone projections (every 3 years, or every year if horizon short)
+  const tier=SCHOOL_TIERS[schoolKey];
+  const milestones=[];
+  const step=yearsToCollege<=5?1:yearsToCollege<=10?2:3;
+  for(let yr=step;yr<yearsToCollege;yr+=step){
+    milestones.push({yr,bal:fv529(balance,monthly,annReturn,yr)});
+  }
+  milestones.push({yr:yearsToCollege,bal:projectedBalance,final:true});
+  const maxBal=Math.max(...milestones.map(m=>m.bal),tier.cost4yr);
+
+  // Coverage vs all tiers
+  const coverageRows=Object.entries(SCHOOL_TIERS).map(([key,td])=>{
+    const gap=projectedBalance-td.cost4yr;
+    return {key,name:td.name,cost4yr:td.cost4yr,gap};
+  });
+
+  // Save results
+  lastTab1Results={
+    childAge,startAge,balance,monthly,annReturn,schoolKey,stateCode,filing,annContrib,
+    yearsToCollege,projectedBalance,savings,annual10yr,milestones,coverageRows,
+    tier,maxBal
+  };
+
+  // Render metrics
+  const mg=document.getElementById('metricsGrid1');
+  mg.innerHTML=`
+    <div class="metric-card"><div class="metric-label">${t('lbl_proj_balance')}</div><div class="metric-val">${fmtDollar(projectedBalance)}</div><div class="metric-sub">${yearsToCollege} years of growth</div></div>
+    <div class="metric-card"><div class="metric-label">${t('lbl_savings_horizon')}</div><div class="metric-val neutral">${yearsToCollege} yrs</div><div class="metric-sub">until age ${startAge}</div></div>
+    <div class="metric-card"><div class="metric-label">Selected Tier Target</div><div class="metric-val neutral">${fmtDollar(tier.cost4yr)}</div><div class="metric-sub">${tier.name.split('—')[0].trim()}</div></div>
+    <div class="metric-card"><div class="metric-label">Coverage Gap / Surplus</div>
+      <div class="metric-val ${projectedBalance>=tier.cost4yr?'positive':'negative'}">${projectedBalance>=tier.cost4yr?'+':''}${fmtDollar(projectedBalance-tier.cost4yr)}</div>
+      <div class="metric-sub">${projectedBalance>=tier.cost4yr?'Fully covered':'Shortfall — consider more contributions'}</div></div>
+    ${stateCode&&savings.annual>0?`<div class="metric-card"><div class="metric-label">${t('lbl_annual_savings')}</div><div class="metric-val positive">${fmtDollar(savings.annual)}</div><div class="metric-sub">per year in state taxes</div></div>`:''}
+    ${stateCode&&savings.annual>0?`<div class="metric-card"><div class="metric-label">${t('lbl_10yr_savings')}</div><div class="metric-val positive">${fmtDollar(annual10yr)}</div><div class="metric-sub">10-year cumulative</div></div>`:''}
+  `;
+
+  // Render timeline
+  const tl=document.getElementById('projTimeline');
+  tl.innerHTML=milestones.map(m=>{
+    const pct=Math.min(100,m.bal/maxBal*100).toFixed(1);
+    return `<div class="proj-row">
+      <div class="proj-row-head"><span class="proj-label">Age ${Math.round(childAge+m.yr)}${m.final?' (college start)':''}</span><span class="proj-val">${fmtDollar(m.bal)}</span></div>
+      <div class="proj-track"><div class="proj-fill-balance" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+
+  // Render tax savings section
+  const ts=document.getElementById('taxSavingsBody');
+  if(!stateCode){
+    ts.innerHTML='<div class="input-hint" style="padding:4px 0">Select a state above to see your tax deduction savings estimate.</div>';
+  } else {
+    const stateData=STATE_529[stateCode];
+    ts.innerHTML=`
+      <div class="metrics-grid" style="margin-bottom:12px;">
+        <div class="metric-card"><div class="metric-label">State</div><div class="metric-val neutral" style="font-size:.85rem">${stateData.n}</div></div>
+        <div class="metric-card"><div class="metric-label">Deduction Type</div><div class="metric-val neutral" style="font-size:.85rem">${
+          savings.type==='no_tax'?'No Income Tax':
+          savings.type==='unlimited'?'Unlimited Deduction':
+          savings.type==='capped'?`Capped — ${fmtDollar(filing==='mfj'?stateData.cm:stateData.cs)}`:
+          savings.type==='credit'?'Tax Credit':
+          savings.type==='no_deduction'?'No Deduction':'—'
+        }</div></div>
+        <div class="metric-card"><div class="metric-label">State Tax Rate</div><div class="metric-val neutral" style="font-size:.85rem">${(stateData.r*100).toFixed(2)}%</div></div>
+        <div class="metric-card"><div class="metric-label">Annual Tax Savings</div><div class="metric-val ${savings.annual>0?'positive':'neutral'}">${fmtDollar(savings.annual)}</div></div>
+        <div class="metric-card"><div class="metric-label">10-Year Cumulative</div><div class="metric-val ${savings.annual>0?'positive':'neutral'}">${fmtDollar(annual10yr)}</div></div>
+      </div>
+      <div class="input-hint">${stateData.note}. Verify current rules with your state tax authority before filing.</div>
+    `;
+  }
+
+  // Render coverage table
+  const cb=document.getElementById('coverageBody');
+  cb.innerHTML=coverageRows.map(row=>{
+    const cls=row.gap>0?'surplus':row.gap<0?'gap':'exact';
+    return `<tr>
+      <td>${row.name}</td>
+      <td>${fmtDollar(row.cost4yr)}</td>
+      <td>${fmtDollar(projectedBalance)}</td>
+      <td class="${cls}">${row.gap>=0?'+':''}${fmtDollar(row.gap)}</td>
+    </tr>`;
+  }).join('');
+
+  // Show FAFSA SAI badge if 529 balance is significant
+  document.getElementById('saiBadge').style.display=projectedBalance>10000?'block':'none';
+
+  // Show results, enable export buttons
+  document.getElementById('results-tab1').classList.add('visible');
+  document.getElementById('mdBtn1').disabled=false;
+  document.getElementById('ap2Btn1').disabled=false;
+  document.getElementById('mdBtn1').classList.add('ready');
+  document.getElementById('ap2Btn1').classList.add('ready');
+}
+
+/* ─── RUN TAB 2 ─────────────────────────────────────────────────── */
+let lastTab2Results = null;
+
+function runTab2(){
+  const targetCost=parseFloat(document.getElementById('targetCost').value)||0;
+  const years=parseFloat(document.getElementById('yearsToSave').value)||1;
+  const pv=parseFloat(document.getElementById('existingBalance2').value)||0;
+  const rate=parseFloat(document.getElementById('returnRate2').value)/100||0.06;
+  const coveragePct=parseFloat(document.getElementById('coveragePct').value)||1.0;
+
+  const target=targetCost*coveragePct;
+  const reqMonthly=requiredMonthly(target,pv,rate,years);
+  const reqAnnual=reqMonthly*12;
+  const finalBal=fv529(pv,reqMonthly,rate,years);
+
+  // Sensitivity table: rows = years [5,10,13,15,18,20], cols = returns [3,4,5,6,7,8,9,10]%
+  const sensYears=[5,8,10,12,15,18,20].filter(y=>y>0);
+  const sensRates=[0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.10];
+
+  lastTab2Results={targetCost,years,pv,rate,coveragePct,target,reqMonthly,reqAnnual,finalBal,sensYears,sensRates};
+
+  // Render metrics
+  const mg=document.getElementById('metricsGrid2');
+  mg.innerHTML=`
+    <div class="metric-card"><div class="metric-label">${t('lbl_mo_contrib')}</div><div class="metric-val">${fmtDollar(reqMonthly)}/mo</div><div class="metric-sub">${coveragePct<1?`${(coveragePct*100).toFixed(0)}% of target covered`:'Full target'}</div></div>
+    <div class="metric-card"><div class="metric-label">${t('lbl_annual_contrib_needed')}</div><div class="metric-val neutral">${fmtDollar(reqAnnual)}/yr</div></div>
+    <div class="metric-card"><div class="metric-label">Target Amount</div><div class="metric-val neutral">${fmtDollar(target)}</div><div class="metric-sub">${(coveragePct*100).toFixed(0)}% of ${fmtDollar(targetCost)}</div></div>
+    <div class="metric-card"><div class="metric-label">Savings Horizon</div><div class="metric-val neutral">${years} years</div></div>
+  `;
+
+  // Render sensitivity table
+  const sensHead=document.getElementById('sensHead');
+  const sensBody=document.getElementById('sensBody');
+  sensHead.innerHTML=`<tr><th>Years → Return</th>${sensRates.map(r=>`<th>${(r*100).toFixed(0)}%</th>`).join('')}</tr>`;
+  sensBody.innerHTML=sensYears.map(yr=>{
+    const cells=sensRates.map(r=>{
+      const monthly=requiredMonthly(target,pv,r,yr);
+      const isHighlight=yr===years&&Math.abs(r-rate)<0.005;
+      return `<td${isHighlight?' class="highlight-cell"':''}>${monthly<=0?'<span style="color:var(--green)">✓ Met</span>':fmtDollar(monthly)}</td>`;
+    }).join('');
+    return `<tr><td>${yr} yrs</td>${cells}</tr>`;
+  }).join('');
+
+  // Show results, enable export
+  document.getElementById('results-tab2').classList.add('visible');
+  document.getElementById('mdBtn2').disabled=false;
+  document.getElementById('ap2Btn2').disabled=false;
+  document.getElementById('mdBtn2').classList.add('ready');
+  document.getElementById('ap2Btn2').classList.add('ready');
+}
+
+/* ─── AP2 SCHEMA VALIDATOR — CONTRACT Appendix F ───────────────── */
+const AP2Schema={
+  required:['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata'],
+  validMandateTypes:[
+    'credential_roi_evaluation','human_capital_assessment','automation_exposure_score',
+    'career_resilience_score','workforce_program_roi','career_pivot_assessment',
+    'career_transition_record','scholarship_pipeline_plan','fafsa_sai_estimate',
+    'exam_pathway_plan','benefits_election_record','severance_decision_record',
+    'offer_negotiation_record','graduate_school_roi_record','apprenticeship_match_record',
+    'cpd_credit_record','job_search_roi_record','career_break_record',
+    // v4+ additions
+    'education_savings_record','mba_roi_evaluation','test_prep_investment_record',
+    'student_cost_record','parent_college_roi_record','equity_compensation_record',
+    'loan_repayment_record','freelance_total_cost_record',
+    'test_prep_roi_record','international_student_cost_record'
+  ],
+  validate(m){
+    const errors=[];
+    if(!m||typeof m!=='object') return{valid:false,errors:['mandate is not an object']};
+    this.required.forEach(k=>{if(m[k]===undefined||m[k]===null)errors.push(`missing required field: ${k}`);});
+    if(m.ap2_version!=='1.0') errors.push('ap2_version must be "1.0"');
+    if(m.mandate_type&&!this.validMandateTypes.includes(m.mandate_type))
+      errors.push(`unrecognized mandate_type: ${m.mandate_type}`);
+    if(m.al_id&&!/^AL-\d{1,2}(\+\d{1,2})?$/.test(m.al_id))
+      errors.push(`al_id format invalid`);
+    if(m.audit_metadata&&m.audit_metadata.client_side_executed!==true)
+      errors.push('audit_metadata.client_side_executed must be true');
+    if(m.audit_metadata&&m.audit_metadata.zero_pii_verified!==true)
+      errors.push('audit_metadata.zero_pii_verified must be true');
+    if(m.audit_metadata&&m.audit_metadata.deterministic_run!==true)
+      errors.push('audit_metadata.deterministic_run must be true');
+    return{valid:errors.length===0,errors};
+  }
+};
+
+/* ─── BUILD AP2 MANDATE ─────────────────────────────────────────── */
+function buildAP2Mandate(tab){
+  const now=new Date().toISOString();
+  if(tab===1&&lastTab1Results){
+    const r=lastTab1Results;
+    const stateData=r.stateCode?STATE_529[r.stateCode]:null;
+    return{
+      ap2_version:"1.0",
+      mandate_id:uuidv4(),
+      issued_at:now,
+      issued_by:"apexlogics.org",
+      tool_id:"education-savings-projector",
+      tool_version:"1.0.0",
+      al_id:"AL-05",
+      mandate_type:"education_savings_record",
+      jurisdiction:["US"],
+      regulatory_frameworks:["IRS Publication 970","SECURE 2.0 Act Section 126","State 529 plan rules"],
+      payload:{
+        tab:"growth_projector",
+        child_age:r.childAge,
+        college_start_age:r.startAge,
+        years_to_college:r.yearsToCollege,
+        current_balance_usd:r.balance,
+        monthly_contribution_usd:r.monthly,
+        annual_return_rate:r.annReturn,
+        state:r.stateCode||null,
+        filing_status:r.filing,
+        annual_contribution_usd:r.annContrib,
+        projected_balance_usd:Math.round(r.projectedBalance),
+        target_school_tier:r.schoolKey,
+        target_cost_4yr_usd:r.tier.cost4yr,
+        coverage_gap_usd:Math.round(r.projectedBalance-r.tier.cost4yr),
+        state_annual_tax_savings_usd:Math.round(r.savings.annual),
+        state_10yr_tax_savings_usd:Math.round(r.annual10yr),
+        deduction_type:r.savings.type,
+        fafsa_sai_impact_rate:0.0564
+      },
+      summary:`${r.yearsToCollege}-year 529 projection for child currently age ${r.childAge}. Projected balance at college start: ${fmtDollar(r.projectedBalance)} vs. ${r.tier.name} target of ${fmtDollar(r.tier.cost4yr)}. ${r.projectedBalance>=r.tier.cost4yr?'On track to cover full target.':'Shortfall of '+fmtDollar(r.tier.cost4yr-r.projectedBalance)+'.'}${r.savings.annual>0?' Annual state tax savings: '+fmtDollar(r.savings.annual)+'.':''}`,
+      agent_instructions:[
+        "Use projected_balance_usd as the 529 asset input in downstream college cost planning tools.",
+        "Apply fafsa_sai_impact_rate (5.64%) to projected_balance_usd to estimate SAI increase from 529 assets.",
+        "Handoff to AL-32 Parent College ROI Planner for full 4-year cost vs. savings analysis."
+      ],
+      valid_from:now,
+      valid_until:new Date(Date.now()+365*86400000).toISOString(),
+      last_reviewed:now,
+      source_tool_inputs:{child_age:r.childAge,monthly_contribution_usd:r.monthly,annual_return_pct:r.annReturn*100,state:r.stateCode,filing_status:r.filing},
+      regulatory_citations:["IRS Publication 970 (2025)","SECURE 2.0 Act §126 (IRC §529(c)(3)(E))","NCES IPEDS 2023-24 (average COA by tier)"],
+      downstream_handoff_candidates:["AL-32","AL-17"],
+      audit_metadata:{client_side_executed:true,zero_pii_verified:true,deterministic_run:true,data_vintage:"Jan 2026"}
+    };
+  }
+  if(tab===2&&lastTab2Results){
+    const r=lastTab2Results;
+    return{
+      ap2_version:"1.0",
+      mandate_id:uuidv4(),
+      issued_at:now,
+      issued_by:"apexlogics.org",
+      tool_id:"education-savings-projector",
+      tool_version:"1.0.0",
+      al_id:"AL-05",
+      mandate_type:"education_savings_record",
+      jurisdiction:["US"],
+      regulatory_frameworks:["IRS Publication 970"],
+      payload:{
+        tab:"contribution_optimizer",
+        target_college_cost_usd:r.targetCost,
+        coverage_pct:r.coveragePct,
+        target_amount_usd:Math.round(r.target),
+        years_to_save:r.years,
+        existing_balance_usd:r.pv,
+        annual_return_rate:r.rate,
+        required_monthly_contribution_usd:Math.round(r.reqMonthly),
+        required_annual_contribution_usd:Math.round(r.reqAnnual)
+      },
+      summary:`To reach ${fmtDollar(r.target)} (${(r.coveragePct*100).toFixed(0)}% of ${fmtDollar(r.targetCost)}) in ${r.years} years at ${(r.rate*100).toFixed(1)}% return, a monthly contribution of ${fmtDollar(r.reqMonthly)} is needed (starting from ${fmtDollar(r.pv)} existing balance).`,
+      agent_instructions:[
+        "Use required_monthly_contribution_usd as the recommended savings target for this beneficiary.",
+        "Handoff to AL-32 Parent College ROI Planner for full cost vs. savings analysis."
+      ],
+      valid_from:now,
+      valid_until:new Date(Date.now()+365*86400000).toISOString(),
+      last_reviewed:now,
+      source_tool_inputs:{target_college_cost_usd:r.targetCost,years_to_save:r.years,existing_balance_usd:r.pv,annual_return_rate_pct:r.rate*100},
+      regulatory_citations:["IRS Publication 970 (2025)"],
+      downstream_handoff_candidates:["AL-32"],
+      audit_metadata:{client_side_executed:true,zero_pii_verified:true,deterministic_run:true,data_vintage:"Jan 2026"}
+    };
+  }
+  return null;
+}
+
+/* ─── EXPORT FUNCTIONS ──────────────────────────────────────────── */
+function exportMarkdown1(){
+  if(!lastTab1Results){return;}
+  const r=lastTab1Results;
+  const stateData=r.stateCode?STATE_529[r.stateCode]:null;
+  let md=`# Education Savings Projector — AL-05\n`;
+  md+=`**Generated:** ${new Date().toLocaleDateString()}  \n`;
+  md+=`**Tool:** apexlogics.org/tools/education-savings-projector/  \n\n`;
+  md+=`## Inputs\n`;
+  md+=`- Child's Current Age: ${r.childAge}\n`;
+  md+=`- College Start Age: ${r.startAge}\n`;
+  md+=`- Savings Horizon: ${r.yearsToCollege} years\n`;
+  md+=`- Current 529 Balance: ${fmtDollar(r.balance)}\n`;
+  md+=`- Monthly Contribution: ${fmtDollar(r.monthly)}\n`;
+  md+=`- Expected Annual Return: ${(r.annReturn*100).toFixed(1)}%\n`;
+  md+=`- State: ${stateData?stateData.n:'Not selected'}\n`;
+  md+=`- Filing Status: ${r.filing==='mfj'?'Married Filing Jointly':'Single'}\n\n`;
+  md+=`## Projection Results\n\n`;
+  md+=`| Metric | Value |\n|--------|-------|\n`;
+  md+=`| Projected Balance at College Start | ${fmtDollar(r.projectedBalance)} |\n`;
+  md+=`| Target School Tier | ${r.tier.name} |\n`;
+  md+=`| 4-Year Cost Estimate | ${fmtDollar(r.tier.cost4yr)} |\n`;
+  md+=`| Coverage Gap / Surplus | ${r.projectedBalance>=r.tier.cost4yr?'+':''}${fmtDollar(r.projectedBalance-r.tier.cost4yr)} |\n`;
+  if(r.savings.annual>0){
+    md+=`| Annual State Tax Savings | ${fmtDollar(r.savings.annual)} |\n`;
+    md+=`| 10-Year Cumulative Tax Savings | ${fmtDollar(r.annual10yr)} |\n`;
+  }
+  md+=`\n## School Tier Coverage\n\n`;
+  md+=`| School Tier | 4-Year COA | Projected Balance | Gap / Surplus |\n`;
+  md+=`|-------------|-----------|-------------------|---------------|\n`;
+  r.coverageRows.forEach(row=>{
+    md+=`| ${row.name} | ${fmtDollar(row.cost4yr)} | ${fmtDollar(r.projectedBalance)} | ${row.gap>=0?'+':''}${fmtDollar(row.gap)} |\n`;
+  });
+  md+=`\n---\n*Data: IRS Pub. 970 (2025) · NCES IPEDS 2023-24 · SECURE 2.0 Act · CC BY 4.0 · ApexLogics.org*\n`;
+  downloadText(md,'AL05_education_savings_projector.md','text/markdown');
+  showToast(t('toast_md'),'success');
+}
+
+function exportMarkdown2(){
+  if(!lastTab2Results){return;}
+  const r=lastTab2Results;
+  let md=`# Education Savings Projector — Contribution Optimizer — AL-05\n`;
+  md+=`**Generated:** ${new Date().toLocaleDateString()}  \n`;
+  md+=`**Tool:** apexlogics.org/tools/education-savings-projector/  \n\n`;
+  md+=`## Inputs\n`;
+  md+=`- Target College Cost: ${fmtDollar(r.targetCost)}\n`;
+  md+=`- Coverage Target: ${(r.coveragePct*100).toFixed(0)}%\n`;
+  md+=`- Target Amount: ${fmtDollar(r.target)}\n`;
+  md+=`- Years Until College: ${r.years}\n`;
+  md+=`- Existing 529 Balance: ${fmtDollar(r.pv)}\n`;
+  md+=`- Expected Annual Return: ${(r.rate*100).toFixed(1)}%\n\n`;
+  md+=`## Required Contribution\n\n`;
+  md+=`| Metric | Value |\n|--------|-------|\n`;
+  md+=`| Required Monthly Contribution | ${fmtDollar(r.reqMonthly)}/mo |\n`;
+  md+=`| Required Annual Contribution | ${fmtDollar(r.reqAnnual)}/yr |\n\n`;
+  md+=`---\n*Data: IRS Pub. 970 (2025) · CC BY 4.0 · ApexLogics.org*\n`;
+  downloadText(md,'AL05_contribution_optimizer.md','text/markdown');
+  showToast(t('toast_md'),'success');
+}
+
+function exportAP2Tab1(){
+  const mandate=buildAP2Mandate(1);
+  if(!mandate){return;}
+  const result=AP2Schema.validate(mandate);
+  if(!result.valid){showToast(t('toast_ap2_err')+': '+result.errors.join('; '),'error');return;}
+  downloadText(JSON.stringify(mandate,null,2),`AL-05_education-savings-projector_${tsCompact()}.ap2.json`,'application/json');
+  showToast(t('toast_ap2'),'success');
+  // Update manifest panel preview
+  document.getElementById('manifest-content').textContent=JSON.stringify(buildManifest(),null,2);
+}
+
+function exportAP2Tab2(){
+  const mandate=buildAP2Mandate(2);
+  if(!mandate){return;}
+  const result=AP2Schema.validate(mandate);
+  if(!result.valid){showToast(t('toast_ap2_err')+': '+result.errors.join('; '),'error');return;}
+  downloadText(JSON.stringify(mandate,null,2),`AL-05_education-savings-projector_${tsCompact()}.ap2.json`,'application/json');
+  showToast(t('toast_ap2'),'success');
+}
+
+/* ─── HANDOFF FUNCTION ──────────────────────────────────────────── */
+function handoffTo(target){
+  let mandate=null;
+  if(target==='al32'&&lastTab1Results) mandate=buildAP2Mandate(1);
+  if(target==='al17') { showToast('Run AL-17 FAFSA SAI Simulator to model aid impact of your 529 balance.',''); return; }
+  if(!mandate){showToast('Run the projector first to generate a handoff payload.','error');return;}
+  const result=AP2Schema.validate(mandate);
+  if(!result.valid){showToast('AP2 validation failed','error');return;}
+  const slugMap={al32:'../parent-college-roi-planner/index.html'};
+  const encoded=encodeURIComponent(JSON.stringify(mandate));
+  window.location.href=`${slugMap[target]}?ap2=${encoded}`;
+}
+
+/* ─── AP2 INBOUND HANDLER — CONTRACT §6.4 ──────────────────────── */
+function parseAP2Inbound(){
+  try{
+    const param=new URLSearchParams(window.location.search).get('ap2');
+    if(!param)return;
+    const mandate=JSON.parse(decodeURIComponent(param));
+    if(!mandate||!mandate.mandate_type)return;
+    dispatchInbound(mandate);
+  }catch(e){/* silent no-op */}
+}
+
+function dispatchInbound(mandate){
+  const handlers={'fafsa_sai_estimate':prefillFromFAFSA};
+  const h=handlers[mandate.mandate_type];
+  if(!h)return;
+  h(mandate.payload,mandate.al_id);
+  showImportBadge(mandate.al_id||'External Tool');
+}
+
+function prefillFromFAFSA(payload,sourceId){
+  // Pre-fill state from FAFSA mandate if available
+  if(payload.state){
+    const sel=document.getElementById('stateSelect');
+    if(sel.querySelector(`option[value="${payload.state}"]`)){
+      setIfEmpty_select('stateSelect',payload.state);
+      onStateChange();
+    }
+  }
+  if(payload.filing_status) setIfEmpty_select('filingStatus',payload.filing_status);
+  // Show FAFSA note
+  document.getElementById('saiBadge').style.display='block';
+}
+
+function setIfEmpty_select(id, value){
+  const el=document.getElementById(id);
+  if(el&&(el.value===''||el.value==='single')){el.value=value;}
+}
+
+function showImportBadge(sourceId){
+  const badge=document.getElementById('ap2ImportBadgeTab1');
+  badge.innerHTML=`<div class="import-badge">✓ Imported from ${sourceId}</div>`;
+}
+
+function loadAP2Inbound(){
+  const json=document.getElementById('ap2InText').value.trim();
+  if(!json){showToast('Paste an AP2 JSON payload first.','error');return;}
+  try{
+    const mandate=JSON.parse(json);
+    dispatchInbound(mandate);
+    showToast(t('toast_loaded'),'success');
+    // Close the panel
+    toggleSection('ap2-in');
+  }catch(e){
+    showToast('Invalid JSON — check format and try again.','error');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', parseAP2Inbound);
+
+/* ─── MANIFEST JSON ─────────────────────────────────────────────── */
+function buildManifest(){
+  return{
+    tool_id:"education-savings-projector",
+    al_id:"AL-05",
+    version:"1.0.0",
+    title:"Education Savings Projector",
+    description:"Projects 529 plan growth to college start, calculates state tax deduction savings using a 4-bucket state classification (no-tax / unlimited / capped / no-deduction), and reverse-solves the required monthly contribution to meet any college cost target.",
+    category:"student_finance_debt",
+    journeys:["education_path"],
+    personas:["student","parent","counselor"],
+    tags:["529","college savings","education savings","state tax deduction","contribution optimizer","SECURE 2.0"],
+    status:"shipped",
+    maintenance:"very_low",
+    data_vintage:"Jan 2026",
+    frozen_baseline:false,
+    input_schema:{type:"object",properties:{child_age:{type:"number"},college_start_age:{type:"number"},current_balance_usd:{type:"number"},monthly_contribution_usd:{type:"number"},annual_return_rate:{type:"number"},state:{type:"string"},filing_status:{type:"string",enum:["single","mfj"]}},required:["child_age","monthly_contribution_usd"]},
+    output_schema:{type:"object",properties:{projected_balance_usd:{type:"number"},coverage_gap_usd:{type:"number"},annual_state_tax_savings_usd:{type:"number"},required_monthly_contribution_usd:{type:"number"}}},
+    mcp_tool_definition:{name:"project_education_savings",description:"Projects 529 college savings plan growth and calculates required monthly contributions to meet college cost targets. Includes state-specific 529 tax deduction analysis (4-bucket classification) and SECURE 2.0 rollover guidance.",inputSchema:{type:"object",properties:{child_age:{type:"number",description:"Child's current age (0-17)"},college_start_age:{type:"number",description:"Target college start age (default 18)"},current_balance_usd:{type:"number",description:"Current 529 account balance in USD"},monthly_contribution_usd:{type:"number",description:"Planned monthly contribution in USD"},annual_return_pct:{type:"number",description:"Expected annual return percentage (default 6)"},state:{type:"string",description:"Two-letter US state code for 529 deduction tier lookup"},filing_status:{type:"string",enum:["single","mfj"],description:"Tax filing status for deduction cap calculation"},target_college_cost_usd:{type:"number",description:"Total 4-year target college cost for contribution optimizer"}},required:["child_age","monthly_contribution_usd"]}},
+    execution:{type:"browser-javascript",entry:"index.html",function_name:"runTab1",timeout_ms:3000},
+    ap2_export:true,
+    ap2_mandate_types:["education_savings_record"],
+    ap2_inbound_mandate_types:["fafsa_sai_estimate"],
+    downstream_handoff_candidates:["AL-32","AL-17"],
+    regulatory_citations:["IRS Publication 970 (2025 edition)","SECURE 2.0 Act §126 (IRC §529(c)(3)(E))","NCES IPEDS 2023-24 average COA by institution type","HHS FPL 2026 (for context only)"],
+    sister_suite:"https://ainumbers.co",
+    consulting_site:"https://apexadvisory.site",
+    license:"CC-BY-4.0"
+  };
+}
+
+/* ─── INIT MANIFEST DISPLAY ──────────────────────────────────────── */
+document.getElementById('manifest-content').textContent=JSON.stringify(buildManifest(),null,2);
+
+</script>
+</body>
+</html>

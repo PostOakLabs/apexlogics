@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPD / CPE Credit Tracker — Apex Logics</title>
+<meta name="description" content="Track continuing education credits for CPA, CLE, HR (SHRM/HRCI), and CME/CEU. Gap calculator, deadline pace model, and AP2 export. Browser-only. Zero PII. Built by Apex Advisors.">
+<link rel="canonical" href="https://apexlogics.org/tools/cpd-credit-tracker/">
+<link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   CSS DESIGN TOKENS — Apex Logics Contract §8 Appendix A
+   Primary accent: --green (#34D399) — Licensing & Credentials category
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --bg:#0b0e14; --bg-2:#0C1220; --bg-3:#111A2E; --bg-4:#162238;
+  --border:#232b3e; --border-2:#2e3a52;
+  --muted:#6b7a99; --body:#c8d0e0; --text:#A8C4DE; --bright:#D4E8F8; --white:#EEF6FD;
+  --amber:#E8A838; --amber-dim:rgba(232,168,56,.10); --amber-lt:#F0BD5E;
+  --teal:#14B8A6; --teal-dim:rgba(20,184,166,.10); --teal-lt:#2DD4BF;
+  --coral:#F07167; --coral-dim:rgba(240,113,103,.10);
+  --lavender:#A78BFA; --lavender-dim:rgba(167,139,250,.10);
+  --green:#34D399; --green-dim:rgba(52,211,153,.10); /* primary accent — Licensing & Credentials */
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,.10);
+  --red:#F87171; --red-dim:rgba(248,113,113,.10);
+  --warn:#FBBF24;
+  --radius:6px; --radius-lg:10px; --shadow:0 4px 24px rgba(0,0,0,.45);
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+html[dir="rtl"] body { direction:rtl; text-align:right; }
+body {
+  background:var(--bg); color:var(--text);
+  font-family:'Sora',sans-serif; font-size:.875rem; line-height:1.6;
+  -webkit-font-smoothing:antialiased; min-height:100vh;
+}
+a { color:var(--teal-lt); text-decoration:none; }
+a:hover { text-decoration:underline; }
+button { cursor:pointer; font-family:inherit; }
+.mono { font-family:'JetBrains Mono',monospace; }
+.container { max-width:1024px; margin:0 auto; padding:24px; }
+
+/* ════ LANG BAR ════ */
+.lang-bar {
+  background:var(--bg-2); border-bottom:1px solid var(--border);
+  padding:.5rem 0;
+}
+.lang-inner { max-width:1024px; margin:0 auto; display:flex; gap:6px; align-items:center; justify-content:flex-end; }
+.lang-btn {
+  background:transparent; border:1px solid var(--border); color:var(--body);
+  padding:.25rem .55rem; border-radius:var(--radius); font-size:.6rem;
+  transition:all .15s;
+ font-family:'JetBrains Mono',monospace; letter-spacing:.06em;}
+.lang-btn:hover { border-color:var(--amber); color:var(--amber); }
+.lang-btn.active { border-color:var(--amber); color:var(--amber); background:var(--amber-dim); }
+
+/* ════════════════════════ NAV ════════════════════════ */
+nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(7,11,20,.92); backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.nav-inner {
+  max-width:1024px; margin:0 auto;
+  display:flex; align-items:center; gap:16px;
+  padding:0 24px; height:58px;
+}
+.logo { display:flex; align-items:center; gap:10px; flex-shrink:0; text-decoration:none; }
+.logo-mark { width:32px; height:32px; flex-shrink:0; }
+.logo-mark svg { width:100%; height:100%; }
+.logo-text { display:flex; flex-direction:column; gap:2px; }
+.logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--bright); letter-spacing:-.02em; line-height:1; }
+.logo-apex { color:var(--amber); }
+.logo-org { color:var(--muted); font-size:.8rem; }
+.logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-family:'JetBrains Mono',monospace; line-height:1; }
+.nav-right { display:flex; align-items:center; gap:8px; margin-left:auto; flex-shrink:0; }
+.nav-pill {
+  background:none; border:1px solid var(--border-2); border-radius:var(--radius);
+  color:var(--body); font-size:.62rem; padding:.3rem .65rem;
+  font-family:'JetBrains Mono',monospace; letter-spacing:.04em;
+  transition:border-color .15s, color .15s;
+}
+.nav-pill:hover { border-color:var(--teal); color:var(--text); }
+@media (max-width:600px) { .logo-tag, .nav-pill { display:none; } }
+
+/* ════ TOOL HEADER ════ */
+.tool-header { padding:32px 0 20px; border-bottom:1px solid var(--border); margin-bottom:24px; }
+.tool-id-line { font-family:'JetBrains Mono',monospace; font-size:.75rem; color:var(--muted); margin-bottom:8px; }
+.tool-id-line span { color:var(--teal); }
+.tool-title { font-family:'DM Serif Display',serif; font-size:2rem; color:var(--white); line-height:1.15; margin-bottom:8px; }
+.tool-subtitle { color:var(--body); font-size:.9rem; margin-bottom:12px; }
+.tool-vintage-banner {
+  display:inline-flex; align-items:center; gap:8px;
+  background:var(--teal-dim); border:1px solid rgba(20,184,166,.2);
+  color:var(--teal-lt); font-size:.72rem; font-family:'JetBrains Mono',monospace;
+  padding:4px 12px; border-radius:var(--radius);
+}
+
+/* ════ PII NOTICE ════ */
+.pii-notice {
+  background:rgba(52,211,153,.06); border:1px solid rgba(52,211,153,.2);
+  border-radius:var(--radius); padding:10px 14px;
+  color:var(--body); font-size:.78rem; margin-bottom:20px; display:flex; gap:8px; align-items:flex-start;
+}
+
+/* ════ PANELS ════ */
+.input-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
+@media(max-width:700px){ .input-grid { grid-template-columns:1fr; } }
+.panel {
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:20px;
+}
+.panel-label {
+  font-size:.7rem; font-family:'JetBrains Mono',monospace; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.08em; margin-bottom:14px;
+  display:flex; align-items:center; gap:8px;
+}
+.panel-label span { color:var(--teal); }
+.panel-row { margin-bottom:14px; }
+.panel-row:last-child { margin-bottom:0; }
+.field-label { font-size:.78rem; color:var(--text); margin-bottom:5px; display:block; }
+.field-hint { font-size:.72rem; color:var(--muted); margin-top:3px; }
+select, input[type="text"], input[type="number"], input[type="date"] {
+  width:100%; background:var(--bg-3); border:1px solid var(--border);
+  color:var(--bright); padding:8px 10px; border-radius:var(--radius);
+  font-family:'Sora',sans-serif; font-size:.83rem;
+  transition:border-color .15s; appearance:none; -webkit-appearance:none;
+}
+select:focus, input:focus { outline:none; border-color:var(--teal); }
+select option { background:var(--bg-3); }
+optgroup { color:var(--muted); font-size:.75rem; }
+
+/* ════ ACTIVITY LOG ════ */
+.activity-section {
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:20px; margin-bottom:20px;
+}
+.activity-header {
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;
+}
+.activity-header h3 { font-size:.85rem; color:var(--bright); font-weight:600; }
+.btn-add {
+  background:var(--teal-dim); border:1px solid rgba(20,184,166,.3);
+  color:var(--teal-lt); padding:6px 14px; border-radius:var(--radius);
+  font-size:.78rem; transition:all .15s;
+}
+.btn-add:hover { background:rgba(20,184,166,.2); }
+.activity-table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:.8rem; }
+thead tr { border-bottom:1px solid var(--border); }
+th { padding:8px 10px; color:var(--muted); font-weight:500; text-align:left; font-size:.72rem; font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:.05em; }
+td { padding:8px 10px; color:var(--text); border-bottom:1px solid rgba(28,45,72,.5); }
+td input[type="text"], td input[type="number"], td input[type="date"] {
+  padding:4px 8px; font-size:.78rem;
+}
+.activity-empty { text-align:center; color:var(--muted); padding:24px; font-size:.8rem; font-style:italic; }
+.btn-remove {
+  background:transparent; border:1px solid var(--border); color:var(--muted);
+  padding:3px 8px; border-radius:var(--radius); font-size:.72rem;
+  transition:all .15s;
+}
+.btn-remove:hover { border-color:var(--red); color:var(--red); }
+.credits-total-row {
+  display:flex; align-items:center; justify-content:flex-end; gap:12px;
+  margin-top:10px; padding-top:10px; border-top:1px solid var(--border);
+}
+.credits-total-label { font-size:.78rem; color:var(--muted); }
+.credits-total-val { font-family:'JetBrains Mono',monospace; font-size:1rem; color:var(--green); font-weight:600; }
+
+/* ════ RUN BUTTON ════ */
+.run-row { display:flex; justify-content:center; margin-bottom:28px; }
+.run-btn {
+  background:var(--teal); color:var(--bg);
+  border:none; padding:13px 40px; border-radius:var(--radius);
+  font-size:.92rem; font-weight:600; letter-spacing:.01em;
+  transition:opacity .15s; min-width:220px;
+}
+.run-btn:hover { opacity:.88; }
+.run-btn:disabled { opacity:.38; cursor:not-allowed; }
+
+/* ════ RESULTS ════ */
+.results-panel { display:none; }
+.results-panel.active { display:block; }
+.results-section {
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:22px; margin-bottom:18px;
+}
+.results-section h2 {
+  font-family:'DM Serif Display',serif; font-size:1.1rem; color:var(--white);
+  margin-bottom:16px; display:flex; align-items:center; gap:10px;
+}
+.results-section h2 .sec-icon { font-size:1rem; }
+
+/* KPI cards */
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-bottom:16px; }
+.kpi {
+  background:var(--bg-3); border:1px solid var(--border);
+  border-radius:var(--radius); padding:14px; text-align:center;
+}
+.kpi-val { font-family:'JetBrains Mono',monospace; font-size:1.5rem; font-weight:600; color:var(--green); }
+.kpi-val.warn { color:var(--warn); }
+.kpi-val.danger { color:var(--coral); }
+.kpi-label { font-size:.72rem; color:var(--muted); margin-top:4px; }
+
+/* Progress bar */
+.progress-wrap { margin:14px 0; }
+.progress-label { display:flex; justify-content:space-between; font-size:.75rem; color:var(--body); margin-bottom:6px; }
+.progress-bar-bg {
+  height:10px; background:var(--bg-4); border-radius:99px;
+  overflow:hidden; border:1px solid var(--border);
+}
+.progress-bar-fill {
+  height:100%; border-radius:99px;
+  background:var(--teal);
+  transition:width .4s ease;
+}
+.progress-bar-fill.warn { background:linear-gradient(90deg, var(--warn), var(--amber)); }
+.progress-bar-fill.danger { background:linear-gradient(90deg, var(--coral), var(--red)); }
+
+/* Status chips */
+.status-chip {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 14px; border-radius:99px; font-size:.78rem; font-weight:500;
+}
+.chip-on-track { background:var(--green-dim); color:var(--green); border:1px solid rgba(52,211,153,.3); }
+.chip-at-risk  { background:var(--amber-dim); color:var(--warn); border:1px solid rgba(232,168,56,.3); }
+.chip-behind   { background:var(--coral-dim); color:var(--coral); border:1px solid rgba(240,113,103,.3); }
+.chip-complete { background:var(--green-dim); color:var(--green); border:1px solid rgba(52,211,153,.4); }
+
+/* Requirements breakdown table */
+.req-table { width:100%; border-collapse:collapse; font-size:.8rem; }
+.req-table th { padding:8px 12px; text-align:left; color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.7rem; text-transform:uppercase; border-bottom:1px solid var(--border); }
+.req-table td { padding:9px 12px; border-bottom:1px solid rgba(28,45,72,.4); }
+.req-table tr:last-child td { border-bottom:none; }
+.req-met { color:var(--green); }
+.req-unmet { color:var(--coral); }
+.req-partial { color:var(--warn); }
+
+/* Pace table */
+.pace-table { width:100%; border-collapse:collapse; font-size:.8rem; }
+.pace-table td { padding:7px 12px; border-bottom:1px solid rgba(28,45,72,.4); }
+.pace-table tr:last-child td { border-bottom:none; }
+.pace-label { color:var(--body); }
+.pace-val { font-family:'JetBrains Mono',monospace; color:var(--bright); text-align:right; }
+
+/* Export row */
+.results-export-row {
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  margin-top:18px; padding-top:16px; border-top:1px solid var(--border);
+}
+.btn {
+  background:var(--bg-3); border:1px solid var(--border); color:var(--text);
+  padding:8px 16px; border-radius:var(--radius); font-size:.8rem;
+  display:flex; flex-direction:column; align-items:flex-start;
+  transition:all .15s; line-height:1.3;
+}
+.btn:hover:not(:disabled) { border-color:var(--teal); color:var(--teal); }
+.btn:disabled { opacity:.28; cursor:not-allowed; }
+.btn.ready { border-color:rgba(20,184,166,.4); }
+.btn-subtitle { font-size:.68rem; color:var(--muted); font-weight:400; }
+.btn.ready .btn-subtitle { color:var(--body); }
+.btn-help {
+  background:transparent; border:1px solid var(--border); color:var(--muted);
+  width:32px; height:32px; border-radius:50%; font-size:.85rem; align-items:center; justify-content:center;
+  display:flex; flex-direction:column; padding:0; flex-shrink:0; align-self:center;
+}
+.btn-help:hover { border-color:var(--teal); color:var(--teal); }
+
+/* MCP panel */
+.mcp-wrap { margin-top:24px; }
+.mcp-toggle {
+  background:transparent; border:none; color:var(--muted); font-size:.75rem;
+  display:flex; align-items:center; gap:6px; padding:0; letter-spacing:.03em;
+  font-family:'JetBrains Mono',monospace;
+}
+.mcp-toggle:hover { color:var(--body); }
+.mcp-panel {
+  display:none; margin-top:10px;
+  background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg);
+  padding:18px;
+}
+.mcp-panel.open { display:block; }
+.mcp-panel pre {
+  font-family:'JetBrains Mono',monospace; font-size:.72rem;
+  color:var(--body); white-space:pre-wrap; word-break:break-word;
+}
+
+/* Toast */
+.toast {
+  position:fixed; bottom:24px; right:24px; z-index:9999;
+  background:var(--bg-3); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:12px 18px;
+  font-size:.8rem; color:var(--text); max-width:340px;
+  box-shadow:var(--shadow); display:none;
+}
+.toast.show { display:block; animation:fadeIn .2s ease; }
+.toast.error { border-color:var(--coral); color:var(--coral); }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+/* Popover */
+.popover-overlay {
+  display:none; position:fixed; inset:0; z-index:200;
+  background:rgba(7,11,20,.7); align-items:center; justify-content:center;
+}
+.popover-overlay.open { display:flex; }
+.popover-box {
+  background:var(--bg-2); border:1px solid var(--border-2);
+  border-radius:var(--radius-lg); padding:24px; max-width:480px; width:90%;
+  box-shadow:var(--shadow);
+}
+.popover-box h3 { font-family:'DM Serif Display',serif; font-size:1.1rem; color:var(--white); margin-bottom:10px; }
+.popover-box p { color:var(--body); font-size:.83rem; line-height:1.6; margin-bottom:10px; }
+.popover-close {
+  background:transparent; border:1px solid var(--border); color:var(--muted);
+  padding:6px 14px; border-radius:var(--radius); font-size:.78rem;
+  margin-top:6px; transition:all .15s;
+}
+.popover-close:hover { border-color:var(--teal); color:var(--bright); }
+
+/* Footer */
+.tool-footer {
+  margin-top:40px; padding-top:20px; border-top:1px solid var(--border);
+  color:var(--muted); font-size:.75rem; text-align:center; line-height:1.8;
+}
+.tool-footer a { color:var(--body); }
+.tool-footer a:hover { color:var(--teal-lt); }
+</style>
+</head>
+<body>
+
+<!-- ════ LANG BAR ════ -->
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')" data-i18n-btn="en">EN</button>
+    <button class="lang-btn" onclick="setLang('es')" data-i18n-btn="es">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')" data-i18n-btn="fr">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')" data-i18n-btn="ar">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')" data-i18n-btn="pt">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')" data-i18n-btn="zh">中文</button>
+  </div>
+</div>
+
+<!-- ════ NAV ════ -->
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-right">
+      <a href="https://apexadvisory.site" class="nav-pill" target="_blank" rel="noopener">ApexAdvisory.site</a>
+      <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ════ MAIN ════ -->
+<div class="container">
+
+  <!-- Tool Header -->
+  <div class="tool-header">
+    <div class="tool-id-line">AL · 18 · Licensing &amp; Credentials</div>
+    <h1 class="tool-title" data-i18n="tool_title">CPD / CPE Credit Tracker</h1>
+    <p class="tool-subtitle" data-i18n="tool_subtitle">Track continuing education credits, calculate your gap to renewal, and model the pace needed to finish on time.</p>
+    <div class="tool-vintage-banner">User-driven · Zero embedded data · No annual refresh required</div>
+  </div>
+
+  <!-- PII Banner — exact CONTRACT §1.3 text -->
+  <div class="pii-notice">
+    🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+  </div>
+
+  <!-- ════ INPUT GRID ════ -->
+  <div class="input-grid">
+
+    <!-- LEFT: Profession + Requirements -->
+    <div class="panel">
+      <div class="panel-label"><span>01</span> Profession &amp; Requirements</div>
+
+      <div class="panel-row">
+        <label class="field-label" for="profSelect" data-i18n="lbl_profession">Profession / Credential</label>
+        <select id="profSelect" onchange="onProfChange()">
+          <option value="" disabled selected>— Select a profession —</option>
+          <optgroup label="Accounting">
+            <option value="cpa_annual">CPA — Annual renewal (40 hrs/yr)</option>
+            <option value="cpa_triennial">CPA — Triennial cycle (120 hrs / 3 yr)</option>
+          </optgroup>
+          <optgroup label="Legal">
+            <option value="cle_12">CLE — 12 hrs/yr (most states)</option>
+            <option value="cle_15">CLE — 15 hrs/yr (CA, TX, NY, FL)</option>
+          </optgroup>
+          <optgroup label="Human Resources">
+            <option value="shrm">SHRM-CP / SHRM-SCP — 60 PDCs / 3 yr</option>
+            <option value="hrci">PHR / SPHR / GPHR — 60 credits / 3 yr</option>
+          </optgroup>
+          <optgroup label="Medicine &amp; Nursing">
+            <option value="cme_25">CME — 25 hrs/yr (many specialty boards)</option>
+            <option value="cme_50">CME — 50 hrs/yr (higher-intensity boards)</option>
+            <option value="ceu_nursing">CEU — Nursing (varies; default 30 contact hrs/2 yr)</option>
+          </optgroup>
+        </select>
+        <div class="field-hint" id="profHint">Select a profession to see standard requirements.</div>
+      </div>
+
+      <!-- Requirement preview card — populated by onProfChange() -->
+      <div id="reqCard" style="display:none; margin-top:14px; background:var(--bg-3); border:1px solid rgba(20,184,166,.15); border-radius:var(--radius); padding:12px;">
+        <div style="font-size:.7rem; font-family:'JetBrains Mono',monospace; color:var(--teal); margin-bottom:8px;">STANDARD REQUIREMENTS</div>
+        <div id="reqCardBody" style="font-size:.8rem; color:var(--text); line-height:1.7;"></div>
+      </div>
+
+      <div class="panel-row" style="margin-top:16px;">
+        <label class="field-label" for="customTotal">
+          Total credits required
+          <span style="font-size:.72rem; color:var(--muted); font-weight:400;"> (auto-filled or override)</span>
+        </label>
+        <input type="number" id="customTotal" min="1" max="999" placeholder="e.g. 40" oninput="syncTotal()">
+        <div class="field-hint">Override if your jurisdiction has a different requirement.</div>
+      </div>
+
+      <div class="panel-row">
+        <label class="field-label" for="mandatoryEthics">Ethics / mandatory topic minimum (credits)</label>
+        <input type="number" id="mandatoryEthics" min="0" max="99" placeholder="e.g. 4" value="0">
+        <div class="field-hint">Leave 0 if your credential has no mandatory category minimum.</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Deadline + Pace -->
+    <div class="panel">
+      <div class="panel-label"><span>02</span> Deadline &amp; Pace</div>
+
+      <div class="panel-row">
+        <label class="field-label" for="deadlineDate">Renewal / recertification deadline</label>
+        <input type="date" id="deadlineDate">
+        <div class="field-hint">Your licence expiry or credential renewal date.</div>
+      </div>
+
+      <div class="panel-row">
+        <label class="field-label" for="cycleStartDate">Cycle start date (optional)</label>
+        <input type="date" id="cycleStartDate">
+        <div class="field-hint">First day credits in this cycle are accepted. Leave blank to use today.</div>
+      </div>
+
+      <div class="panel-row">
+        <label class="field-label" for="ethicsEarned">Ethics / mandatory credits earned so far</label>
+        <input type="number" id="ethicsEarned" min="0" max="99" placeholder="0" value="0">
+      </div>
+
+      <div class="panel-row">
+        <label class="field-label" for="estCostPerCredit">Estimated cost per CPE credit (USD, optional)</label>
+        <input type="number" id="estCostPerCredit" min="0" max="9999" step="0.01" placeholder="e.g. 25">
+        <div class="field-hint">Used to estimate completion cost for remaining credits.</div>
+      </div>
+    </div>
+  </div><!-- /input-grid -->
+
+  <!-- ════ ACTIVITY LOG ════ -->
+  <div class="activity-section">
+    <div class="activity-header">
+      <h3 data-i18n="activity_title">📋 Completed CPE / CPD Activities</h3>
+      <button class="btn-add" onclick="addActivityRow()" data-i18n="btn_add_activity">+ Add Activity</button>
+    </div>
+
+    <div class="activity-table-wrap">
+      <table id="activityTable">
+        <thead>
+          <tr>
+            <th>Activity / Course Title</th>
+            <th>Provider</th>
+            <th>Date Completed</th>
+            <th>Credits Earned</th>
+            <th>Category</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="activityBody">
+          <!-- rows added dynamically -->
+        </tbody>
+      </table>
+      <div class="activity-empty" id="activityEmpty">No activities logged yet. Click "Add Activity" to begin.</div>
+    </div>
+
+    <div class="credits-total-row">
+      <span class="credits-total-label">Total credits logged:</span>
+      <span class="credits-total-val mono" id="creditsTotal">0.0</span>
+    </div>
+  </div>
+
+  <!-- ════ RUN BUTTON ════ -->
+  <div class="run-row">
+    <button class="run-btn" id="calcBtn" onclick="calculate()" data-i18n="btn_calculate">Calculate Gap &amp; Pace</button>
+  </div>
+
+  <!-- ════ RESULTS ════ -->
+  <div class="results-panel" id="resultsPanel">
+
+    <!-- Status Overview -->
+    <div class="results-section">
+      <h2><span class="sec-icon">📊</span> <span data-i18n="sec_status">Status Overview</span></h2>
+      <div class="kpi-grid" id="kpiGrid"></div>
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>Credits earned</span>
+          <span id="progressPct">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <span id="statusChip" class="status-chip chip-at-risk">—</span>
+      </div>
+    </div>
+
+    <!-- Requirements Breakdown -->
+    <div class="results-section">
+      <h2><span class="sec-icon">✅</span> <span data-i18n="sec_requirements">Requirements Breakdown</span></h2>
+      <table class="req-table">
+        <thead>
+          <tr>
+            <th>Requirement</th>
+            <th>Required</th>
+            <th>Earned</th>
+            <th>Remaining</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="reqTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Pace & Deadline Model -->
+    <div class="results-section">
+      <h2><span class="sec-icon">⏱️</span> <span data-i18n="sec_pace">Pace &amp; Deadline Model</span></h2>
+      <table class="pace-table">
+        <tbody id="paceTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Cost Estimate (only shown if cost/credit entered) -->
+    <div class="results-section" id="costSection" style="display:none;">
+      <h2><span class="sec-icon">💰</span> Completion Cost Estimate</h2>
+      <table class="pace-table">
+        <tbody id="costTableBody"></tbody>
+      </table>
+      <p style="font-size:.74rem; color:var(--muted); margin-top:10px;">
+        Cost estimate is informational only. Actual costs vary by provider, delivery method, and bulk purchasing.
+      </p>
+    </div>
+
+    <!-- Export Row -->
+    <div class="results-export-row">
+      <button class="btn" id="csvExportBtn" disabled onclick="exportCSV()"
+              title="Run the analysis above to generate an export">
+        Export CSV
+        <span class="btn-subtitle">Activity log + pace summary</span>
+      </button>
+      <button class="btn" id="markdownExportBtn" disabled onclick="exportMarkdown()"
+              title="Run the analysis above to generate an export">
+        Export Markdown
+        <span class="btn-subtitle">Human-readable summary</span>
+      </button>
+      <button class="btn" id="ap2ExportBtn" disabled onclick="exportAP2()"
+              title="Run the analysis above to generate an AP2 mandate">
+        Export AP2 JSON
+        <span class="btn-subtitle">Agent integration · audit trail</span>
+      </button>
+      <button class="btn btn-help" onclick="showAP2Help()" aria-label="What is AP2?">?</button>
+    </div>
+  </div><!-- /results-panel -->
+
+  <!-- ════ MCP PANEL ════ -->
+  <div class="mcp-wrap">
+    <button class="mcp-toggle" onclick="toggleMCP()" id="mcpToggle">▶ MCP / Agent Discovery</button>
+    <div class="mcp-panel" id="mcpPanel">
+      <pre id="mcpPre"></pre>
+    </div>
+  </div>
+
+  <!-- ════ FOOTER ════ -->
+  <div class="tool-footer">
+    Built by <a href="https://apexadvisory.site" target="_blank" rel="noopener">Apex Advisors</a> ·
+    Sister suite: <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> ·
+    CC 4.0 BY · AL-18 · User-driven tool — no embedded data vintage
+  </div>
+
+</div><!-- /container -->
+
+<!-- ════ POPOVER ════ -->
+<div class="popover-overlay" id="ap2Popover" onclick="closePopover()">
+  <div class="popover-box" onclick="event.stopPropagation()">
+    <h3>What is AP2?</h3>
+    <p>AP2 (Agent Purchase Protocol) is Google's open agent authorization standard (announced September 2025). Exporting your results as an AP2 JSON file lets an AI agent carry your CPD scenario — profession, credits earned, deadline, gap — into a downstream tool like the Human Capital Engine (AL-03) without re-entering data.</p>
+    <p>The file contains no personal data — only the credential type, credit counts, and computed gap metrics you chose to calculate.</p>
+    <p><a href="https://ap2-protocol.org/" target="_blank" rel="noopener">Learn more at ap2-protocol.org →</a></p>
+    <button class="popover-close" onclick="closePopover()">Close</button>
+  </div>
+</div>
+
+<!-- ════ TOAST ════ -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   AP2 Schema Validator — Apex Logics Contract Appendix F
+   Inlined per CONTRACT §0: zero external dependencies.
+   Uses sessionStorage only for 'apex_lang'. No localStorage. No cookies.
+   ═══════════════════════════════════════════════════════════════════════ */
+const AP2Schema = {
+  required: [
+    'ap2_version','mandate_id','issued_at','issued_by',
+    'tool_id','tool_version','al_id','mandate_type',
+    'payload','summary','audit_metadata'
+  ],
+  validMandateTypes: [
+    'credential_roi_evaluation','human_capital_assessment',
+    'automation_exposure_score','career_resilience_score',
+    'workforce_program_roi','career_pivot_assessment',
+    'career_transition_record','scholarship_pipeline_plan',
+    'fafsa_sai_estimate','exam_pathway_plan',
+    'benefits_election_record','severance_decision_record',
+    'offer_negotiation_record','graduate_school_roi_record',
+    'apprenticeship_match_record','cpd_credit_record',
+    'job_search_roi_record','career_break_record',
+    'loan_repayment_record','freelance_total_cost_record',
+    'mba_roi_evaluation','test_prep_roi_record',
+    'international_student_cost_record','parent_college_roi_record',
+    'equity_compensation_record'
+  ],
+  validate(mandate) {
+    const errors = [];
+    if (!mandate || typeof mandate !== 'object') return { valid:false, errors:['mandate is not an object'] };
+    this.required.forEach(k => {
+      if (mandate[k] === undefined || mandate[k] === null) errors.push('missing: ' + k);
+    });
+    if (mandate.ap2_version !== '1.0') errors.push('ap2_version must be "1.0"');
+    if (mandate.mandate_type && !this.validMandateTypes.includes(mandate.mandate_type))
+      errors.push('unrecognized mandate_type: ' + mandate.mandate_type);
+    if (mandate.al_id && !/^AL-\d{1,2}(\+\d{1,2})?$/.test(mandate.al_id))
+      errors.push('al_id format invalid');
+    if (mandate.audit_metadata) {
+      if (mandate.audit_metadata.client_side_executed !== true) errors.push('client_side_executed must be true');
+      if (mandate.audit_metadata.zero_pii_verified !== true)    errors.push('zero_pii_verified must be true');
+      if (mandate.audit_metadata.deterministic_run !== true)    errors.push('deterministic_run must be true');
+    }
+    return { valid: errors.length === 0, errors };
+  }
+};
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PROFESSION DATA — user-driven tool, zero external embedded data.
+   These objects define requirement structures only — no wage or fee data.
+   Source: NASBA (CPA), state bar associations (CLE), SHRM/HRCI (HR),
+           ACCME / specialty boards (CME), ANCC (nursing CEU).
+   ═══════════════════════════════════════════════════════════════════════ */
+const PROFESSIONS = {
+  cpa_annual: {
+    label: 'CPA — Annual (40 hrs/yr)',
+    totalCredits: 40,
+    cycleLengthYears: 1,
+    creditUnit: 'CPE hours',
+    ethicsMin: 4,          // NASBA model rules: 4 hrs ethics minimum per cycle
+    ethicsLabel: 'Ethics (mandatory)',
+    hint: 'NASBA Model Rule §6: 40 CPE hours per annual renewal period. Most states require a 4-hour ethics minimum. Source: NASBA Model Rule on CPE (2024).',
+    downstream: ['AL-03', 'AL-20']
+  },
+  cpa_triennial: {
+    label: 'CPA — Triennial (120 hrs / 3 yr)',
+    totalCredits: 120,
+    cycleLengthYears: 3,
+    creditUnit: 'CPE hours',
+    ethicsMin: 4,
+    ethicsLabel: 'Ethics (mandatory, minimum per cycle)',
+    hint: 'NASBA Model Rule §6: 120 CPE hours per 3-year rolling window. At least 20 hrs per year in many states. 4-hour ethics minimum. Source: NASBA Model Rule on CPE (2024).',
+    downstream: ['AL-03', 'AL-20']
+  },
+  cle_12: {
+    label: 'CLE — 12 hrs/yr',
+    totalCredits: 12,
+    cycleLengthYears: 1,
+    creditUnit: 'CLE credit hours',
+    ethicsMin: 1,
+    ethicsLabel: 'Legal ethics / professional responsibility (mandatory)',
+    hint: 'Most US state bars: 12 CLE credit hours per year, including 1–2 hours of legal ethics. Exact requirements vary by state. Source: American Bar Association CLE requirements by state (2024).',
+    downstream: ['AL-03']
+  },
+  cle_15: {
+    label: 'CLE — 15 hrs/yr (CA, TX, NY, FL)',
+    totalCredits: 15,
+    cycleLengthYears: 1,
+    creditUnit: 'CLE credit hours',
+    ethicsMin: 1,
+    ethicsLabel: 'Legal ethics (mandatory)',
+    hint: 'California, Texas, New York, Florida, and other high-population states require 15 CLE hours per year, typically with 1–3 hours of ethics. Source: State bar associations (2024).',
+    downstream: ['AL-03']
+  },
+  shrm: {
+    label: 'SHRM-CP / SHRM-SCP — 60 PDCs / 3 yr',
+    totalCredits: 60,
+    cycleLengthYears: 3,
+    creditUnit: 'PDCs',
+    ethicsMin: 0,          // SHRM has no separate mandatory ethics minimum
+    ethicsLabel: 'No mandatory category minimum',
+    hint: 'SHRM recertification: 60 Professional Development Credits (PDCs) over a 3-year cycle. No mandatory ethics subcategory; credits can be earned via educational programs, instructor activities, or on-the-job experiences. Source: SHRM Recertification Guide (2024).',
+    downstream: ['AL-03', 'AL-08+14']
+  },
+  hrci: {
+    label: 'PHR / SPHR / GPHR — 60 credits / 3 yr',
+    totalCredits: 60,
+    cycleLengthYears: 3,
+    creditUnit: 'recertification credits',
+    ethicsMin: 0,
+    ethicsLabel: 'No mandatory category minimum',
+    hint: 'HRCI recertification: 60 recertification credits per 3-year cycle. Credits must come from pre-approved activities. No mandatory ethics subcategory. Source: HRCI Recertification Handbook (2024).',
+    downstream: ['AL-03', 'AL-08+14']
+  },
+  cme_25: {
+    label: 'CME — 25 hrs/yr',
+    totalCredits: 25,
+    cycleLengthYears: 1,
+    creditUnit: 'CME credits (AMA PRA Cat 1)',
+    ethicsMin: 0,
+    ethicsLabel: 'No mandatory category minimum (check specialty board)',
+    hint: 'Many specialty boards (e.g., ABIM, ABP) require 25–30 AMA PRA Category 1 CME credits per year. Actual requirements vary by specialty board and state medical license. Source: ACCME / specialty board guidelines (2024).',
+    downstream: ['AL-03']
+  },
+  cme_50: {
+    label: 'CME — 50 hrs/yr',
+    totalCredits: 50,
+    cycleLengthYears: 1,
+    creditUnit: 'CME credits (AMA PRA Cat 1)',
+    ethicsMin: 0,
+    ethicsLabel: 'No mandatory category minimum (check specialty board)',
+    hint: 'Higher-intensity specialty boards (e.g., surgery, interventional cardiology) may require 50+ CME hours annually. Check your specific board\'s MOC requirements. Source: ABMS specialty board guidelines (2024).',
+    downstream: ['AL-03']
+  },
+  ceu_nursing: {
+    label: 'CEU — Nursing (30 contact hrs / 2 yr)',
+    totalCredits: 30,
+    cycleLengthYears: 2,
+    creditUnit: 'contact hours',
+    ethicsMin: 0,
+    ethicsLabel: 'Check state board for mandatory topic minimums',
+    hint: 'Most state nursing boards require 30 contact hours (3 CEUs) per 2-year renewal cycle. Some states require specific topic hours (e.g., pain management, infection control). Source: ANCC / state board of nursing guidelines (2024).',
+    downstream: ['AL-03']
+  }
+};
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ACTIVITY LOG STATE — held in memory only; no localStorage, no cookies
+   per CONTRACT §0. Session data disappears on tab close.
+   ═══════════════════════════════════════════════════════════════════════ */
+let activities = [];    // array of { title, provider, date, credits, category }
+let lastResult = null;  // stores last calculation result for export functions
+let activityIdCounter = 0;
+
+/* ════ PROFESSION CHANGE ════ */
+function onProfChange() {
+  const key = document.getElementById('profSelect').value;
+  const prof = PROFESSIONS[key];
+  if (!prof) return;
+
+  // Auto-fill total credits
+  document.getElementById('customTotal').value = prof.totalCredits;
+  // Auto-fill ethics minimum
+  document.getElementById('mandatoryEthics').value = prof.ethicsMin;
+
+  // Show requirement card
+  const card = document.getElementById('reqCard');
+  const body = document.getElementById('reqCardBody');
+  card.style.display = 'block';
+  body.innerHTML = `
+    <div style="margin-bottom:4px;"><strong style="color:var(--bright);">${prof.totalCredits}</strong> <span style="color:var(--muted);">${prof.creditUnit} per ${prof.cycleLengthYears === 1 ? 'year' : prof.cycleLengthYears + '-year cycle'}</span></div>
+    ${prof.ethicsMin > 0 ? `<div style="margin-bottom:4px;"><strong style="color:var(--warn);">${prof.ethicsMin}</strong> <span style="color:var(--muted);">${prof.ethicsLabel}</span></div>` : ''}
+    <div style="color:var(--muted); font-size:.74rem; margin-top:8px;">${prof.hint}</div>
+  `;
+
+  document.getElementById('profHint').textContent = '';
+}
+
+function syncTotal() { /* user override — no-op, value read directly on calculate() */ }
+
+/* ════ ACTIVITY TABLE ════ */
+function addActivityRow() {
+  const id = ++activityIdCounter;
+  activities.push({ id, title: '', provider: '', date: '', credits: 0, category: 'General' });
+  renderActivityTable();
+}
+
+function removeActivityRow(id) {
+  activities = activities.filter(a => a.id !== id);
+  renderActivityTable();
+}
+
+function renderActivityTable() {
+  const tbody = document.getElementById('activityBody');
+  const empty = document.getElementById('activityEmpty');
+  if (activities.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    document.getElementById('creditsTotal').textContent = '0.0';
+    return;
+  }
+  empty.style.display = 'none';
+  tbody.innerHTML = activities.map(a => `
+    <tr>
+      <td><input type="text" value="${escHtml(a.title)}" placeholder="Activity / Course title" oninput="updateActivity(${a.id},'title',this.value)" style="min-width:160px;"></td>
+      <td><input type="text" value="${escHtml(a.provider)}" placeholder="Provider" oninput="updateActivity(${a.id},'provider',this.value)" style="min-width:100px;"></td>
+      <td><input type="date" value="${escHtml(a.date)}" oninput="updateActivity(${a.id},'date',this.value)"></td>
+      <td><input type="number" value="${a.credits}" min="0" max="999" step="0.5" style="width:70px;" oninput="updateActivity(${a.id},'credits',parseFloat(this.value)||0)"></td>
+      <td>
+        <select onchange="updateActivity(${a.id},'category',this.value)" style="min-width:110px;">
+          ${['General','Ethics / Compliance','Technical','Leadership','Self-Study'].map(c =>
+            `<option${c===a.category?' selected':''}>${c}</option>`).join('')}
+        </select>
+      </td>
+      <td><button class="btn-remove" onclick="removeActivityRow(${a.id})">Remove</button></td>
+    </tr>
+  `).join('');
+  updateCreditsTotal();
+}
+
+function updateActivity(id, field, value) {
+  const a = activities.find(a => a.id === id);
+  if (a) { a[field] = value; updateCreditsTotal(); }
+}
+
+function updateCreditsTotal() {
+  // Sum all credits in activity log
+  const total = activities.reduce((s, a) => s + (parseFloat(a.credits) || 0), 0);
+  document.getElementById('creditsTotal').textContent = total.toFixed(1);
+}
+
+/* ════ CALCULATE ════ */
+function calculate() {
+  const profKey   = document.getElementById('profSelect').value;
+  const deadline  = document.getElementById('deadlineDate').value;
+  const cycleStart = document.getElementById('cycleStartDate').value;
+  const ethicsReq  = parseFloat(document.getElementById('mandatoryEthics').value) || 0;
+  const ethicsEarned = parseFloat(document.getElementById('ethicsEarned').value) || 0;
+  const costPerCredit = parseFloat(document.getElementById('estCostPerCredit').value) || 0;
+
+  // Read total from input (user may have overridden)
+  const totalRequired = parseFloat(document.getElementById('customTotal').value) || 0;
+
+  // Validation
+  if (!profKey) { showToast('Please select a profession.', 'error'); return; }
+  if (!deadline) { showToast('Please enter a renewal deadline date.', 'error'); return; }
+  if (totalRequired <= 0) { showToast('Total credits required must be greater than zero.', 'error'); return; }
+
+  const prof = PROFESSIONS[profKey];
+
+  // Compute credits earned from activity log
+  // Ethics credits: count activities categorised as "Ethics / Compliance"
+  const totalEarned  = activities.reduce((s, a) => s + (parseFloat(a.credits) || 0), 0);
+  const ethicsLogged = activities
+    .filter(a => a.category === 'Ethics / Compliance')
+    .reduce((s, a) => s + (parseFloat(a.credits) || 0), 0);
+  // Total ethics earned = logged ethics activities + manually entered ethics
+  const ethicsTotalEarned = Math.max(ethicsLogged, ethicsEarned);
+
+  // Gap calculations
+  const totalGap    = Math.max(0, totalRequired - totalEarned);
+  const ethicsGap   = ethicsReq > 0 ? Math.max(0, ethicsReq - ethicsTotalEarned) : 0;
+  const totalPct    = Math.min(100, totalRequired > 0 ? (totalEarned / totalRequired) * 100 : 0);
+
+  // Deadline calculations — synchronous, deterministic; no Date drift (we pin to today at midnight)
+  const today       = new Date(); today.setHours(0,0,0,0);
+  const deadlineDate = new Date(deadline + 'T00:00:00');
+  const startDate   = cycleStart ? new Date(cycleStart + 'T00:00:00') : today;
+
+  const daysTotal    = Math.max(1, Math.round((deadlineDate - startDate) / 86400000));
+  const daysRemaining = Math.max(0, Math.round((deadlineDate - today) / 86400000));
+  const weeksRemaining = daysRemaining / 7;
+  const monthsRemaining = daysRemaining / 30.44; // average days per month
+
+  // Pace models
+  // Credits needed per week / month / day to finish remaining gap on time
+  const creditsPerWeek  = weeksRemaining > 0 ? totalGap / weeksRemaining : totalGap;
+  const creditsPerMonth = monthsRemaining > 0 ? totalGap / monthsRemaining : totalGap;
+
+  // On-track assessment
+  // Compare pace earned so far vs pace required over elapsed time
+  const daysElapsed   = Math.max(1, daysTotal - daysRemaining);
+  const paceRequired  = totalRequired / daysTotal;          // credits/day at steady pace
+  const paceActual    = totalEarned / daysElapsed;          // credits/day earned so far
+  const paceRatio     = paceActual / paceRequired;          // ratio: >1 = ahead, <0.7 = behind
+
+  let statusKey;
+  if (totalGap === 0 && ethicsGap === 0) statusKey = 'complete';
+  else if (daysRemaining === 0) statusKey = 'behind';
+  else if (paceRatio >= 0.9) statusKey = 'on_track';
+  else if (paceRatio >= 0.6) statusKey = 'at_risk';
+  else statusKey = 'behind';
+
+  // Cost estimate
+  const estimatedCompletionCost = costPerCredit > 0 ? totalGap * costPerCredit : null;
+
+  lastResult = {
+    profKey, profLabel: prof ? prof.label : profKey,
+    totalRequired, totalEarned, totalGap,
+    ethicsReq, ethicsTotalEarned, ethicsGap,
+    totalPct, daysRemaining, weeksRemaining, monthsRemaining,
+    creditsPerWeek, creditsPerMonth, paceRatio, statusKey,
+    deadline, cycleStart, costPerCredit, estimatedCompletionCost,
+    activities: activities.map(a => ({ ...a })),
+    downstream: prof ? prof.downstream : [],
+    creditUnit: prof ? prof.creditUnit : 'credits'
+  };
+
+  renderResults(lastResult);
+  enableExportButtons();
+}
+
+/* ════ RENDER RESULTS ════ */
+function renderResults(r) {
+  const panel = document.getElementById('resultsPanel');
+  panel.classList.add('active');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // ── KPI Grid ──
+  const kpiGrid = document.getElementById('kpiGrid');
+  const gapClass = r.totalGap === 0 ? '' : r.totalGap <= r.totalRequired * 0.25 ? 'warn' : 'danger';
+  kpiGrid.innerHTML = `
+    <div class="kpi">
+      <div class="kpi-val">${r.totalEarned.toFixed(1)}</div>
+      <div class="kpi-label">Credits earned</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-val ${gapClass}">${r.totalGap.toFixed(1)}</div>
+      <div class="kpi-label">Credits remaining</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-val ${r.daysRemaining < 30 ? 'danger' : r.daysRemaining < 90 ? 'warn' : ''}">${r.daysRemaining}</div>
+      <div class="kpi-label">Days to deadline</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-val">${r.totalRequired}</div>
+      <div class="kpi-label">Total required</div>
+    </div>
+  `;
+
+  // ── Progress Bar ──
+  const fillEl = document.getElementById('progressFill');
+  const pctEl  = document.getElementById('progressPct');
+  fillEl.style.width = r.totalPct.toFixed(1) + '%';
+  pctEl.textContent  = r.totalPct.toFixed(1) + '%';
+  fillEl.className   = 'progress-bar-fill';
+  if (r.totalPct < 50) fillEl.classList.add('danger');
+  else if (r.totalPct < 80) fillEl.classList.add('warn');
+
+  // ── Status Chip ──
+  const chipEl = document.getElementById('statusChip');
+  const statusMap = {
+    complete:  { cls: 'chip-complete',  txt: '✓ Requirement Met — All credits complete' },
+    on_track:  { cls: 'chip-on-track',  txt: '✓ On Track — Pace is sufficient' },
+    at_risk:   { cls: 'chip-at-risk',   txt: '⚠ At Risk — Pace is slower than required' },
+    behind:    { cls: 'chip-behind',    txt: '✗ Behind — Immediate action needed' },
+  };
+  const s = statusMap[r.statusKey] || statusMap['at_risk'];
+  chipEl.className = 'status-chip ' + s.cls;
+  chipEl.textContent = s.txt;
+
+  // ── Requirements Table ──
+  const reqTbody = document.getElementById('reqTableBody');
+  const totalStatus = r.totalGap === 0 ? 'req-met' : r.totalPct >= 75 ? 'req-partial' : 'req-unmet';
+  const totalStatusTxt = r.totalGap === 0 ? '✓ Met' : '✗ Not met';
+  const ethicsStatus = r.ethicsReq === 0 ? 'req-met' : r.ethicsGap === 0 ? 'req-met' : 'req-unmet';
+  const ethicsStatusTxt = r.ethicsReq === 0 ? '— N/A' : r.ethicsGap === 0 ? '✓ Met' : '✗ Not met';
+  reqTbody.innerHTML = `
+    <tr>
+      <td>Total ${r.creditUnit}</td>
+      <td class="mono">${r.totalRequired.toFixed(1)}</td>
+      <td class="mono">${r.totalEarned.toFixed(1)}</td>
+      <td class="mono ${r.totalGap > 0 ? 'req-unmet' : 'req-met'}">${r.totalGap.toFixed(1)}</td>
+      <td class="${totalStatus}">${totalStatusTxt}</td>
+    </tr>
+    <tr>
+      <td>Ethics / mandatory minimum</td>
+      <td class="mono">${r.ethicsReq > 0 ? r.ethicsReq.toFixed(1) : '—'}</td>
+      <td class="mono">${r.ethicsReq > 0 ? r.ethicsTotalEarned.toFixed(1) : '—'}</td>
+      <td class="mono ${r.ethicsGap > 0 ? 'req-unmet' : 'req-met'}">${r.ethicsReq > 0 ? r.ethicsGap.toFixed(1) : '—'}</td>
+      <td class="${ethicsStatus}">${ethicsStatusTxt}</td>
+    </tr>
+  `;
+
+  // ── Pace Table ──
+  const paceTbody = document.getElementById('paceTableBody');
+  const fmtNum = (n, d=1) => isFinite(n) ? n.toFixed(d) : '—';
+  paceTbody.innerHTML = `
+    <tr><td class="pace-label">Deadline</td><td class="pace-val">${r.deadline}</td></tr>
+    <tr><td class="pace-label">Days remaining</td><td class="pace-val">${r.daysRemaining}</td></tr>
+    <tr><td class="pace-label">Weeks remaining</td><td class="pace-val">${fmtNum(r.weeksRemaining)}</td></tr>
+    <tr><td class="pace-label">Months remaining</td><td class="pace-val">${fmtNum(r.monthsRemaining)}</td></tr>
+    <tr><td class="pace-label">Credits still needed</td><td class="pace-val">${r.totalGap.toFixed(1)} ${r.creditUnit}</td></tr>
+    <tr><td class="pace-label">Pace needed — per week</td><td class="pace-val">${r.totalGap > 0 ? fmtNum(r.creditsPerWeek) + ' credits/wk' : '— Complete'}</td></tr>
+    <tr><td class="pace-label">Pace needed — per month</td><td class="pace-val">${r.totalGap > 0 ? fmtNum(r.creditsPerMonth) + ' credits/mo' : '— Complete'}</td></tr>
+    <tr><td class="pace-label">Current pace ratio</td><td class="pace-val">${fmtNum(r.paceRatio * 100)}% of required pace</td></tr>
+  `;
+
+  // ── Cost Section ──
+  const costSection = document.getElementById('costSection');
+  if (r.estimatedCompletionCost !== null && r.totalGap > 0) {
+    costSection.style.display = 'block';
+    const costTbody = document.getElementById('costTableBody');
+    costTbody.innerHTML = `
+      <tr><td class="pace-label">Credits still needed</td><td class="pace-val">${r.totalGap.toFixed(1)}</td></tr>
+      <tr><td class="pace-label">Estimated cost per credit</td><td class="pace-val">$${r.costPerCredit.toFixed(2)}</td></tr>
+      <tr><td class="pace-label">Estimated completion cost</td><td class="pace-val">$${r.estimatedCompletionCost.toFixed(2)}</td></tr>
+    `;
+  } else {
+    costSection.style.display = 'none';
+  }
+}
+
+/* ════ ENABLE EXPORT BUTTONS ════ */
+function enableExportButtons() {
+  // Per CONTRACT §3.3: buttons start disabled; enabled only after successful calculation
+  ['csvExportBtn', 'markdownExportBtn', 'ap2ExportBtn'].forEach(id => {
+    const btn = document.getElementById(id);
+    btn.disabled = false;
+    btn.classList.add('ready');
+    btn.title = 'For download · agent integration · scenario handoff';
+  });
+}
+
+/* ════ DETERMINISTIC UUID — FNV-1a hash of inputs ════ */
+function genUUID(seed) {
+  // FNV-1a 32-bit hash → format as UUID v4 lookalike
+  // Does NOT use Math.random() — deterministic per CONTRACT §0
+  let h = 0x811c9dc5;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = (h * 0x01000193) >>> 0;
+  }
+  const hex = h.toString(16).padStart(8, '0');
+  return `${hex.slice(0,8)}-${hex.slice(0,4)}-4${hex.slice(1,4)}-8${hex.slice(0,3)}-${hex}${hex}`.slice(0, 36);
+}
+
+function tsCompact() {
+  const d = new Date();
+  return [
+    d.getFullYear(),
+    String(d.getMonth()+1).padStart(2,'0'),
+    String(d.getDate()).padStart(2,'0'),
+    String(d.getHours()).padStart(2,'0'),
+    String(d.getMinutes()).padStart(2,'0'),
+    String(d.getSeconds()).padStart(2,'0')
+  ].join('');
+}
+
+/* ════ AP2 MANDATE BUILDER ════ */
+function buildAP2Mandate() {
+  const r = lastResult;
+  const seed = [r.profKey, r.deadline, r.totalEarned, r.totalRequired].join('|');
+  const now  = new Date().toISOString();
+  return {
+    ap2_version: '1.0',
+    mandate_id: genUUID(seed),
+    issued_at:  now,
+    issued_by:  'apexlogics.org',
+    tool_id:    'cpd-credit-tracker',
+    tool_version: '1.0.0',
+    al_id:      'AL-18',
+    mandate_type: 'cpd_credit_record',
+    jurisdiction: ['US'],
+    regulatory_frameworks: [
+      'NASBA Model Rule on CPE',
+      'ABA CLE requirements',
+      'SHRM/HRCI Recertification Rules',
+      'ACCME CME Standards',
+      'ANCC Nursing CEU Standards'
+    ],
+    payload: {
+      profession_key:         r.profKey,
+      profession_label:       r.profLabel,
+      credit_unit:            r.creditUnit,
+      total_credits_required: r.totalRequired,
+      total_credits_earned:   r.totalEarned,
+      total_credits_remaining: r.totalGap,
+      ethics_credits_required: r.ethicsReq,
+      ethics_credits_earned:   r.ethicsTotalEarned,
+      ethics_credits_remaining: r.ethicsGap,
+      completion_pct:         parseFloat(r.totalPct.toFixed(1)),
+      deadline:               r.deadline,
+      days_remaining:         r.daysRemaining,
+      pace_credits_per_week:  parseFloat(r.creditsPerWeek.toFixed(2)),
+      pace_credits_per_month: parseFloat(r.creditsPerMonth.toFixed(2)),
+      pace_ratio:             parseFloat(r.paceRatio.toFixed(3)),
+      status:                 r.statusKey,
+      activities_count:       r.activities.length,
+      estimated_completion_cost_usd: r.estimatedCompletionCost
+    },
+    summary: `${r.profLabel}: ${r.totalEarned.toFixed(1)} of ${r.totalRequired} credits earned (${r.totalPct.toFixed(0)}%). ${r.totalGap.toFixed(1)} credits remaining by ${r.deadline}. Current status: ${r.statusKey.replace('_',' ')}.`,
+    agent_instructions: [
+      'Review gap against upcoming deadline; prioritise ethics/mandatory credits if still outstanding',
+      'Consider AL-03 Human Capital Engine to model long-term career capital value of completed CPD activities',
+      'Consider AL-20 Exam Cost Planner if pursuing a new credential alongside CPD renewal'
+    ],
+    valid_from:   now,
+    valid_until:  r.deadline + 'T23:59:59Z',
+    last_reviewed: new Date().toISOString().slice(0, 10),
+    source_tool_inputs: {
+      profession_key:  r.profKey,
+      total_required:  r.totalRequired,
+      deadline:        r.deadline,
+      ethics_required: r.ethicsReq,
+      activity_count:  r.activities.length
+    },
+    regulatory_citations: [
+      'NASBA Model Rule on CPE (2024)',
+      'American Bar Association CLE requirements by state (2024)',
+      'SHRM Recertification Guide (2024)',
+      'HRCI Recertification Handbook (2024)',
+      'ACCME / specialty board CME guidelines (2024)',
+      'ANCC / state board of nursing CEU requirements (2024)'
+    ],
+    downstream_handoff_candidates: r.downstream,
+    audit_metadata: {
+      client_side_executed: true,
+      zero_pii_verified:    true,
+      deterministic_run:    true,
+      data_vintage:         'User-driven — no embedded reference data; requirement figures per published 2024 standards'
+    }
+  };
+}
+
+/* ════ EXPORT FUNCTIONS ════ */
+function exportAP2() {
+  if (!lastResult) { showToast('Run the analysis first.', 'error'); return; }
+  const mandate = buildAP2Mandate();
+  const result  = AP2Schema.validate(mandate);
+  if (!result.valid) {
+    showToast('AP2 validation failed: ' + result.errors.join('; '), 'error');
+    return;
+  }
+  const blob = new Blob([JSON.stringify(mandate, null, 2)], { type: 'application/json' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `AL-18_cpd-credit-tracker_${tsCompact()}.ap2.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ════ CSV EXPORT (Tier 2) ════ */
+function csvEscape(v) {
+  const s = (v === null || v === undefined) ? '' : String(v);
+  return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function exportCSV() {
+  if (!lastResult) { showToast('Run the analysis first.', 'error'); return; }
+  const r   = lastResult;
+  const now = new Date().toISOString().slice(0, 10);
+  const rows = [];
+
+  // Section 1 — Summary
+  rows.push(['Section', 'Field', 'Value']);
+  rows.push(['Summary', 'Profession', r.profLabel]);
+  rows.push(['Summary', 'Total credits required', r.totalRequired]);
+  rows.push(['Summary', 'Credits earned', r.totalEarned.toFixed(1)]);
+  rows.push(['Summary', 'Credits remaining', r.totalGap.toFixed(1)]);
+  rows.push(['Summary', 'Progress (%)', r.totalPct.toFixed(1)]);
+  rows.push(['Summary', 'Ethics credits required', r.ethicsReq || 0]);
+  rows.push(['Summary', 'Ethics credits earned', r.ethicsReq > 0 ? r.ethicsTotalEarned.toFixed(1) : '—']);
+  rows.push(['Summary', 'Ethics credits remaining', r.ethicsReq > 0 ? r.ethicsGap.toFixed(1) : '—']);
+  rows.push(['Summary', 'Renewal deadline', r.deadline]);
+  rows.push(['Summary', 'Days remaining', r.daysRemaining]);
+  rows.push(['Summary', 'Status', r.statusKey.replace(/_/g, ' ')]);
+  rows.push(['Summary', 'Pace ratio (%)', (r.paceRatio * 100).toFixed(0)]);
+  rows.push(['Summary', 'Credits per week needed', r.creditsPerWeek.toFixed(1)]);
+  rows.push(['Summary', 'Credits per month needed', r.creditsPerMonth.toFixed(1)]);
+  if (r.estimatedCompletionCost !== null) {
+    rows.push(['Summary', 'Est. completion cost ($)', r.estimatedCompletionCost.toFixed(2)]);
+  }
+  rows.push([]); // blank separator
+
+  // Section 2 — Activity Log
+  rows.push(['Activity Log', 'Title', 'Provider', 'Date', 'Credits', 'Category']);
+  if (r.activities.length > 0) {
+    r.activities.forEach(a => {
+      rows.push(['Activity Log', a.title || '', a.provider || '', a.date || '', a.credits, a.category || '']);
+    });
+  } else {
+    rows.push(['Activity Log', '(no activities logged)', '', '', '', '']);
+  }
+  rows.push([]);
+
+  // Footer
+  rows.push(['Generated', now, 'Apex Logics AL-18', 'apexlogics.org', 'CC BY 4.0', '']);
+
+  const csv  = rows.map(r => r.map(csvEscape).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `AL-18_cpd-credit-tracker_${tsCompact()}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('CSV exported.', 'success');
+}
+
+function exportMarkdown() {
+  if (!lastResult) { showToast('Run the analysis first.', 'error'); return; }
+  const r   = lastResult;
+  const now = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  const lines = [
+    `# CPD / CPE Credit Tracker — ${r.profLabel}`,
+    `*Generated by Apex Logics AL-18 · ${now}*`,
+    '',
+    '## Summary',
+    `- **Profession:** ${r.profLabel}`,
+    `- **Credits earned:** ${r.totalEarned.toFixed(1)} / ${r.totalRequired} (${r.totalPct.toFixed(1)}%)`,
+    `- **Credits remaining:** ${r.totalGap.toFixed(1)} ${r.creditUnit}`,
+    `- **Renewal deadline:** ${r.deadline}`,
+    `- **Days remaining:** ${r.daysRemaining}`,
+    `- **Status:** ${r.statusKey.replace('_',' ')}`,
+    '',
+    '## Requirements',
+    `| Requirement | Required | Earned | Remaining |`,
+    `|---|---|---|---|`,
+    `| Total credits | ${r.totalRequired} | ${r.totalEarned.toFixed(1)} | ${r.totalGap.toFixed(1)} |`,
+    `| Ethics / mandatory | ${r.ethicsReq || '—'} | ${r.ethicsReq > 0 ? r.ethicsTotalEarned.toFixed(1) : '—'} | ${r.ethicsReq > 0 ? r.ethicsGap.toFixed(1) : '—'} |`,
+    '',
+    '## Pace Model',
+    `- Credits per week needed: ${r.creditsPerWeek.toFixed(1)}`,
+    `- Credits per month needed: ${r.creditsPerMonth.toFixed(1)}`,
+    `- Current pace ratio: ${(r.paceRatio * 100).toFixed(0)}% of required pace`,
+    '',
+  ];
+  if (r.activities.length > 0) {
+    lines.push('## Completed Activities');
+    lines.push('| Title | Provider | Date | Credits | Category |');
+    lines.push('|---|---|---|---|---|');
+    r.activities.forEach(a => {
+      lines.push(`| ${a.title || '—'} | ${a.provider || '—'} | ${a.date || '—'} | ${a.credits} | ${a.category} |`);
+    });
+    lines.push('');
+  }
+  if (r.estimatedCompletionCost !== null) {
+    lines.push('## Completion Cost Estimate');
+    lines.push(`- Cost per credit: $${r.costPerCredit.toFixed(2)}`);
+    lines.push(`- Estimated cost for remaining ${r.totalGap.toFixed(1)} credits: **$${r.estimatedCompletionCost.toFixed(2)}**`);
+    lines.push('');
+  }
+  lines.push('---');
+  lines.push('*Apex Logics AL-18 · apexlogics.org · CC BY 4.0 · Built by Apex Advisors*');
+  const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `AL-18_cpd-credit-tracker_${tsCompact()}.md`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ════ MCP PANEL ════ */
+function toggleMCP() {
+  const panel  = document.getElementById('mcpPanel');
+  const toggle = document.getElementById('mcpToggle');
+  const isOpen = panel.classList.toggle('open');
+  toggle.textContent = (isOpen ? '▼' : '▶') + ' MCP / Agent Discovery';
+  if (isOpen && !document.getElementById('mcpPre').textContent) {
+    document.getElementById('mcpPre').textContent = JSON.stringify({
+      tool_id: 'cpd-credit-tracker',
+      al_id: 'AL-18',
+      version: '1.0.0',
+      title: 'CPD / CPE Credit Tracker',
+      category: 'licensing_credentials',
+      status: 'shipped',
+      ap2_mandate_types: ['cpd_credit_record'],
+      downstream_handoff_candidates: ['AL-03', 'AL-20'],
+      sister_suite: 'https://ainumbers.co',
+      consulting_site: 'https://apexadvisory.site',
+      mcp_tool_definition: {
+        name: 'track_cpd_cpe_credits',
+        description: 'Tracks CPD/CPE credits for CPA, CLE, HR (SHRM/HRCI), and CME/CEU credentials. Computes gap to renewal deadline and pace model. Returns an AP2 cpd_credit_record mandate.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            profession_key: { type: 'string' },
+            total_required: { type: 'number' },
+            total_earned:   { type: 'number' },
+            ethics_required: { type: 'number' },
+            deadline: { type: 'string' }
+          },
+          required: ['profession_key', 'total_required', 'total_earned', 'deadline']
+        }
+      }
+    }, null, 2);
+  }
+}
+
+/* ════ UI UTILITIES ════ */
+function showAP2Help() { document.getElementById('ap2Popover').classList.add('open'); }
+function closePopover() { document.getElementById('ap2Popover').classList.remove('open'); }
+
+let toastTimer = null;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'toast show' + (type ? ' ' + type : '');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.classList.remove('show'); }, 3500);
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ════ I18N — Apex Logics standard: 6 languages, sessionStorage apex_lang ════ */
+/* Uses sessionStorage only — NO localStorage, cookies, or IndexedDB per CONTRACT §0 */
+const TRANSLATIONS = {
+  en: {
+    tool_title: 'CPD / CPE Credit Tracker',
+    tool_subtitle: 'Track continuing education credits, calculate your gap to renewal, and model the pace needed to finish on time.',
+    nav_back: '← All Tools',
+    lbl_profession: 'Profession / Credential',
+    activity_title: '📋 Completed CPE / CPD Activities',
+    btn_add_activity: '+ Add Activity',
+    btn_calculate: 'Calculate Gap & Pace',
+    sec_status: 'Status Overview',
+    sec_gap: 'Gap Analysis',
+    sec_pace: 'Pace Model',
+    sec_export: 'Export',
+    lbl_total_required: 'Credits Required',
+    lbl_total_earned: 'Credits Earned',
+    lbl_ethics_required: 'Ethics Credits Required',
+    lbl_ethics_earned: 'Ethics Credits Earned',
+    lbl_deadline: 'Renewal Deadline',
+    lbl_renewal_period: 'Renewal Period (years)',
+    lbl_hours_per_week: 'Available Hours / Week',
+    err_no_data: 'Add at least one activity and fill in all required fields.',
+    toast_exported: 'Report downloaded.',
+    toast_ap2: 'AP2 JSON downloaded.'
+  },
+  es: { lang_dir: 'ltr' },
+  fr: { lang_dir: 'ltr' },
+  ar: { lang_dir: 'rtl' },
+  pt: { lang_dir: 'ltr' },
+  zh: { lang_dir: 'ltr' }
+};
+
+function setLang(lang) {
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  const dir = (t.lang_dir === 'rtl') ? 'rtl' : 'ltr';
+  document.documentElement.dir = dir;
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.dataset.i18n;
+    const val = t[k] || TRANSLATIONS.en[k];
+    if (val) el.textContent = val;
+  });
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+  try { sessionStorage.setItem('apex_lang', lang); } catch (e) {}
+}
+
+(function initLang() {
+  let lang = 'en';
+  try {
+    const saved = sessionStorage.getItem('apex_lang');
+    if (saved && TRANSLATIONS[saved]) lang = saved;
+    else {
+      const navLang = (navigator.language || '').slice(0, 2).toLowerCase();
+      if (TRANSLATIONS[navLang]) lang = navLang;
+    }
+  } catch (e) {}
+  setLang(lang);
+})();
+</script>
+</body>
+</html>

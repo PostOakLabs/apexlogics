@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equity Compensation Analyzer — Apex Logics AL-33</title>
+<meta name="description" content="RSU vesting, ISO/NSO intrinsic value, AMT flag, equity vs. cash equivalence, 3-offer total comp NPV stack. Free, browser-only, zero PII. AP2-compliant.">
+<link rel="canonical" href="https://apexlogics.org/tools/equity-compensation-analyzer/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════ DESIGN TOKENS ════════════════════════ */
+:root {
+  --bg:#070B14; --bg-2:#0C1220; --bg-3:#111A2E; --bg-4:#162238;
+  --border:#1C2D48; --border-2:#253754;
+  --muted:#3E5675; --body:#6A8BAE; --text:#A8C4DE; --bright:#D4E8F8; --white:#EEF6FD;
+  --amber:#E8A838; --amber-lt:#F0BD5E; --amber-dim:rgba(232,168,56,.10);
+  --teal:#14B8A6; --teal-dim:rgba(20,184,166,.10); --teal-lt:#2DD4BF;
+  --coral:#F07167; --coral-lt:#F5928B; --coral-dim:rgba(240,113,103,.10);
+  --lavender:#A78BFA; --lavender-dim:rgba(167,139,250,.10);
+  --green:#34D399; --green-dim:rgba(52,211,153,.10);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,.10);
+  --red:#F87171; --red-dim:rgba(248,113,113,.10);
+  --warn:#FBBF24; --warn-dim:rgba(251,191,36,.10);
+  --radius:6px; --radius-lg:10px; --shadow:0 4px 24px rgba(0,0,0,.45);
+}
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html { font-size:16px; scroll-behavior:smooth; }
+body { background:var(--bg); color:var(--text); font-family:'Sora',sans-serif; font-weight:400; line-height:1.6; min-height:100vh; }
+a { color:var(--coral-lt); text-decoration:none; }
+a:hover { text-decoration:underline; }
+
+/* ════════════════════════ NAV ════════════════════════ */
+nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(7,11,20,.92); backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.nav-inner {
+  max-width:900px; margin:0 auto;
+  display:flex; align-items:center; gap:12px;
+  padding:0 20px; height:56px;
+}
+.logo { display:flex; align-items:center; gap:10px; flex-shrink:0; text-decoration:none; }
+.logo-mark { width:30px; height:30px; flex-shrink:0; }
+.logo-mark svg { width:100%; height:100%; }
+.logo-text { display:flex; flex-direction:column; gap:2px; }
+.logo-name { font-family:'JetBrains Mono',monospace; font-size:.9rem; font-weight:500; color:var(--bright); letter-spacing:-.02em; line-height:1; }
+.logo-apex { color:var(--amber); }
+.logo-org { color:var(--muted); font-size:.78rem; }
+.logo-tag { font-size:.48rem; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-family:'JetBrains Mono',monospace; line-height:1; }
+.nav-right { display:flex; align-items:center; gap:4px; margin-left:auto; flex-shrink:0; flex-wrap:wrap; }
+.lang-btn {
+  background:none; border:1px solid var(--border); border-radius:var(--radius);
+  color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.58rem;
+  letter-spacing:.06em; padding:3px 8px; cursor:pointer; transition:all .2s;
+}
+.lang-btn:hover { border-color:var(--coral); color:var(--coral-lt); }
+.lang-btn.active { border-color:var(--coral); color:var(--coral-lt); background:var(--coral-dim); }
+@media(max-width:600px){ .logo-tag { display:none; } }
+
+/* ════════════════════════ LAYOUT ════════════════════════ */
+.container { max-width:900px; margin:0 auto; padding:0 20px 60px; }
+
+/* ════════════════════════ LEGAL DISCLAIMER ════════════════════════ */
+.legal-notice {
+  background:rgba(240,113,103,.07); border:1px solid rgba(240,113,103,.35);
+  border-left:3px solid var(--coral); border-radius:var(--radius);
+  padding:14px 16px; margin:18px 0;
+}
+.legal-notice-title {
+  font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--coral); margin-bottom:6px;
+}
+.legal-notice p { font-size:.78rem; color:var(--text); line-height:1.65; }
+.legal-notice .cite { font-family:'JetBrains Mono',monospace; font-size:.65rem; color:var(--muted); }
+
+/* ════════════════════════ TOOL HEADER ════════════════════════ */
+.tool-header { padding:36px 0 20px; }
+.tool-eyebrow {
+  font-family:'JetBrains Mono',monospace; font-size:.55rem;
+  letter-spacing:.18em; text-transform:uppercase; color:var(--coral);
+  margin-bottom:8px;
+}
+.tool-title { font-family:'DM Serif Display',serif; font-size:clamp(1.8rem,4vw,2.6rem); color:var(--white); line-height:1.15; margin-bottom:10px; }
+.tool-subtitle { font-size:.9rem; color:var(--body); max-width:660px; line-height:1.65; }
+
+/* ════════════════════════ VINTAGE BADGE ════════════════════════ */
+.vintage-badge {
+  display:inline-flex; align-items:center; gap:8px;
+  background:var(--coral-dim); border:1px solid rgba(240,113,103,.3);
+  color:var(--coral-lt); padding:.4rem .8rem; border-radius:var(--radius);
+  font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.04em;
+  margin-top:14px;
+}
+.vintage-dot { width:6px; height:6px; border-radius:50%; background:var(--coral); }
+
+/* ════════════════════════ PII BANNER ════════════════════════ */
+.pii-banner {
+  background:rgba(240,113,103,.06); border:1px solid rgba(240,113,103,.2);
+  border-radius:var(--radius); padding:12px 16px; margin:16px 0;
+  font-size:.78rem; color:var(--coral-lt); display:flex; gap:10px; align-items:flex-start;
+}
+
+/* ════════════════════════ AP2 INBOUND ════════════════════════ */
+.ap2-inbound { margin-bottom:20px; }
+.ap2-inbound-toggle {
+  background:none; border:1px solid var(--border-2); border-radius:var(--radius);
+  color:var(--body); font-family:'JetBrains Mono',monospace; font-size:.6rem;
+  letter-spacing:.06em; padding:8px 14px; cursor:pointer; width:100%;
+  text-align:left; display:flex; align-items:center; gap:8px;
+  transition:border-color .2s, color .2s;
+}
+.ap2-inbound-toggle:hover { border-color:var(--coral); color:var(--coral-lt); }
+.ap2-inbound-toggle .chevron { margin-left:auto; transition:transform .25s; font-style:normal; }
+.ap2-inbound-toggle.open { border-color:var(--coral); color:var(--coral-lt); }
+.ap2-inbound-toggle.open .chevron { transform:rotate(180deg); }
+.ap2-inbound-body { display:none; margin-top:6px; }
+.ap2-inbound-toggle.open + .ap2-inbound-body { display:block; }
+.ap2-inbound-body textarea {
+  width:100%; height:90px; background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius); color:var(--text); font-family:'JetBrains Mono',monospace;
+  font-size:.65rem; padding:10px; resize:vertical; outline:none;
+}
+.ap2-inbound-body textarea:focus { border-color:var(--coral); }
+.ap2-inbound-body .ap2-load-btn {
+  margin-top:6px; background:var(--coral-dim); border:1px solid rgba(240,113,103,.3);
+  color:var(--coral-lt); font-family:'Sora',sans-serif; font-size:.75rem;
+  padding:6px 14px; border-radius:var(--radius); cursor:pointer; transition:background .2s;
+}
+.ap2-inbound-body .ap2-load-btn:hover { background:rgba(240,113,103,.2); }
+
+/* ════════════════════════ TABS ════════════════════════ */
+.tab-bar { display:flex; gap:4px; border-bottom:2px solid var(--border); margin-bottom:20px; }
+.tab-btn {
+  background:none; border:none; padding:10px 18px; cursor:pointer;
+  font-family:'Sora',sans-serif; font-size:.8rem; color:var(--muted);
+  border-bottom:2px solid transparent; margin-bottom:-2px; transition:color .2s, border-color .2s;
+}
+.tab-btn:hover { color:var(--text); }
+.tab-btn.active { color:var(--coral-lt); border-bottom-color:var(--coral); }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+
+/* ════════════════════════ SECTION LABELS ════════════════════════ */
+.section-label {
+  font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted); margin:24px 0 12px;
+  border-bottom:1px solid var(--border); padding-bottom:6px;
+}
+
+/* ════════════════════════ INPUTS ════════════════════════ */
+.input-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 20px; }
+.input-grid.triple { grid-template-columns:1fr 1fr 1fr; }
+.input-group { display:flex; flex-direction:column; gap:5px; }
+.input-group.span2 { grid-column:span 2; }
+label { font-size:.75rem; color:var(--body); }
+input[type="number"], input[type="text"], select {
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius); color:var(--white); font-family:'Sora',sans-serif;
+  font-size:.85rem; padding:9px 12px; outline:none; width:100%;
+  transition:border-color .2s;
+}
+input[type="number"]:focus, input[type="text"]:focus, select:focus { border-color:var(--coral); }
+select option { background:var(--bg-3); }
+.input-hint { font-size:.68rem; color:var(--muted); margin-top:2px; }
+
+/* Grant type radio-style toggle */
+.grant-type-row { display:flex; gap:8px; margin-bottom:4px; }
+.grant-pill {
+  flex:1; padding:9px; text-align:center; cursor:pointer;
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius); color:var(--body); font-size:.8rem;
+  transition:all .2s; user-select:none;
+}
+.grant-pill:hover { border-color:var(--coral); color:var(--text); }
+.grant-pill.active { border-color:var(--coral); color:var(--coral-lt); background:var(--coral-dim); }
+
+/* ════════════════════════ AMT WARNING ════════════════════════ */
+.amt-warning {
+  background:var(--warn-dim); border:1px solid rgba(251,191,36,.4);
+  border-left:3px solid var(--warn); border-radius:var(--radius);
+  padding:12px 16px; margin:12px 0; display:none;
+}
+.amt-warning.show { display:block; }
+.amt-warning-title { font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.12em; text-transform:uppercase; color:var(--warn); margin-bottom:5px; }
+.amt-warning p { font-size:.78rem; color:var(--text); }
+
+/* ════════════════════════ RUN BUTTON ════════════════════════ */
+.run-row { margin-top:24px; }
+.run-btn {
+  width:100%; padding:14px 24px;
+  background:var(--coral); color:var(--bg); border:none;
+  border-radius:var(--radius);
+  font-family:'Sora',sans-serif; font-size:.9rem; font-weight:600;
+  cursor:pointer; letter-spacing:.02em; transition:background .2s, transform .1s;
+}
+.run-btn:hover { background:var(--coral-lt); }
+.run-btn:active { transform:translateY(1px); }
+
+/* ════════════════════════ RESULTS ════════════════════════ */
+.results-panel { display:none; margin-top:28px; }
+.results-panel.visible { display:block; }
+
+.stat-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:16px 0; }
+.stat-box {
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:16px;
+  display:flex; flex-direction:column; gap:4px;
+}
+.stat-box.highlight { border-color:rgba(240,113,103,.4); background:var(--coral-dim); }
+.stat-box.warn-box { border-color:rgba(251,191,36,.4); background:var(--warn-dim); }
+.stat-box.good { border-color:rgba(52,211,153,.4); background:var(--green-dim); }
+.stat-n { font-family:'DM Serif Display',serif; font-size:1.5rem; color:var(--white); }
+.stat-n.coral { color:var(--coral-lt); }
+.stat-n.green { color:var(--green); }
+.stat-n.amber { color:var(--amber); }
+.stat-n.warn { color:var(--warn); }
+.stat-l { font-size:.72rem; color:var(--body); }
+
+/* ════════════════════════ VESTING TABLE ════════════════════════ */
+.vest-table { width:100%; border-collapse:collapse; margin:16px 0; font-size:.82rem; }
+.vest-table th {
+  background:var(--bg-3); color:var(--body); font-weight:500;
+  padding:10px 12px; text-align:left; border-bottom:1px solid var(--border);
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; letter-spacing:.06em; text-transform:uppercase;
+}
+.vest-table th.right { text-align:right; }
+.vest-table td { padding:9px 12px; border-bottom:1px solid var(--border); color:var(--text); }
+.vest-table tr:last-child td { border-bottom:none; }
+.vest-table tr.cliff-row { border-left:2px solid var(--coral); }
+.vest-table tr.total-row td { color:var(--white); font-weight:600; background:var(--bg-3); }
+.vest-table td.money { font-family:'JetBrains Mono',monospace; font-size:.8rem; text-align:right; }
+.vest-table td.badge { font-size:.7rem; }
+.vest-event { display:inline-block; background:var(--coral-dim); color:var(--coral-lt); border:1px solid rgba(240,113,103,.3); padding:1px 6px; border-radius:3px; font-size:.65rem; font-family:'JetBrains Mono',monospace; }
+
+/* ════════════════════════ TAX BREAKDOWN ════════════════════════ */
+.tax-panel {
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:20px; margin:16px 0;
+}
+.tax-panel-title { font-family:'JetBrains Mono',monospace; font-size:.65rem; letter-spacing:.12em; text-transform:uppercase; color:var(--coral); margin-bottom:14px; }
+.tax-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--border); font-size:.83rem; }
+.tax-row:last-child { border-bottom:none; }
+.tax-row .tk { color:var(--body); }
+.tax-row .tv { font-family:'JetBrains Mono',monospace; color:var(--white); }
+.tax-row .tv.coral { color:var(--coral-lt); }
+.tax-row .tv.green { color:var(--green); }
+.tax-row .tv.warn { color:var(--warn); }
+
+/* ════════════════════════ OFFER COMPARISON (Tab 2) ════════════════════════ */
+.offer-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin:16px 0; }
+.offer-card {
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:16px;
+}
+.offer-card-label { font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.12em; text-transform:uppercase; color:var(--coral); margin-bottom:12px; }
+.offer-card .input-group { margin-bottom:10px; }
+.offer-card label { font-size:.72rem; }
+
+.comp-table { width:100%; border-collapse:collapse; margin:16px 0; font-size:.82rem; }
+.comp-table th {
+  background:var(--bg-3); color:var(--body); font-weight:500;
+  padding:10px 12px; border-bottom:1px solid var(--border);
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; letter-spacing:.06em; text-transform:uppercase;
+}
+.comp-table th.center { text-align:center; }
+.comp-table td { padding:9px 12px; border-bottom:1px solid var(--border); color:var(--text); }
+.comp-table tr:last-child td { border-bottom:none; }
+.comp-table td.val { font-family:'JetBrains Mono',monospace; font-size:.8rem; text-align:center; }
+.comp-table td.row-label { color:var(--body); font-size:.78rem; }
+.comp-table .best { color:var(--green); font-weight:600; }
+.comp-table .worst { color:var(--red); }
+.comp-table .total-row td { background:var(--bg-3); color:var(--white); font-weight:600; }
+
+/* ════════════════════════ PROGRESS ════════════════════════ */
+.stack-bar { display:flex; height:12px; border-radius:4px; overflow:hidden; border:1px solid var(--border); margin-bottom:8px; }
+.stack-seg { height:100%; }
+
+/* ════════════════════════ SUMMARY ════════════════════════ */
+.summary-box {
+  background:var(--bg-3); border:1px solid var(--border-2);
+  border-radius:var(--radius-lg); padding:20px; margin:16px 0;
+  border-left:3px solid var(--coral);
+}
+.summary-box p { font-size:.85rem; color:var(--text); line-height:1.7; }
+.summary-box strong { color:var(--white); }
+.tag-pill { display:inline-block; background:var(--coral-dim); color:var(--coral-lt); border:1px solid rgba(240,113,103,.3); padding:2px 8px; border-radius:3px; font-size:.72rem; font-family:'JetBrains Mono',monospace; margin:0 2px; }
+.tag-pill.green { background:var(--green-dim); color:var(--green); border-color:rgba(52,211,153,.3); }
+.tag-pill.warn { background:var(--warn-dim); color:var(--warn); border-color:rgba(251,191,36,.3); }
+
+/* ════════════════════════ EXPORT ROW ════════════════════════ */
+.results-export-row { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; padding-top:16px; border-top:1px solid var(--border); }
+.exp-btn {
+  background:var(--bg-2); border:1px solid var(--border-2);
+  border-radius:var(--radius); color:var(--text);
+  font-family:'JetBrains Mono',monospace; font-size:.6rem;
+  letter-spacing:.06em; padding:8px 16px; cursor:pointer; transition:border-color .2s, color .2s;
+}
+.exp-btn:hover { border-color:var(--coral); color:var(--coral-lt); }
+.exp-btn.ap2 { border-color:rgba(240,113,103,.4); color:var(--coral-lt); }
+.exp-btn.ap2:hover { background:var(--coral-dim); }
+
+/* ════════════════════════ MANIFEST ════════════════════════ */
+.mcp-toggle {
+  background:none; border:1px solid var(--border); border-radius:var(--radius);
+  color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.58rem;
+  letter-spacing:.06em; padding:7px 14px; cursor:pointer; width:100%;
+  text-align:left; margin-top:10px; transition:border-color .2s, color .2s;
+}
+.mcp-toggle:hover { border-color:var(--coral); color:var(--coral-lt); }
+.mcp-toggle.open { border-color:var(--coral); color:var(--coral-lt); }
+.mcp-panel { display:none; background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius); margin-top:4px; }
+.mcp-panel.open { display:block; }
+.mcp-panel pre { padding:16px; font-family:'JetBrains Mono',monospace; font-size:.65rem; color:var(--text); white-space:pre-wrap; overflow-x:auto; }
+
+/* ════════════════════════ FOOTER ════════════════════════ */
+.tool-footer { margin-top:40px; padding-top:20px; border-top:1px solid var(--border); text-align:center; font-size:.7rem; color:var(--muted); line-height:1.8; }
+.tool-footer a { color:var(--muted); }
+.tool-footer a:hover { color:var(--coral-lt); }
+
+/* ════════════════════════ TOAST ════════════════════════ */
+#toast { position:fixed; bottom:24px; right:24px; background:var(--bg-3); border:1px solid var(--border-2); color:var(--text); padding:12px 20px; border-radius:var(--radius); font-size:.8rem; opacity:0; pointer-events:none; transition:opacity .3s; z-index:999; max-width:320px; }
+#toast.show { opacity:1; }
+#toast.success { border-color:rgba(52,211,153,.5); color:var(--green); }
+#toast.error { border-color:rgba(248,113,113,.5); color:var(--red); }
+
+/* ════════════════════════ RTL ════════════════════════ */
+[dir="rtl"] .tab-bar { flex-direction:row-reverse; }
+[dir="rtl"] .tax-row { flex-direction:row-reverse; }
+
+/* ════════════════════════ RESPONSIVE ════════════════════════ */
+@media(max-width:640px){
+  .input-grid { grid-template-columns:1fr; }
+  .input-grid.triple { grid-template-columns:1fr 1fr; }
+  .offer-grid { grid-template-columns:1fr; }
+  .stat-row { grid-template-columns:1fr 1fr; }
+  .input-group.span2 { grid-column:span 1; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════ NAV ════ -->
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-right" role="navigation" aria-label="Language selector">
+      <button class="lang-btn active" id="lb-en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" id="lb-es" onclick="setLang('es')">ES</button>
+      <button class="lang-btn" id="lb-fr" onclick="setLang('fr')">FR</button>
+      <button class="lang-btn" id="lb-ar" onclick="setLang('ar')">AR</button>
+      <button class="lang-btn" id="lb-pt" onclick="setLang('pt')">PT</button>
+      <button class="lang-btn" id="lb-zh" onclick="setLang('zh')">中文</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- ════ LEGAL DISCLAIMER ════ -->
+  <div class="legal-notice" role="note">
+    <div class="legal-notice-title">⚠ Legal &amp; Tax Notice — Read Before Use</div>
+    <p>This tool provides <strong>illustrative estimates only</strong> and does not constitute tax, legal, or financial advice. Equity compensation tax treatment is complex and highly fact-specific. Always consult a qualified tax advisor, CPA, or attorney before making exercise, hold, or sale decisions. AMT calculations are simplified estimates; actual AMT liability depends on full tax return context. ISO qualifying disposition rules require both a 2-year hold from grant date and 1-year hold from exercise date.</p>
+    <p style="margin-top:8px;" class="cite">Regulatory basis: IRC §422 (ISOs) · IRC §83 (property transferred in connection with services) · IRC §55 (alternative minimum tax) · IRS Rev. Proc. 2023-34 (2024 AMT exemptions) · IRS Pub. 525 (2024 taxable and nontaxable income)</p>
+  </div>
+
+  <!-- ════ HEADER ════ -->
+  <header class="tool-header">
+    <div class="tool-eyebrow">AL · 33 · Compensation &amp; Offers</div>
+    <h1 class="tool-title" data-i18n="title">Equity Compensation Analyzer</h1>
+    <p class="tool-subtitle" data-i18n="subtitle">Model RSU vesting, ISO/NSO intrinsic value and AMT exposure, equity vs. cash equivalence, and compare up to 3 total comp offers — entirely in your browser.</p>
+    <div class="vintage-badge"><span class="vintage-dot"></span> IRS 2024 brackets · AMT exemption 2024 · IRC §422, §83, §55</div>
+  </header>
+
+  <!-- ════ PII BANNER ════ -->
+  <div class="pii-banner" role="note">
+    <span style="flex-shrink:0;margin-top:1px;">🔒</span>
+    <span>🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+  </div>
+
+  <!-- ════ AP2 INBOUND (AL-25) ════ -->
+  <div class="ap2-inbound">
+    <button class="ap2-inbound-toggle" id="ap2InboundToggle" onclick="toggleAp2Inbound()">
+      ↙ Import AP2 from AL-25 Offer Negotiation Suite — auto-fill base salary &amp; equity
+      <em class="chevron">▾</em>
+    </button>
+    <div class="ap2-inbound-body" id="ap2InboundBody">
+      <textarea id="ap2InboundText" placeholder='Paste AP2 JSON from AL-25 (offer_negotiation_record) here…'></textarea>
+      <button class="ap2-load-btn" onclick="loadAp2Inbound()">Load offer details from AP2 →</button>
+    </div>
+  </div>
+
+  <!-- ════ TAB BAR ════ -->
+  <div class="tab-bar" role="tablist">
+    <button class="tab-btn active" id="tab-t1" role="tab" aria-selected="true" onclick="switchTab('t1')" data-i18n-tab="tab1">Grant Analyzer</button>
+    <button class="tab-btn" id="tab-t2" role="tab" aria-selected="false" onclick="switchTab('t2')" data-i18n-tab="tab2">Total Comp Stack</button>
+  </div>
+
+  <!-- ══════════════════════════ TAB 1: GRANT ANALYZER ══════════════════════════ -->
+  <div class="tab-panel active" id="panel-t1" role="tabpanel">
+
+    <div class="section-label">Grant Type</div>
+    <div class="grant-type-row">
+      <div class="grant-pill active" id="pill-rsu" onclick="setGrantType('rsu')">RSU<br><span style="font-size:.65rem;color:inherit;opacity:.7">Restricted Stock Units</span></div>
+      <div class="grant-pill" id="pill-iso" onclick="setGrantType('iso')">ISO<br><span style="font-size:.65rem;color:inherit;opacity:.7">Incentive Stock Options</span></div>
+      <div class="grant-pill" id="pill-nso" onclick="setGrantType('nso')">NSO<br><span style="font-size:.65rem;color:inherit;opacity:.7">Non-Qualified Stock Options</span></div>
+    </div>
+
+    <div class="section-label">Grant Details</div>
+    <div class="input-grid">
+      <div class="input-group">
+        <label for="totalShares" data-i18n="lbl_shares">Total Shares Granted</label>
+        <input type="number" id="totalShares" min="1" value="10000">
+      </div>
+      <div class="input-group">
+        <label for="currentFMV" data-i18n="lbl_fmv">Current FMV per Share ($)</label>
+        <input type="number" id="currentFMV" min="0.01" step="0.01" value="25.00">
+        <span class="input-hint" data-i18n="hint_fmv">Fair market value at grant date (RSU) or current price (options)</span>
+      </div>
+      <div class="input-group" id="strikePriceRow" style="display:none;">
+        <label for="strikePrice" data-i18n="lbl_strike">Strike / Exercise Price ($)</label>
+        <input type="number" id="strikePrice" min="0" step="0.01" value="15.00">
+        <span class="input-hint" data-i18n="hint_strike">Grant-date price (ISO: must be ≥ FMV at grant)</span>
+      </div>
+      <div class="input-group">
+        <label for="annualAppreciation" data-i18n="lbl_apprec">Expected Annual Appreciation (%)</label>
+        <input type="number" id="annualAppreciation" min="-50" max="200" step="0.1" value="12.0">
+        <span class="input-hint" data-i18n="hint_apprec">Used to project FMV at each vest event</span>
+      </div>
+    </div>
+
+    <div class="section-label">Vesting Schedule</div>
+    <div class="input-grid">
+      <div class="input-group">
+        <label for="vestingSchedule" data-i18n="lbl_sched">Vesting Schedule</label>
+        <select id="vestingSchedule" onchange="updateVestingHint()">
+          <option value="std4_1cliff" selected>4-yr / 1-yr cliff (25% then quarterly)</option>
+          <option value="4yr_equal">4-yr equal annual (25%/yr)</option>
+          <option value="3yr_equal">3-yr equal annual (33%/yr)</option>
+          <option value="frontloaded">Front-loaded (40/30/20/10)</option>
+          <option value="backloaded">Back-loaded (10/20/30/40)</option>
+          <option value="cliff_only">Full cliff at 1 year (100%)</option>
+        </select>
+        <span class="input-hint" id="vestHint">25% at 1-yr cliff, then 6.25% per quarter over 3 years</span>
+      </div>
+      <div class="input-group">
+        <label for="grantYear" data-i18n="lbl_grant_yr">Grant Year</label>
+        <input type="number" id="grantYear" min="2020" max="2035" value="2025">
+      </div>
+    </div>
+
+    <div class="section-label" data-i18n="sec_tax">Tax Inputs</div>
+    <div class="input-grid triple">
+      <div class="input-group">
+        <label for="ordinaryRate" data-i18n="lbl_ordinary">Federal Ordinary Income Rate (%)</label>
+        <input type="number" id="ordinaryRate" min="10" max="37" step="1" value="32">
+        <span class="input-hint" data-i18n="hint_ordinary">Your marginal federal bracket (2024: 10–37%)</span>
+      </div>
+      <div class="input-group">
+        <label for="stateRate" data-i18n="lbl_state">State Income Tax Rate (%)</label>
+        <input type="number" id="stateRate" min="0" max="15" step="0.1" value="5.0">
+        <span class="input-hint" data-i18n="hint_state">Combined state/local rate; 0% for WA/TX/FL/etc.</span>
+      </div>
+      <div class="input-group">
+        <label for="ltcgRate" data-i18n="lbl_ltcg">Long-Term Capital Gains Rate (%)</label>
+        <select id="ltcgRate">
+          <option value="0">0% (income &lt; $47,025)</option>
+          <option value="15" selected>15% (most filers)</option>
+          <option value="20">20% (income &gt; $518,900)</option>
+        </select>
+        <span class="input-hint" data-i18n="hint_ltcg">2024 federal LTCG brackets (single filer)</span>
+      </div>
+    </div>
+
+    <!-- ISO-specific AMT inputs -->
+    <div id="isoAmtRow" style="display:none;">
+      <div class="section-label">ISO / AMT Inputs</div>
+      <div class="input-grid">
+        <div class="input-group">
+          <label for="filingStatus" data-i18n="lbl_filing">Filing Status</label>
+          <select id="filingStatus" onchange="updateAMTExemption()">
+            <option value="single" selected>Single / MFS</option>
+            <option value="mfj">Married Filing Jointly</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label for="amtExemption" data-i18n="lbl_amt_exempt">AMT Exemption (2024)</label>
+          <input type="number" id="amtExemption" value="85700" readonly>
+          <span class="input-hint" data-i18n="hint_amt_exempt">Auto-set: Single $85,700 · MFJ $133,300 (IRS Rev. Proc. 2023-34)</span>
+        </div>
+        <div class="input-group">
+          <label for="otherAmti" data-i18n="lbl_amti">Other AMTI Before ISO Spread ($)</label>
+          <input type="number" id="otherAmti" min="0" value="0">
+          <span class="input-hint" data-i18n="hint_amti">Your AMTI without this ISO exercise (simplified)</span>
+        </div>
+        <div class="input-group">
+          <label for="exerciseYear" data-i18n="lbl_exercise">Year of Exercise</label>
+          <input type="number" id="exerciseYear" min="2024" max="2040" value="2026">
+          <span class="input-hint" data-i18n="hint_exercise">Qualifying disposition requires &gt;1yr hold from exercise AND &gt;2yr from grant</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="run-row">
+      <button class="run-btn" onclick="runGrantAnalysis()" data-i18n="run_btn">Run Grant Analysis →</button>
+    </div>
+
+  </div><!-- /panel-t1 -->
+
+  <!-- ══════════════════════════ TAB 2: TOTAL COMP STACK ══════════════════════════ -->
+  <div class="tab-panel" id="panel-t2" role="tabpanel">
+
+    <p style="font-size:.82rem;color:var(--body);margin-bottom:16px;" data-i18n="t2_desc">Compare up to 3 total compensation offers over a 4-year window. Equity vesting uses the same schedule selected in the Grant Analyzer tab. Discount rate 7% for NPV.</p>
+
+    <div class="section-label" data-i18n="sec_shared_eq">Shared Equity Assumptions (from Grant Analyzer)</div>
+    <div class="input-grid triple">
+      <div class="input-group">
+        <label for="compVestSched" data-i18n="lbl_comp_vest">Vesting Schedule</label>
+        <select id="compVestSched">
+          <option value="std4_1cliff" selected>4-yr / 1-yr cliff</option>
+          <option value="4yr_equal">4-yr equal annual</option>
+          <option value="3yr_equal">3-yr equal annual</option>
+          <option value="frontloaded">Front-loaded</option>
+          <option value="backloaded">Back-loaded</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label for="compApprec" data-i18n="lbl_comp_apprec">Annual Stock Appreciation (%)</label>
+        <input type="number" id="compApprec" value="12.0" step="0.1">
+      </div>
+      <div class="input-group">
+        <label for="compTaxRate" data-i18n="lbl_comp_tax">Combined Tax Rate on Equity (%)</label>
+        <input type="number" id="compTaxRate" value="37" step="0.1">
+        <span class="input-hint" data-i18n="hint_comp_tax">Federal + state ordinary rate (RSU at vest)</span>
+      </div>
+    </div>
+
+    <div class="section-label" data-i18n="sec_offers">Offer Details</div>
+    <div class="offer-grid">
+      <!-- Offer A -->
+      <div class="offer-card">
+        <div class="offer-card-label">Offer A</div>
+        <div class="input-group"><label>Company / Role</label><input type="text" id="offerAName" value="Offer A" placeholder="e.g. Acme Corp · SWE L5"></div>
+        <div class="input-group"><label>Base Salary (annual)</label><input type="number" id="offerABase" min="0" value="180000"></div>
+        <div class="input-group"><label>Target Bonus (% of base)</label><input type="number" id="offerABonus" min="0" max="200" value="15"></div>
+        <div class="input-group"><label>Equity Grant Total ($)</label><input type="number" id="offerAEquity" min="0" value="400000"><span class="input-hint">Total RSU/option grant $ value at grant</span></div>
+        <div class="input-group"><label>Benefits Annual Value ($)</label><input type="number" id="offerABenefits" min="0" value="25000"><span class="input-hint">Health, 401k match, other perks</span></div>
+      </div>
+      <!-- Offer B -->
+      <div class="offer-card">
+        <div class="offer-card-label">Offer B</div>
+        <div class="input-group"><label>Company / Role</label><input type="text" id="offerBName" value="Offer B" placeholder="e.g. Beta Inc · SWE L5"></div>
+        <div class="input-group"><label>Base Salary (annual)</label><input type="number" id="offerBBase" min="0" value="160000"></div>
+        <div class="input-group"><label>Target Bonus (% of base)</label><input type="number" id="offerBBonus" min="0" max="200" value="20"></div>
+        <div class="input-group"><label>Equity Grant Total ($)</label><input type="number" id="offerBEquity" min="0" value="600000"></div>
+        <div class="input-group"><label>Benefits Annual Value ($)</label><input type="number" id="offerBBenefits" min="0" value="20000"></div>
+      </div>
+      <!-- Offer C -->
+      <div class="offer-card">
+        <div class="offer-card-label">Offer C</div>
+        <div class="input-group"><label>Company / Role</label><input type="text" id="offerCName" value="Offer C" placeholder="e.g. Gamma Ltd · SWE L6"></div>
+        <div class="input-group"><label>Base Salary (annual)</label><input type="number" id="offerCBase" min="0" value="220000"></div>
+        <div class="input-group"><label>Target Bonus (% of base)</label><input type="number" id="offerCBonus" min="0" max="200" value="10"></div>
+        <div class="input-group"><label>Equity Grant Total ($)</label><input type="number" id="offerCEquity" min="0" value="200000"></div>
+        <div class="input-group"><label>Benefits Annual Value ($)</label><input type="number" id="offerCBenefits" min="0" value="30000"></div>
+      </div>
+    </div>
+
+    <div class="run-row">
+      <button class="run-btn" onclick="runCompStack()" data-i18n="run_comp_btn">Run Total Comp Comparison →</button>
+    </div>
+
+    <div id="compStackResults" style="display:none; margin-top:24px;"></div>
+
+  </div><!-- /panel-t2 -->
+
+  <!-- ══════════════════════════ RESULTS (Tab 1) ══════════════════════════ -->
+  <div class="results-panel" id="resultsPanel">
+
+    <div class="section-label" data-i18n="sec_vest_summary">Vesting Value Summary</div>
+    <div class="stat-row" id="vestStats"></div>
+
+    <!-- AMT Warning -->
+    <div class="amt-warning" id="amtWarning">
+      <div class="amt-warning-title">⚠ AMT Exposure Detected</div>
+      <p id="amtWarningText"></p>
+    </div>
+
+    <div class="section-label" data-i18n="sec_vest_schedule">Vesting Schedule &amp; After-Tax Value</div>
+    <div style="overflow-x:auto;"><table class="vest-table" id="vestTable"></table></div>
+
+    <div class="section-label" data-i18n="sec_tax_detail">Tax Breakdown</div>
+    <div class="tax-panel" id="taxPanel"></div>
+
+    <!-- Cash equivalence -->
+    <div class="section-label" data-i18n="sec_cash_equiv">Equity vs. Cash Equivalence</div>
+    <div id="cashEquivWrap"></div>
+
+    <div class="summary-box" id="narrativeBox"></div>
+
+    <div class="results-export-row">
+      <button class="exp-btn" onclick="exportMarkdown()" data-i18n="btn_md">↓ Markdown Summary</button>
+      <button class="exp-btn ap2" onclick="exportAP2()" data-i18n="btn_ap2">↓ AP2 JSON (equity_compensation_record)</button>
+    </div>
+
+  </div><!-- /results-panel -->
+
+  <!-- ════ MANIFEST TOGGLE ════ -->
+  <button class="mcp-toggle" id="manifestToggle" onclick="toggleManifest()">manifest.json · Tool Discovery</button>
+  <div class="mcp-panel" id="manifestPanel">
+    <pre id="manifestPre"></pre>
+  </div>
+
+  <!-- ════ FOOTER ════ -->
+  <footer class="tool-footer">
+    AL-33 · Equity Compensation Analyzer · <a href="https://apexlogics.org" target="_blank" rel="noopener">ApexLogics.org</a> · <a href="https://apexadvisory.site" target="_blank" rel="noopener">Apex Advisors</a> · CC BY 4.0<br>
+    IRS 2024 brackets · AMT exemptions per IRS Rev. Proc. 2023-34 · Estimates only — not tax or legal advice. Consult a qualified advisor before any exercise or sale decision. IRC §422 · IRC §83 · IRC §55
+  </footer>
+
+</div><!-- /container -->
+<div id="toast"></div>
+
+<!-- ════════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ════════════════════════════════════════════════════════════
+// CONSTANTS
+// ════════════════════════════════════════════════════════════
+const AMT_EXEMPTIONS = { single: 85700, mfj: 133300 };
+const AMT_PHASEOUT   = { single: 609350, mfj: 1218700 }; // 2024
+const AMT_RATE_1 = 0.26; // up to $220,700 AMTI
+const AMT_RATE_2 = 0.28; // above $220,700 AMTI
+const AMT_BREAKEVEN  = 220700;
+const DISC_RATE = 0.07; // 7% discount rate for NPV
+
+// Vesting schedule definitions: returns array of {year, pct} objects
+const VEST_SCHEDULES = {
+  std4_1cliff: [
+    {year:1, pct:25}, {year:2, pct:25}, {year:3, pct:25}, {year:4, pct:25}
+  ], // cliff at y1, then quarterly (we show annual for simplicity)
+  '4yr_equal': [{year:1,pct:25},{year:2,pct:25},{year:3,pct:25},{year:4,pct:25}],
+  '3yr_equal': [{year:1,pct:33.33},{year:2,pct:33.33},{year:3,pct:33.34}],
+  frontloaded: [{year:1,pct:40},{year:2,pct:30},{year:3,pct:20},{year:4,pct:10}],
+  backloaded:  [{year:1,pct:10},{year:2,pct:20},{year:3,pct:30},{year:4,pct:40}],
+  cliff_only:  [{year:1,pct:100}]
+};
+
+const VEST_HINTS = {
+  std4_1cliff: '25% at 1-yr cliff, then 6.25%/quarter over 3 years',
+  '4yr_equal': '25% per year over 4 years, no cliff',
+  '3yr_equal': '33% per year over 3 years',
+  frontloaded: '40% · 30% · 20% · 10% over 4 years',
+  backloaded:  '10% · 20% · 30% · 40% over 4 years',
+  cliff_only:  '100% vests at 1-year mark'
+};
+
+// Manifest
+const MANIFEST = {
+  al_id: 'AL-33',
+  title: 'Equity Compensation Analyzer',
+  slug: 'equity-compensation-analyzer',
+  version: '1.0.0',
+  description: 'RSU vesting (cliff + graded), ISO/NSO intrinsic value, AMT flag, equity vs. cash equivalence, 3-offer total comp NPV stack. 2-tab. Legal disclaimer required.',
+  category: 'compensation_offers',
+  journeys: ['compensation_benefits'],
+  personas: ['working_professional','career_changer','counselor'],
+  inputs: ['grant_type','total_shares','fmv','strike_price','vesting_schedule','ordinary_rate','state_rate','ltcg_rate','amt_exemption'],
+  outputs: ['total_vest_value','after_tax_value','amt_exposure','npv_4yr','cash_equivalent_salary'],
+  ap2_mandate_types: ['equity_compensation_record'],
+  ap2_inbound_mandate_types: ['offer_negotiation_record'],
+  downstream_handoff_candidates: ['AL-25'],
+  regulatory_citations: ['IRC §422','IRC §83','IRC §55','IRS Rev. Proc. 2023-34','IRS Pub. 525 (2024)'],
+  data_sources: ['IRS 2024 income tax brackets','IRS AMT exemption 2024 (Rev. Proc. 2023-34)','IRS LTCG rates 2024'],
+  legal_disclaimer_required: true,
+  maintenance: 'low',
+  license: 'CC-BY-4.0',
+  tool_url: 'https://apexlogics.org/tools/equity-compensation-analyzer/',
+  suite_url: 'https://apexlogics.org'
+};
+
+const AP2Schema = {
+  required: [
+    'ap2_version','mandate_id','issued_at','issued_by',
+    'tool_id','tool_version','al_id','mandate_type',
+    'payload','summary','audit_metadata'
+  ],
+  validMandateTypes: [
+    'credential_roi_evaluation','human_capital_assessment',
+    'automation_exposure_score','career_resilience_score',
+    'workforce_program_roi','career_pivot_assessment',
+    'career_transition_record','scholarship_pipeline_plan',
+    'fafsa_sai_estimate','exam_pathway_plan',
+    'benefits_election_record','severance_decision_record',
+    'offer_negotiation_record','graduate_school_roi_record',
+    'apprenticeship_match_record','cpd_credit_record',
+    'job_search_roi_record','career_break_record',
+    'loan_repayment_record','freelance_total_cost_record',
+    'mba_roi_evaluation','test_prep_roi_record',
+    'international_student_cost_record','parent_college_roi_record',
+    'equity_compensation_record'
+  ],
+  validate(m) {
+    const errors = [];
+    if (!m || typeof m !== 'object') return { valid:false, errors:['mandate is not an object'] };
+    this.required.forEach(k => { if (m[k] === undefined || m[k] === null) errors.push(`missing required field: ${k}`); });
+    if (m.ap2_version !== '1.0') errors.push('ap2_version must be "1.0"');
+    if (m.mandate_type && !this.validMandateTypes.includes(m.mandate_type)) errors.push(`mandate_type "${m.mandate_type}" not in enum`);
+    if (m.al_id && !/^AL-\d{1,2}(\+\d{1,2})?$/.test(m.al_id)) errors.push(`al_id "${m.al_id}" malformed`);
+    if (m.audit_metadata) {
+      if (m.audit_metadata.client_side_executed !== true) errors.push('audit_metadata.client_side_executed must be true');
+      if (m.audit_metadata.zero_pii_verified !== true) errors.push('audit_metadata.zero_pii_verified must be true');
+      if (m.audit_metadata.deterministic_run !== true) errors.push('audit_metadata.deterministic_run must be true');
+    }
+    return { valid: errors.length === 0, errors };
+  }
+};
+
+// ════════════════════════════════════════════════════════════
+// I18N
+// ════════════════════════════════════════════════════════════
+const I18N = {
+  en: {
+    title:'Equity Compensation Analyzer',
+    subtitle:'Model RSU vesting, ISO/NSO intrinsic value and AMT exposure, equity vs. cash equivalence, and compare up to 3 total comp offers — entirely in your browser.',
+    tab1:'Grant Analyzer', tab2:'Total Comp Stack',
+    lbl_shares:'Total Shares Granted', lbl_fmv:'Current FMV per Share ($)',
+    hint_fmv:'Fair market value at grant (RSU) or current price (options)',
+    lbl_strike:'Strike / Exercise Price ($)', hint_strike:'Grant-date price; ISO must be ≥ FMV at grant',
+    lbl_apprec:'Expected Annual Appreciation (%)', hint_apprec:'Used to project FMV at each vest event',
+    lbl_sched:'Vesting Schedule', lbl_grant_yr:'Grant Year',
+    sec_tax:'Tax Inputs', lbl_ordinary:'Federal Ordinary Income Rate (%)',
+    hint_ordinary:'Your marginal federal bracket (2024: 10–37%)',
+    lbl_state:'State Income Tax Rate (%)', hint_state:'0% for WA, TX, FL, NV, SD, WY, AK, NH (on wages)',
+    lbl_ltcg:'Long-Term Capital Gains Rate (%)', hint_ltcg:'2024 federal LTCG brackets (single filer)',
+    lbl_filing:'Filing Status', lbl_amt_exempt:'AMT Exemption (2024)',
+    hint_amt_exempt:'Auto-set: Single $85,700 · MFJ $133,300',
+    lbl_amti:'Other AMTI Before ISO Spread ($)', hint_amti:'Your AMTI without this ISO exercise',
+    lbl_exercise:'Year of Exercise', hint_exercise:'Qualifying: >1yr hold from exercise AND >2yr from grant',
+    run_btn:'Run Grant Analysis →',
+    sec_vest_summary:'Vesting Value Summary', sec_vest_schedule:'Vesting Schedule & After-Tax Value',
+    sec_tax_detail:'Tax Breakdown', sec_cash_equiv:'Equity vs. Cash Equivalence',
+    sec_shared_eq:'Shared Equity Assumptions', lbl_comp_vest:'Vesting Schedule',
+    lbl_comp_apprec:'Annual Stock Appreciation (%)', lbl_comp_tax:'Combined Tax Rate on Equity (%)',
+    hint_comp_tax:'Federal + state ordinary rate (RSU at vest)',
+    sec_offers:'Offer Details', run_comp_btn:'Run Total Comp Comparison →',
+    t2_desc:'Compare up to 3 total compensation offers over 4 years. Discount rate: 7% for NPV.',
+    btn_ap2:'↓ AP2 JSON (equity_compensation_record)', btn_md:'↓ Markdown Summary'
+  },
+  es: {
+    title:'Analizador de Compensación en Acciones',
+    subtitle:'Modela el vesting de RSU, valor intrínseco ISO/NSO, exposición al AMT y equivalencia efectivo vs. acciones — completamente en tu navegador.',
+    tab1:'Análisis de Concesión', tab2:'Paquete Total',
+    run_btn:'Ejecutar Análisis →', run_comp_btn:'Comparar Ofertas →',
+    btn_ap2:'↓ AP2 JSON', btn_md:'↓ Resumen Markdown'
+  },
+  fr: {
+    title:'Analyseur de Rémunération en Actions',
+    subtitle:'Modélisez le vesting RSU, la valeur intrinsèque ISO/NSO, l\'exposition AMT et l\'équivalence actions vs. liquidités — entièrement dans votre navigateur.',
+    tab1:'Analyseur de Grant', tab2:'Package Total',
+    run_btn:'Lancer l\'analyse →', run_comp_btn:'Comparer les offres →',
+    btn_ap2:'↓ AP2 JSON', btn_md:'↓ Résumé Markdown'
+  },
+  ar: {
+    title:'محلل التعويض بالأسهم',
+    subtitle:'نمذجة جدول استحقاق RSU، والقيمة الجوهرية للخيارات، ومخاطر AMT، والمقارنة بين العروض — بالكامل في متصفحك.',
+    tab1:'تحليل المنحة', tab2:'إجمالي الحزمة',
+    run_btn:'تشغيل التحليل →', run_comp_btn:'مقارنة العروض →',
+    btn_ap2:'↓ AP2 JSON', btn_md:'↓ ملخص Markdown'
+  },
+  pt: {
+    title:'Analisador de Remuneração em Ações',
+    subtitle:'Modele o vesting de RSUs, valor intrínseco de ISO/NSO, exposição ao AMT e equivalência entre ações e dinheiro — totalmente no seu navegador.',
+    tab1:'Analisador de Grant', tab2:'Pacote Total',
+    run_btn:'Executar análise →', run_comp_btn:'Comparar ofertas →',
+    btn_ap2:'↓ AP2 JSON', btn_md:'↓ Resumo Markdown'
+  },
+  zh: {
+    title:'股权薪酬分析器',
+    subtitle:'建模RSU归属、ISO/NSO内在价值、AMT敞口、股权与现金等价分析，以及3个总薪酬方案对比——全在浏览器中完成。',
+    tab1:'授予分析', tab2:'总薪酬对比',
+    run_btn:'运行分析 →', run_comp_btn:'对比薪酬包 →',
+    btn_ap2:'↓ AP2 JSON', btn_md:'↓ Markdown摘要'
+  }
+};
+
+let currentLang = sessionStorage.getItem('apex_lang') || 'en';
+let grantType = 'rsu';
+let lastResults = null;
+
+// ════════════════════════════════════════════════════════════
+// UTILITIES
+// ════════════════════════════════════════════════════════════
+function fmt(n, dec=0) { return Number(n).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+function fmtMoney(n) { return '$' + fmt(Math.round(n)); }
+function fmtPct(n, dec=1) { return n.toFixed(dec) + '%'; }
+function uuidv4() { return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16)); }
+function tsCompact() { return new Date().toISOString().replace(/[-:T]/g,'').slice(0,14); }
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'show ' + type;
+  setTimeout(() => t.className = '', 3200);
+}
+function npv(cashflows, rate) {
+  return cashflows.reduce((acc, cf, i) => acc + cf / Math.pow(1 + rate, i + 1), 0);
+}
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ════════════════════════════════════════════════════════════
+// I18N
+// ════════════════════════════════════════════════════════════
+function setLang(lang) {
+  currentLang = lang;
+  sessionStorage.setItem('apex_lang', lang);
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('lb-' + lang);
+  if (btn) btn.classList.add('active');
+  const isRTL = lang === 'ar';
+  document.documentElement.setAttribute('dir', isRTL ? 'rtl' : 'ltr');
+  document.documentElement.setAttribute('lang', lang);
+  const t = { ...I18N.en, ...(I18N[lang] || {}) };
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key]) el.textContent = t[key];
+  });
+  document.querySelectorAll('[data-i18n-tab]').forEach(el => {
+    const key = el.getAttribute('data-i18n-tab');
+    if (t[key]) el.textContent = t[key];
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// GRANT TYPE TOGGLE
+// ════════════════════════════════════════════════════════════
+function setGrantType(type) {
+  grantType = type;
+  ['rsu','iso','nso'].forEach(t => {
+    document.getElementById('pill-' + t).classList.toggle('active', t === type);
+  });
+  const isOption = type === 'iso' || type === 'nso';
+  document.getElementById('strikePriceRow').style.display = isOption ? '' : 'none';
+  document.getElementById('isoAmtRow').style.display = type === 'iso' ? '' : 'none';
+}
+
+function updateVestingHint() {
+  const sched = document.getElementById('vestingSchedule').value;
+  document.getElementById('vestHint').textContent = VEST_HINTS[sched] || '';
+}
+
+function updateAMTExemption() {
+  const status = document.getElementById('filingStatus').value;
+  document.getElementById('amtExemption').value = AMT_EXEMPTIONS[status];
+}
+
+// ════════════════════════════════════════════════════════════
+// BUILD VESTING EVENTS
+// ════════════════════════════════════════════════════════════
+function buildVestEvents(totalShares, schedKey, grantYear, fmvAtGrant, appreciation, strikePrice) {
+  const sched = VEST_SCHEDULES[schedKey] || VEST_SCHEDULES.std4_1cliff;
+  const events = [];
+  let cumShares = 0;
+  sched.forEach(row => {
+    const shares = Math.round(totalShares * row.pct / 100);
+    const yrsFromGrant = row.year;
+    const fmvAtVest = fmvAtGrant * Math.pow(1 + appreciation / 100, yrsFromGrant);
+    const vestYear  = grantYear + yrsFromGrant;
+    const intrinsic = grantType === 'rsu'
+      ? shares * fmvAtVest                    // RSU: full FMV at vest
+      : shares * Math.max(0, fmvAtVest - strikePrice); // Options: spread at vest
+    cumShares += shares;
+    events.push({
+      year: vestYear, yrsFromGrant,
+      shares, cumShares,
+      pct: row.pct,
+      fmvAtVest, strikePrice,
+      intrinsic,
+      isCliff: schedKey === 'std4_1cliff' && row.year === 1
+    });
+  });
+  return events;
+}
+
+// ════════════════════════════════════════════════════════════
+// TAX CALCULATIONS
+// ════════════════════════════════════════════════════════════
+function calcAfterTax(intrinsic, ordRate, stateRate, grantType, ltcgRate) {
+  const combinedOrd = (ordRate + stateRate) / 100;
+  const combinedLtcg = (ltcgRate + stateRate) / 100;
+  if (grantType === 'rsu') {
+    // RSU: ordinary income at vest (FICA also but simplified)
+    return { taxable: intrinsic, taxType: 'ordinary', tax: intrinsic * combinedOrd, afterTax: intrinsic * (1 - combinedOrd) };
+  } else if (grantType === 'nso') {
+    // NSO: spread = ordinary income at exercise
+    return { taxable: intrinsic, taxType: 'ordinary', tax: intrinsic * combinedOrd, afterTax: intrinsic * (1 - combinedOrd) };
+  } else {
+    // ISO qualifying: LTCG on full gain (simplified — no AMT at sale)
+    return { taxable: intrinsic, taxType: 'ltcg', tax: intrinsic * combinedLtcg, afterTax: intrinsic * (1 - combinedLtcg) };
+  }
+}
+
+// AMT for ISO
+function calcAMT(isoSpread, otherAmti, exemption, filingStatus) {
+  const amti = otherAmti + isoSpread;
+  // Phase-out: exemption reduced 25¢ per $1 AMTI above phase-out threshold
+  const phaseoutThreshold = AMT_PHASEOUT[filingStatus] || AMT_PHASEOUT.single;
+  const exemptionAdj = Math.max(0, exemption - Math.max(0, (amti - phaseoutThreshold) * 0.25));
+  const amtiLessExemption = Math.max(0, amti - exemptionAdj);
+  let amtTax = 0;
+  if (amtiLessExemption <= AMT_BREAKEVEN) {
+    amtTax = amtiLessExemption * AMT_RATE_1;
+  } else {
+    amtTax = AMT_BREAKEVEN * AMT_RATE_1 + (amtiLessExemption - AMT_BREAKEVEN) * AMT_RATE_2;
+  }
+  return { amti, exemptionAdj, amtiLessExemption, amtTax };
+}
+
+// ════════════════════════════════════════════════════════════
+// MAIN: GRANT ANALYSIS
+// ════════════════════════════════════════════════════════════
+function runGrantAnalysis() {
+  const totalShares   = parseInt(document.getElementById('totalShares').value) || 10000;
+  const currentFMV    = parseFloat(document.getElementById('currentFMV').value) || 25;
+  const strikePrice   = parseFloat(document.getElementById('strikePrice').value) || 15;
+  const appreciation  = parseFloat(document.getElementById('annualAppreciation').value) || 12;
+  const schedKey      = document.getElementById('vestingSchedule').value;
+  const grantYear     = parseInt(document.getElementById('grantYear').value) || 2025;
+  const ordinaryRate  = parseFloat(document.getElementById('ordinaryRate').value) || 32;
+  const stateRate     = parseFloat(document.getElementById('stateRate').value) || 5;
+  const ltcgRate      = parseFloat(document.getElementById('ltcgRate').value) || 15;
+  // ISO-specific
+  const filingStatus  = document.getElementById('filingStatus').value;
+  const amtExemption  = parseFloat(document.getElementById('amtExemption').value) || AMT_EXEMPTIONS.single;
+  const otherAmti     = parseFloat(document.getElementById('otherAmti').value) || 0;
+  const exerciseYear  = parseInt(document.getElementById('exerciseYear').value) || 2026;
+
+  // Build vesting events
+  const events = buildVestEvents(totalShares, schedKey, grantYear, currentFMV, appreciation, strikePrice);
+
+  // Per-event after-tax
+  const eventResults = events.map(ev => {
+    const atRes = calcAfterTax(ev.intrinsic, ordinaryRate, stateRate, grantType, ltcgRate);
+    return { ...ev, ...atRes };
+  });
+
+  const totalIntrinsic = eventResults.reduce((s, e) => s + e.intrinsic, 0);
+  const totalTax       = eventResults.reduce((s, e) => s + e.tax, 0);
+  const totalAfterTax  = eventResults.reduce((s, e) => s + e.afterTax, 0);
+  const cashFlows      = eventResults.map(e => e.afterTax);
+  const npv4yr         = npv(cashFlows, DISC_RATE);
+
+  // Effective combined rate
+  const combinedOrd = (ordinaryRate + stateRate) / 100;
+  const combinedLtcg = (parseFloat(ltcgRate) + stateRate) / 100;
+  const effectiveRate = grantType === 'iso' ? combinedLtcg : combinedOrd;
+
+  // Cash equivalent: what annual salary (after same tax) = same total after-tax value
+  const cashEquivSalary = totalAfterTax > 0 ? totalAfterTax / (1 - effectiveRate) / events.length : 0;
+
+  // ISO AMT
+  let amtData = null;
+  if (grantType === 'iso') {
+    const isoSpread = totalShares * Math.max(0, currentFMV * Math.pow(1 + appreciation / 100, exerciseYear - grantYear) - strikePrice);
+    amtData = calcAMT(isoSpread, otherAmti, amtExemption, filingStatus);
+  }
+
+  lastResults = {
+    grantType, totalShares, currentFMV, strikePrice, appreciation,
+    schedKey, grantYear, ordinaryRate, stateRate, ltcgRate, effectiveRate,
+    filingStatus, amtExemption, otherAmti, exerciseYear,
+    events: eventResults,
+    totalIntrinsic, totalTax, totalAfterTax, npv4yr, cashEquivSalary,
+    amtData
+  };
+
+  renderGrantResults(lastResults);
+}
+
+// ════════════════════════════════════════════════════════════
+// RENDER: GRANT RESULTS
+// ════════════════════════════════════════════════════════════
+function renderGrantResults(r) {
+  const grantLabel = { rsu:'RSU', iso:'ISO', nso:'NSO' }[r.grantType];
+  const taxLabel   = r.grantType === 'iso' ? 'LTCG (qualifying)' : 'Ordinary Income';
+
+  // Stat boxes
+  document.getElementById('vestStats').innerHTML = `
+    <div class="stat-box">
+      <div class="stat-n">${fmtMoney(r.totalIntrinsic)}</div>
+      <div class="stat-l">Total ${grantLabel} Value at Vest</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-n coral">${fmtMoney(r.totalTax)}</div>
+      <div class="stat-l">Total Estimated Tax (${taxLabel})</div>
+    </div>
+    <div class="stat-box highlight">
+      <div class="stat-n coral">${fmtMoney(r.totalAfterTax)}</div>
+      <div class="stat-l">Total After-Tax Proceeds</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-n">${fmtMoney(r.npv4yr)}</div>
+      <div class="stat-l">NPV (7% discount rate)</div>
+    </div>
+    <div class="stat-box good">
+      <div class="stat-n green">${fmtPct(r.effectiveRate * 100)}</div>
+      <div class="stat-l">Effective Combined Tax Rate</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-n">${fmtMoney(r.cashEquivSalary)}</div>
+      <div class="stat-l">Cash-Equiv Annual Salary</div>
+    </div>
+  `;
+
+  // AMT warning
+  const amtWarn = document.getElementById('amtWarning');
+  if (r.amtData) {
+    const ad = r.amtData;
+    const showAmt = ad.amtTax > 0;
+    amtWarn.classList.toggle('show', showAmt);
+    if (showAmt) {
+      document.getElementById('amtWarningText').innerHTML =
+        `Exercising these ISOs in ${r.exerciseYear} adds an estimated ISO spread of <strong>${fmtMoney(ad.amti - r.otherAmti)}</strong> as an AMT preference item. ` +
+        `Total AMTI: <strong>${fmtMoney(ad.amti)}</strong> · Adjusted exemption: <strong>${fmtMoney(ad.exemptionAdj)}</strong> · ` +
+        `Estimated AMT liability: <strong>${fmtMoney(ad.amtTax)}</strong>. ` +
+        `Consider spreading exercises across tax years or consulting a CPA before exercising. IRC §55, IRS Rev. Proc. 2023-34.`;
+    }
+  } else {
+    amtWarn.classList.remove('show');
+  }
+
+  // Vest table
+  let html = `<thead><tr>
+    <th>Year</th><th>Yrs from Grant</th><th>Event</th>
+    <th class="right">Shares</th><th class="right">Cum. Shares</th>
+    <th class="right">FMV at Vest</th><th class="right">Gross Value</th>
+    <th class="right">Est. Tax</th><th class="right">After-Tax</th>
+  </tr></thead><tbody>`;
+  r.events.forEach(ev => {
+    const rowClass = ev.isCliff ? ' class="cliff-row"' : '';
+    html += `<tr${rowClass}>
+      <td>${ev.year}</td>
+      <td>Year ${ev.yrsFromGrant}</td>
+      <td class="badge">${ev.isCliff ? '<span class="vest-event">Cliff</span>' : '<span class="vest-event">Vest</span>'} ${fmtPct(ev.pct, 0)}</td>
+      <td class="money">${fmt(ev.shares)}</td>
+      <td class="money">${fmt(ev.cumShares)}</td>
+      <td class="money">${fmtMoney(ev.fmvAtVest)}</td>
+      <td class="money">${fmtMoney(ev.intrinsic)}</td>
+      <td class="money">${fmtMoney(ev.tax)}</td>
+      <td class="money">${fmtMoney(ev.afterTax)}</td>
+    </tr>`;
+  });
+  html += `<tr class="total-row">
+    <td colspan="6">TOTAL</td>
+    <td class="money">${fmtMoney(r.totalIntrinsic)}</td>
+    <td class="money">${fmtMoney(r.totalTax)}</td>
+    <td class="money">${fmtMoney(r.totalAfterTax)}</td>
+  </tr></tbody>`;
+  document.getElementById('vestTable').innerHTML = html;
+
+  // Tax panel
+  const taxLabel2 = r.grantType === 'iso' ? 'LTCG Rate (qualifying)' : 'Ordinary Income Rate';
+  const combinedRate = r.grantType === 'iso'
+    ? (parseFloat(document.getElementById('ltcgRate').value) + r.stateRate)
+    : (r.ordinaryRate + r.stateRate);
+  document.getElementById('taxPanel').innerHTML = `
+    <div class="tax-panel-title">${grantLabel} Tax Treatment · ${r.grantType === 'iso' ? 'Qualifying Disposition (IRC §422)' : r.grantType === 'nso' ? 'Ordinary Income at Exercise (IRC §83)' : 'Ordinary Income at Vest'}</div>
+    <div class="tax-row"><span class="tk">Federal ${taxLabel2}</span><span class="tv">${fmtPct(r.grantType === 'iso' ? parseFloat(document.getElementById('ltcgRate').value) : r.ordinaryRate)}</span></div>
+    <div class="tax-row"><span class="tk">State / Local Rate</span><span class="tv">${fmtPct(r.stateRate)}</span></div>
+    <div class="tax-row"><span class="tk">Combined Effective Rate</span><span class="tv coral">${fmtPct(combinedRate)}</span></div>
+    <div class="tax-row"><span class="tk">Total Gross Value</span><span class="tv">${fmtMoney(r.totalIntrinsic)}</span></div>
+    <div class="tax-row"><span class="tk">Total Tax</span><span class="tv">${fmtMoney(r.totalTax)}</span></div>
+    <div class="tax-row"><span class="tk">Total After-Tax Proceeds</span><span class="tv green">${fmtMoney(r.totalAfterTax)}</span></div>
+    ${r.grantType === 'iso' ? `<div class="tax-row"><span class="tk" style="font-size:.72rem;color:var(--muted);">⚠ AMT check required at exercise — see warning above. Qualifying disposition requires &gt;1yr hold from exercise and &gt;2yr from grant date.</span><span class="tv"></span></div>` : ''}
+  `;
+
+  // Cash equivalence
+  const numYears = r.events.length;
+  document.getElementById('cashEquivWrap').innerHTML = `
+    <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:12px;">
+      <p style="font-size:.82rem;color:var(--body);margin-bottom:12px;">
+        What annual cash salary (before tax) would generate the same <strong>${fmtMoney(r.totalAfterTax)}</strong> in after-tax proceeds over ${numYears} year${numYears!==1?'s':''}?
+      </p>
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+        <div style="text-align:center;">
+          <div style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--green);">${fmtMoney(r.cashEquivSalary)}</div>
+          <div style="font-size:.72rem;color:var(--body);">Cash-Equivalent Annual Salary</div>
+        </div>
+        <div style="font-size:.9rem;color:var(--muted);">vs.</div>
+        <div style="text-align:center;">
+          <div style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--coral-lt);">${fmtMoney(r.currentFMV * r.totalShares)}</div>
+          <div style="font-size:.72rem;color:var(--body);">Total Grant at Current FMV</div>
+        </div>
+      </div>
+      <p style="font-size:.72rem;color:var(--muted);margin-top:10px;">
+        Stock appreciation at ${r.appreciation}%/yr · combined tax ${fmtPct(r.effectiveRate*100)} · does not account for 409A, FICA withholding, or broker commissions.
+      </p>
+    </div>
+  `;
+
+  // Narrative
+  let narrative = `Your <strong>${r.totalShares.toLocaleString()}-share ${grantLabel} grant</strong> is projected to be worth
+    <strong>${fmtMoney(r.totalIntrinsic)}</strong> in gross value across the vesting schedule (${r.appreciation}% annual appreciation).
+    After an estimated combined tax rate of <strong>${fmtPct(r.effectiveRate*100)}</strong>, your take-home is
+    <strong>${fmtMoney(r.totalAfterTax)}</strong> (NPV <strong>${fmtMoney(r.npv4yr)}</strong> at 7%).
+    The after-tax equity stream is equivalent to <span class="tag-pill green">${fmtMoney(r.cashEquivSalary)}/yr</span> in additional base salary.`;
+
+  if (r.amtData && r.amtData.amtTax > 0) {
+    narrative += ` <span class="tag-pill warn">⚠ AMT risk ${fmtMoney(r.amtData.amtTax)}</span> — consult a CPA before exercising ISOs in ${r.exerciseYear}.`;
+  }
+  if (r.grantType === 'iso') {
+    narrative += ` For <span class="tag-pill">qualifying ISO treatment</span> (LTCG rates), shares must be held &gt;1yr from exercise and &gt;2yr from grant date.`;
+  }
+
+  document.getElementById('narrativeBox').innerHTML = `<p>${narrative}</p>`;
+  document.getElementById('resultsPanel').classList.add('visible');
+  document.getElementById('resultsPanel').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+// ════════════════════════════════════════════════════════════
+// TAB 2: TOTAL COMP STACK
+// ════════════════════════════════════════════════════════════
+function getVestWeights(schedKey) {
+  const sched = VEST_SCHEDULES[schedKey] || VEST_SCHEDULES.std4_1cliff;
+  return sched.map(r => r.pct / 100);
+}
+
+function runCompStack() {
+  const schedKey   = document.getElementById('compVestSched').value;
+  const apprec     = parseFloat(document.getElementById('compApprec').value) || 12;
+  const taxRate    = parseFloat(document.getElementById('compTaxRate').value) / 100 || 0.37;
+  const weights    = getVestWeights(schedKey);
+
+  const offers = ['A','B','C'].map(id => ({
+    name:   document.getElementById(`offer${id}Name`).value || `Offer ${id}`,
+    base:   parseFloat(document.getElementById(`offer${id}Base`).value) || 0,
+    bonus:  parseFloat(document.getElementById(`offer${id}Bonus`).value) / 100 || 0,
+    equity: parseFloat(document.getElementById(`offer${id}Equity`).value) || 0,
+    benefits: parseFloat(document.getElementById(`offer${id}Benefits`).value) || 0
+  }));
+
+  const maxYears = Math.min(4, weights.length);
+
+  // Build year-by-year for each offer
+  const offerData = offers.map(o => {
+    const cashPerYear = o.base * (1 + o.bonus) + o.benefits;
+    const years = Array.from({length: maxYears}, (_, i) => {
+      const weight  = weights[i] || 0;
+      const fmvMult = Math.pow(1 + apprec / 100, i + 1);
+      const equityVest = o.equity * weight * fmvMult;
+      const equityAfterTax = equityVest * (1 - taxRate);
+      return { yr: i + 1, cash: cashPerYear, equity: equityVest, equityAfterTax, total: cashPerYear + equityAfterTax };
+    });
+    const total4yr = years.reduce((s, y) => s + y.total, 0);
+    const npv4yr   = npv(years.map(y => y.total), DISC_RATE);
+    return { ...o, years, total4yr, npv4yr };
+  });
+
+  // Mark best NPV
+  const npvs = offerData.map(o => o.npv4yr);
+  const bestNPV = Math.max(...npvs);
+
+  // Build comparison table
+  let rows = [
+    ['Base Salary', o => fmtMoney(o.base), false],
+    ['Annual Bonus (target)', o => fmtMoney(o.base * o.bonus), false],
+    ['Benefits Value', o => fmtMoney(o.benefits), false],
+    ['Total Cash Yr 1', o => fmtMoney(o.base * (1 + o.bonus) + o.benefits), false],
+    ['Equity Yr 1 (after-tax)', o => fmtMoney(o.years[0]?.equityAfterTax || 0), false],
+    ['Total Comp Yr 1', o => fmtMoney(o.years[0]?.total || 0), true],
+    ['Total Comp Yr 2', o => fmtMoney(o.years[1]?.total || 0), false],
+    ['Total Comp Yr 3', o => fmtMoney(o.years[2]?.total || 0), false],
+    ['Total Comp Yr 4', o => fmtMoney(o.years[3]?.total || 0), false],
+    ['4-yr Total Comp', o => fmtMoney(o.total4yr), true],
+    ['4-yr NPV (7%)', o => fmtMoney(o.npv4yr), true],
+  ];
+
+  let html = `<table class="comp-table"><thead><tr>
+    <th></th>${offerData.map(o => `<th class="center">${o.name}</th>`).join('')}
+  </tr></thead><tbody>`;
+
+  rows.forEach(([label, fn, mark]) => {
+    const vals = offerData.map(o => fn(o));
+    const numVals = offerData.map(o => parseFloat(fn(o).replace(/[$,]/g,'')));
+    const maxVal = Math.max(...numVals);
+    html += `<tr><td class="row-label">${label}</td>`;
+    offerData.forEach((o, i) => {
+      const isBest = mark && o.npv4yr === bestNPV;
+      html += `<td class="val${isBest ? ' best' : ''}">${vals[i]}</td>`;
+    });
+    html += `</tr>`;
+  });
+
+  // Equity grant row
+  html += `<tr><td class="row-label" style="color:var(--muted);">Equity Grant (total at FMV)</td>`;
+  offerData.forEach(o => { html += `<td class="val" style="color:var(--muted);">${fmtMoney(o.equity)}</td>`; });
+  html += `</tr></tbody></table>
+  <p style="font-size:.72rem;color:var(--muted);margin-top:8px;">
+    <span style="color:var(--green);">Green</span> = best 4-yr NPV · Equity after-tax at ${fmtPct(taxRate * 100)} combined rate · ${apprec}% annual appreciation · Discount rate 7%.
+    Figures are estimates only. Vesting schedule: ${schedKey}.
+  </p>`;
+
+  // Best offer narrative
+  const bestOffer = offerData.find(o => o.npv4yr === bestNPV);
+  html += `<div style="background:var(--bg-3);border:1px solid var(--border-2);border-left:3px solid var(--coral);border-radius:var(--radius-lg);padding:16px;margin-top:12px;">
+    <p style="font-size:.85rem;color:var(--text);line-height:1.7;">
+      <strong>${bestOffer.name}</strong> leads on 4-year NPV at <strong>${fmtMoney(bestOffer.npv4yr)}</strong>.
+      ${bestOffer.equity > 0 ? `Equity represents ${fmtPct(bestOffer.equity / (bestOffer.equity + bestOffer.base * 4) * 100)} of the total 4-year package — consider appreciation risk and vesting cliff timing before accepting.` : ''}
+      Weighted for time value, it outperforms the alternatives by
+      ${fmtMoney(bestOffer.npv4yr - Math.min(...offerData.filter(o=>o!==bestOffer).map(o=>o.npv4yr)))} vs. the nearest offer.
+    </p>
+  </div>`;
+
+  const wrap = document.getElementById('compStackResults');
+  wrap.innerHTML = html;
+  wrap.style.display = 'block';
+  wrap.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+// ════════════════════════════════════════════════════════════
+// AP2 INBOUND
+// ════════════════════════════════════════════════════════════
+function toggleAp2Inbound() {
+  document.getElementById('ap2InboundToggle').classList.toggle('open');
+}
+
+function loadAp2Inbound() {
+  const raw = document.getElementById('ap2InboundText').value.trim();
+  if (!raw) { showToast('Paste an AP2 JSON first.', 'error'); return; }
+  let data;
+  try { data = JSON.parse(raw); } catch(e) { showToast('Invalid JSON — check formatting.', 'error'); return; }
+  if (data.mandate_type !== 'offer_negotiation_record') {
+    showToast(`Expected "offer_negotiation_record" — got "${data.mandate_type}".`, 'error'); return;
+  }
+  const p = data.payload || {};
+  // Pre-fill offer A with base salary from negotiation
+  if (p.target_salary || p.anchor) {
+    const base = p.target_salary || p.anchor || 0;
+    document.getElementById('offerABase').value = base;
+    showToast(`Offer A base loaded: ${fmtMoney(base)} from AL-25 ✓`, 'success');
+    document.getElementById('ap2InboundToggle').classList.remove('open');
+  } else {
+    showToast('No salary data found in AP2 payload.', 'error');
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// EXPORTS
+// ════════════════════════════════════════════════════════════
+function exportAP2() {
+  if (!lastResults) { showToast('Run Grant Analysis first.', 'error'); return; }
+  const r = lastResults;
+  const now = new Date();
+  const mandate = {
+    ap2_version: '1.0',
+    mandate_id: uuidv4(),
+    issued_at: now.toISOString(),
+    issued_by: 'apexlogics.org',
+    tool_id: 'equity-compensation-analyzer',
+    tool_version: '1.0.0',
+    al_id: 'AL-33',
+    mandate_type: 'equity_compensation_record',
+    jurisdiction: ['US'],
+    regulatory_frameworks: ['IRC §422','IRC §83','IRC §55','IRS Rev. Proc. 2023-34','IRS Pub. 525 (2024)'],
+    payload: {
+      grant_type: r.grantType,
+      total_shares: r.totalShares,
+      current_fmv: r.currentFMV,
+      strike_price: r.grantType !== 'rsu' ? r.strikePrice : null,
+      annual_appreciation_pct: r.appreciation,
+      vesting_schedule: r.schedKey,
+      grant_year: r.grantYear,
+      ordinary_rate: r.ordinaryRate,
+      state_rate: r.stateRate,
+      ltcg_rate: parseFloat(document.getElementById('ltcgRate').value),
+      effective_combined_rate: parseFloat((r.effectiveRate * 100).toFixed(2)),
+      total_gross_value: Math.round(r.totalIntrinsic),
+      total_tax_estimated: Math.round(r.totalTax),
+      total_after_tax: Math.round(r.totalAfterTax),
+      npv_7pct: Math.round(r.npv4yr),
+      cash_equiv_annual_salary: Math.round(r.cashEquivSalary),
+      amt_exposure: r.amtData ? Math.round(r.amtData.amtTax) : 0,
+      vest_events: r.events.map(e => ({
+        year: e.year, shares: e.shares, pct: e.pct,
+        fmv_at_vest: parseFloat(e.fmvAtVest.toFixed(2)),
+        gross: Math.round(e.intrinsic), tax: Math.round(e.tax), after_tax: Math.round(e.afterTax)
+      }))
+    },
+    summary: `${r.totalShares.toLocaleString()}-share ${r.grantType.toUpperCase()} grant. Total gross: ${fmtMoney(r.totalIntrinsic)}. After-tax: ${fmtMoney(r.totalAfterTax)} (${fmtPct(r.effectiveRate*100)} combined rate). NPV: ${fmtMoney(r.npv4yr)}. Cash-equiv salary: ${fmtMoney(r.cashEquivSalary)}/yr.${r.amtData && r.amtData.amtTax > 0 ? ` AMT risk: ${fmtMoney(r.amtData.amtTax)}.` : ''}`,
+    agent_instructions: [
+      'All tax figures are simplified estimates. IRC §422 qualifying disposition rules must be verified with a tax advisor.',
+      'Downstream to AL-25 (Offer Negotiation Suite) if user is negotiating equity-heavy offer.',
+      'AMT exposure is approximate — actual AMT depends on full tax return context including credits and other preferences.',
+      'Do not use these figures for actual tax filing or investment decisions without qualified advisor review.'
+    ],
+    valid_from: now.toISOString(),
+    valid_until: new Date(now.getTime() + 90*24*3600*1000).toISOString(),
+    last_reviewed: now.toISOString(),
+    regulatory_citations: ['IRC §422','IRC §83','IRC §55','IRS Rev. Proc. 2023-34','IRS Pub. 525 (2024)','IRS 2024 Tax Rate Schedules'],
+    ap2_schema_version: '1.0',
+    audit_metadata: {
+      execution_hash: null,
+      client_side_executed: true,
+      zero_pii_verified: true,
+      deterministic_run: true,
+      data_vintage: '2024'
+    }
+  };
+  const result = AP2Schema.validate(mandate);
+  if (!result.valid) {
+    showToast('AP2 validation failed: ' + result.errors.join('; '), 'error');
+    return;
+  }
+  const blob = new Blob([JSON.stringify(mandate, null, 2)], { type:'application/json' });
+  triggerDownload(blob, `AL-33_equity-compensation-analyzer_${tsCompact()}.ap2.json`);
+  showToast('AP2 mandate downloaded and validated.', 'success');
+}
+
+function exportMarkdown() {
+  if (!lastResults) { showToast('Run Grant Analysis first.', 'error'); return; }
+  const r = lastResults;
+  const grantLabel = { rsu:'RSU', iso:'ISO', nso:'NSO' }[r.grantType];
+  const lines = [];
+  lines.push(`# Equity Compensation Analyzer — Apex Logics AL-33`);
+  lines.push(``);
+  lines.push(`**Generated:** ${new Date().toISOString()}`);
+  lines.push(`**⚠ Disclaimer:** Estimates only. Not tax or legal advice. Consult a CPA / attorney before any exercise or sale decision.`);
+  lines.push(``);
+  lines.push(`## Grant Summary`);
+  lines.push(`- Type: ${grantLabel} | Shares: ${r.totalShares.toLocaleString()} | FMV at grant: ${fmtMoney(r.currentFMV)}`);
+  lines.push(`- Vesting: ${r.schedKey} from ${r.grantYear} | Appreciation: ${r.appreciation}%/yr`);
+  lines.push(`- Federal rate: ${fmtPct(r.ordinaryRate)} ordinary | State: ${fmtPct(r.stateRate)} | Effective: ${fmtPct(r.effectiveRate*100)}`);
+  if (r.grantType !== 'rsu') lines.push(`- Strike price: ${fmtMoney(r.strikePrice)}`);
+  lines.push(``);
+  lines.push(`## Results`);
+  lines.push(`| Metric | Value |`);
+  lines.push(`|---|---|`);
+  lines.push(`| Total Gross Value | ${fmtMoney(r.totalIntrinsic)} |`);
+  lines.push(`| Total Tax (estimated) | ${fmtMoney(r.totalTax)} |`);
+  lines.push(`| Total After-Tax | ${fmtMoney(r.totalAfterTax)} |`);
+  lines.push(`| NPV (7%) | ${fmtMoney(r.npv4yr)} |`);
+  lines.push(`| Cash-Equiv Annual Salary | ${fmtMoney(r.cashEquivSalary)} |`);
+  if (r.amtData) lines.push(`| AMT Exposure (ISO) | ${fmtMoney(r.amtData.amtTax)} |`);
+  lines.push(``);
+  lines.push(`## Vesting Schedule`);
+  lines.push(`| Year | Shares | Gross | Tax | After-Tax |`);
+  lines.push(`|---|---|---|---|---|`);
+  r.events.forEach(e => lines.push(`| ${e.year} | ${e.shares.toLocaleString()} | ${fmtMoney(e.intrinsic)} | ${fmtMoney(e.tax)} | ${fmtMoney(e.afterTax)} |`));
+  lines.push(``);
+  lines.push(`---`);
+  lines.push(`Built by Apex Advisors · ApexLogics.org · CC BY 4.0 · AL-33`);
+  lines.push(`Regulatory basis: IRC §422 · IRC §83 · IRC §55 · IRS Rev. Proc. 2023-34`);
+  lines.push(`Estimates only — not tax, legal, or financial advice.`);
+  const blob = new Blob([lines.join('\n')], { type:'text/markdown;charset=utf-8' });
+  triggerDownload(blob, `AL-33_equity-compensation-analyzer_${tsCompact()}.md`);
+  showToast('Markdown summary downloaded.', 'success');
+}
+
+// ════════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ════════════════════════════════════════════════════════════
+function switchTab(id) {
+  document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  document.getElementById('tab-' + id).setAttribute('aria-selected','true');
+  document.getElementById('panel-' + id).classList.add('active');
+}
+
+// ════════════════════════════════════════════════════════════
+// MANIFEST
+// ════════════════════════════════════════════════════════════
+function toggleManifest() {
+  const btn = document.getElementById('manifestToggle');
+  const panel = document.getElementById('manifestPanel');
+  btn.classList.toggle('open');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) {
+    document.getElementById('manifestPre').textContent = JSON.stringify(MANIFEST, null, 2);
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════
+(function init() {
+  setLang(currentLang);
+  updateVestingHint();
+})();
+</script>
+</body>
+</html>

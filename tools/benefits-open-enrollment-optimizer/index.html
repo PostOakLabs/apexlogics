@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Benefits Open Enrollment Optimizer — Apex Logics</title>
+<meta name="description" content="Compare health plans, model HSA/FSA tax savings, and capture your full 401k match in one browser-based tool. Zero PII. Zero servers."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ── TOKENS ─────────────────────────────────────────────── */
+:root{
+  --bg:#0b0e14;--surface:#111520;--surface-2:#171c2a;--surface-3:#1e2535;
+  --border:#232b3e;--border-2:#2e3a52;
+  --body:#c8d0e0;--muted:#6b7a99;--heading:#e8edf8;
+  --amber:#f5a623;--amber-dim:rgba(245,166,35,.12);
+  --coral:#f07060;--coral-dim:rgba(240,112,96,.12);
+  --teal:#3ec9a7;--teal-dim:rgba(62,201,167,.12);
+  --lavender:#8b9cf4;--lavender-dim:rgba(139,156,244,.12);
+  --green:#5ecf7a;--green-dim:rgba(94,207,122,.12);
+  --blue:#4da6ff;--blue-dim:rgba(77,166,255,.12);
+  --accent:var(--coral);--accent-dim:var(--coral-dim);
+  --radius:6px;--radius-lg:10px;
+  --font-serif:'DM Serif Display',serif;
+  --font-sans:'Sora',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:16px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--body);font-family:var(--font-sans);font-size:.875rem;line-height:1.6;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+h1,h2,h3,h4{font-family:var(--font-serif);color:var(--heading);line-height:1.25;}
+code,kbd{font-family:var(--font-mono);}
+/* ── NAV ─────────────────────────────────────────────────── */
+nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(7,11,20,.92); backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.nav-inner {
+  max-width:1024px; margin:0 auto;
+  display:flex; align-items:center; gap:16px;
+  padding:0 24px; height:58px;
+}
+.logo { display:flex; align-items:center; gap:10px; flex-shrink:0; text-decoration:none; }
+.logo-mark { width:32px; height:32px; flex-shrink:0; }
+.logo-mark svg { width:100%; height:100%; }
+.logo-text { display:flex; flex-direction:column; gap:2px; }
+.logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; letter-spacing:-.02em; line-height:1; }
+.logo-apex { color:var(--amber); }
+.logo-org { color:var(--muted); font-size:.8rem; }
+.logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-family:'JetBrains Mono',monospace; line-height:1; }
+.nav-right { display:flex; align-items:center; gap:8px; margin-left:auto; flex-shrink:0; }
+.nav-pill {
+  background:none; border:1px solid var(--border-2); border-radius:var(--radius);
+  color:var(--body); font-size:.62rem; padding:.3rem .65rem;
+  font-family:'JetBrains Mono',monospace; letter-spacing:.04em;
+  transition:border-color .15s, color .15s;
+}
+.nav-pill:hover { border-color:var(--amber); }
+@media (max-width:600px) { .logo-tag, .nav-pill { display:none; } }
+
+.lang-bar {
+  border-bottom:1px solid var(--border);
+  padding:.5rem 0;
+}
+.lang-inner {
+  max-width:1024px; margin:0 auto; padding:0 24px;
+  display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;
+}
+.lang-btn {
+  background:none; border:1px solid var(--border); color:var(--muted);
+  font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.06em;
+  padding:.25rem .55rem; border-radius:var(--radius);
+  transition:all .15s; cursor:pointer;
+}
+.lang-btn:hover { border-color:var(--border-2); color:var(--body); }
+.lang-btn.active { border-color:var(--amber); color:var(--amber); background:var(--amber-dim); }
+/* ── TOOL HEADER ─────────────────────────────────────────── */
+.tool-header{max-width:1024px;margin:2rem auto 0;padding:0 1.5rem;}
+.tool-eyebrow{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;flex-wrap:wrap;}
+.tool-id{font-family:var(--font-mono);font-size:.65rem;letter-spacing:.1em;color:var(--coral);border:1px solid var(--coral);border-radius:var(--radius);padding:.2rem .55rem;}
+.tool-cat{font-size:.7rem;color:var(--muted);font-family:var(--font-mono);}
+.tool-h1{font-size:1.8rem;margin-bottom:.5rem;}
+.tool-sub{color:var(--muted);font-size:.875rem;max-width:640px;}
+/* ── PII BANNER ──────────────────────────────────────────── */
+.pii-banner{max-width:1024px;margin:1.25rem auto;padding:0 1.5rem;}
+.pii-inner{background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--coral);border-radius:var(--radius);padding:.7rem 1rem;font-size:.78rem;color:var(--muted);display:flex;align-items:flex-start;gap:.5rem;}
+.pii-icon{flex-shrink:0;font-size:.85rem;}
+/* ── MAIN LAYOUT ─────────────────────────────────────────── */
+.main{max-width:1024px;margin:0 auto;padding:0 1.5rem 4rem;}
+/* ── SECTION BLOCKS ──────────────────────────────────────── */
+.section-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:1.25rem;overflow:hidden;}
+.section-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem;}
+.section-num{font-family:var(--font-mono);font-size:.65rem;color:var(--coral);border:1px solid var(--coral);border-radius:var(--radius);padding:.15rem .45rem;}
+.section-title{font-family:var(--font-serif);font-size:1.05rem;color:var(--heading);}
+.section-body{padding:1.25rem;}
+/* ── FORM ELEMENTS ───────────────────────────────────────── */
+.field-row{display:grid;gap:1rem;margin-bottom:1rem;}
+.field-row.cols-2{grid-template-columns:1fr 1fr;}
+.field-row.cols-3{grid-template-columns:1fr 1fr 1fr;}
+.field-row.cols-4{grid-template-columns:1fr 1fr 1fr 1fr;}
+.field{display:flex;flex-direction:column;gap:.3rem;}
+label{font-size:.75rem;color:var(--muted);font-family:var(--font-mono);letter-spacing:.04em;}
+label span.req{color:var(--coral);}
+input[type=text],input[type=number],select,textarea{
+  background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);
+  color:var(--body);font-family:var(--font-sans);font-size:.85rem;
+  padding:.5rem .75rem;width:100%;transition:border-color .15s;}
+input:focus,select:focus{outline:none;border-color:var(--coral);}
+input[readonly]{color:var(--muted);cursor:default;}
+.help-text{font-size:.7rem;color:var(--muted);margin-top:.15rem;}
+/* ── PLAN CARDS ──────────────────────────────────────────── */
+.plan-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;margin-bottom:1rem;}
+.plan-card{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;}
+.plan-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;}
+.plan-card-label{font-family:var(--font-mono);font-size:.65rem;color:var(--coral);font-weight:500;}
+.btn-remove-plan{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem;padding:.2rem .4rem;border-radius:var(--radius);transition:color .15s;}
+.btn-remove-plan:hover{color:var(--coral);}
+.plan-card .field{margin-bottom:.65rem;}
+/* ── BUTTONS ─────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;border-radius:var(--radius);font-family:var(--font-sans);font-size:.85rem;font-weight:500;cursor:pointer;transition:all .15s;border:none;}
+.btn-primary{background:var(--coral);color:#fff;}
+.btn-primary:hover{filter:brightness(1.12);}
+.btn-secondary{background:var(--surface-3);border:1px solid var(--border-2);color:var(--body);}
+.btn-secondary:hover{border-color:var(--coral);color:var(--coral);}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--muted);}
+.btn-ghost:hover{border-color:var(--border-2);color:var(--body);}
+.btn-sm{padding:.35rem .75rem;font-size:.78rem;}
+.btn-add-plan{width:100%;padding:.65rem;border:1px dashed var(--border-2);background:none;border-radius:var(--radius-lg);color:var(--muted);cursor:pointer;font-size:.8rem;font-family:var(--font-sans);transition:all .15s;}
+.btn-add-plan:hover{border-color:var(--coral);color:var(--coral);}
+/* ── DIVIDER ─────────────────────────────────────────────── */
+.divider{border:none;border-top:1px solid var(--border);margin:1rem 0;}
+/* ── RUN ROW ─────────────────────────────────────────────── */
+.run-row{display:flex;align-items:center;justify-content:center;gap:1rem;margin:1.5rem 0;flex-wrap:wrap;}
+/* ── RESULTS PANEL ───────────────────────────────────────── */
+#results-panel{display:none;}
+.results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem;}
+.results-title{font-family:var(--font-serif);font-size:1.3rem;color:var(--heading);}
+/* ── SUMMARY CARDS ───────────────────────────────────────── */
+.summary-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.85rem;margin-bottom:1.5rem;}
+.summary-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.1rem;}
+.sc-label{font-size:.68rem;color:var(--muted);font-family:var(--font-mono);letter-spacing:.05em;margin-bottom:.35rem;}
+.sc-value{font-family:var(--font-mono);font-size:1.25rem;color:var(--heading);font-weight:500;}
+.sc-value.good{color:var(--green);}
+.sc-value.warn{color:var(--amber);}
+.sc-value.bad{color:var(--coral);}
+.sc-sub{font-size:.7rem;color:var(--muted);margin-top:.2rem;}
+/* ── RESULTS SECTION ─────────────────────────────────────── */
+.results-section{margin-bottom:1.5rem;}
+.results-section-title{font-family:var(--font-serif);font-size:1rem;color:var(--heading);margin-bottom:.85rem;padding-bottom:.4rem;border-bottom:1px solid var(--border);}
+/* ── PLAN COMPARISON TABLE ───────────────────────────────── */
+.plan-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.plan-table th{background:var(--surface-2);color:var(--muted);font-family:var(--font-mono);font-size:.68rem;letter-spacing:.05em;padding:.6rem .85rem;text-align:left;border-bottom:1px solid var(--border);}
+.plan-table td{padding:.65rem .85rem;border-bottom:1px solid var(--border);color:var(--body);}
+.plan-table tr:last-child td{border-bottom:none;}
+.plan-table tr:hover td{background:var(--surface-2);}
+.plan-table .best-plan td{background:var(--coral-dim);}
+.plan-table .row-label{color:var(--muted);font-size:.75rem;}
+.plan-table .val-mono{font-family:var(--font-mono);}
+.plan-table .val-good{color:var(--green);font-family:var(--font-mono);}
+.plan-table .val-bad{color:var(--coral);font-family:var(--font-mono);}
+.badge-best{display:inline-block;background:var(--coral-dim);color:var(--coral);font-family:var(--font-mono);font-size:.6rem;padding:.15rem .4rem;border-radius:var(--radius);border:1px solid var(--coral);margin-left:.4rem;}
+/* ── HSA/FSA RESULT BLOCK ────────────────────────────────── */
+.hsa-block{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:.85rem;}
+.hsa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.75rem;margin-top:.75rem;}
+.hsa-item{display:flex;flex-direction:column;gap:.25rem;}
+.hsa-item-label{font-size:.68rem;color:var(--muted);font-family:var(--font-mono);}
+.hsa-item-val{font-family:var(--font-mono);font-size:1rem;color:var(--heading);}
+/* ── MATCH BLOCK ─────────────────────────────────────────── */
+.match-block{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.25rem;}
+.match-bar-wrap{margin:1rem 0;}
+.match-bar-label{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:.35rem;font-family:var(--font-mono);}
+.match-bar{background:var(--surface-3);border-radius:20px;height:8px;overflow:hidden;}
+.match-bar-fill{height:100%;background:var(--green);border-radius:20px;transition:width .4s ease;}
+.match-bar-fill.warn{background:var(--amber);}
+.match-bar-fill.bad{background:var(--coral);}
+/* ── EXPORT ROW ──────────────────────────────────────────── */
+.results-export-row{margin-top:1.5rem;padding:1rem 1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;}
+.export-label{font-size:.75rem;color:var(--muted);font-family:var(--font-mono);flex:1;min-width:160px;}
+/* ── MCP PANEL ───────────────────────────────────────────── */
+.mcp-panel{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-top:2rem;}
+.mcp-toggle{width:100%;background:var(--surface);border:none;padding:.85rem 1.25rem;text-align:left;color:var(--muted);font-size:.78rem;font-family:var(--font-mono);cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:color .15s;}
+.mcp-toggle:hover{color:var(--body);}
+.mcp-body{display:none;padding:1.25rem;background:var(--surface-2);border-top:1px solid var(--border);}
+.mcp-body.open{display:block;}
+pre.mcp-json{font-family:var(--font-mono);font-size:.72rem;color:var(--body);white-space:pre-wrap;word-break:break-all;line-height:1.55;}
+/* ── FOOTER ──────────────────────────────────────────────── */
+.footer{border-top:1px solid var(--border);padding:2rem 1.5rem;text-align:center;color:var(--muted);font-size:.75rem;margin-top:3rem;}
+.footer a{color:var(--muted);}
+.footer a:hover{color:var(--body);}
+/* ── UTILS ───────────────────────────────────────────────── */
+.hidden{display:none!important;}
+.text-mono{font-family:var(--font-mono);}
+.text-muted{color:var(--muted);}
+.text-good{color:var(--green);}
+.text-warn{color:var(--amber);}
+.mt-1{margin-top:.5rem;}
+.mb-1{margin-bottom:.5rem;}
+.info-note{background:var(--surface-2);border-left:3px solid var(--coral);border-radius:0 var(--radius) var(--radius) 0;padding:.6rem .9rem;font-size:.76rem;color:var(--muted);margin:.75rem 0;}
+@media(max-width:640px){
+  .field-row.cols-2,.field-row.cols-3,.field-row.cols-4{grid-template-columns:1fr;}
+  .nav-links{gap:.5rem;}
+  .tool-h1{font-size:1.4rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ LANG BAR ═══════════════════════════════════════════════ -->
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<!-- ══ NAV ══════════════════════════════════════════════════ -->
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-right">
+      <a href="https://apexadvisory.site" class="nav-pill" target="_blank" rel="noopener">ApexAdvisory.site</a>
+      <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ TOOL HEADER ═══════════════════════════════════════════ -->
+<header class="tool-header">
+  <div class="tool-eyebrow">
+    AL · 23 · Compensation &amp; Offers
+  </div>
+  <h1 class="tool-h1" data-i18n="tool_h1">Benefits Open Enrollment Optimizer</h1>
+  <p class="tool-sub" data-i18n="tool_sub">Compare health plans by expected annual cost, model your HSA/FSA tax advantage, and make sure you're capturing your full 401(k) match — all in your browser. Nothing leaves this page.</p>
+</header>
+
+<!-- ══ PII BANNER ════════════════════════════════════════════ -->
+<div class="pii-banner">
+  <div class="pii-inner">
+    <span class="pii-icon">🔒</span>
+    <span data-i18n="pii_banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+  </div>
+</div>
+
+<!-- ══ MAIN ══════════════════════════════════════════════════ -->
+<main class="main">
+
+  <!-- ── SECTION A: HEALTH PLAN COMPARISON ───────────────── -->
+  <div class="section-block">
+    <div class="section-header">
+      <span class="section-num">A</span>
+      <span class="section-title" data-i18n="sec_a_title">Health Plan Comparison</span>
+    </div>
+    <div class="section-body">
+
+      <div class="field-row cols-3">
+        <div class="field">
+          <label data-i18n="lbl_coverage_type">Coverage Type <span class="req">*</span></label>
+          <select id="coverage-type">
+            <option value="self">Self Only</option>
+            <option value="self_spouse">Self + Spouse</option>
+            <option value="self_child">Self + Child(ren)</option>
+            <option value="family">Family</option>
+          </select>
+        </div>
+        <div class="field">
+          <label data-i18n="lbl_expected_spend">Expected Annual Medical Spend ($) <span class="req">*</span></label>
+          <input type="number" id="expected-spend" min="0" step="100" value="2000" placeholder="e.g. 2000"/>
+          <span class="help-text" data-i18n="help_expected_spend">Prescriptions, visits, procedures you anticipate this year.</span>
+        </div>
+        <div class="field">
+          <label data-i18n="lbl_marginal_rate">Federal + State Marginal Tax Rate (%)</label>
+          <input type="number" id="marginal-rate" min="0" max="60" step="0.5" value="25" placeholder="25"/>
+          <span class="help-text" data-i18n="help_marginal_rate">Used for HSA/FSA tax savings. Combined federal + state.</span>
+        </div>
+      </div>
+
+      <hr class="divider"/>
+
+      <!-- Plan cards container -->
+      <div id="plan-cards" class="plan-cards"></div>
+
+      <button class="btn-add-plan" id="btn-add-plan" onclick="addPlan()" data-i18n="btn_add_plan">+ Add Health Plan (up to 3)</button>
+
+      <div class="info-note mt-1" data-i18n="note_coinsurance">
+        <strong>Coinsurance</strong> is your share after meeting the deductible (e.g. 20% means you pay 20%, insurance pays 80%). Leave at 0% if your plan covers 100% after deductible.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION B: HSA / FSA OPTIMIZER ──────────────────── -->
+  <div class="section-block">
+    <div class="section-header">
+      <span class="section-num">B</span>
+      <span class="section-title" data-i18n="sec_b_title">HSA / FSA Tax Optimizer</span>
+    </div>
+    <div class="section-body">
+
+      <div class="field-row cols-2">
+        <div class="field">
+          <label data-i18n="lbl_account_type">Account Type</label>
+          <select id="account-type" onchange="onAccountTypeChange()">
+            <option value="hsa_self">HSA — Self Only (HDHP required)</option>
+            <option value="hsa_family">HSA — Family (HDHP required)</option>
+            <option value="fsa">Health FSA (non-HDHP plans)</option>
+            <option value="none">No HSA/FSA election</option>
+          </select>
+        </div>
+        <div class="field">
+          <label id="contrib-label" data-i18n="lbl_contrib_amount">Your Contribution ($)</label>
+          <input type="number" id="contrib-amount" min="0" step="100" value="3000"/>
+          <span class="help-text" id="contrib-limit-note">2025 HSA self-only limit: $4,300 · Verify at IRS.gov each year.</span>
+        </div>
+      </div>
+
+      <div class="field-row cols-2">
+        <div class="field">
+          <label data-i18n="lbl_employer_hsa">Employer HSA Contribution ($/yr)</label>
+          <input type="number" id="employer-hsa" min="0" step="100" value="0" placeholder="0"/>
+          <span class="help-text" data-i18n="help_employer_hsa">Some employers seed your HSA — check your enrollment materials.</span>
+        </div>
+        <div class="field" id="fsa-carryover-field" style="display:none;">
+          <label data-i18n="lbl_fsa_carryover">FSA Carryover Limit ($)</label>
+          <input type="number" id="fsa-carryover" min="0" step="50" value="660"/>
+          <span class="help-text" data-i18n="help_fsa_carryover">2025 FSA carryover limit: $660. Verify with your employer plan.</span>
+        </div>
+      </div>
+
+      <div class="info-note" id="hsa-triple-note" data-i18n="note_hsa_triple">
+        <strong>HSA triple tax advantage:</strong> (1) Contributions are pre-tax, (2) growth is tax-free, (3) withdrawals for qualified medical expenses are tax-free. After age 65, withdrawals for any purpose are taxed as ordinary income — like a traditional IRA.
+      </div>
+      <div class="info-note hidden" id="fsa-use-it-note" data-i18n="note_fsa_use_it">
+        <strong>FSA use-it-or-lose-it:</strong> Funds above the carryover limit are forfeited at year-end. Calibrate your contribution to your actual anticipated spend.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION C: 401(k) MATCH CAPTURE ─────────────────── -->
+  <div class="section-block">
+    <div class="section-header">
+      <span class="section-num">C</span>
+      <span class="section-title" data-i18n="sec_c_title">401(k) Match Capture</span>
+    </div>
+    <div class="section-body">
+
+      <div class="field-row cols-2">
+        <div class="field">
+          <label data-i18n="lbl_annual_salary">Annual Salary ($) <span class="req">*</span></label>
+          <input type="number" id="annual-salary" min="0" step="1000" value="75000" placeholder="e.g. 75000"/>
+        </div>
+        <div class="field">
+          <label data-i18n="lbl_contrib_pct">Your 401(k) Contribution (%)</label>
+          <input type="number" id="contrib-pct" min="0" max="100" step="0.5" value="6" placeholder="6"/>
+          <span class="help-text" data-i18n="help_contrib_pct">Percentage of salary you plan to contribute.</span>
+        </div>
+      </div>
+
+      <div class="field-row cols-3">
+        <div class="field">
+          <label data-i18n="lbl_match_rate">Employer Match Rate (%)</label>
+          <input type="number" id="match-rate" min="0" max="200" step="5" value="100" placeholder="100"/>
+          <span class="help-text" data-i18n="help_match_rate">e.g. 100 = dollar-for-dollar; 50 = 50 cents per dollar.</span>
+        </div>
+        <div class="field">
+          <label data-i18n="lbl_match_cap">Match Cap (% of Salary)</label>
+          <input type="number" id="match-cap" min="0" max="20" step="0.5" value="4" placeholder="4"/>
+          <span class="help-text" data-i18n="help_match_cap">Employer matches up to this % of your salary.</span>
+        </div>
+        <div class="field">
+          <label data-i18n="lbl_irs_limit">2025 IRS 401(k) Limit ($)</label>
+          <input type="number" id="irs-401k-limit" min="0" step="500" value="23500"/>
+          <span class="help-text" data-i18n="help_irs_limit">2025 limit: $23,500. Update annually from IRS.gov.</span>
+        </div>
+      </div>
+
+      <div class="info-note" data-i18n="note_match_formula">
+        <strong>Common match formula example:</strong> "100% up to 4% of salary" → set Match Rate = 100, Match Cap = 4. Another example: "50% up to 6%" → Match Rate = 50, Match Cap = 6.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RUN ROW ────────────────────────────────────────────── -->
+  <div class="run-row">
+    <button class="btn btn-primary" onclick="runAnalysis()" data-i18n="btn_run">Analyze Benefits →</button>
+    <button class="btn btn-ghost btn-sm" onclick="resetAll()" data-i18n="btn_reset">Reset</button>
+  </div>
+
+  <!-- ══ RESULTS PANEL ══════════════════════════════════════ -->
+  <div id="results-panel">
+    <div class="results-header">
+      <span class="results-title" data-i18n="results_title">Your Benefits Analysis</span>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('results-panel').style.display='none'" data-i18n="btn_collapse">Collapse ↑</button>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="summary-cards" id="summary-cards"></div>
+
+    <!-- Plan comparison -->
+    <div class="results-section" id="plan-comparison-section">
+      <div class="results-section-title" data-i18n="res_plan_comparison">Health Plan Cost Comparison</div>
+      <div style="overflow-x:auto;">
+        <table class="plan-table" id="plan-comparison-table"></table>
+      </div>
+    </div>
+
+    <!-- HSA/FSA block -->
+    <div class="results-section" id="hsa-result-section">
+      <div class="results-section-title" data-i18n="res_tax_advantage">HSA / FSA Tax Advantage</div>
+      <div class="hsa-block" id="hsa-result-block"></div>
+    </div>
+
+    <!-- 401k block -->
+    <div class="results-section" id="match-result-section">
+      <div class="results-section-title" data-i18n="res_401k">401(k) Match Analysis</div>
+      <div class="match-block" id="match-result-block"></div>
+    </div>
+
+    <!-- Export row -->
+    <div class="results-export-row">
+      <span class="export-label" data-i18n="export_label">Export your benefits election record:</span>
+      <button class="btn btn-secondary btn-sm" onclick="exportMarkdown()" data-i18n="btn_md">↓ Markdown</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportAP2()" data-i18n="btn_ap2">↓ AP2 JSON</button>
+      <button class="btn btn-ghost btn-sm" onclick="showHelp()" data-i18n="btn_help">?</button>
+    </div>
+  </div>
+
+  <!-- ══ MCP PANEL ══════════════════════════════════════════ -->
+  <div class="mcp-panel" style="margin-top:2rem;">
+    <button class="mcp-toggle" onclick="toggleMcp(this)">
+      <span>⚙ MCP Agent Definition — <code>optimize_benefits_enrollment</code></span>
+      <span>▸</span>
+    </button>
+    <div class="mcp-body" id="mcp-body">
+      <pre class="mcp-json">{
+  "name": "optimize_benefits_enrollment",
+  "description": "Compare up to 3 employer health plans by expected annual cost, model HSA/FSA tax savings, and calculate 401(k) match capture. Returns a benefits_election_record AP2 mandate.",
+  "inputSchema": {
+    "type": "object",
+    "required": ["plans","expected_spend","coverage_type","annual_salary"],
+    "properties": {
+      "plans": {"type": "array","maxItems": 3,"description": "Array of health plan objects"},
+      "expected_spend": {"type": "number","description": "Anticipated annual medical spend in USD"},
+      "coverage_type": {"type": "string","enum": ["self","self_spouse","self_child","family"]},
+      "annual_salary": {"type": "number"},
+      "hsa_contribution": {"type": "number","description": "Employee HSA contribution (requires HDHP plan)"},
+      "employer_hsa": {"type": "number"},
+      "contrib_pct_401k": {"type": "number"},
+      "match_rate": {"type": "number"},
+      "match_cap_pct": {"type": "number"},
+      "marginal_tax_rate_pct": {"type": "number","default": 25}
+    }
+  }
+}</pre>
+    </div>
+  </div>
+
+</main>
+
+<!-- ══ FOOTER ════════════════════════════════════════════════ -->
+<footer class="footer">
+  <p style="margin-bottom:.4rem;">
+    <strong>Apex Logics</strong> — AL-23 Benefits Open Enrollment Optimizer · v1.0.0 ·
+    <a href="https://apexadvisory.site" target="_blank" rel="noopener">Apex Advisors</a> ·
+    <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a>
+  </p>
+  <p>Zero embedded plan data — all inputs user-supplied. 2025 HSA/FSA/401(k) limits embedded as defaults; verify annually at <a href="https://irs.gov" target="_blank" rel="noopener">IRS.gov</a>. Data vintage: 2025 (IRS Rev. Proc. 2024-25 · IR-2024-285). Not financial or tax advice.</p>
+  <p style="margin-top:.4rem;">License: <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> · <a href="../../index.html">Suite Hub</a></p>
+</footer>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   APEX LOGICS — AL-23 BENEFITS OPEN ENROLLMENT OPTIMIZER
+   v1.0.0 | CC BY 4.0 | Zero PII | Zero Network Calls
+   ══════════════════════════════════════════════════════════ */
+
+'use strict';
+
+/* ── CONSTANTS ─────────────────────────────────────────────── */
+const HSA_LIMITS_2025 = {
+  self: 4300,
+  family: 8550
+};
+const FSA_LIMIT_2025 = 3300;
+const FSA_CARRYOVER_2025 = 660;
+const IRS_401K_LIMIT_2025 = 23500;
+const FICA_RATE = 0.0765; // 7.65% (employee share: SS 6.2% + Medicare 1.45%)
+
+/* ── I18N ──────────────────────────────────────────────────── */
+const I18N = {
+  en: {
+    nav_consulting: 'Consulting',
+    nav_suite: '← Suite',
+    cat_label: 'Compensation & Benefits',
+    tool_h1: 'Benefits Open Enrollment Optimizer',
+    tool_sub: 'Compare health plans by expected annual cost, model your HSA/FSA tax advantage, and make sure you\'re capturing your full 401(k) match — all in your browser. Nothing leaves this page.',
+    pii_banner: '🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.',
+    sec_a_title: 'Health Plan Comparison',
+    sec_b_title: 'HSA / FSA Tax Optimizer',
+    sec_c_title: '401(k) Match Capture',
+    btn_add_plan: '+ Add Health Plan (up to 3)',
+    btn_run: 'Analyze Benefits →',
+    btn_reset: 'Reset',
+    results_title: 'Your Benefits Analysis',
+    btn_collapse: 'Collapse ↑',
+    export_label: 'Export your benefits election record:',
+    btn_md: '↓ Markdown',
+    btn_ap2: '↓ AP2 JSON',
+    btn_help: '?'
+  },
+  es: { tool_h1: 'Optimizador de Inscripción Abierta de Beneficios', btn_run: 'Analizar Beneficios →' },
+  fr: { tool_h1: 'Optimiseur d\'Inscription aux Avantages Sociaux', btn_run: 'Analyser les Avantages →' },
+  ar: { tool_h1: 'محسّن التسجيل المفتوح للمزايا', btn_run: 'تحليل المزايا ←' },
+  pt: { tool_h1: 'Otimizador de Inscrição Aberta de Benefícios', btn_run: 'Analisar Benefícios →' },
+  zh: { tool_h1: '福利开放注册优化器', btn_run: '分析福利 →' }
+};
+
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.trim().toLowerCase() === lang || b.textContent.trim() === (lang === 'zh' ? '中文' : lang.toUpperCase())));
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  const strings = Object.assign({}, I18N.en, I18N[lang] || {});
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (strings[k]) el.textContent = strings[k];
+  });
+}
+
+/* ── PLAN STATE ────────────────────────────────────────────── */
+let planCount = 0;
+const MAX_PLANS = 3;
+
+const PLAN_TYPES = [
+  { value: 'hdhp', label: 'HDHP (High-Deductible)' },
+  { value: 'ppo',  label: 'PPO (Preferred Provider)' },
+  { value: 'hmo',  label: 'HMO (Health Maintenance)' },
+  { value: 'epo',  label: 'EPO (Exclusive Provider)' },
+  { value: 'other',label: 'Other' }
+];
+
+function addPlan() {
+  if (planCount >= MAX_PLANS) return;
+  planCount++;
+  const idx = planCount;
+  const card = document.createElement('div');
+  card.className = 'plan-card';
+  card.id = 'plan-card-' + idx;
+
+  const planTypeOpts = PLAN_TYPES.map(t =>
+    `<option value="${t.value}">${t.label}</option>`
+  ).join('');
+
+  card.innerHTML = `
+    <div class="plan-card-header">
+      <span class="plan-card-label">Plan ${idx}</span>
+      <button class="btn-remove-plan" onclick="removePlan(${idx})" title="Remove plan">✕</button>
+    </div>
+    <div class="field mb-1">
+      <label>Plan Name</label>
+      <input type="text" id="plan-name-${idx}" value="Plan ${idx}" placeholder="e.g. Blue Choice PPO"/>
+    </div>
+    <div class="field mb-1">
+      <label>Plan Type</label>
+      <select id="plan-type-${idx}">${planTypeOpts}</select>
+    </div>
+    <div class="field mb-1">
+      <label>Monthly Premium — Employee Share ($)</label>
+      <input type="number" id="plan-prem-${idx}" min="0" step="5" value="200" placeholder="200"/>
+    </div>
+    <div class="field mb-1">
+      <label>Annual Deductible — Individual ($)</label>
+      <input type="number" id="plan-ded-ind-${idx}" min="0" step="100" value="1500" placeholder="1500"/>
+    </div>
+    <div class="field mb-1">
+      <label>Annual Deductible — Family ($) <span class="text-muted" style="font-size:.65rem;">(if applicable)</span></label>
+      <input type="number" id="plan-ded-fam-${idx}" min="0" step="100" value="3000" placeholder="3000"/>
+    </div>
+    <div class="field mb-1">
+      <label>Out-of-Pocket Max — Individual ($)</label>
+      <input type="number" id="plan-oop-ind-${idx}" min="0" step="100" value="5000" placeholder="5000"/>
+    </div>
+    <div class="field mb-1">
+      <label>Out-of-Pocket Max — Family ($) <span class="text-muted" style="font-size:.65rem;">(if applicable)</span></label>
+      <input type="number" id="plan-oop-fam-${idx}" min="0" step="100" value="10000" placeholder="10000"/>
+    </div>
+    <div class="field mb-1">
+      <label>Coinsurance — Your Share (%) <span class="text-muted" style="font-size:.65rem;">after deductible</span></label>
+      <input type="number" id="plan-coins-${idx}" min="0" max="100" step="5" value="20" placeholder="20"/>
+    </div>
+    <div class="field">
+      <label>Employer HSA / HRA Contribution ($/yr)</label>
+      <input type="number" id="plan-emp-hsa-${idx}" min="0" step="100" value="0" placeholder="0"/>
+      <span class="help-text">Employer seeds your HSA/HRA with this amount.</span>
+    </div>
+  `;
+
+  document.getElementById('plan-cards').appendChild(card);
+  updateAddButton();
+}
+
+function removePlan(idx) {
+  const card = document.getElementById('plan-card-' + idx);
+  if (card) { card.remove(); planCount--; }
+  updateAddButton();
+}
+
+function updateAddButton() {
+  const btn = document.getElementById('btn-add-plan');
+  btn.disabled = planCount >= MAX_PLANS;
+  btn.style.opacity = planCount >= MAX_PLANS ? '.4' : '1';
+  btn.style.cursor = planCount >= MAX_PLANS ? 'not-allowed' : 'pointer';
+}
+
+/* ── ACCOUNT TYPE CHANGE ───────────────────────────────────── */
+function onAccountTypeChange() {
+  const type = document.getElementById('account-type').value;
+  const noteHsa = document.getElementById('hsa-triple-note');
+  const noteFsa = document.getElementById('fsa-use-it-note');
+  const carryoverField = document.getElementById('fsa-carryover-field');
+  const limitNote = document.getElementById('contrib-limit-note');
+  const contribAmt = document.getElementById('contrib-amount');
+  const contribLabel = document.getElementById('contrib-label');
+
+  if (type === 'hsa_self') {
+    noteHsa.classList.remove('hidden'); noteFsa.classList.add('hidden'); carryoverField.style.display = 'none';
+    limitNote.textContent = `2025 HSA self-only limit: $${HSA_LIMITS_2025.self.toLocaleString()} · Verify at IRS.gov each year.`;
+    contribAmt.max = HSA_LIMITS_2025.self;
+    contribAmt.value = Math.min(+contribAmt.value || 3000, HSA_LIMITS_2025.self);
+    contribLabel.textContent = 'Your HSA Contribution ($)';
+  } else if (type === 'hsa_family') {
+    noteHsa.classList.remove('hidden'); noteFsa.classList.add('hidden'); carryoverField.style.display = 'none';
+    limitNote.textContent = `2025 HSA family limit: $${HSA_LIMITS_2025.family.toLocaleString()} · Verify at IRS.gov each year.`;
+    contribAmt.max = HSA_LIMITS_2025.family;
+    contribAmt.value = Math.min(+contribAmt.value || 4000, HSA_LIMITS_2025.family);
+    contribLabel.textContent = 'Your HSA Contribution ($)';
+  } else if (type === 'fsa') {
+    noteHsa.classList.add('hidden'); noteFsa.classList.remove('hidden'); carryoverField.style.display = 'flex';
+    limitNote.textContent = `2025 FSA limit: $${FSA_LIMIT_2025.toLocaleString()} · Verify at IRS.gov each year.`;
+    contribAmt.max = FSA_LIMIT_2025;
+    contribAmt.value = Math.min(+contribAmt.value || 1500, FSA_LIMIT_2025);
+    contribLabel.textContent = 'Your FSA Contribution ($)';
+  } else {
+    noteHsa.classList.add('hidden'); noteFsa.classList.add('hidden'); carryoverField.style.display = 'none';
+    limitNote.textContent = '';
+    contribLabel.textContent = 'Contribution ($)';
+  }
+}
+
+/* ── CALCULATION ENGINE ────────────────────────────────────── */
+
+/**
+ * Calculate expected out-of-pocket for one plan given anticipated spend.
+ * @param {object} plan - plan parameters
+ * @param {number} spend - anticipated annual spend
+ * @param {string} coverageType - 'self' | 'self_spouse' | 'self_child' | 'family'
+ * @returns {number} expected OOP in dollars
+ */
+function calcExpectedOOP(plan, spend, coverageType) {
+  const isFamily = (coverageType === 'family' || coverageType === 'self_spouse' || coverageType === 'self_child');
+  const ded = isFamily ? plan.ded_fam : plan.ded_ind;
+  const oopMax = isFamily ? plan.oop_fam : plan.oop_ind;
+  const coinsRate = Math.min(plan.coinsurance, 100) / 100;
+
+  if (spend <= 0) return 0;
+
+  let oop = 0;
+  if (spend <= ded) {
+    // Haven't hit deductible: pay full spend
+    oop = spend;
+  } else {
+    // Hit deductible: pay deductible + coinsurance on amount above
+    oop = ded + (spend - ded) * coinsRate;
+  }
+  // Capped at OOP maximum
+  return Math.min(oop, oopMax);
+}
+
+/**
+ * Calculate total annual cost for one plan.
+ * @param {object} plan
+ * @param {number} spend
+ * @param {string} coverageType
+ * @returns {object} { annualPremium, expectedOOP, grossCost, netCost }
+ */
+function calcPlanCost(plan, spend, coverageType) {
+  const annualPremium = plan.monthly_premium * 12;
+  const expectedOOP = calcExpectedOOP(plan, spend, coverageType);
+  const grossCost = annualPremium + expectedOOP;
+  const netCost = Math.max(0, grossCost - plan.employer_hsa); // employer HSA seeds offset cost
+  return { annualPremium, expectedOOP, grossCost, netCost };
+}
+
+/**
+ * Calculate HSA/FSA tax savings.
+ * @param {string} accountType
+ * @param {number} employeeContrib
+ * @param {number} marginalRatePct
+ * @returns {object}
+ */
+function calcTaxSavings(accountType, employeeContrib, marginalRatePct) {
+  if (accountType === 'none') return { federalSavings: 0, ficaSavings: 0, totalSavings: 0, effectiveContrib: 0, note: '' };
+  const rate = Math.min(Math.max(marginalRatePct, 0), 60) / 100;
+  const contrib = Math.max(0, employeeContrib);
+  const federalSavings = contrib * rate;
+  // FICA savings only available for HSA (payroll deduction via employer cafeteria plan)
+  const ficaSavings = accountType.startsWith('hsa') ? contrib * FICA_RATE : 0;
+  const totalSavings = federalSavings + ficaSavings;
+  const effectiveContrib = contrib - totalSavings;
+  const note = accountType.startsWith('hsa')
+    ? 'Includes federal income tax + FICA (7.65%) savings via payroll deduction.'
+    : 'Includes federal income tax savings only (FSA via payroll deduction).';
+  return { federalSavings, ficaSavings, totalSavings, effectiveContrib, note };
+}
+
+/**
+ * Calculate 401(k) match.
+ * @param {number} salary
+ * @param {number} contribPct - employee contribution %
+ * @param {number} matchRate - employer match % (e.g. 100 = dollar-for-dollar)
+ * @param {number} matchCapPct - employer matches up to this % of salary
+ * @param {number} irsLimit
+ * @returns {object}
+ */
+function calcMatch(salary, contribPct, matchRate, matchCapPct, irsLimit) {
+  const employeeContrib = salary * contribPct / 100;
+  const effectiveContrib = Math.min(employeeContrib, irsLimit); // IRS cap
+  const matchableThreshold = salary * matchCapPct / 100;
+  const matchableDollars = Math.min(effectiveContrib, matchableThreshold);
+  const matchReceived = matchableDollars * matchRate / 100;
+  const maxPossibleMatch = matchableThreshold * matchRate / 100;
+  const leaveOnTable = Math.max(0, maxPossibleMatch - matchReceived);
+  const captureRate = maxPossibleMatch > 0 ? matchReceived / maxPossibleMatch * 100 : 100;
+  const isCapacityLimited = employeeContrib > irsLimit;
+  const minContribForFullMatch = matchableThreshold; // must contribute at least this much
+  const minContribPct = maxPossibleMatch > 0 ? matchCapPct : 0;
+  return {
+    employeeContrib, matchReceived, maxPossibleMatch, leaveOnTable,
+    captureRate, isCapacityLimited, minContribForFullMatch, minContribPct, matchableThreshold
+  };
+}
+
+/* ── COLLECT PLAN INPUTS ───────────────────────────────────── */
+function collectPlans() {
+  const plans = [];
+  for (let i = 1; i <= 10; i++) {
+    const nameEl = document.getElementById('plan-name-' + i);
+    if (!nameEl) continue;
+    plans.push({
+      idx: i,
+      name: (document.getElementById('plan-name-' + i).value || 'Plan ' + i).trim(),
+      type: document.getElementById('plan-type-' + i).value,
+      monthly_premium: parseFloat(document.getElementById('plan-prem-' + i).value) || 0,
+      ded_ind: parseFloat(document.getElementById('plan-ded-ind-' + i).value) || 0,
+      ded_fam: parseFloat(document.getElementById('plan-ded-fam-' + i).value) || 0,
+      oop_ind: parseFloat(document.getElementById('plan-oop-ind-' + i).value) || 0,
+      oop_fam: parseFloat(document.getElementById('plan-oop-fam-' + i).value) || 0,
+      coinsurance: parseFloat(document.getElementById('plan-coins-' + i).value) || 0,
+      employer_hsa: parseFloat(document.getElementById('plan-emp-hsa-' + i).value) || 0
+    });
+  }
+  return plans;
+}
+
+/* ── MAIN ANALYSIS ─────────────────────────────────────────── */
+function runAnalysis() {
+  const plans = collectPlans();
+  if (plans.length === 0) {
+    alert('Add at least one health plan before running the analysis.');
+    return;
+  }
+
+  const coverageType = document.getElementById('coverage-type').value;
+  const expectedSpend = parseFloat(document.getElementById('expected-spend').value) || 0;
+  const marginalRate = parseFloat(document.getElementById('marginal-rate').value) || 25;
+  const accountType = document.getElementById('account-type').value;
+  const employeeContrib = parseFloat(document.getElementById('contrib-amount').value) || 0;
+  const employerHSAGlobal = parseFloat(document.getElementById('employer-hsa').value) || 0;
+  const fsaCarryover = parseFloat(document.getElementById('fsa-carryover').value) || FSA_CARRYOVER_2025;
+  const annualSalary = parseFloat(document.getElementById('annual-salary').value) || 0;
+  const contribPct = parseFloat(document.getElementById('contrib-pct').value) || 0;
+  const matchRate = parseFloat(document.getElementById('match-rate').value) || 0;
+  const matchCap = parseFloat(document.getElementById('match-cap').value) || 0;
+  const irsLimit = parseFloat(document.getElementById('irs-401k-limit').value) || IRS_401K_LIMIT_2025;
+
+  // Compute plan costs
+  const planResults = plans.map(plan => {
+    const cost = calcPlanCost(plan, expectedSpend, coverageType);
+    return { plan, cost };
+  });
+
+  // Find best plan (lowest net cost)
+  let bestIdx = 0;
+  planResults.forEach((r, i) => {
+    if (r.cost.netCost < planResults[bestIdx].cost.netCost) bestIdx = i;
+  });
+
+  // Tax savings
+  const taxSavings = calcTaxSavings(accountType, employeeContrib, marginalRate);
+
+  // 401k match
+  const matchResult = calcMatch(annualSalary, contribPct, matchRate, matchCap, irsLimit);
+
+  // Total annual health savings (net cost of worst - net cost of best, if >1 plan)
+  const planSavings = planResults.length > 1
+    ? Math.max(...planResults.map(r => r.cost.netCost)) - planResults[bestIdx].cost.netCost
+    : 0;
+
+  // Render everything
+  renderSummaryCards(planResults, bestIdx, taxSavings, matchResult, planSavings);
+  renderPlanTable(planResults, bestIdx);
+  renderHSABlock(taxSavings, accountType, employeeContrib, employerHSAGlobal, fsaCarryover, marginalRate);
+  renderMatchBlock(matchResult, annualSalary, contribPct);
+
+  // Store results for export
+  window._lastResult = {
+    plans: planResults, bestIdx, taxSavings, matchResult,
+    inputs: { coverageType, expectedSpend, marginalRate, accountType, employeeContrib, employerHSAGlobal, annualSalary, contribPct, matchRate, matchCap, irsLimit }
+  };
+
+  document.getElementById('results-panel').style.display = 'block';
+  document.getElementById('results-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── RENDER: SUMMARY CARDS ─────────────────────────────────── */
+function renderSummaryCards(planResults, bestIdx, taxSavings, matchResult, planSavings) {
+  const best = planResults[bestIdx];
+  const cards = [
+    {
+      label: 'Best Plan',
+      value: best.plan.name,
+      sub: `Net cost: ${fmt$(best.cost.netCost)}/yr`,
+      cls: ''
+    },
+    {
+      label: 'Lowest Net Annual Cost',
+      value: fmt$(best.cost.netCost),
+      sub: `${fmt$(best.cost.annualPremium)} premium + ${fmt$(best.cost.expectedOOP)} est. OOP`,
+      cls: 'good'
+    },
+    {
+      label: 'HSA/FSA Tax Savings',
+      value: taxSavings.accountType === 'none' ? '—' : fmt$(taxSavings.totalSavings),
+      sub: taxSavings.totalSavings > 0 ? `Federal + FICA on $${(+document.getElementById('contrib-amount').value||0).toLocaleString()}` : 'No account elected',
+      cls: taxSavings.totalSavings > 0 ? 'good' : ''
+    },
+    {
+      label: '401(k) Match Captured',
+      value: matchResult.maxPossibleMatch > 0 ? Math.round(matchResult.captureRate) + '%' : 'N/A',
+      sub: matchResult.leaveOnTable > 0 ? `${fmt$(matchResult.leaveOnTable)}/yr left on table` : 'Full match captured',
+      cls: matchResult.captureRate >= 100 ? 'good' : matchResult.captureRate >= 50 ? 'warn' : 'bad'
+    },
+    {
+      label: 'Plan Savings vs. Worst Option',
+      value: planResults.length > 1 ? fmt$(planSavings) : '—',
+      sub: planResults.length > 1 ? 'Picking the best vs. worst plan' : 'Add more plans to compare',
+      cls: planSavings > 500 ? 'good' : ''
+    },
+    {
+      label: 'Total Estimated Savings',
+      value: fmt$(taxSavings.totalSavings + Math.max(0, matchResult.matchReceived) + planSavings),
+      sub: 'Plan optimization + tax + match',
+      cls: 'good'
+    }
+  ];
+  document.getElementById('summary-cards').innerHTML = cards.map(c => `
+    <div class="summary-card">
+      <div class="sc-label">${c.label}</div>
+      <div class="sc-value ${c.cls}">${c.value}</div>
+      <div class="sc-sub">${c.sub}</div>
+    </div>`).join('');
+}
+
+/* ── RENDER: PLAN TABLE ────────────────────────────────────── */
+function renderPlanTable(planResults, bestIdx) {
+  const planNames = planResults.map(r => r.plan.name);
+  const rows = [
+    { label: 'Plan Type', vals: planResults.map(r => r.plan.type.toUpperCase()) },
+    { label: 'Monthly Premium', vals: planResults.map(r => fmt$(r.plan.monthly_premium)) },
+    { label: 'Annual Premium', vals: planResults.map(r => fmt$(r.plan.monthly_premium * 12)) },
+    { label: 'Deductible (Individual)', vals: planResults.map(r => fmt$(r.plan.ded_ind)) },
+    { label: 'OOP Maximum (Individual)', vals: planResults.map(r => fmt$(r.plan.oop_ind)) },
+    { label: 'Coinsurance (Your Share)', vals: planResults.map(r => r.plan.coinsurance + '%') },
+    { label: 'Employer HSA/HRA Seed', vals: planResults.map(r => r.plan.employer_hsa > 0 ? fmt$(r.plan.employer_hsa) : '—') },
+    { label: 'Est. Out-of-Pocket', vals: planResults.map(r => fmt$(r.cost.expectedOOP)) },
+    { label: 'Gross Annual Cost', vals: planResults.map(r => fmt$(r.cost.grossCost)) },
+    { label: 'Net Annual Cost', vals: planResults.map(r => fmt$(r.cost.netCost)), highlight: true }
+  ];
+
+  const colHeaders = planNames.map((n, i) =>
+    `<th>${n}${i === bestIdx ? '<span class="badge-best">Best</span>' : ''}</th>`
+  ).join('');
+
+  const tableRows = rows.map(row => {
+    const cells = planResults.map((r, i) => {
+      const isBest = i === bestIdx && row.highlight;
+      const cls = row.highlight ? (i === bestIdx ? 'val-good' : 'val-mono') : 'val-mono';
+      return `<td class="${cls}">${row.vals[i]}</td>`;
+    }).join('');
+    const trClass = row.highlight ? 'style="font-weight:600;"' : '';
+    return `<tr ${trClass}><td class="row-label">${row.label}</td>${cells}</tr>`;
+  }).join('');
+
+  document.getElementById('plan-comparison-table').innerHTML = `
+    <thead><tr><th></th>${colHeaders}</tr></thead>
+    <tbody>${tableRows}</tbody>`;
+}
+
+/* ── RENDER: HSA/FSA BLOCK ─────────────────────────────────── */
+function renderHSABlock(ts, accountType, employeeContrib, employerHSA, fsaCarryover, marginalRate) {
+  const isHSA = accountType.startsWith('hsa');
+  const isFSA = accountType === 'fsa';
+  const isNone = accountType === 'none';
+
+  let html = '';
+  if (isNone) {
+    html = `<p class="text-muted" style="font-size:.85rem;">No HSA/FSA elected. Consider a tax-advantaged account to reduce your effective medical spend.</p>`;
+  } else {
+    const totalPool = isHSA ? employeeContrib + employerHSA : employeeContrib;
+    const effectiveCostPerDollar = 1 - (ts.federalSavings + ts.ficaSavings) / Math.max(employeeContrib, 1);
+    html = `
+      <div class="hsa-grid">
+        <div class="hsa-item"><span class="hsa-item-label">${isHSA ? 'Your HSA Contribution' : 'Your FSA Contribution'}</span><span class="hsa-item-val">${fmt$(employeeContrib)}</span></div>
+        ${isHSA && employerHSA > 0 ? `<div class="hsa-item"><span class="hsa-item-label">Employer Seed</span><span class="hsa-item-val">${fmt$(employerHSA)}</span></div>` : ''}
+        ${isHSA ? `<div class="hsa-item"><span class="hsa-item-label">Total Account Pool</span><span class="hsa-item-val">${fmt$(totalPool)}</span></div>` : ''}
+        <div class="hsa-item"><span class="hsa-item-label">Federal Tax Savings</span><span class="hsa-item-val text-good">${fmt$(ts.federalSavings)}</span></div>
+        ${isHSA ? `<div class="hsa-item"><span class="hsa-item-label">FICA Savings (7.65%)</span><span class="hsa-item-val text-good">${fmt$(ts.ficaSavings)}</span></div>` : ''}
+        <div class="hsa-item"><span class="hsa-item-label">Total Tax Savings</span><span class="hsa-item-val text-good">${fmt$(ts.totalSavings)}</span></div>
+        <div class="hsa-item"><span class="hsa-item-label">Effective Cost Per Dollar</span><span class="hsa-item-val">${(effectiveCostPerDollar * 100).toFixed(1)}¢</span></div>
+        ${isFSA ? `<div class="hsa-item"><span class="hsa-item-label">FSA Carryover Limit</span><span class="hsa-item-val">${fmt$(fsaCarryover)}</span></div>` : ''}
+        ${isFSA ? `<div class="hsa-item"><span class="hsa-item-label">At-Risk Balance</span><span class="hsa-item-val ${employeeContrib - fsaCarryover > 0 ? 'sc-value warn' : ''}">${fmt$(Math.max(0, employeeContrib - fsaCarryover))}</span></div>` : ''}
+      </div>
+      <p style="font-size:.72rem;color:var(--muted);margin-top:.75rem;">${ts.note} Assumes payroll deduction via employer cafeteria plan (Section 125). At ${marginalRate}% combined marginal rate.</p>
+    `;
+  }
+  document.getElementById('hsa-result-block').innerHTML = html;
+}
+
+/* ── RENDER: 401K MATCH BLOCK ──────────────────────────────── */
+function renderMatchBlock(mr, salary, contribPct) {
+  const captureInt = Math.round(mr.captureRate);
+  const barClass = mr.captureRate >= 100 ? '' : mr.captureRate >= 50 ? 'warn' : 'bad';
+  const barWidth = Math.min(100, mr.captureRate);
+
+  let html = `
+    <div class="hsa-grid" style="margin-bottom:.75rem;">
+      <div class="hsa-item"><span class="hsa-item-label">Your Annual Contribution</span><span class="hsa-item-val">${fmt$(mr.employeeContrib)}</span></div>
+      <div class="hsa-item"><span class="hsa-item-label">Match Received</span><span class="hsa-item-val text-good">${fmt$(mr.matchReceived)}</span></div>
+      <div class="hsa-item"><span class="hsa-item-label">Max Possible Match</span><span class="hsa-item-val">${fmt$(mr.maxPossibleMatch)}</span></div>
+      <div class="hsa-item"><span class="hsa-item-label">Left on Table</span><span class="hsa-item-val ${mr.leaveOnTable > 0 ? 'sc-value bad' : 'sc-value good'}">${mr.leaveOnTable > 0 ? fmt$(mr.leaveOnTable) : '$0 ✓'}</span></div>
+    </div>
+    <div class="match-bar-wrap">
+      <div class="match-bar-label"><span>Match Capture Rate</span><span>${captureInt}%</span></div>
+      <div class="match-bar"><div class="match-bar-fill ${barClass}" style="width:${barWidth}%"></div></div>
+    </div>`;
+
+  if (mr.leaveOnTable > 0) {
+    const neededPct = mr.minContribPct;
+    html += `<p style="font-size:.78rem;color:var(--amber);margin-top:.5rem;">⚠ To capture the full match, contribute at least ${neededPct}% of salary (${fmt$(mr.matchableThreshold)}/yr). You're currently contributing ${contribPct}%.</p>`;
+  } else if (mr.maxPossibleMatch === 0) {
+    html += `<p style="font-size:.78rem;color:var(--muted);margin-top:.5rem;">No employer match formula entered — set match rate and match cap to see your match opportunity.</p>`;
+  } else {
+    html += `<p style="font-size:.78rem;color:var(--green);margin-top:.5rem;">✓ You're on track to capture your full employer match of ${fmt$(mr.maxPossibleMatch)}/yr.</p>`;
+  }
+
+  if (mr.isCapacityLimited) {
+    html += `<p style="font-size:.72rem;color:var(--muted);margin-top:.35rem;">Note: Your contribution exceeds the IRS annual limit — limited to $${document.getElementById('irs-401k-limit').value} for match calculation.</p>`;
+  }
+
+  document.getElementById('match-result-block').innerHTML = html;
+}
+
+/* ── AP2 SCHEMA ────────────────────────────────────────────── */
+const AP2Schema = {
+  version: '1.0',
+  validMandateTypes: [
+    'offer_negotiation_record','career_transition_record','scholarship_pipeline_plan',
+    'fafsa_sai_estimate','benefits_election_record','graduate_school_roi_record',
+    'credential_roi_evaluation','human_capital_assessment','automation_exposure_score',
+    'career_resilience_score','workforce_program_roi','career_pivot_assessment',
+    'exam_pathway_plan','severance_decision_record','apprenticeship_match_record',
+    'cpd_credit_record','human_capital_assessment_reserved','career_break_record_reserved',
+    'job_search_roi_record','career_break_record',
+    'loan_repayment_record','freelance_total_cost_record',
+    'mba_roi_evaluation','test_prep_roi_record',
+    'international_student_cost_record','parent_college_roi_record',
+    'equity_compensation_record'
+  ],
+  required: ['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version',
+             'al_id','mandate_type','payload','summary','audit_metadata'],
+  validate(mandate) {
+    const errors = [];
+    this.required.forEach(f => { if (mandate[f] === undefined) errors.push(`Missing required field: ${f}`); });
+    if (mandate.mandate_type && !this.validMandateTypes.includes(mandate.mandate_type))
+      errors.push(`mandate_type "${mandate.mandate_type}" is not recognized`);
+    if (mandate.ap2_version && mandate.ap2_version !== '1.0')
+      errors.push(`ap2_version must be "1.0"`);
+    return errors;
+  }
+};
+
+/* ── EXPORT: AP2 JSON ──────────────────────────────────────── */
+function buildAP2Mandate() {
+  const r = window._lastResult;
+  if (!r) return null;
+
+  const best = r.planResults ? r.planResults[r.bestIdx] : r.plans[r.bestIdx];
+  const bp = best.plan;
+  const bc = best.cost;
+
+  const mandate = {
+    ap2_version: '1.0',
+    mandate_id: genUUID(),
+    issued_at: new Date().toISOString(),
+    issued_by: 'apex-logics-al-23',
+    tool_id: 'benefits-open-enrollment-optimizer',
+    tool_version: '1.0.0',
+    al_id: 'AL-23',
+    mandate_type: 'benefits_election_record',
+    payload: {
+      recommended_plan: {
+        name: bp.name,
+        type: bp.type,
+        monthly_premium: bp.monthly_premium,
+        deductible_individual: bp.ded_ind,
+        oop_max_individual: bp.oop_ind,
+        coinsurance_pct: bp.coinsurance,
+        employer_hsa_seed: bp.employer_hsa,
+        net_annual_cost: Math.round(bc.netCost)
+      },
+      all_plans: r.plans.map(pr => ({
+        name: pr.plan.name,
+        type: pr.plan.type,
+        net_annual_cost: Math.round(pr.cost.netCost)
+      })),
+      hsa_fsa: {
+        account_type: r.inputs.accountType,
+        employee_contribution: r.inputs.employeeContrib,
+        employer_contribution: r.inputs.employerHSAGlobal,
+        total_tax_savings: Math.round(r.taxSavings.totalSavings),
+        federal_tax_savings: Math.round(r.taxSavings.federalSavings),
+        fica_savings: Math.round(r.taxSavings.ficaSavings)
+      },
+      retirement: {
+        annual_salary: r.inputs.annualSalary,
+        contrib_pct: r.inputs.contribPct,
+        match_received: Math.round(r.matchResult.matchReceived),
+        max_possible_match: Math.round(r.matchResult.maxPossibleMatch),
+        leave_on_table: Math.round(r.matchResult.leaveOnTable),
+        capture_rate_pct: Math.round(r.matchResult.captureRate)
+      },
+      assumptions: {
+        coverage_type: r.inputs.coverageType,
+        expected_annual_spend: r.inputs.expectedSpend,
+        marginal_tax_rate_pct: r.inputs.marginalRate
+      }
+    },
+    summary: buildSummaryText(r),
+    audit_metadata: {
+      tool_url: 'https://apexlogics.org/tools/benefits-open-enrollment-optimizer/',
+      data_vintage: '2025 (IRS Rev. Proc. 2024-25)',
+      generated_at: new Date().toISOString(),
+      deterministic: true,
+      zero_pii: true
+    }
+  };
+
+  const errors = AP2Schema.validate(mandate);
+  if (errors.length > 0) {
+    console.error('AP2 validation errors:', errors);
+    return null;
+  }
+  return mandate;
+}
+
+function buildSummaryText(r) {
+  const best = r.plans[r.bestIdx];
+  const lines = [`Recommended health plan: ${best.plan.name} (net annual cost: ${fmt$(best.cost.netCost)}).`];
+  if (r.taxSavings.totalSavings > 0) {
+    lines.push(`HSA/FSA election (${r.inputs.accountType.replace('_',' ')}): $${r.inputs.employeeContrib.toLocaleString()} contribution yields ${fmt$(r.taxSavings.totalSavings)} in tax savings.`);
+  }
+  if (r.matchResult.maxPossibleMatch > 0) {
+    if (r.matchResult.leaveOnTable > 0) {
+      lines.push(`401(k): Currently leaving ${fmt$(r.matchResult.leaveOnTable)}/yr in employer match on the table. Increase contribution to ${r.matchResult.minContribPct}% to capture full ${fmt$(r.matchResult.maxPossibleMatch)} match.`);
+    } else {
+      lines.push(`401(k): Full employer match of ${fmt$(r.matchResult.maxPossibleMatch)}/yr captured.`);
+    }
+  }
+  return lines.join(' ');
+}
+
+function exportAP2() {
+  if (!window._lastResult) { alert('Run the analysis first.'); return; }
+  const mandate = buildAP2Mandate();
+  if (!mandate) { alert('AP2 validation failed — check console for details.'); return; }
+  downloadFile(
+    'AL23_benefits_election_record_' + dateStamp() + '.ap2.json',
+    JSON.stringify(mandate, null, 2),
+    'application/json'
+  );
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────── */
+function exportMarkdown() {
+  if (!window._lastResult) { alert('Run the analysis first.'); return; }
+  const r = window._lastResult;
+  const best = r.plans[r.bestIdx];
+  const lines = [
+    '# Benefits Open Enrollment Analysis',
+    `*Generated by Apex Logics AL-23 · ${new Date().toLocaleDateString()}*`,
+    '',
+    '## Health Plan Recommendation',
+    '',
+    `**Best Plan: ${best.plan.name}** (${best.plan.type.toUpperCase()})`,
+    '',
+    `| Metric | Value |`,
+    `|---|---|`,
+    `| Monthly Premium (Employee) | ${fmt$(best.plan.monthly_premium)} |`,
+    `| Annual Premium | ${fmt$(best.plan.monthly_premium * 12)} |`,
+    `| Deductible (Individual) | ${fmt$(best.plan.ded_ind)} |`,
+    `| Out-of-Pocket Maximum | ${fmt$(best.plan.oop_ind)} |`,
+    `| Coinsurance | ${best.plan.coinsurance}% |`,
+    `| Estimated OOP at Expected Spend | ${fmt$(best.cost.expectedOOP)} |`,
+    `| **Net Annual Cost** | **${fmt$(best.cost.netCost)}** |`,
+    '',
+    '## All Plans Compared',
+    '',
+    `| Plan | Net Annual Cost | Monthly Premium | Deductible |`,
+    `|---|---|---|---|`,
+    ...r.plans.map((pr, i) =>
+      `| ${pr.plan.name}${i === r.bestIdx ? ' ✓' : ''} | ${fmt$(pr.cost.netCost)} | ${fmt$(pr.plan.monthly_premium)} | ${fmt$(pr.plan.ded_ind)} |`
+    ),
+    '',
+    '## HSA / FSA Analysis',
+    '',
+    `| Item | Value |`,
+    `|---|---|`,
+    `| Account Type | ${r.inputs.accountType.replace(/_/g,' ')} |`,
+    `| Employee Contribution | ${fmt$(r.inputs.employeeContrib)} |`,
+    `| Employer Seed | ${fmt$(r.inputs.employerHSAGlobal)} |`,
+    `| Federal Tax Savings | ${fmt$(r.taxSavings.federalSavings)} |`,
+    `| FICA Savings | ${fmt$(r.taxSavings.ficaSavings)} |`,
+    `| **Total Tax Savings** | **${fmt$(r.taxSavings.totalSavings)}** |`,
+    '',
+    '## 401(k) Match Analysis',
+    '',
+    `| Item | Value |`,
+    `|---|---|`,
+    `| Annual Salary | ${fmt$(r.inputs.annualSalary)} |`,
+    `| Your Contribution | ${r.inputs.contribPct}% (${fmt$(r.matchResult.employeeContrib)}) |`,
+    `| Match Received | ${fmt$(r.matchResult.matchReceived)} |`,
+    `| Max Possible Match | ${fmt$(r.matchResult.maxPossibleMatch)} |`,
+    `| Left on Table | ${fmt$(r.matchResult.leaveOnTable)} |`,
+    `| Match Capture Rate | ${Math.round(r.matchResult.captureRate)}% |`,
+    '',
+    '---',
+    '*Apex Logics AL-23 · apexlogics.org · CC BY 4.0 · Zero PII · Browser-only*',
+    '*2025 IRS limits embedded as defaults — verify annually at IRS.gov*'
+  ];
+  downloadFile(
+    'AL23_benefits_analysis_' + dateStamp() + '.md',
+    lines.join('\n'),
+    'text/markdown'
+  );
+}
+
+/* ── MCP TOGGLE ────────────────────────────────────────────── */
+function toggleMcp(btn) {
+  const body = document.getElementById('mcp-body');
+  const isOpen = body.classList.toggle('open');
+  btn.querySelector('span:last-child').textContent = isOpen ? '▾' : '▸';
+}
+
+/* ── RESET ─────────────────────────────────────────────────── */
+function resetAll() {
+  if (!confirm('Reset all inputs?')) return;
+  document.getElementById('plan-cards').innerHTML = '';
+  planCount = 0;
+  updateAddButton();
+  document.getElementById('results-panel').style.display = 'none';
+  window._lastResult = null;
+}
+
+/* ── HELP ──────────────────────────────────────────────────── */
+function showHelp() {
+  alert(
+    'Export formats:\n\n' +
+    '• Markdown — Human-readable analysis for notes, email, or documentation.\n' +
+    '• AP2 JSON — Structured machine-readable record for AI agent workflows (Google Agent Purchase Protocol v1.0).\n\n' +
+    'AP2 records can be imported into other Apex Logics tools via the AP2 button or ?ap2= URL parameter.'
+  );
+}
+
+/* ── UTILS ─────────────────────────────────────────────────── */
+function fmt$(n) {
+  if (n == null || isNaN(n)) return '—';
+  return '$' + Math.round(n).toLocaleString();
+}
+
+function dateStamp() {
+  return new Date().toISOString().slice(0, 10).replace(/-/g, '');
+}
+
+function genUUID() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
+function downloadFile(filename, content, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ── INIT ──────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  const savedLang = sessionStorage.getItem('apex_lang') || 'en';
+  setLang(savedLang);
+  // Add 2 starter plans by default
+  addPlan();
+  addPlan();
+});
+</script>
+</body>
+</html>

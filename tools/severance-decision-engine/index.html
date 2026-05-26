@@ -1,0 +1,1937 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Separation Package Analyzer — Apex Logics AL-24</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN TOKENS — Apex Logics Contract v1.1 §8 Appendix A
+   Category: Career Transition & Mobility → accent: --lavender
+   ============================================================ */
+:root {
+  --bg:#0b0e14;
+  --bg-2:      #0C1220;
+  --bg-3:      #111A2E;
+  --bg-4:      #162238;
+  --border:#232b3e;
+  --border-2:#2e3a52;
+  --muted:#6b7a99;
+  --body:#c8d0e0;
+  --text:      #A8C4DE;
+  --bright:    #D4E8F8;
+  --white:     #EEF6FD;
+  --amber:     #E8A838;
+  --amber-dim: rgba(232,168,56,.10);
+  --teal:      #14B8A6;
+  --teal-dim:  rgba(20,184,166,.10);
+  --teal-lt:   #2DD4BF;
+  --amber-lt:  #F0BD5E;
+  --coral:     #F07167;
+  --coral-dim: rgba(240,113,103,.10);
+  --lavender:  #A78BFA; /* primary accent — Career Transition & Mobility */
+  --lavender-dim: rgba(167,139,250,.10);
+  --lavender-glow: rgba(167,139,250,.06);
+  --green:     #34D399;
+  --green-dim: rgba(52,211,153,.10);
+  --blue:      #60A5FA;
+  --blue-dim:  rgba(96,165,250,.10);
+  --red:       #F87171;
+  --red-dim:   rgba(248,113,113,.10);
+  --warn:      #FBBF24;
+  --radius:    6px;
+  --radius-lg: 10px;
+  --shadow:    0 4px 24px rgba(0,0,0,.45);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Sora', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size:.875rem;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   LANG BAR — CONTRACT §1.1 — <button> required (not <a>)
+   ============================================================ */
+.lang-bar {
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  padding: .5rem 0;
+}
+.lang-inner { max-width:1024px; margin:0 auto; padding:0 24px; display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; }
+.lang-btn {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--muted);
+  font-family:'JetBrains Mono',monospace;
+  font-size:.6rem;
+  padding:.25rem .55rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all .15s ease;
+  letter-spacing:.06em;
+}
+.lang-btn:hover { color: var(--amber); border-color: var(--amber); }
+.lang-btn.active {
+  color: var(--amber);
+  border-color: var(--amber);
+  background: var(--amber-dim);
+}
+.lang-btn:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+/* ════════════════════════ NAV ════════════════════════ */
+nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(7,11,20,.92); backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.nav-inner {
+  max-width:1024px; margin:0 auto;
+  display:flex; align-items:center; gap:16px;
+  padding:0 24px; height:58px;
+}
+.logo { display:flex; align-items:center; gap:10px; flex-shrink:0; text-decoration:none; }
+.logo-mark { width:32px; height:32px; flex-shrink:0; }
+.logo-mark svg { width:100%; height:100%; }
+.logo-text { display:flex; flex-direction:column; gap:2px; }
+.logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--bright); letter-spacing:-.02em; line-height:1; }
+.logo-apex { color:var(--amber); }
+.logo-org { color:var(--muted); font-size:.8rem; }
+.logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-family:'JetBrains Mono',monospace; line-height:1; }
+.nav-right { display:flex; align-items:center; gap:8px; margin-left:auto; flex-shrink:0; }
+.nav-pill {
+  background:none; border:1px solid var(--border-2); border-radius:var(--radius);
+  color:var(--body); font-size:.62rem; padding:.3rem .65rem;
+  font-family:'JetBrains Mono',monospace; letter-spacing:.04em;
+  transition:border-color .15s, color .15s;
+}
+.nav-pill:hover { border-color:var(--teal); color:var(--text); }
+@media (max-width:600px) { .logo-tag, .nav-pill { display:none; } }
+
+/* ============================================================
+   TOOL HEADER
+   ============================================================ */
+.tool-header {
+  padding: 32px 24px 20px;
+  max-width: 1024px;
+  margin: 0 auto;
+}
+.tool-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  color: var(--white);
+  letter-spacing: .01em;
+  margin-bottom: 6px;
+}
+.tool-subtitle {
+  font-size: 14px;
+  color: var(--body);
+  margin-bottom: 10px;
+}
+.tool-vintage-banner {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--teal);
+  background: var(--teal-dim);
+  border: 1px solid rgba(20,184,166,.25);
+  border-radius: var(--radius);
+  padding: 3px 10px;
+}
+
+/* ============================================================
+   PII BANNER — CONTRACT §1.3 — exact text required
+   ============================================================ */
+.pii-notice {
+  max-width: 1024px;
+  margin: 0 auto 12px;
+  padding: 0 24px;
+}
+.pii-notice-inner {
+  background: rgba(20,184,166,.07);
+  border: 1px solid rgba(20,184,166,.25);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--teal);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* ============================================================
+   LEGAL DISCLAIMER — always visible, not dismissible
+   ============================================================ */
+.legal-disclaimer {
+  max-width: 1024px;
+  margin: 0 auto 20px;
+  padding: 0 24px;
+}
+.legal-disclaimer-inner {
+  background: var(--amber-dim);
+  border: 1px solid rgba(232,168,56,.25);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--amber);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.legal-disclaimer-inner .disc-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ============================================================
+   MAIN LAYOUT
+   ============================================================ */
+.main-wrap {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 0 24px 40px;
+}
+
+/* Two-column input layout */
+.input-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+@media (max-width: 768px) {
+  .input-grid { grid-template-columns: 1fr; }
+}
+
+/* Input panel card */
+.panel {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+}
+.panel-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--teal);
+  margin-bottom: 18px;
+}
+
+.panel-row {
+  margin-bottom: 16px;
+}
+.panel-row:last-child { margin-bottom: 0; }
+
+.panel-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--bright);
+  margin-bottom: 5px;
+}
+.field-hint {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.field-input {
+  width: 100%;
+  background: var(--bg-3);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  color: var(--white);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color .15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.field-input:focus { border-color: var(--teal); }
+.field-input:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(20,184,166,.25); }
+select.field-input { cursor: pointer; }
+select.field-input option { background: var(--bg-3); }
+
+/* ============================================================
+   PREVIEW CARD — right column, real-time
+   ============================================================ */
+.preview-card {
+  background: var(--bg-3);
+  border: 1px solid var(--teal);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  position: sticky;
+  top: 20px;
+}
+.preview-card-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--teal);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.preview-card-title::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--teal);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.preview-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.preview-row:last-child { border-bottom: none; }
+.preview-row-label { color: var(--body); font-size: 12px; }
+.preview-row-val {
+  color: var(--bright);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: right;
+  max-width: 180px;
+  word-break: break-word;
+}
+.preview-row-val.gross {
+  color: var(--teal);
+  font-size: 16px;
+  font-weight: 600;
+}
+.preview-empty {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+  padding: 20px 0;
+  font-style: italic;
+}
+
+/* ============================================================
+   RUN BUTTON
+   ============================================================ */
+.run-row {
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.run-btn {
+  background: var(--teal);
+  color: var(--bg);
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 32px;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all .15s;
+  letter-spacing: .02em;
+}
+.run-btn:hover { background: var(--teal-lt); }
+.run-btn:active { transform: scale(.98); }
+.run-btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+.run-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ============================================================
+   RESULTS PANEL
+   ============================================================ */
+.results-panel {
+  display: none;
+}
+.results-panel.visible { display: block; }
+
+.results-section {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  margin-bottom: 20px;
+}
+.results-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--teal);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* KPI grid */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+.kpi-card {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.kpi-card.highlight {
+  background: var(--teal-dim);
+  border-color: var(--teal);
+}
+.kpi-label {
+  font-size: 11px;
+  color: var(--body);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 6px;
+}
+.kpi-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--bright);
+}
+.kpi-card.highlight .kpi-value { color: var(--teal); font-size: 22px; }
+.kpi-note { font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+/* Tax detail table */
+.tax-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.tax-table th {
+  text-align: left;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.tax-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: top;
+}
+.tax-table tr:last-child td { border-bottom: none; }
+.tax-table td.amount {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--bright);
+  text-align: right;
+  white-space: nowrap;
+}
+.tax-table td.cite {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+.tax-table tr.total-row td {
+  border-top: 2px solid var(--teal);
+  font-weight: 600;
+  color: var(--teal);
+  padding-top: 12px;
+}
+.tax-table tr.total-row td.amount {
+  color: var(--teal);
+}
+
+/* Runway */
+.runway-display {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.runway-months {
+  font-family: 'DM Serif Display', serif;
+  font-size: 48px;
+  color: var(--teal);
+  line-height: 1;
+}
+.runway-label { font-size: 14px; color: var(--body); }
+.runway-detail { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.runway-bar-wrap {
+  flex: 1;
+  min-width: 200px;
+}
+.runway-bar-bg {
+  background: var(--border);
+  border-radius: 4px;
+  height: 8px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.runway-bar-fill {
+  height: 100%;
+  background: var(--teal);
+  border-radius: 4px;
+  transition: width .6s ease;
+}
+.runway-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+.runway-warning {
+  background: var(--red-dim);
+  border: 1px solid rgba(248,113,113,.3);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--red);
+  margin-top: 12px;
+}
+.runway-ok {
+  background: var(--green-dim);
+  border: 1px solid rgba(52,211,153,.3);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--green);
+  margin-top: 12px;
+}
+
+/* ============================================================
+   EXPORT ROW — CONTRACT §3.3 §4: Markdown first, AP2 second
+   ============================================================ */
+.results-export-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.btn {
+  font-family: 'Sora', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: all .15s;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+}
+.btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.btn-ghost {
+  background: var(--bg-3);
+  border: 1px solid var(--border-2);
+  color: var(--text);
+  padding: 9px 16px;
+}
+.btn-ghost:hover:not(:disabled) {
+  border-color: var(--teal);
+  color: var(--teal);
+  background: var(--teal-dim);
+}
+.btn-ghost:disabled {
+  opacity: .28;
+  cursor: not-allowed;
+}
+.btn-ghost.ready {
+  border-color: rgba(20,184,166,.4);
+  color: var(--teal);
+}
+.btn-subtitle {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.btn-help {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 9px 12px;
+  font-size: 13px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all .15s;
+  flex-direction: row;
+}
+.btn-help:hover { color: var(--teal); border-color: var(--teal); }
+.btn-sm { padding: 9px 14px; }
+
+/* ============================================================
+   MCP PANEL
+   ============================================================ */
+.mcp-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: 'Sora', sans-serif;
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.mcp-toggle:hover { color: var(--teal); border-color: var(--teal); }
+.mcp-toggle:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.mcp-panel {
+  display: none;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--body);
+  overflow-x: auto;
+  white-space: pre;
+  line-height: 1.6;
+}
+.mcp-panel.open { display: block; }
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+.toast-wrap {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  background: var(--bg-3);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--text);
+  max-width: 360px;
+  pointer-events: all;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all .2s;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.error { border-color: var(--red); color: var(--red); }
+.toast.success { border-color: var(--teal); color: var(--teal); }
+
+/* ============================================================
+   POPOVER
+   ============================================================ */
+.popover-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(7,11,20,.7);
+  z-index: 9998;
+  align-items: center;
+  justify-content: center;
+}
+.popover-overlay.open { display: flex; }
+.popover-box {
+  background: var(--bg-3);
+  border: 1px solid var(--teal);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  max-width: 420px;
+  width: 90%;
+}
+.popover-box h4 {
+  color: var(--teal);
+  font-family: 'DM Serif Display', serif;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+.popover-box p {
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+.popover-box a { color: var(--teal); }
+.popover-close {
+  background: none;
+  border: 1px solid var(--border-2);
+  color: var(--body);
+  font-family: 'Sora', sans-serif;
+  font-size: 12px;
+  padding: 7px 16px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all .15s;
+}
+.popover-close:hover { border-color: var(--teal); color: var(--teal); }
+
+/* ============================================================
+   FOOTER — CONTRACT §6.2
+   ============================================================ */
+.tool-footer {
+  text-align: center;
+  padding: 24px;
+  font-size: 11px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  line-height: 1.8;
+  max-width: 1024px;
+  margin: 0 auto;
+}
+.tool-footer a { color: var(--teal); text-decoration: none; }
+.tool-footer a:hover { text-decoration: underline; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 600px) {
+  .tool-title { font-size: 22px; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .main-wrap { padding: 0 16px 40px; }
+  .tool-header { padding: 20px 16px 16px; }
+  .pii-notice, .legal-disclaimer { padding: 0 16px; }
+}
+
+/* RTL support for Arabic */
+[dir="rtl"] .nav-right { flex-direction: row-reverse; }
+[dir="rtl"] .preview-row { flex-direction: row-reverse; }
+[dir="rtl"] .tax-table th,
+[dir="rtl"] .tax-table td { text-align: right; }
+[dir="rtl"] .tax-table td.amount { text-align: left; }
+[dir="rtl"] .results-export-row { flex-direction: row-reverse; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     LANG BAR — CONTRACT §1.1 — buttons only, apex_lang key
+     ============================================================ -->
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')" data-lang="en">EN</button>
+    <button class="lang-btn" onclick="setLang('es')" data-lang="es">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')" data-lang="fr">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')" data-lang="ar">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')" data-lang="pt">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')" data-lang="zh">中文</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     NAV ROW — relative internal path, absolute external paths
+     ============================================================ -->
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-right">
+      <a href="https://apexadvisory.site" class="nav-pill" target="_blank" rel="noopener">ApexAdvisory.site</a>
+      <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============================================================
+     TOOL HEADER
+     ============================================================ -->
+<header class="tool-header">
+  <div class="tool-num" style="font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin-bottom:8px;">AL · 24 · Career Transition &amp; Mobility</div>
+  <h1 class="tool-title" data-i18n="tool_title">Separation Package Analyzer</h1>
+  <p class="tool-subtitle" data-i18n="tool_subtitle">Model the after-tax value of your separation package offer</p>
+  <span class="tool-vintage-banner">Tax model: IRS Publication 15-T (2024) · User-entered state rate</span>
+</header>
+
+<!-- ============================================================
+     PII BANNER — CONTRACT §1.3 — exact text required
+     ============================================================ -->
+<div class="pii-notice" role="note" aria-label="Privacy notice">
+  <div class="pii-notice-inner">
+    <span>🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+  </div>
+</div>
+
+<!-- ============================================================
+     LEGAL DISCLAIMER — always visible, inline, not dismissible
+     ============================================================ -->
+<div class="legal-disclaimer" role="note" aria-label="Legal disclaimer">
+  <div class="legal-disclaimer-inner">
+    <span class="disc-icon">⚠️</span>
+    <span>This tool provides estimates for planning purposes only and does not constitute legal, tax, or financial advice. Consult an employment attorney and a tax professional before accepting any separation agreement.</span>
+  </div>
+</div>
+
+<!-- ============================================================
+     MAIN CONTENT
+     ============================================================ -->
+<main class="main-wrap">
+
+  <!-- ---- INPUT GRID: left inputs + right preview card ---- -->
+  <div class="input-grid">
+
+    <!-- LEFT: input panel -->
+    <div class="panel" aria-label="Package inputs">
+      <div class="panel-title" data-i18n="panel_inputs_title">Package Details</div>
+
+      <!-- 1. Package structure -->
+      <div class="panel-row">
+        <label class="panel-label" for="paymentType" data-i18n="lbl_payment_type">Payment Structure</label>
+        <select class="field-input" id="paymentType" oninput="updatePreview()" onchange="updatePreview()">
+          <option value="lump_sum">Lump Sum Payment</option>
+          <option value="salary_continuation">Salary Continuation</option>
+        </select>
+        <span class="field-hint" data-i18n="hint_payment_type">How the package will be paid out affects withholding method</span>
+      </div>
+
+      <!-- 2. Gross package amount -->
+      <div class="panel-row">
+        <label class="panel-label" for="grossPackage" data-i18n="lbl_gross">Gross Separation Package Amount (USD)</label>
+        <input class="field-input" type="number" id="grossPackage" min="0" step="1000"
+          placeholder="e.g. 60000" oninput="updatePreview()" aria-describedby="grossHint">
+        <span class="field-hint" id="grossHint" data-i18n="hint_gross">Total payout before taxes</span>
+      </div>
+
+      <!-- 3. Current annual base salary -->
+      <div class="panel-row">
+        <label class="panel-label" for="currentSalary" data-i18n="lbl_salary">Current Annual Base Salary (USD)</label>
+        <input class="field-input" type="number" id="currentSalary" min="0" step="1000"
+          placeholder="e.g. 95000" oninput="updatePreview()" aria-describedby="salaryHint">
+        <span class="field-hint" id="salaryHint" data-i18n="hint_salary">Used for salary continuation withholding annualization</span>
+      </div>
+
+      <!-- 4. Federal filing status -->
+      <div class="panel-row">
+        <label class="panel-label" for="filingStatus" data-i18n="lbl_filing">Federal Filing Status</label>
+        <select class="field-input" id="filingStatus" oninput="updatePreview()" onchange="updatePreview()">
+          <option value="single">Single</option>
+          <option value="mfj">Married Filing Jointly</option>
+          <option value="hoh">Head of Household</option>
+        </select>
+      </div>
+
+      <!-- 5. State income tax rate -->
+      <div class="panel-row">
+        <label class="panel-label" for="stateRate" data-i18n="lbl_state_rate">State Income Tax Rate (%)</label>
+        <input class="field-input" type="number" id="stateRate" min="0" max="20" step="0.01"
+          placeholder="e.g. 6.8" oninput="updatePreview()" aria-describedby="stateHint">
+        <span class="field-hint" id="stateHint" data-i18n="hint_state_rate">TX/FL: 0% · CA: ~9.3% · NY: ~6.8% · WA: 0% · IL: 4.95%</span>
+      </div>
+
+      <!-- 6. Monthly living expenses (optional) -->
+      <div class="panel-row">
+        <label class="panel-label" for="monthlyExpenses" data-i18n="lbl_expenses">Monthly Living Expenses (USD) <span style="color:var(--muted);font-weight:400;">— Optional</span></label>
+        <input class="field-input" type="number" id="monthlyExpenses" min="0" step="100"
+          placeholder="e.g. 4500" oninput="updatePreview()" aria-describedby="expHint">
+        <span class="field-hint" id="expHint" data-i18n="hint_expenses">Used to calculate how many months of runway the package provides</span>
+      </div>
+
+      <!-- 7. COBRA monthly premium (optional) -->
+      <div class="panel-row">
+        <label class="panel-label" for="cobraPremium">COBRA Monthly Premium (USD) <span style="color:var(--muted);font-weight:400;">— Optional</span></label>
+        <input class="field-input" type="number" id="cobraPremium" min="0" step="10"
+          placeholder="e.g. 650" oninput="updatePreview()">
+        <span class="field-hint">Included in runway burn rate if Monthly Expenses entered. Avg. family COBRA: ~$1,750/mo (KFF 2024).</span>
+      </div>
+
+      <!-- 8. UI weekly benefit estimate (optional) -->
+      <div class="panel-row">
+        <label class="panel-label" for="uiBenefit">Est. Unemployment Insurance Weekly Benefit (USD) <span style="color:var(--muted);font-weight:400;">— Optional</span></label>
+        <input class="field-input" type="number" id="uiBenefit" min="0" step="10"
+          placeholder="e.g. 450" oninput="updatePreview()">
+        <span class="field-hint">Shown as comparison in results. Avg. US weekly UI benefit: ~$450 (DOL 2024). Check your state's UI estimator for accuracy.</span>
+      </div>
+
+      <!-- 9. Prior-year SS wages (optional, salary continuation path) -->
+      <div class="panel-row">
+        <label class="panel-label" for="priorYearSSWages">Prior-Year SS Wages Already Withheld (USD) <span style="color:var(--muted);font-weight:400;">— Optional, salary continuation only</span></label>
+        <input class="field-input" type="number" id="priorYearSSWages" min="0" step="1000"
+          placeholder="e.g. 120000" oninput="updatePreview()">
+        <span class="field-hint">If you were paid earlier this year, enter wages already subject to SS tax. Reduces SS withholding on the salary continuation package (2024 SS wage base: $168,600). Leave blank to use conservative $0 assumption.</span>
+      </div>
+    </div><!-- end left panel -->
+
+    <!-- RIGHT: real-time preview card -->
+    <aside aria-label="Package preview">
+      <div class="preview-card">
+        <div class="preview-card-title" data-i18n="preview_title">Live Preview</div>
+        <div id="previewContent">
+          <p class="preview-empty" data-i18n="preview_empty">Enter package details to see a live preview</p>
+        </div>
+      </div>
+    </aside>
+
+  </div><!-- end input-grid -->
+
+  <!-- ---- RUN BUTTON ---- -->
+  <div class="run-row">
+    <button class="run-btn" id="calcBtn" onclick="calculate()" data-i18n="btn_calculate">
+      Calculate Take-Home
+    </button>
+    <span id="calcStatus" style="font-size:12px;color:var(--muted);"></span>
+  </div>
+
+  <!-- ============================================================
+       RESULTS PANEL — hidden until calculate() runs
+       ============================================================ -->
+  <div class="results-panel" id="resultsPanel" aria-live="polite" aria-label="Calculation results">
+
+    <!-- 1. Tax & Take-Home Summary KPIs -->
+    <div class="results-section" id="kpiSection">
+      <div class="results-section-title" data-i18n="results_summary_title">Tax &amp; Take-Home Summary</div>
+      <div class="kpi-grid" id="kpiGrid">
+        <!-- populated by renderResults() -->
+      </div>
+    </div>
+
+    <!-- 2. Tax Model Detail table -->
+    <div class="results-section" id="taxDetailSection">
+      <div class="results-section-title" data-i18n="results_detail_title">Tax Model Detail</div>
+      <div style="overflow-x:auto;">
+        <table class="tax-table" id="taxDetailTable" aria-label="Tax calculation breakdown">
+          <thead>
+            <tr>
+              <th data-i18n="th_component">Component</th>
+              <th data-i18n="th_method">Method / Citation</th>
+              <th data-i18n="th_amount" style="text-align:right;">Amount</th>
+            </tr>
+          </thead>
+          <tbody id="taxDetailBody">
+            <!-- populated by renderResults() -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 3. Runway Estimate (conditional on monthlyExpenses > 0) -->
+    <div class="results-section" id="runwaySection" style="display:none;">
+      <div class="results-section-title" data-i18n="results_runway_title">Runway Estimate</div>
+      <div id="runwayContent">
+        <!-- populated by renderResults() -->
+      </div>
+    </div>
+
+    <!-- ============================================================
+         EXPORT ROW — CONTRACT §4 — Markdown first, AP2 second
+         ============================================================ -->
+    <div class="results-export-row" role="group" aria-label="Export results">
+      <button class="btn btn-ghost btn-sm" id="markdownExportBtn" disabled onclick="exportMarkdown()">
+        <span data-i18n="btn_export_md">Export Markdown</span>
+        <span class="btn-subtitle" data-i18n="btn_export_md_sub">Human-readable summary</span>
+      </button>
+      <button class="btn btn-ghost btn-sm" id="ap2ExportBtn" disabled onclick="exportAP2()"
+        title="Run the analysis above to generate an AP2 mandate">
+        <span data-i18n="btn_export_ap2">Export AP2 JSON</span>
+        <span class="btn-subtitle" data-i18n="btn_export_ap2_sub">Agent integration · audit trail</span>
+      </button>
+      <button class="btn btn-help" onclick="showAP2Help()" aria-label="What is AP2?">?</button>
+    </div>
+
+  </div><!-- end results-panel -->
+
+  <!-- ============================================================
+       MCP PANEL — collapsed by default
+       ============================================================ -->
+  <button class="mcp-toggle" id="mcpToggle" onclick="toggleMCP()" aria-expanded="false"
+    aria-controls="mcpPanel" data-i18n="mcp_toggle">
+    <span id="mcpArrow">▶</span> MCP Manifest
+  </button>
+  <div class="mcp-panel" id="mcpPanel" aria-hidden="true" role="region" aria-label="MCP manifest JSON"></div>
+
+</main><!-- end main-wrap -->
+
+<!-- ============================================================
+     FOOTER — CONTRACT §6.2 — exact attribution required
+     ============================================================ -->
+<footer class="tool-footer" role="contentinfo">
+  Built by <a href="https://apexadvisory.site" target="_blank" rel="noopener">Apex Advisors</a> ·
+  Sister suite: <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> ·
+  CC 4.0 BY · AL-24 · Tax model: IRS Pub 15-T 2024
+</footer>
+
+<!-- Toast container -->
+<div class="toast-wrap" id="toastWrap" aria-live="assertive" aria-atomic="true"></div>
+
+<!-- AP2 Help Popover -->
+<div class="popover-overlay" id="ap2HelpOverlay" role="dialog" aria-modal="true" aria-label="About AP2">
+  <div class="popover-box">
+    <h4>What is AP2?</h4>
+    <p>AP2 (Agent Purchase Protocol) is Google's agent authorization standard (September 2025).
+       The exported JSON file carries your scenario state — package type, tax estimates, net take-home —
+       in a structured format that lets any AI agent continue the analysis in another tool, create an audit trail,
+       or hand off to a downstream advisor workflow.</p>
+    <p>The mandate is valid for 90 days and includes a reference to downstream tools such as
+       the Career Break &amp; Reentry Engine (AL-28).</p>
+    <a href="https://ap2-protocol.org/" target="_blank" rel="noopener" style="font-size:12px;">
+      Learn more at ap2-protocol.org ↗
+    </a><br><br>
+    <button class="popover-close" onclick="closeAP2Help()">Close</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   TRANSLATIONS — i18n Stage 2
+   CONTRACT §1.1 — translates UI chrome only; numbers stay EN
+   ============================================================ */
+const TRANSLATIONS = {
+  en: {
+    nav_back: '← Back to Suite',
+    tool_title: 'Separation Package Analyzer',
+    tool_subtitle: 'Model the after-tax value of your separation package offer',
+    panel_inputs_title: 'Package Details',
+    lbl_payment_type: 'Payment Structure',
+    hint_payment_type: 'How the package will be paid out affects withholding method',
+    lbl_gross: 'Gross Separation Package Amount (USD)',
+    hint_gross: 'Total payout before taxes',
+    lbl_salary: 'Current Annual Base Salary (USD)',
+    hint_salary: 'Used for salary continuation withholding annualization',
+    lbl_filing: 'Federal Filing Status',
+    lbl_state_rate: 'State Income Tax Rate (%)',
+    hint_state_rate: 'TX/FL: 0% · CA: ~9.3% · NY: ~6.8% · WA: 0% · IL: 4.95%',
+    lbl_expenses: 'Monthly Living Expenses (USD)',
+    hint_expenses: 'Used to calculate how many months of runway the package provides',
+    preview_title: 'Live Preview',
+    preview_empty: 'Enter package details to see a live preview',
+    btn_calculate: 'Calculate Take-Home',
+    results_summary_title: 'Tax & Take-Home Summary',
+    results_detail_title: 'Tax Model Detail',
+    results_runway_title: 'Runway Estimate',
+    th_component: 'Component',
+    th_method: 'Method / Citation',
+    th_amount: 'Amount',
+    btn_export_md: 'Export Markdown',
+    btn_export_md_sub: 'Human-readable summary',
+    btn_export_ap2: 'Export AP2 JSON',
+    btn_export_ap2_sub: 'Agent integration · audit trail',
+    mcp_toggle: '▶ MCP Manifest'
+  },
+  es: {
+    nav_back: '← Volver a la Suite',
+    tool_title: 'Analizador de Paquete de Separación',
+    tool_subtitle: 'Modela el valor neto de tu oferta de paquete de separación',
+    panel_inputs_title: 'Detalles del Paquete',
+    lbl_payment_type: 'Estructura de Pago',
+    hint_payment_type: 'La forma de pago afecta el método de retención',
+    lbl_gross: 'Monto Bruto del Paquete (USD)',
+    hint_gross: 'Pago total antes de impuestos',
+    lbl_salary: 'Salario Base Anual Actual (USD)',
+    hint_salary: 'Usado para calcular retención de continuación salarial',
+    lbl_filing: 'Estado Civil Federal',
+    lbl_state_rate: 'Tasa de Impuesto Estatal (%)',
+    hint_state_rate: 'TX/FL: 0% · CA: ~9.3% · NY: ~6.8% · WA: 0% · IL: 4.95%',
+    lbl_expenses: 'Gastos Mensuales de Vida (USD)',
+    hint_expenses: 'Calcula cuántos meses cubre el paquete',
+    preview_title: 'Vista Previa en Vivo',
+    preview_empty: 'Ingresa los detalles para ver la vista previa',
+    btn_calculate: 'Calcular Ingreso Neto',
+    results_summary_title: 'Resumen de Impuestos y Neto',
+    results_detail_title: 'Detalle del Modelo Fiscal',
+    results_runway_title: 'Estimado de Meses de Cobertura',
+    th_component: 'Componente',
+    th_method: 'Método / Cita',
+    th_amount: 'Monto',
+    btn_export_md: 'Exportar Markdown',
+    btn_export_md_sub: 'Resumen legible por humanos',
+    btn_export_ap2: 'Exportar AP2 JSON',
+    btn_export_ap2_sub: 'Integración de agente · auditoría',
+    mcp_toggle: '▶ Manifiesto MCP'
+  },
+  fr: {
+    nav_back: '← Retour à la Suite',
+    tool_title: 'Analyseur de Package de Séparation',
+    tool_subtitle: 'Modélisez la valeur nette de votre offre de package de séparation',
+    panel_inputs_title: 'Détails du Package',
+    lbl_payment_type: 'Structure de Paiement',
+    hint_payment_type: 'Le mode de paiement affecte la méthode de retenue',
+    lbl_gross: 'Montant Brut du Package (USD)',
+    hint_gross: 'Paiement total avant impôts',
+    lbl_salary: 'Salaire Annuel de Base Actuel (USD)',
+    hint_salary: 'Utilisé pour l\'annualisation de la retenue de continuation',
+    lbl_filing: 'Statut Fiscal Fédéral',
+    lbl_state_rate: 'Taux d\'Imposition de l\'État (%)',
+    hint_state_rate: 'TX/FL: 0% · CA: ~9.3% · NY: ~6.8% · WA: 0% · IL: 4.95%',
+    lbl_expenses: 'Dépenses Mensuelles (USD)',
+    hint_expenses: 'Calcule combien de mois le package couvre',
+    preview_title: 'Aperçu en Temps Réel',
+    preview_empty: 'Entrez les détails pour voir l\'aperçu',
+    btn_calculate: 'Calculer le Net',
+    results_summary_title: 'Résumé Fiscal et Net',
+    results_detail_title: 'Détail du Modèle Fiscal',
+    results_runway_title: 'Estimation de la Piste',
+    th_component: 'Composant',
+    th_method: 'Méthode / Citation',
+    th_amount: 'Montant',
+    btn_export_md: 'Exporter Markdown',
+    btn_export_md_sub: 'Résumé lisible',
+    btn_export_ap2: 'Exporter AP2 JSON',
+    btn_export_ap2_sub: 'Intégration agent · audit',
+    mcp_toggle: '▶ Manifeste MCP'
+  },
+  ar: {
+    lang_dir: 'rtl',
+    nav_back: 'العودة إلى المجموعة ←',
+    tool_title: 'محلل حزمة الفصل الوظيفي',
+    tool_subtitle: 'نمذجة القيمة الصافية بعد الضريبة لعرض حزمة الفصل',
+    panel_inputs_title: 'تفاصيل الحزمة',
+    lbl_payment_type: 'هيكل الدفع',
+    hint_payment_type: 'طريقة الدفع تؤثر على أسلوب الاستقطاع',
+    lbl_gross: 'المبلغ الإجمالي للحزمة (USD)',
+    hint_gross: 'إجمالي الدفع قبل الضرائب',
+    lbl_salary: 'الراتب الأساسي السنوي الحالي (USD)',
+    hint_salary: 'يُستخدم لحساب الاستقطاع السنوي',
+    lbl_filing: 'حالة التقديم الضريبي الفيدرالي',
+    lbl_state_rate: 'معدل ضريبة الولاية (%)',
+    hint_state_rate: 'TX/FL: 0% · CA: ~9.3% · NY: ~6.8%',
+    lbl_expenses: 'المصروفات الشهرية (USD)',
+    hint_expenses: 'لحساب عدد الأشهر التي تغطيها الحزمة',
+    preview_title: 'معاينة فورية',
+    preview_empty: 'أدخل التفاصيل لرؤية المعاينة',
+    btn_calculate: 'احسب الصافي',
+    results_summary_title: 'ملخص الضرائب والصافي',
+    results_detail_title: 'تفاصيل النموذج الضريبي',
+    results_runway_title: 'تقدير فترة التغطية',
+    th_component: 'المكون',
+    th_method: 'الطريقة / المرجع',
+    th_amount: 'المبلغ',
+    btn_export_md: 'تصدير Markdown',
+    btn_export_md_sub: 'ملخص قابل للقراءة',
+    btn_export_ap2: 'تصدير AP2 JSON',
+    btn_export_ap2_sub: 'تكامل الوكيل · سجل التدقيق',
+    mcp_toggle: '▶ بيان MCP'
+  },
+  pt: {
+    nav_back: '← Voltar para a Suite',
+    tool_title: 'Analisador de Pacote de Separação',
+    tool_subtitle: 'Modele o valor líquido da sua oferta de pacote de separação',
+    panel_inputs_title: 'Detalhes do Pacote',
+    lbl_payment_type: 'Estrutura de Pagamento',
+    hint_payment_type: 'A forma de pagamento afeta o método de retenção',
+    lbl_gross: 'Valor Bruto do Pacote (USD)',
+    hint_gross: 'Pagamento total antes dos impostos',
+    lbl_salary: 'Salário Base Anual Atual (USD)',
+    hint_salary: 'Usado para anualizar a retenção de continuação salarial',
+    lbl_filing: 'Estado Civil Federal',
+    lbl_state_rate: 'Alíquota do Imposto Estadual (%)',
+    hint_state_rate: 'TX/FL: 0% · CA: ~9.3% · NY: ~6.8% · WA: 0% · IL: 4.95%',
+    lbl_expenses: 'Despesas Mensais (USD)',
+    hint_expenses: 'Calcula quantos meses o pacote cobre',
+    preview_title: 'Pré-visualização ao Vivo',
+    preview_empty: 'Insira os detalhes para ver a pré-visualização',
+    btn_calculate: 'Calcular Líquido',
+    results_summary_title: 'Resumo de Impostos e Líquido',
+    results_detail_title: 'Detalhe do Modelo Fiscal',
+    results_runway_title: 'Estimativa de Pista',
+    th_component: 'Componente',
+    th_method: 'Método / Citação',
+    th_amount: 'Valor',
+    btn_export_md: 'Exportar Markdown',
+    btn_export_md_sub: 'Resumo legível por humanos',
+    btn_export_ap2: 'Exportar AP2 JSON',
+    btn_export_ap2_sub: 'Integração de agente · auditoria',
+    mcp_toggle: '▶ Manifesto MCP'
+  },
+  zh: {
+    nav_back: '← 返回套件',
+    tool_title: '离职补偿方案分析器',
+    tool_subtitle: '模拟您的离职补偿方案税后净值',
+    panel_inputs_title: '方案详情',
+    lbl_payment_type: '付款方式',
+    hint_payment_type: '付款方式影响预扣税计算方法',
+    lbl_gross: '离职补偿总金额（美元）',
+    hint_gross: '税前总付款',
+    lbl_salary: '当前年度基本工资（美元）',
+    hint_salary: '用于工资延续预扣税的年化计算',
+    lbl_filing: '联邦报税状态',
+    lbl_state_rate: '州所得税率（%）',
+    hint_state_rate: 'TX/FL: 0% · CA: ~9.3% · NY: ~6.8% · WA: 0% · IL: 4.95%',
+    lbl_expenses: '每月生活费用（美元）',
+    hint_expenses: '用于计算补偿方案可覆盖的月数',
+    preview_title: '实时预览',
+    preview_empty: '输入详情以查看实时预览',
+    btn_calculate: '计算税后净额',
+    results_summary_title: '税务与税后净额摘要',
+    results_detail_title: '税务模型详情',
+    results_runway_title: '资金跑道估算',
+    th_component: '项目',
+    th_method: '方法 / 依据',
+    th_amount: '金额',
+    btn_export_md: '导出 Markdown',
+    btn_export_md_sub: '人类可读摘要',
+    btn_export_ap2: '导出 AP2 JSON',
+    btn_export_ap2_sub: '代理集成 · 审计跟踪',
+    mcp_toggle: '▶ MCP 清单'
+  }
+};
+
+/* i18n init — CONTRACT §1.1 */
+function setLang(lang) {
+  const t = TRANSLATIONS[lang];
+  if (!t) return;
+  document.documentElement.dir = (t.lang_dir === 'rtl') ? 'rtl' : 'ltr';
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.dataset.i18n;
+    if (t[k] !== undefined) el.textContent = t[k];
+  });
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const bl = b.dataset.lang || '';
+    b.classList.toggle('active', bl === lang);
+  });
+  sessionStorage.setItem('apex_lang', lang); /* CONTRACT §0 — session only */
+}
+(function initLang() {
+  const saved = sessionStorage.getItem('apex_lang');
+  const nav = (navigator.language || 'en').slice(0, 2).toLowerCase();
+  setLang(saved || (TRANSLATIONS[nav] ? nav : 'en'));
+})();
+
+/* ============================================================
+   FORMATTING HELPERS
+   ============================================================ */
+/**
+ * Format a dollar value — CONTRACT: use toLocaleString with maximumFractionDigits:0
+ * @param {number} n
+ * @returns {string}
+ */
+function fmt(n) {
+  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+}
+
+/**
+ * FNV-1a hash — deterministic UUID-like ID, NO Math.random() per CONTRACT §0
+ * @param {string} seed
+ * @returns {string} hex string formatted as UUID-like
+ */
+function genUUID(seed) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = (h * 0x01000193) >>> 0;
+  }
+  const h2 = (h ^ 0xdeadbeef) >>> 0;
+  const h3 = (h ^ 0xcafebabe) >>> 0;
+  const h4 = (h ^ 0x12345678) >>> 0;
+  const toHex = (n, len) => n.toString(16).padStart(len, '0');
+  return `${toHex(h,8)}-${toHex(h2>>>16,4)}-4${toHex((h2&0xfff),3)}-${toHex(0x8000|(h3>>>18),4)}-${toHex(h3,8)}${toHex(h4,4)}`;
+}
+
+/** Compact timestamp for filenames: YYYYMMDDHHMMSS */
+function tsCompact() {
+  const d = new Date();
+  return d.getFullYear().toString()
+    + String(d.getMonth()+1).padStart(2,'0')
+    + String(d.getDate()).padStart(2,'0')
+    + String(d.getHours()).padStart(2,'0')
+    + String(d.getMinutes()).padStart(2,'0')
+    + String(d.getSeconds()).padStart(2,'0');
+}
+
+/* ============================================================
+   LIVE PREVIEW — updates on any input event
+   ============================================================ */
+function updatePreview() {
+  const gross = parseFloat(document.getElementById('grossPackage').value) || 0;
+  const type = document.getElementById('paymentType').value;
+  const status = document.getElementById('filingStatus').value;
+  const stateRate = parseFloat(document.getElementById('stateRate').value) || 0;
+
+  const typeLabel = type === 'lump_sum' ? 'Lump Sum Payment' : 'Salary Continuation';
+  const statusMap = { single: 'Single', mfj: 'Married Filing Jointly', hoh: 'Head of Household' };
+
+  if (gross === 0) {
+    document.getElementById('previewContent').innerHTML =
+      `<p class="preview-empty">Enter package details to see a live preview</p>`;
+    return;
+  }
+
+  document.getElementById('previewContent').innerHTML = `
+    <div class="preview-row">
+      <span class="preview-row-label">Gross Package</span>
+      <span class="preview-row-val gross">${fmt(gross)}</span>
+    </div>
+    <div class="preview-row">
+      <span class="preview-row-label">Payment Structure</span>
+      <span class="preview-row-val">${typeLabel}</span>
+    </div>
+    <div class="preview-row">
+      <span class="preview-row-label">Filing Status</span>
+      <span class="preview-row-val">${statusMap[status] || status}</span>
+    </div>
+    <div class="preview-row">
+      <span class="preview-row-label">State Tax Rate</span>
+      <span class="preview-row-val">${stateRate.toFixed(2)}%</span>
+    </div>
+    <div class="preview-row">
+      <span class="preview-row-label">Est. State Tax</span>
+      <span class="preview-row-val">${fmt(gross * stateRate / 100)}</span>
+    </div>
+  `;
+}
+
+/* ============================================================
+   TAX ENGINE
+   ============================================================
+
+   2024 IRS Publication 15-T Standard Withholding Method.
+   Standard deduction equivalents (2024):
+     Single: $14,600
+     MFJ:    $29,200
+     HOH:    $21,900
+
+   Bracket tables:
+     Single / HOH — same brackets per IRS Pub 15-T 2024 Percentage Method
+     MFJ           — see below
+   ============================================================ */
+
+/* Standard deductions 2024 — IRS Pub 15-T, Table for Percentage Method */
+const STD_DEDUCTION = { single: 14600, mfj: 29200, hoh: 21900 };
+
+/**
+ * Compute federal income tax via 2024 IRS Pub 15-T bracket table.
+ * Used only for SALARY CONTINUATION path (regular wage withholding).
+ *
+ * @param {number} annualTaxable — taxable income (gross minus std deduction)
+ * @param {string} status — 'single' | 'mfj' | 'hoh'
+ * @returns {number} federal income tax for the annualized period
+ */
+function computeBracketTax(annualTaxable, status) {
+  if (annualTaxable <= 0) return 0;
+
+  /* 2024 IRS Pub 15-T — Annual Payroll Period Percentage Method Tables */
+  /* Each entry: [bracket floor, marginal rate, cumulative tax at floor] */
+  const brackets = {
+    /* Single and Head of Household use the same bracket table (2024) */
+    single: [
+      [0,          0.10,  0],
+      [11600,      0.12,  1160],
+      [47150,      0.22,  5426],
+      [100525,     0.24,  17168.50],
+      [191950,     0.32,  39110.50],
+      [243700,     0.35,  55678.50],
+      [609350,     0.37,  183647.25]
+    ],
+    hoh: [
+      [0,          0.10,  0],
+      [11600,      0.12,  1160],
+      [47150,      0.22,  5426],
+      [100525,     0.24,  17168.50],
+      [191950,     0.32,  39110.50],
+      [243700,     0.35,  55678.50],
+      [609350,     0.37,  183647.25]
+    ],
+    /* Married Filing Jointly — 2024 IRS Pub 15-T */
+    mfj: [
+      [0,          0.10,  0],
+      [23200,      0.12,  2320],
+      [94300,      0.22,  10852],
+      [201050,     0.24,  34337],
+      [383900,     0.32,  78221],
+      [487450,     0.35,  111357],
+      [731200,     0.37,  196669.50]
+    ]
+  };
+
+  const table = brackets[status] || brackets.single;
+
+  /* Walk brackets from highest down to find the correct band */
+  let tax = 0;
+  for (let i = table.length - 1; i >= 0; i--) {
+    const [floor, rate, cumBelow] = table[i];
+    if (annualTaxable > floor) {
+      tax = cumBelow + (annualTaxable - floor) * rate;
+      break;
+    }
+  }
+  return tax;
+}
+
+/* ============================================================
+   MAIN CALCULATE FUNCTION
+   ============================================================ */
+let lastResult = null; /* Persists last run for export functions */
+
+function calculate() {
+  /* --- Input collection & validation --- */
+  const paymentType    = document.getElementById('paymentType').value;
+  const grossPackage   = parseFloat(document.getElementById('grossPackage').value);
+  const currentSalary  = parseFloat(document.getElementById('currentSalary').value) || 0;
+  const filingStatus   = document.getElementById('filingStatus').value;
+  const stateRate      = parseFloat(document.getElementById('stateRate').value) || 0;
+  const monthlyExpenses= parseFloat(document.getElementById('monthlyExpenses').value) || 0;
+  const cobraPremium     = parseFloat(document.getElementById('cobraPremium').value) || 0;
+  const uiBenefit        = parseFloat(document.getElementById('uiBenefit').value) || 0;
+  const priorYearSSWages = parseFloat(document.getElementById('priorYearSSWages').value) || 0;
+  const totalMonthlyBurn = monthlyExpenses + cobraPremium;
+
+  /* Validate required fields */
+  if (!grossPackage || grossPackage <= 0) {
+    showToast('Please enter a gross package amount greater than 0.', 'error');
+    return;
+  }
+  if (grossPackage > 100000000) {
+    showToast('Gross package amount seems unusually large. Please double-check.', 'error');
+    return;
+  }
+  if (stateRate < 0 || stateRate > 20) {
+    showToast('State tax rate must be between 0% and 20%.', 'error');
+    return;
+  }
+
+  /* --- Disable button briefly for UX feedback --- */
+  const btn = document.getElementById('calcBtn');
+  btn.disabled = true;
+  document.getElementById('calcStatus').textContent = 'Calculating…';
+
+  /* --- Begin tax computation --- */
+  let federalTax = 0;
+  let ficaTax    = 0;
+  let stateTax   = 0;
+  const rows     = []; /* tax detail table rows */
+
+  /* State tax: same formula for both paths */
+  stateTax = grossPackage * (stateRate / 100);
+  /* Capped at gross (should never exceed for valid rates, but guard) */
+  stateTax = Math.min(stateTax, grossPackage);
+
+  if (paymentType === 'lump_sum') {
+    /* ================================================================
+       LUMP SUM PATH — IRS Pub 15-T, Supplemental Wage Method
+       IRC §3402(o) — supplemental wages withholding rules
+       ================================================================
+       Lump-sum severance is treated as supplemental wages.
+       Flat withholding rate:
+         22% if total supplemental wages ≤ $1,000,000
+         37% if total supplemental wages > $1,000,000
+       ================================================================ */
+
+    /* Step 1: Determine flat supplemental rate — IRS Pub 15-T §5 */
+    const suppRate = grossPackage > 1000000 ? 0.37 : 0.22;
+    federalTax = grossPackage * suppRate;
+
+    rows.push({
+      component: 'Federal Tax (Supplemental)',
+      method: grossPackage > 1000000
+        ? 'IRS Pub 15-T §5 — 37% flat rate (supplemental wages > $1M)'
+        : 'IRS Pub 15-T §5 — 22% flat rate (supplemental wages ≤ $1M)',
+      amount: federalTax
+    });
+
+    /* Step 2: FICA — not applicable for true lump-sum separation payments
+       Lump-sum severance classified as separation pay (not wages for FICA)
+       per IRS Revenue Ruling 90-72 and IRC §3121(a)(13).
+       FICA = $0 for lump sum path. */
+    ficaTax = 0;
+    rows.push({
+      component: 'FICA (Social Security + Medicare)',
+      method: 'Not applicable — lump-sum separation pay is not subject to FICA (IRS Rev. Rul. 90-72; IRC §3121(a)(13))',
+      amount: 0
+    });
+
+  } else {
+    /* ================================================================
+       SALARY CONTINUATION PATH — Regular Wage Withholding Method
+       IRS Pub 15-T — Percentage Method for Periodic Payments
+       ================================================================
+       Salary continuation is treated as regular wages paid over time.
+       Because we model the ENTIRE package as one annualized taxable
+       event (the full payout is the taxable gross), we:
+         1. Subtract the 2024 standard deduction equivalent
+         2. Apply the 2024 annual bracket table
+         3. The result = federal income tax on the package
+       FICA applies because salary continuation IS wages.
+       ================================================================ */
+
+    /* Step 1: Subtract standard deduction — IRS Pub 15-T Table 1 (2024) */
+    const stdDed = STD_DEDUCTION[filingStatus] || STD_DEDUCTION.single;
+    const taxableAnnualized = Math.max(0, grossPackage - stdDed);
+
+    /* Step 2: Apply bracket table — IRS Pub 15-T Percentage Method */
+    federalTax = computeBracketTax(taxableAnnualized, filingStatus);
+
+    rows.push({
+      component: 'Federal Tax (Salary Continuation)',
+      method: `IRS Pub 15-T Percentage Method 2024 — Annualized gross ${fmt(grossPackage)} minus std. deduction ${fmt(stdDed)} = taxable ${fmt(taxableAnnualized)}; bracket applied for ${filingStatus.toUpperCase()}`,
+      amount: federalTax
+    });
+
+    /* Step 3: FICA — applies to salary continuation (regular wages)
+       IRC §3101 & §3111 — employee/employer FICA
+       Social Security: 6.2% up to 2024 wage base $168,600
+         Prior wages assumed = 0 (conservative / worst-case estimate)
+         Note shown to user: actual SS may be lower if prior wages exist
+       Medicare: 1.45% — no cap (IRC §3101(b))
+       Additional Medicare Tax (0.9%) above $200K single / $250K MFJ
+         not modeled here — consult tax professional */
+    const SS_WAGE_BASE = 168600;   /* 2024 Social Security wage base */
+    const SS_RATE      = 0.062;
+    const MEDI_RATE    = 0.0145;
+
+    /* Social Security — capped at 2024 wage base
+       Conservative: treat prior wages as $0 (worst-case FICA estimate) */
+    const ssAlreadySubject = Math.min(priorYearSSWages, SS_WAGE_BASE);
+    const ssBase = Math.max(0, Math.min(grossPackage, SS_WAGE_BASE - ssAlreadySubject));
+    const ssTax  = ssBase * SS_RATE;
+
+    /* Medicare — no cap */
+    const mediTax = grossPackage * MEDI_RATE;
+
+    ficaTax = ssTax + mediTax;
+
+    rows.push({
+      component: 'Social Security (6.2%)',
+      method: `IRC §3101 — 6.2% on ${fmt(ssBase)} (2024 SS wage base: ${fmt(SS_WAGE_BASE)}; prior-year wages credited: ${fmt(ssAlreadySubject)}).`,
+      amount: ssTax
+    });
+    rows.push({
+      component: 'Medicare (1.45%)',
+      method: 'IRC §3101(b) — 1.45% on gross package; no wage base cap',
+      amount: mediTax
+    });
+  }
+
+  /* State tax row — same for both paths */
+  rows.push({
+    component: 'State Income Tax',
+    method: `User-entered rate: ${stateRate.toFixed(2)}% × gross package`,
+    amount: stateTax
+  });
+
+  /* Net take-home */
+  const netTakeHome = Math.max(0, grossPackage - federalTax - ficaTax - stateTax);
+  const effectiveTaxRate = ((federalTax + ficaTax + stateTax) / grossPackage * 100);
+
+  /* Runway */
+  let runwayMonths = null;
+  runwayMonths = totalMonthlyBurn > 0 ? netTakeHome / totalMonthlyBurn : null;
+
+  /* Store result for exports */
+  lastResult = {
+    paymentType,
+    grossPackage,
+    currentSalary,
+    filingStatus,
+    stateRate,
+    federalTax,
+    ficaTax,
+    stateTax,
+    netTakeHome,
+    effectiveTaxRate,
+    monthlyExpenses,
+    cobraPremium,
+    uiBenefit,
+    priorYearSSWages,
+    totalMonthlyBurn,
+    runwayMonths,
+    taxRows: rows
+  };
+
+  /* Render */
+  renderResults(lastResult);
+
+  /* Re-enable button */
+  btn.disabled = false;
+  document.getElementById('calcStatus').textContent = '';
+
+  /* Enable export buttons — CONTRACT §3.3 */
+  enableExportButtons();
+
+  /* Scroll to results */
+  document.getElementById('resultsPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ============================================================
+   RENDER RESULTS
+   ============================================================ */
+function renderResults(r) {
+  /* --- KPI Grid --- */
+  const kpiGrid = document.getElementById('kpiGrid');
+  const ficaLabel = r.paymentType === 'lump_sum' ? 'FICA (N/A for Lump Sum)' : 'FICA Withheld';
+  kpiGrid.innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Gross Package</div>
+      <div class="kpi-value">${fmt(r.grossPackage)}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Federal Tax Withheld</div>
+      <div class="kpi-value">${fmt(r.federalTax)}</div>
+      <div class="kpi-note">${r.paymentType === 'lump_sum'
+        ? (r.grossPackage > 1000000 ? '37% flat supplemental rate' : '22% flat supplemental rate')
+        : 'IRS Pub 15-T bracket method'}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">${ficaLabel}</div>
+      <div class="kpi-value">${fmt(r.ficaTax)}</div>
+      <div class="kpi-note">${r.paymentType === 'lump_sum' ? 'Not applicable (separation pay)' : 'SS 6.2% + Medicare 1.45%'}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">State Tax (Est.)</div>
+      <div class="kpi-value">${fmt(r.stateTax)}</div>
+      <div class="kpi-note">${r.stateRate.toFixed(2)}% user-entered rate</div>
+    </div>
+    <div class="kpi-card highlight">
+      <div class="kpi-label">Net Take-Home</div>
+      <div class="kpi-value">${fmt(r.netTakeHome)}</div>
+      <div class="kpi-note">Effective tax rate: ${r.effectiveTaxRate.toFixed(1)}%</div>
+    </div>
+  `;
+
+  /* --- Tax Detail Table --- */
+  const tbody = document.getElementById('taxDetailBody');
+  let rows = '';
+  r.taxRows.forEach(row => {
+    rows += `
+      <tr>
+        <td>${row.component}</td>
+        <td class="cite">${row.method}</td>
+        <td class="amount">${fmt(row.amount)}</td>
+      </tr>
+    `;
+  });
+  /* Total row */
+  const totalTax = r.federalTax + r.ficaTax + r.stateTax;
+  rows += `
+    <tr class="total-row">
+      <td colspan="2">Total Tax Withholding</td>
+      <td class="amount">${fmt(totalTax)}</td>
+    </tr>
+    <tr class="total-row">
+      <td colspan="2"><strong>Net Take-Home</strong></td>
+      <td class="amount"><strong>${fmt(r.netTakeHome)}</strong></td>
+    </tr>
+  `;
+  tbody.innerHTML = rows;
+
+  /* --- Runway Section --- */
+  const runwaySection = document.getElementById('runwaySection');
+  if ((r.monthlyExpenses > 0 || r.cobraPremium > 0) && r.runwayMonths !== null) {
+    runwaySection.style.display = '';
+    const months = r.runwayMonths;
+    const barPct = Math.min(100, (months / 24) * 100); /* scale: 24 months = full bar */
+    const isWarning = months < 3;
+    const isOk = months >= 6;
+    let statusBlock = '';
+    if (isWarning) {
+      statusBlock = `<div class="runway-warning">
+        ⚠ Less than 3 months of runway — consider escalating to career transition planning immediately.
+        See the <a href="../career-transition-suite/" style="color:var(--red);">Career Transition Suite (AL-08+14)</a>.
+      </div>`;
+    } else if (isOk) {
+      statusBlock = `<div class="runway-ok">
+        ✓ ${months.toFixed(1)} months of runway provides a solid planning window.
+      </div>`;
+    }
+    document.getElementById('runwayContent').innerHTML = `
+      <div class="runway-display">
+        <div>
+          <div class="runway-months">${months.toFixed(1)}</div>
+          <div class="runway-label">months of runway</div>
+          <div class="runway-detail">${fmt(r.netTakeHome)} ÷ ${fmt(r.totalMonthlyBurn)}/month</div>
+        </div>
+        <div class="runway-bar-wrap">
+          <div class="runway-bar-bg">
+            <div class="runway-bar-fill" style="width:${barPct}%"></div>
+          </div>
+          <div class="runway-bar-labels">
+            <span>0 mo</span>
+            <span>6 mo</span>
+            <span>12 mo</span>
+            <span>18 mo</span>
+            <span>24 mo</span>
+          </div>
+        </div>
+      </div>
+      ${statusBlock}
+    `;
+    if (r.uiBenefit > 0) {
+      const uiMonthly = r.uiBenefit * 4.33;
+      const coverageNote = uiMonthly > r.totalMonthlyBurn && r.totalMonthlyBurn > 0
+        ? `covers monthly burn`
+        : `does not cover monthly burn${r.totalMonthlyBurn > 0 ? ` ($${fmt(r.totalMonthlyBurn)}/mo)` : ''}`;
+      // append a note line to the runway display
+      const runwayContent = document.getElementById('runwayContent');
+      const uiNote = document.createElement('p');
+      uiNote.style.cssText = 'font-size:13px;color:var(--muted);margin-top:8px;';
+      uiNote.textContent = `Est. UI benefit: $${fmt(r.uiBenefit)}/wk (~$${fmt(uiMonthly)}/mo) — ${coverageNote}.`;
+      runwayContent.appendChild(uiNote);
+    }
+  } else {
+    runwaySection.style.display = 'none';
+  }
+
+  /* Show results panel */
+  document.getElementById('resultsPanel').classList.add('visible');
+}
+
+/* ============================================================
+   EXPORT — CONTRACT §3.3 §4
+   ============================================================ */
+
+/** Enable export buttons after a successful calculate() run */
+function enableExportButtons() {
+  ['markdownExportBtn', 'ap2ExportBtn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.add('ready');
+      btn.title = 'For agent integration · audit trail · scenario handoff';
+    }
+  });
+}
+
+/** Markdown export — Tier 1 mandatory */
+function exportMarkdown() {
+  if (!lastResult) return;
+  const r = lastResult;
+  const typeLabel = r.paymentType === 'lump_sum' ? 'Lump Sum Payment' : 'Salary Continuation';
+  const statusMap = { single: 'Single', mfj: 'Married Filing Jointly', hoh: 'Head of Household' };
+  const now = new Date().toLocaleString('en-US');
+
+  let md = `# Separation Package Analyzer — Results\n`;
+  md += `**AL-24 · Apex Logics** · Generated: ${now}\n\n`;
+  md += `---\n\n`;
+  md += `## Package Details\n\n`;
+  md += `| Field | Value |\n|---|---|\n`;
+  md += `| Payment Structure | ${typeLabel} |\n`;
+  md += `| Gross Package | ${fmt(r.grossPackage)} |\n`;
+  md += `| Filing Status | ${statusMap[r.filingStatus] || r.filingStatus} |\n`;
+  md += `| State Tax Rate | ${r.stateRate.toFixed(2)}% |\n\n`;
+  md += `## Tax & Take-Home Summary\n\n`;
+  md += `| Component | Amount |\n|---|---|\n`;
+  md += `| Gross Package | ${fmt(r.grossPackage)} |\n`;
+  md += `| Federal Tax | ${fmt(r.federalTax)} |\n`;
+  md += `| FICA | ${fmt(r.ficaTax)} |\n`;
+  md += `| State Tax | ${fmt(r.stateTax)} |\n`;
+  md += `| **Net Take-Home** | **${fmt(r.netTakeHome)}** |\n`;
+  md += `| Effective Tax Rate | ${r.effectiveTaxRate.toFixed(1)}% |\n\n`;
+  if (r.runwayMonths !== null) {
+    md += `## Runway Estimate\n\n`;
+    md += `- Monthly Expenses: ${fmt(r.monthlyExpenses)}\n`;
+    md += `- **Runway: ${r.runwayMonths.toFixed(1)} months**\n\n`;
+  }
+  md += `---\n\n`;
+  md += `## Tax Model Detail\n\n`;
+  md += `| Component | Method | Amount |\n|---|---|---|\n`;
+  r.taxRows.forEach(row => {
+    md += `| ${row.component} | ${row.method.replace(/\|/g, '\\|')} | ${fmt(row.amount)} |\n`;
+  });
+  md += `\n---\n\n`;
+  md += `> **Disclaimer:** This tool provides estimates for planning purposes only and does not constitute legal, tax, or financial advice. Consult an employment attorney and a tax professional before accepting any separation agreement.\n`;
+  md += `>\n> Tax model: IRS Publication 15-T (2024) · IRS Pub 15-T, IRC §3402, IRS Rev. Rul. 90-72\n`;
+  md += `>\n> Built by [Apex Advisors](https://apexadvisory.site) · Sister suite: [AINumbers.co](https://ainumbers.co) · CC 4.0 BY\n`;
+
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `AL-24_separation-package-analyzer_${tsCompact()}.md`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Markdown exported successfully.', 'success');
+}
+
+/* ============================================================
+   AP2 SCHEMA VALIDATOR — CONTRACT §3.1 Appendix F (verbatim)
+   ============================================================ */
+const AP2Schema = {
+  required: [
+    'ap2_version', 'mandate_id', 'issued_at', 'issued_by',
+    'tool_id', 'tool_version', 'al_id', 'mandate_type',
+    'payload', 'summary', 'audit_metadata'
+  ],
+  validMandateTypes: [
+    'credential_roi_evaluation', 'human_capital_assessment',
+    'automation_exposure_score', 'career_resilience_score',
+    'workforce_program_roi', 'career_pivot_assessment',
+    'career_transition_record', 'scholarship_pipeline_plan',
+    'fafsa_sai_estimate', 'exam_pathway_plan',
+    'benefits_election_record', 'severance_decision_record',
+    'offer_negotiation_record', 'graduate_school_roi_record',
+    'apprenticeship_match_record', 'cpd_credit_record',
+    'job_search_roi_record', 'career_break_record',
+    'loan_repayment_record', 'freelance_total_cost_record',
+    'mba_roi_evaluation', 'test_prep_roi_record',
+    'international_student_cost_record', 'parent_college_roi_record',
+    'equity_compensation_record'
+  ],
+  validate(mandate) {
+    const errors = [];
+    if (!mandate || typeof mandate !== 'object') {
+      return { valid: false, errors: ['mandate is not an object'] };
+    }
+    this.required.forEach(k => {
+      if (mandate[k] === undefined || mandate[k] === null) errors.push('missing: ' + k);
+    });
+    if (mandate.ap2_version !== '1.0') errors.push('ap2_version must be "1.0"');
+    if (mandate.mandate_type && !this.validMandateTypes.includes(mandate.mandate_type))
+      errors.push('unrecognized mandate_type: ' + mandate.mandate_type);
+    if (mandate.al_id && !/^AL-\d{1,2}(\+\d{1,2})?$/.test(mandate.al_id))
+      errors.push('al_id format invalid');
+    if (mandate.audit_metadata) {
+      if (mandate.audit_metadata.client_side_executed !== true)
+        errors.push('client_side_executed must be true');
+      if (mandate.audit_metadata.zero_pii_verified !== true)
+        errors.push('zero_pii_verified must be true');
+      if (mandate.audit_metadata.deterministic_run !== true)
+        errors.push('deterministic_run must be true');
+    }
+    return { valid: errors.length === 0, errors };
+  }
+};
+
+/* ============================================================
+   AP2 MANDATE BUILDER — CONTRACT §3.1
+   ============================================================ */
+function buildAP2Mandate() {
+  const r = lastResult;
+  const statusMap = { single: 'Single', mfj: 'Married Filing Jointly', hoh: 'Head of Household' };
+  const typeLabel = r.paymentType === 'lump_sum' ? 'Lump Sum Payment' : 'Salary Continuation';
+
+  /* Plain English summary — 1-2 sentences */
+  const summary = `${typeLabel} of ${fmt(r.grossPackage)} yields an estimated net take-home of ${fmt(r.netTakeHome)} (${r.effectiveTaxRate.toFixed(1)}% effective tax rate) after federal, state, and FICA withholding.${r.runwayMonths !== null ? ` At ${fmt(r.monthlyExpenses)}/month in expenses, this provides approximately ${r.runwayMonths.toFixed(1)} months of financial runway.` : ''}`;
+
+  return {
+    ap2_version: '1.0',
+    mandate_id: genUUID(r.grossPackage + '|' + r.paymentType + '|' + r.filingStatus + '|' + r.stateRate),
+    issued_at: new Date().toISOString(),
+    issued_by: 'apexlogics.org',
+    tool_id: 'severance-decision-engine',
+    tool_version: '1.0.0',
+    al_id: 'AL-24',
+    mandate_type: 'severance_decision_record',
+    jurisdiction: ['US'],
+    regulatory_frameworks: ['IRS Publication 15-T (2024)', 'IRC §3402'],
+    payload: {
+      payment_type: r.paymentType,
+      gross_package_usd: r.grossPackage,
+      federal_tax_usd: r.federalTax,
+      fica_tax_usd: r.ficaTax,
+      state_tax_usd: r.stateTax,
+      state_tax_rate_pct: r.stateRate,
+      net_takeHome_usd: r.netTakeHome,
+      filing_status: r.filingStatus,
+      monthly_expenses_usd: r.monthlyExpenses || null,
+      runway_months: r.runwayMonths || null,
+      effective_tax_rate_pct: parseFloat(r.effectiveTaxRate.toFixed(2))
+    },
+    summary: summary,
+    agent_instructions: [
+      'Verify federal withholding method with a tax professional — lump sum vs. salary continuation treatment differs',
+      r.runwayMonths !== null && r.runwayMonths < 3
+        ? 'Runway is less than 3 months — escalate to AL-08+14 Career Transition Suite for pivot risk assessment'
+        : 'If runway < 3 months, escalate to AL-08+14 Career Transition Suite for pivot risk assessment',
+      'Consult employment attorney to review separation agreement terms before signing'
+    ],
+    valid_from: new Date().toISOString(),
+    valid_until: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+    last_reviewed: new Date().toISOString().slice(0, 10),
+    source_tool_inputs: {
+      payment_type: r.paymentType,
+      gross_package: r.grossPackage,
+      filing_status: r.filingStatus,
+      state_rate_pct: r.stateRate
+    },
+    regulatory_citations: [
+      'IRS Publication 15-T, Federal Income Tax Withholding Methods (2024)',
+      'IRS Revenue Procedure 2023-34 — 2024 tax brackets',
+      'IRC §3402 — Income Tax Collected at Source',
+      'IRS Revenue Ruling 90-72 — FICA treatment of separation pay',
+      'IRC §3121(a)(13) — FICA exclusion for certain separation payments'
+    ],
+    downstream_handoff_candidates: ['AL-08+14'], /* CONTRACT §6.3 handoff map: AL-24 → AL-28 (proposed) */
+    audit_metadata: {
+      client_side_executed: true,
+      zero_pii_verified: true,
+      deterministic_run: true,
+      data_vintage: 'IRS Publication 15-T 2024 · User-entered state rate'
+    }
+  };
+}
+
+/** AP2 export — validate AP2 mandate and download */
+function exportAP2() {
+  if (!window._lastResult) { showToast('Run the calculator first.', 'warn'); return; }
+  const mandate = buildAP2(window._lastResult);
+  const result = AP2Schema.validate(mandate);
+  if (!result.valid) {
+    showToast('AP2 validation failed: ' + result.errors.join('; '), 'error');
+    return;
+  }
+  const json = JSON.stringify(mandate, null, 2);
+  downloadFile('al24-severance.ap2.json', json, 'application/json');
+  showToast('AP2 JSON downloaded.', 'success');
+  // Show in MCP panel if open
+  const pre = document.getElementById('mcpPre');
+  if (pre) pre.textContent = json;
+}
+
+function downloadFile(name, content, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 500);
+}
+
+/* ── Init ── */
+(function () {
+  try {
+    const saved = sessionStorage.getItem('apex_lang');
+    if (saved) setLang(saved);
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>

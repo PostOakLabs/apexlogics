@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Graduate School ROI Comparator — Apex Logics</title>
+<meta name="description" content="Compare up to 3 graduate programs side-by-side: NPV, IRR, break-even, and total investment. Accepts AP2 mandates from AL-02 and AL-17. Browser-only. Zero PII. Built by Apex Advisors.">
+<link rel="canonical" href="https://apexlogics.org/tools/graduate-school-roi-comparator/">
+<link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Design tokens (CONTRACT Appendix A) ─────────────────────────────────── */
+:root {
+  --bg:#0b0e14; --bg-2:#0C1220; --bg-3:#111A2E; --bg-4:#162238;
+  --border:#232b3e; --border-2:#2e3a52;
+  --muted:#6b7a99; --body:#c8d0e0; --text:#A8C4DE; --bright:#D4E8F8; --white:#EEF6FD;
+  --amber:#E8A838; --amber-lt:#F0BD5E; --amber-dim:rgba(232,168,56,.10); --amber-glow:rgba(232,168,56,.05);
+  --teal:#14B8A6; --teal-dim:rgba(20,184,166,.10);
+  --coral:#F07167; --coral-dim:rgba(240,113,103,.10); --coral-lt:#F5938B;
+  --lavender:#A78BFA; --lavender-dim:rgba(167,139,250,.10);
+  --green:#34D399; --green-dim:rgba(52,211,153,.10);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,.10);
+  --red:#F87171; --red-dim:rgba(248,113,113,.10);
+  --warn:#FBBF24;
+  --radius:6px; --radius-lg:10px; --shadow:0 4px 24px rgba(0,0,0,.45);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+html[dir="rtl"] body{direction:rtl;text-align:right;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;font-size:.875rem;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh;}
+a{color:var(--amber-lt);text-decoration:none;}
+a:hover{text-decoration:underline;}
+button{cursor:pointer;font-family:inherit;}
+.mono{font-family:'JetBrains Mono',monospace;}
+.container{max-width:1024px;margin:0 auto;padding:24px;}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(7,11,20,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);}
+.nav-inner{max-width:1024px;margin:0 auto;display:flex;align-items:center;gap:16px;padding:0 24px;height:58px;}
+.logo{display:flex;align-items:center;gap:10px;flex-shrink:0;text-decoration:none;}
+.logo-mark{width:32px;height:32px;flex-shrink:0;}
+.logo-mark svg{width:100%;height:100%;}
+.logo-text{display:flex;flex-direction:column;gap:2px;}
+.logo-name{font-family:'JetBrains Mono',monospace;font-size:.95rem;font-weight:500;color:var(--bright);letter-spacing:-.02em;line-height:1;}
+.logo-apex{color:var(--amber);}
+.logo-org{color:var(--muted);font-size:.8rem;}
+.logo-tag{font-size:.5rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-family:'JetBrains Mono',monospace;line-height:1;}
+.nav-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0;}
+.nav-pill{background:none;border:1px solid var(--border-2);border-radius:var(--radius);color:var(--body);font-size:.62rem;padding:.3rem .65rem;font-family:'JetBrains Mono',monospace;letter-spacing:.04em;transition:border-color .15s,color .15s;text-decoration:none;display:inline-block;}
+.nav-pill:hover{border-color:var(--text);color:var(--text);text-decoration:none;}
+@media(max-width:600px){.logo-tag,.nav-pill{display:none;}}
+
+/* LANG BAR */
+.lang-bar{background:var(--bg-2);border-bottom:1px solid var(--border);padding:.5rem 0;}
+.lang-inner{max-width:1024px;margin:0 auto;padding:0 24px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+.lang-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.06em;padding:.25rem .55rem;border-radius:var(--radius);transition:all .15s;}
+.lang-btn:hover{border-color:var(--border-2);color:var(--body);}
+.lang-btn.active{border-color:var(--amber);color:var(--amber);background:var(--amber-dim);}
+
+/* TOOL HEADER */
+.tool-header{padding:48px 0 24px;}
+.tool-eyebrow{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);margin-bottom:8px;}
+.tool-title{font-family:'DM Serif Display',serif;font-size:2rem;line-height:1.15;color:var(--bright);margin-bottom:10px;}
+.tool-subtitle{color:var(--body);font-size:.95rem;max-width:780px;margin-bottom:18px;}
+.tool-vintage-banner{display:inline-flex;align-items:center;gap:8px;background:var(--amber-dim);border:1px solid rgba(232,168,56,.3);color:var(--amber-lt);padding:.4rem .8rem;border-radius:var(--radius);font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.04em;}
+.vintage-dot{width:6px;height:6px;border-radius:50%;background:var(--amber);}
+
+/* PII BANNER */
+.pii-notice{margin:24px 0;padding:14px 18px;background:rgba(232,168,56,.06);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);color:var(--amber-lt);font-size:.78rem;line-height:1.5;}
+
+/* AP2 INBOUND BANNER */
+.ap2-inbound-banner{display:none;margin-bottom:18px;padding:14px 18px;background:var(--teal-dim);border:1px solid var(--teal);border-radius:var(--radius);color:var(--teal);font-size:.78rem;line-height:1.5;align-items:flex-start;gap:10px;}
+.ap2-inbound-banner.visible{display:flex;}
+.ap2-inbound-banner .ap2-ib-icon{font-size:1rem;flex-shrink:0;}
+.ap2-inbound-banner .ap2-ib-close{margin-left:auto;background:none;border:none;color:var(--teal);font-size:.85rem;cursor:pointer;flex-shrink:0;padding:0 4px;}
+
+/* AP2 LOAD STRIP */
+.ap2-load-strip{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding:10px 16px;background:var(--bg-2);border:1px solid var(--border-2);border-radius:var(--radius);font-size:.72rem;color:var(--body);}
+.ap2-load-strip .ap2-load-label{flex:1;}
+.ap2-load-strip button{background:none;border:1px solid var(--teal);color:var(--teal);font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.06em;padding:.3rem .7rem;border-radius:var(--radius);transition:all .15s;}
+.ap2-load-strip button:hover{background:var(--teal-dim);}
+
+/* PROGRAM COMPARISON GRID */
+.prog-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:18px;}
+@media(max-width:900px){.prog-grid{grid-template-columns:1fr;}}
+.prog-slot{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;position:relative;}
+.prog-slot-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.prog-slot-num{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);background:var(--amber-dim);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:.2rem .5rem;}
+.prog-slot-clear{background:none;border:none;color:var(--muted);font-size:.7rem;cursor:pointer;padding:2px 4px;}
+.prog-slot-clear:hover{color:var(--coral);}
+
+/* PANELS */
+.panel{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;margin-bottom:18px;}
+.panel-label{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:block;}
+.panel-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px;}
+@media(max-width:560px){.panel-row{grid-template-columns:1fr;}}
+.panel-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:12px;}
+@media(max-width:760px){.panel-row-3{grid-template-columns:1fr 1fr;}}
+@media(max-width:480px){.panel-row-3{grid-template-columns:1fr;}}
+.input-group{display:flex;flex-direction:column;gap:6px;}
+.input-group label{font-size:.72rem;color:var(--text);}
+.input-hint{font-size:.62rem;color:var(--muted);margin-top:2px;}
+input[type="number"],input[type="text"],select{width:100%;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);color:var(--bright);padding:.55rem .7rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;outline:none;transition:border-color .15s;-webkit-appearance:none;}
+input:focus,select:focus{border-color:var(--amber);}
+input::placeholder{color:var(--muted);}
+select option{background:var(--bg-3);}
+.input-prefix{position:relative;}
+.input-prefix::before{content:"$";position:absolute;left:.7rem;top:50%;transform:translateY(-50%);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.78rem;pointer-events:none;}
+.input-prefix input{padding-left:1.4rem;}
+.input-suffix{position:relative;}
+.input-suffix::after{content:"%";position:absolute;right:.7rem;top:50%;transform:translateY(-50%);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.78rem;pointer-events:none;}
+.input-suffix input{padding-right:1.4rem;}
+.net-cost-chip{margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--teal);background:var(--teal-dim);border:1px solid rgba(20,184,166,.2);border-radius:var(--radius);padding:.2rem .5rem;display:inline-block;}
+.net-cost-chip.positive{color:var(--green);background:var(--green-dim);border-color:rgba(52,211,153,.2);}
+
+/* RUN BUTTON */
+.run-btn{width:100%;padding:14px 24px;background:var(--amber);color:var(--bg);border:none;border-radius:var(--radius);font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;transition:background .15s,transform .1s;margin:18px 0 36px;}
+.run-btn:hover{background:var(--amber-lt);}
+.run-btn:active{transform:translateY(1px);}
+.run-btn:disabled{background:var(--muted);cursor:not-allowed;}
+
+/* RESULTS */
+.results-panel{display:none;}
+.results-panel.visible{display:block;}
+.results-section-title{font-family:'DM Serif Display',serif;font-size:1.3rem;color:var(--bright);margin-bottom:18px;}
+.results-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px;}
+@media(max-width:900px){.results-grid{grid-template-columns:1fr;}}
+.result-prog-card{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;position:relative;}
+.result-prog-card.winner{border-color:var(--amber);background:var(--amber-glow);}
+.winner-badge{position:absolute;top:-1px;left:50%;transform:translateX(-50%);background:var(--amber);color:var(--bg);font-family:'JetBrains Mono',monospace;font-size:.5rem;letter-spacing:.14em;text-transform:uppercase;padding:.2rem .6rem;border-radius:0 0 var(--radius) var(--radius);font-weight:600;}
+.rpc-name{font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.08em;color:var(--amber-lt);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rpc-inst{font-size:.7rem;color:var(--body);margin-bottom:16px;}
+.rpc-metric{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--border);}
+.rpc-metric:last-child{border-bottom:none;}
+.rpc-metric-label{font-size:.68rem;color:var(--body);}
+.rpc-metric-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--bright);}
+.rpc-metric-value.good{color:var(--green);}
+.rpc-metric-value.warn{color:var(--warn);}
+.rpc-metric-value.bad{color:var(--red);}
+
+/* COMPARISON TABLE */
+.comp-table-wrap{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow-x:auto;margin-bottom:18px;}
+.comp-table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:.68rem;}
+.comp-table th,.comp-table td{padding:9px 14px;border-bottom:1px solid var(--border);}
+.comp-table th{color:var(--muted);font-weight:500;text-align:left;font-size:.55rem;letter-spacing:.06em;text-transform:uppercase;background:var(--bg-3);}
+.comp-table td.num{text-align:right;}
+.comp-table .best{color:var(--green);font-weight:600;}
+.comp-table .worst{color:var(--red);}
+.comp-table .row-label{color:var(--text);min-width:160px;}
+
+/* EXPORT ROW */
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:18px 22px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:18px;}
+.btn{background:none;border:1px solid var(--border-2);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.06em;padding:.55rem .9rem;border-radius:var(--radius);transition:all .15s;display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;}
+.btn:hover:not(:disabled){border-color:var(--text);}
+.btn:disabled{opacity:.28;cursor:not-allowed;}
+.btn.ready{border-color:var(--amber);color:var(--amber-lt);}
+.btn.ready:hover{background:var(--amber-dim);}
+.btn-subtitle{font-size:.5rem;color:var(--muted);letter-spacing:.04em;text-transform:none;}
+.btn-help{width:28px;height:28px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:500;flex-shrink:0;}
+
+/* MCP PANEL */
+.mcp-toggle{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:18px;}
+.mcp-toggle summary{padding:14px 22px;font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);cursor:pointer;list-style:none;}
+.mcp-toggle summary::before{content:"▸ ";}
+.mcp-toggle[open] summary::before{content:"▾ ";}
+.mcp-panel{padding:0 22px 22px;font-family:'JetBrains Mono',monospace;font-size:.65rem;line-height:1.6;color:var(--body);}
+.mcp-panel pre{background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;overflow-x:auto;font-size:.62rem;color:var(--text);}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 18px;border-radius:var(--radius);font-family:'JetBrains Mono',monospace;font-size:.72rem;z-index:300;box-shadow:var(--shadow);opacity:0;transition:opacity .2s;pointer-events:none;max-width:520px;text-align:center;}
+.toast.show{opacity:1;}
+.toast.error{background:var(--red-dim);border:1px solid var(--red);color:var(--red);}
+.toast.success{background:var(--green-dim);border:1px solid var(--green);color:var(--green);}
+.toast.info{background:var(--amber-dim);border:1px solid var(--amber);color:var(--amber-lt);}
+
+/* FOOTER */
+.tool-footer{margin-top:48px;padding:24px 0;border-top:1px solid var(--border);font-size:.7rem;color:var(--muted);line-height:1.6;text-align:center;}
+.tool-footer a{color:var(--body);border-bottom:1px solid var(--border-2);}
+.tool-footer a:hover{color:var(--text);border-color:var(--text);text-decoration:none;}
+
+/* AP2 MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(7,11,20,.88);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;}
+.modal-overlay[hidden]{display:none;}
+.modal-box{background:var(--bg-2);border:1px solid var(--border-2);border-radius:var(--radius-lg);padding:28px;max-width:560px;width:100%;box-shadow:var(--shadow);}
+.modal-title{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--bright);margin-bottom:8px;}
+.modal-sub{font-size:.75rem;color:var(--body);margin-bottom:18px;line-height:1.5;}
+.modal-textarea{width:100%;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.65rem;padding:12px;resize:vertical;min-height:140px;outline:none;transition:border-color .15s;}
+.modal-textarea:focus{border-color:var(--teal);}
+.modal-actions{display:flex;gap:10px;margin-top:14px;justify-content:flex-end;}
+.btn-primary{background:var(--amber);color:var(--bg);border:none;font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:600;letter-spacing:.06em;padding:.55rem 1.1rem;border-radius:var(--radius);transition:background .15s;}
+.btn-primary:hover{background:var(--amber-lt);}
+.btn-secondary{background:none;border:1px solid var(--border-2);color:var(--body);font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:.55rem 1.1rem;border-radius:var(--radius);}
+.btn-secondary:hover{border-color:var(--text);color:var(--text);}
+
+.disclaimer{margin-top:18px;padding:14px 18px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--body);font-size:.7rem;line-height:1.55;}
+.hidden{display:none!important;}
+.section-divider{border:none;border-top:1px solid var(--border);margin:28px 0;}
+</style>
+</head>
+<body>
+
+<!-- LANG BAR (CONTRACT §1.1 — <button> toggles, 6 languages) -->
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-right">
+      <a href="https://apexadvisory.site" class="nav-pill" target="_blank" rel="noopener" data-i18n="nav_advisory">ApexAdvisory.site</a>
+      <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    </div>
+  </div>
+</nav>
+
+<!-- AP2 INBOUND PASTE MODAL -->
+<div class="modal-overlay" id="ap2Modal" hidden aria-modal="true" role="dialog" aria-labelledby="ap2ModalTitle">
+  <div class="modal-box">
+    <div class="modal-title" id="ap2ModalTitle" data-i18n="modal_title">Load AP2 Mandate</div>
+    <div class="modal-sub" data-i18n="modal_sub">Paste an AP2 mandate exported from the Credential ROI Suite (AL-02) or FAFSA SAI Simulator (AL-17). Relevant fields will be pre-populated into Program 1.</div>
+    <textarea class="modal-textarea" id="ap2PasteArea" placeholder='{ "ap2_version": "1.0", "mandate_type": "credential_roi_evaluation", ... }' aria-label="Paste AP2 mandate JSON"></textarea>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeAP2Modal()" data-i18n="cancel">Cancel</button>
+      <button class="btn-primary" onclick="loadAP2FromModal()" data-i18n="load_mandate">Load Mandate</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" role="alert" aria-live="assertive"></div>
+
+<!-- MAIN CONTENT -->
+<div class="container">
+
+  <!-- TOOL HEADER -->
+  <div class="tool-header">
+    <div class="tool-eyebrow" data-i18n="eyebrow">AL · 26 · Education Path &amp; ROI</div>
+    <h1 class="tool-title" data-i18n="tool_title">Graduate School ROI Comparator</h1>
+    <p class="tool-subtitle" data-i18n="tool_subtitle">Model the full financial return of up to 3 graduate programs side-by-side. Compare net investment, salary premium, break-even timeline, NPV, and IRR — all computed locally in your browser using NCES IPEDS 2023-24 tuition data and BLS OEWS May 2023 wage data.</p>
+    <div class="tool-vintage-banner">
+      <div class="vintage-dot"></div>
+      <span data-i18n="vintage">NCES IPEDS 2023-24 · BLS OEWS May 2023 · MBA Employment Reports 2023</span>
+    </div>
+  </div>
+
+  <!-- AP2 INBOUND BANNER (shown when a mandate is loaded) -->
+  <div class="ap2-inbound-banner" id="ap2InboundBanner">
+    <span class="ap2-ib-icon">📥</span>
+    <span id="ap2InboundText"></span>
+    <button class="ap2-ib-close" onclick="dismissInboundBanner()" aria-label="Dismiss">✕</button>
+  </div>
+
+  <!-- PII BANNER (CONTRACT §1.3 — exact text) -->
+  <div class="pii-notice" role="note">
+    🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+  </div>
+
+  <!-- AP2 LOAD STRIP -->
+  <div class="ap2-load-strip">
+    <span class="ap2-load-label" data-i18n="ap2_strip_label">Have an AP2 mandate from the Credential ROI Suite or FAFSA SAI Simulator?</span>
+    <button onclick="openAP2Modal()" data-i18n="ap2_strip_btn">📥 Load Mandate</button>
+  </div>
+
+  <!-- PROGRAM COMPARISON PANELS -->
+  <div class="prog-grid" id="progGrid">
+    <!-- Program slots rendered by JS -->
+  </div>
+
+  <!-- SHARED ASSUMPTIONS -->
+  <div class="panel">
+    <span class="panel-label" data-i18n="assumptions_label">Shared Assumptions</span>
+    <div class="panel-row-3">
+      <div class="input-group">
+        <label for="sharedCurrentSalary" data-i18n="lbl_current_salary">Current Annual Salary (pre-degree)</label>
+        <div class="input-prefix"><input type="number" id="sharedCurrentSalary" min="0" max="500000" step="1000" value="65000" aria-label="Current annual salary"></div>
+        <div class="input-hint" data-i18n="hint_current_salary">What you earn today, before enrolling</div>
+      </div>
+      <div class="input-group">
+        <label for="sharedCareerHorizon" data-i18n="lbl_horizon">Career Horizon (years from today)</label>
+        <input type="number" id="sharedCareerHorizon" min="5" max="40" step="1" value="25" aria-label="Career horizon in years">
+        <div class="input-hint" data-i18n="hint_horizon">Total horizon for NPV/IRR, including school years</div>
+      </div>
+      <div class="input-group">
+        <label for="sharedDiscountRate" data-i18n="lbl_discount">Discount Rate (%)</label>
+        <div class="input-suffix"><input type="number" id="sharedDiscountRate" min="0" max="20" step="0.5" value="5" aria-label="Discount rate percent"></div>
+        <div class="input-hint" data-i18n="hint_discount">Reflects cost of capital / opportunity cost of money (5% default)</div>
+      </div>
+    </div>
+    <div class="panel-row">
+      <div class="input-group">
+        <label for="sharedSalaryGrowth" data-i18n="lbl_growth">Annual Salary Growth Rate (%)</label>
+        <div class="input-suffix"><input type="number" id="sharedSalaryGrowth" min="0" max="10" step="0.5" value="2" aria-label="Annual salary growth rate"></div>
+        <div class="input-hint" data-i18n="hint_growth">Applied equally to pre- and post-degree salary trajectories</div>
+      </div>
+      <div class="input-group">
+        <label for="sharedYearsPostGrad" data-i18n="lbl_post_grad_horizon">Post-Graduation Employment Years</label>
+        <input type="number" id="sharedYearsPostGrad" min="1" max="40" step="1" value="20" aria-label="Post graduation employment years" aria-describedby="postGradHint">
+        <div class="input-hint" id="postGradHint" data-i18n="hint_post_grad">How many years you expect to work after graduating (overrides career horizon if needed)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RUN BUTTON -->
+  <button class="run-btn" id="runBtn" onclick="runComparison()" data-i18n="run_btn">
+    ▶ Compare Programs
+  </button>
+
+  <!-- RESULTS PANEL -->
+  <div class="results-panel" id="resultsPanel">
+
+    <h2 class="results-section-title" data-i18n="results_title">Comparison Results</h2>
+
+    <!-- 3-col program result cards -->
+    <div class="results-grid" id="resultsGrid">
+      <!-- Populated by JS -->
+    </div>
+
+    <!-- Comparison table -->
+    <div class="comp-table-wrap">
+      <table class="comp-table" id="compTable" aria-label="Program comparison table">
+        <thead id="compTableHead"></thead>
+        <tbody id="compTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="disclaimer">
+      <strong>Methodology note:</strong> NPV and IRR are computed over the full career horizon using differential cash flows (graduate school scenario vs. staying at current job). Opportunity cost = foregone salary during enrollment years. Post-degree salary is the user-specified target, applied from graduation year forward. Salary premium grows at the specified annual growth rate. All figures are nominal (not inflation-adjusted) unless discount rate approximates real cost of capital. Embedded data: NCES IPEDS 2023-24 tuition · BLS OEWS May 2023 wages · school-published MBA employment reports (Class of 2023). PhD programs at research universities are typically fully funded — adjust fellowship amount accordingly.
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- EXPORT ROW (CONTRACT §3.3 — Markdown first, AP2 second) -->
+    <div class="results-export-row">
+      <button class="btn" id="markdownExportBtn" disabled onclick="exportMarkdown()" aria-label="Export Markdown summary">
+        <span data-i18n="export_md">Export Markdown</span>
+        <span class="btn-subtitle" data-i18n="export_md_sub">Human-readable summary</span>
+      </button>
+      <button class="btn" id="ap2ExportBtn" disabled onclick="exportAP2()" aria-label="Export AP2 mandate JSON">
+        <span data-i18n="export_ap2">Export AP2 JSON</span>
+        <span class="btn-subtitle" data-i18n="export_ap2_sub">Agent integration · audit trail</span>
+      </button>
+      <button class="btn btn-help" onclick="showAP2Help()" aria-label="What is AP2?" title="What is AP2?">?</button>
+    </div>
+
+  </div><!-- /results-panel -->
+
+  <!-- MCP PANEL (collapsed by default) -->
+  <details class="mcp-toggle" id="mcpToggle">
+    <summary data-i18n="mcp_label">▸ MCP Discovery · manifest.json</summary>
+    <div class="mcp-panel">
+      <p style="margin-bottom:10px;" data-i18n="mcp_desc">Machine-readable tool manifest for AI agent discovery via Model Context Protocol.</p>
+      <pre id="mcpJson"></pre>
+    </div>
+  </details>
+
+  <!-- FOOTER (CONTRACT §6.2 — exact attribution) -->
+  <div class="tool-footer">
+    Built by <a href="https://apexadvisory.site" target="_blank" rel="noopener">Apex Advisors</a> ·
+    Sister suite: <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> ·
+    CC 4.0 BY · AL-26 · Data as of NCES IPEDS 2023-24 · BLS OEWS May 2023
+  </div>
+
+</div><!-- /container -->
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §1  EMBEDDED REFERENCE DATA
+   Sources: NCES IPEDS 2023-24 · BLS OEWS May 2023 · School employment reports
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// BLS field definitions: post-degree median salary and bachelor's-level baseline
+// Source: BLS OEWS May 2023
+const BLS_FIELDS = [
+  { key:'mba',      label:'MBA / Business Management',       median:107360, baseline:72000,  p25:72480,  p75:162900 },
+  { key:'jd',       label:'JD / Law',                        median:135740, baseline:72000,  p25:73000,  p75:239200 },
+  { key:'md',       label:'MD / Medicine (attending)',        median:236000, baseline:72000,  p25:165700, p75:239200 },
+  { key:'cs_ms',    label:'Computer Science MS',             median:130160, baseline:108130, p25:99380,  p75:168870 },
+  { key:'ds_ms',    label:'Data Science / Statistics MS',    median:108020, baseline:72000,  p25:75900,  p75:154530 },
+  { key:'eng_ms',   label:'Engineering MS',                  median:103990, baseline:88000,  p25:80020,  p75:133520 },
+  { key:'mpa_mpp',  label:'Public Policy MPA/MPP',           median:82640,  baseline:58000,  p25:58500,  p75:115000 },
+  { key:'msw',      label:'Social Work MSW',                 median:60280,  baseline:48150,  p25:45800,  p75:79930  },
+  { key:'dnp',      label:'Nursing DNP / Nurse Practitioner',median:124680, baseline:81220,  p25:105390, p75:144890 },
+  { key:'edd',      label:'Education EdD/PhD',               median:83380,  baseline:52000,  p25:57600,  p75:126000 },
+  { key:'psych_phd',label:'Psychology PhD',                  median:90130,  baseline:48000,  p25:64430,  p75:130590 },
+  { key:'bio_phd',  label:'Biology PhD / Life Sciences',     median:102270, baseline:52000,  p25:67100,  p75:133000 },
+  { key:'custom',   label:'Custom (enter salary manually)',  median:null,   baseline:null,   p25:null,   p75:null   }
+];
+
+// Institution programs: id, name, group, type, tuition_is, tuition_oos, years, field_key, funding_note
+// tuition_is: null for private (use tuition_oos for all)
+// Source: NCES IPEDS 2023-24 and institution-published 2024-25 rates
+const PROGRAMS_DB = [
+  // ── US MBA ────────────────────────────────────────────────────────────────
+  { id:'hbs-mba',      name:'Harvard Business School',                 group:'MBA (US)', type:'private', tuition_is:null,  tuition_oos:76900, years:2,   field:'mba',     note:null },
+  { id:'gsb-mba',      name:'Stanford Graduate School of Business',    group:'MBA (US)', type:'private', tuition_is:null,  tuition_oos:80340, years:2,   field:'mba',     note:null },
+  { id:'wharton-mba',  name:'University of Pennsylvania (Wharton)',     group:'MBA (US)', type:'private', tuition_is:null,  tuition_oos:87526, years:2,   field:'mba',     note:null },
+  { id:'booth-mba',    name:'University of Chicago (Booth)',            group:'MBA (US)', type:'private', tuition_is:null,  tuition_oos:80400, years:2,   field:'mba',     note:null },
+  { id:'kellogg-mba',  name:'Northwestern University (Kellogg)',        group:'MBA (US)', type:'private', tuition_is:null,  tuition_oos:83484, years:2,   field:'mba',     note:null },
+  { id:'sloan-mba',    name:'MIT (Sloan)',                              group:'MBA (US)', type:'private', tuition_is:null,  tuition_oos:83400, years:2,   field:'mba',     note:null },
+  { id:'cbs-mba',      name:'Columbia Business School',                group:'MBA (US)', type:'private', tuition_is:null,  tuition_oos:87768, years:2,   field:'mba',     note:null },
+  { id:'yale-som-mba', name:'Yale School of Management',               group:'MBA (US)', type:'private', tuition_is:null,  tuition_oos:78200, years:2,   field:'mba',     note:null },
+  { id:'fuqua-mba',    name:'Duke University (Fuqua)',                  group:'MBA (US)', type:'private', tuition_is:null,  tuition_oos:78960, years:2,   field:'mba',     note:null },
+  { id:'tuck-mba',     name:'Dartmouth College (Tuck)',                 group:'MBA (US)', type:'private', tuition_is:null,  tuition_oos:84168, years:2,   field:'mba',     note:null },
+  { id:'stern-mba',    name:'New York University (Stern)',              group:'MBA (US)', type:'private', tuition_is:null,  tuition_oos:82312, years:2,   field:'mba',     note:null },
+  { id:'johnson-mba',  name:'Cornell University (Johnson)',             group:'MBA (US)', type:'private', tuition_is:null,  tuition_oos:78080, years:2,   field:'mba',     note:null },
+  { id:'tepper-mba',   name:'Carnegie Mellon University (Tepper)',      group:'MBA (US)', type:'private', tuition_is:null,  tuition_oos:80000, years:2,   field:'mba',     note:null },
+  { id:'marshall-mba', name:'University of Southern California (Marshall)', group:'MBA (US)', type:'private', tuition_is:null, tuition_oos:72360, years:2, field:'mba', note:null },
+  { id:'haas-mba',     name:'UC Berkeley (Haas)',                      group:'MBA (US)', type:'public',  tuition_is:34000, tuition_oos:57432, years:2,   field:'mba',     note:null },
+  { id:'ross-mba',     name:'University of Michigan (Ross)',            group:'MBA (US)', type:'public',  tuition_is:36000, tuition_oos:60500, years:2,   field:'mba',     note:null },
+  { id:'anderson-mba', name:'UCLA (Anderson)',                          group:'MBA (US)', type:'public',  tuition_is:37164, tuition_oos:52170, years:2,   field:'mba',     note:null },
+  { id:'darden-mba',   name:'University of Virginia (Darden)',          group:'MBA (US)', type:'public',  tuition_is:42700, tuition_oos:67200, years:2,   field:'mba',     note:null },
+  { id:'mccombs-mba',  name:'University of Texas at Austin (McCombs)', group:'MBA (US)', type:'public',  tuition_is:22000, tuition_oos:45800, years:2,   field:'mba',     note:null },
+  { id:'unc-mba',      name:'UNC (Kenan-Flagler)',                      group:'MBA (US)', type:'public',  tuition_is:29404, tuition_oos:53858, years:2,   field:'mba',     note:null },
+  { id:'kelley-mba',   name:'Indiana University (Kelley)',              group:'MBA (US)', type:'public',  tuition_is:22700, tuition_oos:45240, years:2,   field:'mba',     note:null },
+  { id:'owen-mba',     name:'Vanderbilt University (Owen)',             group:'MBA (US)', type:'private', tuition_is:null,  tuition_oos:72060, years:2,   field:'mba',     note:null },
+  // ── International MBA ──────────────────────────────────────────────────────
+  { id:'insead',       name:'INSEAD (France/Singapore)',               group:'MBA (Intl)', type:'private', tuition_is:null, tuition_oos:107250, years:0.83, field:'mba', note:'EUR 99,300 total; 10-month programme' },
+  { id:'lbs-mba',      name:'London Business School',                  group:'MBA (Intl)', type:'private', tuition_is:null, tuition_oos:112887, years:1.5,  field:'mba', note:'GBP 88,100; 15-21 months' },
+  { id:'oxford-said',  name:'Oxford Saïd Business School',            group:'MBA (Intl)', type:'private', tuition_is:null, tuition_oos:79060,  years:1,    field:'mba', note:'GBP 62,640; 12 months' },
+  { id:'cambridge-judge', name:'Cambridge Judge Business School',     group:'MBA (Intl)', type:'private', tuition_is:null, tuition_oos:75780,  years:1,    field:'mba', note:'GBP 60,000; 12 months' },
+  { id:'iese-mba',     name:'IESE Business School (Spain)',            group:'MBA (Intl)', type:'private', tuition_is:null, tuition_oos:87048,  years:1.58, field:'mba', note:'EUR 80,600; 19 months' },
+  { id:'hec-paris',    name:'HEC Paris',                               group:'MBA (Intl)', type:'private', tuition_is:null, tuition_oos:76680,  years:1.33, field:'mba', note:'EUR 71,000; 16 months' },
+  { id:'imd-mba',      name:'IMD Business School (Switzerland)',       group:'MBA (Intl)', type:'private', tuition_is:null, tuition_oos:101200, years:0.92, field:'mba', note:'CHF 92,000; 11 months' },
+  { id:'nus-mba',      name:'NUS Business School (Singapore)',         group:'MBA (Intl)', type:'private', tuition_is:null, tuition_oos:52170,  years:1,    field:'mba', note:'SGD 70,500; 12 months' },
+  { id:'rotman-mba',   name:'University of Toronto (Rotman)',          group:'MBA (Intl)', type:'public',  tuition_is:null, tuition_oos:49420,  years:2,    field:'mba', note:'CAD 66,780/yr' },
+  // ── JD / Law ──────────────────────────────────────────────────────────────
+  { id:'yale-jd',      name:'Yale Law School',                         group:'JD / Law', type:'private', tuition_is:null,  tuition_oos:74800, years:3, field:'jd', note:null },
+  { id:'hls-jd',       name:'Harvard Law School',                      group:'JD / Law', type:'private', tuition_is:null,  tuition_oos:73800, years:3, field:'jd', note:null },
+  { id:'cls-jd',       name:'Columbia Law School',                     group:'JD / Law', type:'private', tuition_is:null,  tuition_oos:79720, years:3, field:'jd', note:null },
+  { id:'umich-jd',     name:'University of Michigan Law School',       group:'JD / Law', type:'public',  tuition_is:62484, tuition_oos:65484, years:3, field:'jd', note:null },
+  { id:'utaustin-jd',  name:'University of Texas School of Law',       group:'JD / Law', type:'public',  tuition_is:37600, tuition_oos:52200, years:3, field:'jd', note:null },
+  // ── MD / Medicine ──────────────────────────────────────────────────────────
+  { id:'jhu-md',       name:'Johns Hopkins School of Medicine',        group:'MD / Medicine', type:'private', tuition_is:null, tuition_oos:60600, years:4, field:'md', note:'Add 3-7 residency years at ~$65k' },
+  { id:'columbia-md',  name:'Columbia University (Vagelos P&S)',       group:'MD / Medicine', type:'private', tuition_is:null, tuition_oos:63720, years:4, field:'md', note:'Add 3-7 residency years at ~$65k' },
+  { id:'ucsf-md',      name:'UC San Francisco School of Medicine',     group:'MD / Medicine', type:'public',  tuition_is:18512, tuition_oos:30836, years:4, field:'md', note:'CA resident rate; add residency years' },
+  { id:'umich-md',     name:'University of Michigan Medical School',   group:'MD / Medicine', type:'public',  tuition_is:30808, tuition_oos:54050, years:4, field:'md', note:null },
+  // ── CS MS ──────────────────────────────────────────────────────────────────
+  { id:'mit-cs-ms',    name:'MIT — Computer Science MS',               group:'CS / Tech MS', type:'private', tuition_is:null, tuition_oos:60156, years:1.5, field:'cs_ms', note:null },
+  { id:'stanford-cs',  name:'Stanford — Computer Science MS',          group:'CS / Tech MS', type:'private', tuition_is:null, tuition_oos:62484, years:1.5, field:'cs_ms', note:null },
+  { id:'cmu-cs-ms',    name:'Carnegie Mellon — CS MS',                 group:'CS / Tech MS', type:'private', tuition_is:null, tuition_oos:59820, years:1.5, field:'cs_ms', note:null },
+  { id:'ucsd-cs-ms',   name:'UC San Diego — CS MS',                    group:'CS / Tech MS', type:'public',  tuition_is:17052, tuition_oos:32068, years:2, field:'cs_ms', note:null },
+  { id:'uiuc-cs-ms',   name:'UIUC — Computer Science MS',              group:'CS / Tech MS', type:'public',  tuition_is:17072, tuition_oos:32724, years:1.5, field:'cs_ms', note:null },
+  { id:'columbia-ds',  name:'Columbia — Data Science MS',              group:'CS / Tech MS', type:'private', tuition_is:null, tuition_oos:65592, years:1.5, field:'ds_ms', note:null },
+  { id:'nyu-ds',       name:'NYU — Data Science MS (CDS)',             group:'CS / Tech MS', type:'private', tuition_is:null, tuition_oos:60438, years:1.5, field:'ds_ms', note:null },
+  { id:'uw-ds',        name:'University of Washington — DS MS',        group:'CS / Tech MS', type:'public',  tuition_is:19788, tuition_oos:35016, years:1.5, field:'ds_ms', note:null },
+  // ── Engineering MS ─────────────────────────────────────────────────────────
+  { id:'gatech-ms-eng',name:'Georgia Tech — Engineering MS',           group:'Engineering MS', type:'public', tuition_is:13788, tuition_oos:29526, years:1.5, field:'eng_ms', note:null },
+  { id:'purdue-ms-eng',name:'Purdue — Engineering MS',                 group:'Engineering MS', type:'public', tuition_is:10002, tuition_oos:29134, years:2, field:'eng_ms', note:null },
+  { id:'caltech-ms',   name:'Caltech — Engineering MS',                group:'Engineering MS', type:'private', tuition_is:null, tuition_oos:62346, years:1.5, field:'eng_ms', note:null },
+  // ── Public Policy ──────────────────────────────────────────────────────────
+  { id:'hks-mpp',      name:'Harvard Kennedy School — MPA/MPP',        group:'Public Policy', type:'private', tuition_is:null, tuition_oos:65760, years:2, field:'mpa_mpp', note:null },
+  { id:'princeton-mpa',name:'Princeton Woodrow Wilson School — MPA',   group:'Public Policy', type:'private', tuition_is:null, tuition_oos:62370, years:2, field:'mpa_mpp', note:null },
+  { id:'michigan-ford',name:'University of Michigan Ford School — MPP', group:'Public Policy', type:'public', tuition_is:27258, tuition_oos:51720, years:2, field:'mpa_mpp', note:null },
+  // ── Other Graduate ─────────────────────────────────────────────────────────
+  { id:'columbia-msw', name:'Columbia — Social Work MSW',              group:'Other Graduate', type:'private', tuition_is:null, tuition_oos:53928, years:2, field:'msw', note:null },
+  { id:'jhu-dnp',      name:'Johns Hopkins — Nursing DNP',             group:'Other Graduate', type:'private', tuition_is:null, tuition_oos:55080, years:3, field:'dnp', note:null },
+  { id:'hgse-edd',     name:'Harvard Graduate School of Education — EdD', group:'Other Graduate', type:'private', tuition_is:null, tuition_oos:57780, years:3, field:'edd', note:null },
+  { id:'mit-bio-phd',  name:'MIT — Biology PhD (typically funded)',    group:'Other Graduate', type:'private', tuition_is:null, tuition_oos:60156, years:5.5, field:'bio_phd', note:'Research PhDs are typically fully funded — set fellowship = tuition and add stipend as negative living delta' },
+  // ── Custom ─────────────────────────────────────────────────────────────────
+  { id:'custom',       name:'Custom / Enter Manually',                 group:'Custom', type:'custom', tuition_is:null, tuition_oos:null, years:2, field:'custom', note:null }
+];
+
+// MBA employment benchmark data (Class of 2023)
+// Source: School-published MBA Employment Reports 2023
+const MBA_BENCHMARKS = {
+  'hbs-mba':      { salary:175000, employ:0.94, bonus:30000 },
+  'gsb-mba':      { salary:175000, employ:0.92, bonus:30000 },
+  'wharton-mba':  { salary:175000, employ:0.94, bonus:30000 },
+  'booth-mba':    { salary:170000, employ:0.95, bonus:30000 },
+  'kellogg-mba':  { salary:165000, employ:0.94, bonus:30000 },
+  'sloan-mba':    { salary:175000, employ:0.93, bonus:30000 },
+  'cbs-mba':      { salary:175000, employ:0.92, bonus:30000 },
+  'yale-som-mba': { salary:150000, employ:0.93, bonus:30000 },
+  'fuqua-mba':    { salary:150000, employ:0.93, bonus:30000 },
+  'tuck-mba':     { salary:160000, employ:0.94, bonus:30000 },
+  'stern-mba':    { salary:150000, employ:0.91, bonus:30000 },
+  'johnson-mba':  { salary:155000, employ:0.92, bonus:30000 },
+  'tepper-mba':   { salary:150000, employ:0.93, bonus:25000 },
+  'marshall-mba': { salary:130000, employ:0.89, bonus:20000 },
+  'haas-mba':     { salary:162000, employ:0.91, bonus:30000 },
+  'ross-mba':     { salary:150000, employ:0.93, bonus:30000 },
+  'anderson-mba': { salary:150000, employ:0.90, bonus:25000 },
+  'darden-mba':   { salary:150000, employ:0.94, bonus:30000 },
+  'mccombs-mba':  { salary:135000, employ:0.90, bonus:25000 },
+  'unc-mba':      { salary:125000, employ:0.90, bonus:20000 },
+  'kelley-mba':   { salary:118000, employ:0.89, bonus:18000 },
+  'owen-mba':     { salary:130000, employ:0.91, bonus:20000 }
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §2  AP2 SCHEMA VALIDATOR (CONTRACT Appendix F — exact reference impl)
+   ═══════════════════════════════════════════════════════════════════════════ */
+const AP2Schema = {
+  required: ['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata'],
+  validMandateTypes: [
+    'credential_roi_evaluation','human_capital_assessment','automation_exposure_score',
+    'career_resilience_score','workforce_program_roi','career_pivot_assessment',
+    'career_transition_record','scholarship_pipeline_plan','fafsa_sai_estimate',
+    'exam_pathway_plan','benefits_election_record','severance_decision_record',
+    'offer_negotiation_record','graduate_school_roi_record','apprenticeship_match_record',
+    'cpd_credit_record','job_search_roi_record','career_break_record',
+    'loan_repayment_record','freelance_total_cost_record',
+    'mba_roi_evaluation','test_prep_roi_record',
+    'international_student_cost_record','parent_college_roi_record',
+    'equity_compensation_record'
+  ],
+  validate(mandate) {
+    const errors = [];
+    if (!mandate || typeof mandate !== 'object') return { valid:false, errors:['mandate is not an object'] };
+    this.required.forEach(k => { if (mandate[k] == null) errors.push(`missing required field: ${k}`); });
+    if (mandate.ap2_version !== '1.0') errors.push('ap2_version must be "1.0"');
+    if (mandate.mandate_type && !this.validMandateTypes.includes(mandate.mandate_type))
+      errors.push(`mandate_type "${mandate.mandate_type}" is not a recognized Apex Logics value`);
+    if (mandate.al_id && !/^AL-\d{1,2}(\+\d{1,2})?$/.test(mandate.al_id))
+      errors.push(`al_id "${mandate.al_id}" must match /^AL-\\d{1,2}(\\+\\d{1,2})?$/`);
+    if (mandate.audit_metadata) {
+      if (mandate.audit_metadata.client_side_executed !== true) errors.push('audit_metadata.client_side_executed must be true');
+      if (mandate.audit_metadata.zero_pii_verified !== true) errors.push('audit_metadata.zero_pii_verified must be true');
+      if (mandate.audit_metadata.deterministic_run !== true) errors.push('audit_metadata.deterministic_run must be true');
+    }
+    return { valid: errors.length === 0, errors };
+  }
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §3  i18n (CONTRACT Appendix B — apex_lang sessionStorage key)
+   ═══════════════════════════════════════════════════════════════════════════ */
+const TRANSLATIONS = {
+  en: {
+    eyebrow:'Education Path & ROI · AL-26',
+    tool_title:'Graduate School ROI Comparator',
+    tool_subtitle:'Model the full financial return of up to 3 graduate programs side-by-side. Compare net investment, salary premium, break-even timeline, NPV, and IRR.',
+    vintage:'NCES IPEDS 2023-24 · BLS OEWS May 2023 · MBA Employment Reports 2023',
+    nav_advisory:'ApexAdvisory.site',
+    modal_title:'Load AP2 Mandate',
+    modal_sub:'Paste an AP2 mandate from the Credential ROI Suite (AL-02) or FAFSA SAI Simulator (AL-17).',
+    cancel:'Cancel', load_mandate:'Load Mandate',
+    ap2_strip_label:'Have an AP2 mandate from the Credential ROI Suite or FAFSA SAI Simulator?',
+    ap2_strip_btn:'📥 Load Mandate',
+    assumptions_label:'Shared Assumptions',
+    lbl_current_salary:'Current Annual Salary (pre-degree)',
+    hint_current_salary:'What you earn today, before enrolling',
+    lbl_horizon:'Career Horizon (years from today)',
+    hint_horizon:'Total horizon for NPV/IRR, including school years',
+    lbl_discount:'Discount Rate (%)',
+    hint_discount:'Reflects cost of capital (5% default)',
+    lbl_growth:'Annual Salary Growth Rate (%)',
+    hint_growth:'Applied equally to pre- and post-degree trajectories',
+    lbl_post_grad_horizon:'Post-Graduation Employment Years',
+    hint_post_grad:'How many years you expect to work after graduating',
+    run_btn:'▶ Compare Programs',
+    results_title:'Comparison Results',
+    export_md:'Export Markdown', export_md_sub:'Human-readable summary',
+    export_ap2:'Export AP2 JSON', export_ap2_sub:'Agent integration · audit trail',
+    mcp_label:'MCP Discovery · manifest.json',
+    mcp_desc:'Machine-readable tool manifest for AI agent discovery via Model Context Protocol.'
+  },
+  es: { tool_title:'Comparador de Retorno de Inversión en Posgrado', run_btn:'▶ Comparar Programas', cancel:'Cancelar', load_mandate:'Cargar Mandato' },
+  fr: { tool_title:'Comparateur de ROI — Études Supérieures', run_btn:'▶ Comparer les Programmes', cancel:'Annuler', load_mandate:'Charger le Mandat' },
+  ar: { tool_title:'مقارن العائد على الاستثمار في الدراسات العليا', run_btn:'▶ قارن البرامج', cancel:'إلغاء', load_mandate:'تحميل التفويض', lang_dir:'rtl' },
+  pt: { tool_title:'Comparador de ROI — Pós-Graduação', run_btn:'▶ Comparar Programas', cancel:'Cancelar', load_mandate:'Carregar Mandato' },
+  zh: { tool_title:'研究生项目回报率比较器', run_btn:'▶ 比较项目', cancel:'取消', load_mandate:'加载授权' }
+};
+
+function setLang(lang) {
+  const t = TRANSLATIONS[lang]; if (!t) return;
+  const base = TRANSLATIONS.en;
+  document.documentElement.dir = (t.lang_dir === 'rtl') ? 'rtl' : 'ltr';
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.dataset.i18n;
+    el.textContent = t[k] || base[k] || el.textContent;
+  });
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.toLowerCase() === lang || (lang === 'zh' && b.textContent === '中文'));
+  });
+  sessionStorage.setItem('apex_lang', lang);
+}
+(function initLang() {
+  const saved = sessionStorage.getItem('apex_lang');
+  const fallback = (navigator.language || 'en').slice(0,2);
+  setLang(saved || (TRANSLATIONS[fallback] ? fallback : 'en'));
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §4  UTILITY FUNCTIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+function fmtUSD(n, compact) {
+  if (n == null || isNaN(n)) return '—';
+  if (compact && Math.abs(n) >= 1000) {
+    const abs = Math.abs(n);
+    const sign = n < 0 ? '-' : '';
+    if (abs >= 1e6) return sign + '$' + (abs/1e6).toFixed(1) + 'M';
+    if (abs >= 1e3) return sign + '$' + (abs/1e3).toFixed(0) + 'k';
+  }
+  return new Intl.NumberFormat('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0}).format(n);
+}
+function fmtPct(n) { if (n == null || isNaN(n)) return '—'; return (n * 100).toFixed(1) + '%'; }
+function fmtYrs(n) { if (n == null || isNaN(n)) return '—'; return n.toFixed(1) + ' yrs'; }
+function fmtYrsInt(n) { if (n == null || isNaN(n)) return 'Never'; return 'Yr ' + Math.ceil(n); }
+function tsCompact() { return new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14); }
+function isoNow() { return new Date().toISOString(); }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+let _toastTimer = null;
+function showToast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + type + ' show';
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §5  PROGRAM SLOT RENDERING
+   ═══════════════════════════════════════════════════════════════════════════ */
+// Build grouped <optgroup> HTML for institution selector
+function buildInstOptions() {
+  const groups = {};
+  PROGRAMS_DB.forEach(p => {
+    if (!groups[p.group]) groups[p.group] = [];
+    groups[p.group].push(p);
+  });
+  let html = '<option value="">— Select Institution / Program —</option>';
+  Object.entries(groups).forEach(([grp, items]) => {
+    html += `<optgroup label="${grp}">`;
+    items.forEach(p => {
+      const label = p.type === 'public' ? p.name + ' (public)' : p.name;
+      html += `<option value="${p.id}">${label}</option>`;
+    });
+    html += '</optgroup>';
+  });
+  return html;
+}
+
+function buildFieldOptions() {
+  return BLS_FIELDS.map(f =>
+    `<option value="${f.key}">${f.label}${f.median ? ' — Median: ' + fmtUSD(f.median) : ''}</option>`
+  ).join('');
+}
+
+function buildProgSlot(idx) {
+  const n = idx + 1;
+  return `
+  <div class="prog-slot" id="progSlot${n}">
+    <div class="prog-slot-header">
+      <span class="prog-slot-num">Program ${n}</span>
+      <button class="prog-slot-clear" onclick="clearSlot(${n})" title="Clear this program slot">✕ Clear</button>
+    </div>
+
+    <div class="input-group" style="margin-bottom:12px;">
+      <label for="p${n}Inst">Institution / Program</label>
+      <select id="p${n}Inst" onchange="onInstChange(${n})" aria-label="Program ${n} institution">
+        ${buildInstOptions()}
+      </select>
+    </div>
+
+    <div class="input-group" style="margin-bottom:12px;">
+      <label for="p${n}Name">Program Label (custom name)</label>
+      <input type="text" id="p${n}Name" placeholder="e.g. Harvard MBA" maxlength="60" aria-label="Program ${n} label">
+    </div>
+
+    <div class="input-group" style="margin-bottom:12px;">
+      <label for="p${n}Field">Field / Career Track (for salary data)</label>
+      <select id="p${n}Field" onchange="onFieldChange(${n})" aria-label="Program ${n} field">
+        ${buildFieldOptions()}
+      </select>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="input-group">
+        <label for="p${n}Tuition">Annual Tuition ($)</label>
+        <div class="input-prefix"><input type="number" id="p${n}Tuition" min="0" max="200000" step="500" value="50000" onchange="updateNetCost(${n})" aria-label="Annual tuition"></div>
+      </div>
+      <div class="input-group">
+        <label for="p${n}Years">Program Length (yrs)</label>
+        <input type="number" id="p${n}Years" min="0.5" max="10" step="0.5" value="2" aria-label="Program length years">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
+      <div class="input-group">
+        <label for="p${n}Residency">Residency</label>
+        <select id="p${n}Residency" onchange="onResidencyChange(${n})" aria-label="Residency status">
+          <option value="oos">Out-of-state / Non-resident</option>
+          <option value="is">In-state (public schools)</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label for="p${n}Fellowship">Annual Fellowship / Stipend ($)</label>
+        <div class="input-prefix"><input type="number" id="p${n}Fellowship" min="0" max="100000" step="500" value="0" onchange="updateNetCost(${n})" aria-label="Annual fellowship or stipend"></div>
+      </div>
+    </div>
+    <div id="p${n}NetCostWrap" style="margin-bottom:12px;"></div>
+
+    <div class="input-group" style="margin-bottom:12px;">
+      <label for="p${n}Living">Extra Living Expense / yr ($)</label>
+      <div class="input-prefix"><input type="number" id="p${n}Living" min="-30000" max="50000" step="500" value="0" aria-label="Additional annual living expenses"></div>
+      <div class="input-hint">Delta vs. your current living costs. Negative = cheaper city.</div>
+    </div>
+
+    <div class="input-group">
+      <label for="p${n}PostSalary">Expected Post-Degree Salary ($)</label>
+      <div class="input-prefix"><input type="number" id="p${n}PostSalary" min="0" max="500000" step="1000" value="0" aria-label="Expected post-degree salary"></div>
+      <div class="input-hint">Auto-filled from BLS field data. Edit to match your target.</div>
+    </div>
+
+    <div id="p${n}Note" style="margin-top:8px;font-size:.65rem;color:var(--amber-lt);display:none;"></div>
+  </div>`;
+}
+
+function initProgGrid() {
+  const grid = document.getElementById('progGrid');
+  grid.innerHTML = [0,1,2].map(i => buildProgSlot(i)).join('');
+}
+
+function clearSlot(n) {
+  document.getElementById(`p${n}Inst`).value = '';
+  document.getElementById(`p${n}Name`).value = '';
+  document.getElementById(`p${n}Tuition`).value = 50000;
+  document.getElementById(`p${n}Years`).value = 2;
+  document.getElementById(`p${n}Fellowship`).value = 0;
+  document.getElementById(`p${n}Living`).value = 0;
+  document.getElementById(`p${n}PostSalary`).value = 0;
+  document.getElementById(`p${n}NetCostWrap`).innerHTML = '';
+  document.getElementById(`p${n}Note`).style.display = 'none';
+}
+
+function onInstChange(n) {
+  const sel = document.getElementById(`p${n}Inst`).value;
+  if (!sel || sel === 'custom') return;
+  const prog = PROGRAMS_DB.find(p => p.id === sel);
+  if (!prog) return;
+
+  // Auto-fill name, tuition, years, field
+  document.getElementById(`p${n}Name`).value = prog.name;
+  document.getElementById(`p${n}Years`).value = prog.years;
+
+  const isPublic = prog.type === 'public';
+  const resEl = document.getElementById(`p${n}Residency`);
+  const isIS = resEl.value === 'is';
+  const tuition = (isIS && isPublic && prog.tuition_is) ? prog.tuition_is : (prog.tuition_oos || 50000);
+  document.getElementById(`p${n}Tuition`).value = tuition;
+
+  // Set field
+  if (prog.field && prog.field !== 'custom') {
+    document.getElementById(`p${n}Field`).value = prog.field;
+    onFieldChange(n);
+  }
+
+  // MBA benchmark salary override
+  if (MBA_BENCHMARKS[sel]) {
+    document.getElementById(`p${n}PostSalary`).value = MBA_BENCHMARKS[sel].salary;
+  }
+
+  // Show note
+  const noteEl = document.getElementById(`p${n}Note`);
+  if (prog.note) {
+    noteEl.textContent = '⚠ ' + prog.note;
+    noteEl.style.display = 'block';
+  } else {
+    noteEl.style.display = 'none';
+  }
+
+  updateNetCost(n);
+}
+
+function onResidencyChange(n) {
+  const sel = document.getElementById(`p${n}Inst`).value;
+  if (!sel || sel === 'custom') return;
+  const prog = PROGRAMS_DB.find(p => p.id === sel);
+  if (!prog || prog.type === 'private') return;
+  const isIS = document.getElementById(`p${n}Residency`).value === 'is';
+  const tuition = (isIS && prog.tuition_is) ? prog.tuition_is : prog.tuition_oos;
+  if (tuition) {
+    document.getElementById(`p${n}Tuition`).value = tuition;
+    updateNetCost(n);
+  }
+}
+
+function onFieldChange(n) {
+  const fk = document.getElementById(`p${n}Field`).value;
+  const field = BLS_FIELDS.find(f => f.key === fk);
+  if (!field || !field.median) return;
+  // Only auto-fill if not already set by MBA benchmark
+  const instId = document.getElementById(`p${n}Inst`).value;
+  if (!MBA_BENCHMARKS[instId]) {
+    document.getElementById(`p${n}PostSalary`).value = field.median;
+  }
+}
+
+function updateNetCost(n) {
+  const tuition = parseFloat(document.getElementById(`p${n}Tuition`).value) || 0;
+  const fellowship = parseFloat(document.getElementById(`p${n}Fellowship`).value) || 0;
+  const net = tuition - fellowship;
+  const wrap = document.getElementById(`p${n}NetCostWrap`);
+  const stipend = Math.max(0, fellowship - tuition);
+  if (net <= 0 && fellowship > 0) {
+    wrap.innerHTML = `<span class="net-cost-chip positive">Net: Fully funded${stipend > 0 ? ' + ' + fmtUSD(stipend) + '/yr stipend income' : ''}</span>`;
+  } else {
+    wrap.innerHTML = `<span class="net-cost-chip">Net annual tuition: ${fmtUSD(net)}</span>`;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §6  CALCULATION ENGINE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// Compute IRR via bisection method (deterministic, no Math.random)
+// Finds the discount rate r where NPV(cashFlows) = 0
+function computeIRR(cfs) {
+  const npvAt = r => cfs.reduce((s, cf, t) => s + cf / Math.pow(1 + r, t + 1), 0);
+  // Check if IRR is solvable (must have sign change)
+  if (npvAt(-0.99) < 0 || npvAt(5.0) > 0) return null; // no solution in range
+  let lo = -0.99, hi = 5.0;
+  for (let i = 0; i < 120; i++) {
+    const mid = (lo + hi) / 2;
+    if (npvAt(mid) > 0) lo = mid; else hi = mid;
+    if (Math.abs(hi - lo) < 1e-7) break;
+  }
+  return (lo + hi) / 2;
+}
+
+// Main ROI engine for a single program vs. baseline (stay at current job)
+// Returns all metrics used in results display
+function computeROI(prog, shared) {
+  // --- Inputs ---
+  const tuition      = Math.max(0, prog.tuition);
+  const fellowship   = Math.max(0, prog.fellowship);
+  const livingDelta  = prog.livingDelta;           // can be negative
+  const progYears    = Math.max(0.5, prog.years);
+  const postSalary   = Math.max(0, prog.postSalary);
+  const curSalary    = Math.max(0, shared.currentSalary);
+  const r            = clamp(shared.discountRate, 0, 0.5);   // decimal
+  const g            = clamp(shared.salaryGrowth, 0, 0.2);   // decimal
+  const horizon      = Math.round(clamp(shared.careerHorizon, 5, 45));
+
+  // Net annual tuition (after fellowship, floored at 0)
+  const netTuition = Math.max(0, tuition - fellowship);
+  // If fellowship > tuition, student earns net income (stipend income)
+  const stipendIncome = Math.max(0, fellowship - tuition);
+
+  // --- Build differential cash flow array (length = horizon years) ---
+  // Baseline: earn curSalary × (1+g)^t every year
+  // Grad school: years 0..progYears-1: pay -netTuition - livingDelta, earn stipendIncome
+  //              years progYears..horizon-1: earn postSalary × (1+g)^(t-progYears)
+  // Differential = grad school cash flow - baseline cash flow
+
+  const cfs = [];
+  for (let t = 0; t < horizon; t++) {
+    const baselineEarning = curSalary * Math.pow(1 + g, t);
+    if (t < progYears) {
+      // In school: pay costs, earn stipend, forgo baseline salary
+      const schoolCF = stipendIncome - netTuition - Math.max(0, livingDelta);
+      cfs.push(schoolCF - baselineEarning);
+    } else {
+      const yearsPost = t - progYears;
+      const gradEarning = postSalary * Math.pow(1 + g, yearsPost);
+      cfs.push(gradEarning - baselineEarning);
+    }
+  }
+
+  // --- NPV ---
+  const npv = cfs.reduce((s, cf, t) => s + cf / Math.pow(1 + r, t + 1), 0);
+
+  // --- Break-even year (cumulative undiscounted cash flow crosses 0) ---
+  let cum = 0, breakEvenYear = null;
+  for (let t = 0; t < cfs.length; t++) {
+    cum += cfs[t];
+    if (cum >= 0 && breakEvenYear === null) breakEvenYear = t; // 0-based year index
+  }
+
+  // --- Total investment (absolute value of school-year outflows) ---
+  const totalInvestment = cfs.slice(0, Math.ceil(progYears)).reduce((s, cf) => s + Math.abs(Math.min(0, cf)), 0);
+  const totalTuitionCost = netTuition * progYears;
+  const opportunityCost  = cfs.slice(0, Math.ceil(progYears)).reduce((s, _, t) =>
+    s + curSalary * Math.pow(1 + g, t), 0);
+  const livingCostTotal  = Math.max(0, livingDelta) * progYears;
+
+  // --- IRR ---
+  const irr = computeIRR(cfs);
+
+  // --- 10-year cumulative premium post-graduation ---
+  const tenYearStart = Math.ceil(progYears);
+  const tenYearSlice = cfs.slice(tenYearStart, tenYearStart + 10);
+  const tenYearCum   = tenYearSlice.reduce((s, cf) => s + cf, 0);
+
+  // --- Annual premium (first year post-graduation) ---
+  const annualPremium = postSalary - curSalary;
+
+  return {
+    npv, breakEvenYear, totalInvestment, totalTuitionCost,
+    opportunityCost, livingCostTotal, irr, tenYearCum,
+    annualPremium, netTuition, stipendIncome, cfs
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §7  INPUT COLLECTION & VALIDATION
+   ═══════════════════════════════════════════════════════════════════════════ */
+function collectShared() {
+  return {
+    currentSalary: parseFloat(document.getElementById('sharedCurrentSalary').value) || 0,
+    careerHorizon: parseInt(document.getElementById('sharedCareerHorizon').value) || 25,
+    discountRate:  (parseFloat(document.getElementById('sharedDiscountRate').value) || 5) / 100,
+    salaryGrowth:  (parseFloat(document.getElementById('sharedSalaryGrowth').value) || 2) / 100
+  };
+}
+
+function collectProgram(n) {
+  return {
+    label:       document.getElementById(`p${n}Name`).value || `Program ${n}`,
+    instId:      document.getElementById(`p${n}Inst`).value,
+    field:       document.getElementById(`p${n}Field`).value,
+    tuition:     parseFloat(document.getElementById(`p${n}Tuition`).value) || 0,
+    years:       parseFloat(document.getElementById(`p${n}Years`).value) || 2,
+    fellowship:  parseFloat(document.getElementById(`p${n}Fellowship`).value) || 0,
+    livingDelta: parseFloat(document.getElementById(`p${n}Living`).value) || 0,
+    postSalary:  parseFloat(document.getElementById(`p${n}PostSalary`).value) || 0
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §8  MAIN COMPARISON RUNNER
+   ═══════════════════════════════════════════════════════════════════════════ */
+let _lastResults = null; // saved for export
+
+function runComparison() {
+  const shared = collectShared();
+
+  // Validate shared inputs
+  if (shared.currentSalary < 0) { showToast('Current salary must be non-negative', 'error'); return; }
+  if (shared.careerHorizon < 5) { showToast('Career horizon must be at least 5 years', 'error'); return; }
+
+  const programs = [1,2,3].map(n => collectProgram(n));
+  const hasAny = programs.some(p => p.postSalary > 0 && p.tuition >= 0);
+  if (!hasAny) { showToast('Enter tuition and post-degree salary for at least one program', 'error'); return; }
+
+  // Run ROI for each program
+  const results = programs.map((prog, i) => {
+    if (prog.postSalary === 0 && prog.tuition === 0 && prog.label === `Program ${i+1}`) {
+      return null; // skip empty slots
+    }
+    if (prog.postSalary === 0) { return { skip: true, label: prog.label }; }
+    return { prog, roi: computeROI(prog, shared) };
+  });
+
+  _lastResults = { programs, results, shared, ts: isoNow() };
+
+  renderResults(results, shared);
+
+  // Enable exports
+  document.getElementById('markdownExportBtn').disabled = false;
+  document.getElementById('markdownExportBtn').classList.add('ready');
+  document.getElementById('ap2ExportBtn').disabled = false;
+  document.getElementById('ap2ExportBtn').classList.add('ready');
+
+  document.getElementById('resultsPanel').classList.add('visible');
+  document.getElementById('resultsPanel').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §9  RESULTS RENDERING
+   ═══════════════════════════════════════════════════════════════════════════ */
+function renderResults(results, shared) {
+  const valid = results.filter(r => r && !r.skip);
+  if (!valid.length) { showToast('No complete programs to compare.', 'error'); return; }
+
+  // Determine winner by highest NPV
+  let winnerIdx = 0;
+  valid.forEach((r, i) => {
+    if (r.roi.npv > valid[winnerIdx].roi.npv) winnerIdx = i;
+  });
+  const winnerLabel = valid[winnerIdx].prog.label;
+
+  // Result cards
+  const grid = document.getElementById('resultsGrid');
+  grid.innerHTML = results.map((r, i) => {
+    if (!r || r.skip) return `<div class="result-prog-card" style="opacity:.35;display:flex;align-items:center;justify-content:center;"><span style="font-size:.75rem;color:var(--muted);">Program ${i+1} — not configured</span></div>`;
+    const roi = r.roi;
+    const isWinner = r.prog.label === winnerLabel;
+    const npvClass = roi.npv >= 0 ? 'good' : 'bad';
+    const irrVal = roi.irr != null ? fmtPct(roi.irr) : '—';
+    const beVal = roi.breakEvenYear != null ? 'Year ' + (roi.breakEvenYear + 1) : 'Beyond horizon';
+    return `
+    <div class="result-prog-card${isWinner ? ' winner' : ''}">
+      ${isWinner ? '<div class="winner-badge">Best NPV</div>' : ''}
+      <div class="rpc-name">${r.prog.label}</div>
+      <div class="rpc-inst">${r.prog.instId && r.prog.instId !== 'custom' ? (PROGRAMS_DB.find(p=>p.id===r.prog.instId)||{name:''}).name : ''}</div>
+      <div class="rpc-metric"><span class="rpc-metric-label">Total Investment</span><span class="rpc-metric-value">${fmtUSD(roi.totalInvestment, true)}</span></div>
+      <div class="rpc-metric"><span class="rpc-metric-label">Net Tuition Cost</span><span class="rpc-metric-value">${fmtUSD(roi.totalTuitionCost, true)}</span></div>
+      <div class="rpc-metric"><span class="rpc-metric-label">Opportunity Cost</span><span class="rpc-metric-value">${fmtUSD(roi.opportunityCost, true)}</span></div>
+      <div class="rpc-metric"><span class="rpc-metric-label">Annual Salary Premium</span><span class="rpc-metric-value ${roi.annualPremium >= 0 ? 'good' : 'bad'}">${fmtUSD(roi.annualPremium, true)}/yr</span></div>
+      <div class="rpc-metric"><span class="rpc-metric-label">Break-Even</span><span class="rpc-metric-value">${beVal}</span></div>
+      <div class="rpc-metric"><span class="rpc-metric-label">10-Year Gain (post-grad)</span><span class="rpc-metric-value ${roi.tenYearCum >= 0 ? 'good' : 'bad'}">${fmtUSD(roi.tenYearCum, true)}</span></div>
+      <div class="rpc-metric"><span class="rpc-metric-label">NPV (${shared.careerHorizon} yr)</span><span class="rpc-metric-value ${npvClass}" style="font-size:.95rem;">${fmtUSD(roi.npv, true)}</span></div>
+      <div class="rpc-metric"><span class="rpc-metric-label">IRR</span><span class="rpc-metric-value">${irrVal}</span></div>
+    </div>`;
+  }).join('');
+
+  // Comparison table
+  const thead = document.getElementById('compTableHead');
+  const tbody = document.getElementById('compTableBody');
+  const headers = ['Metric', ...results.map((r,i) => r && !r.skip ? r.prog.label : `Program ${i+1}`)];
+  thead.innerHTML = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+
+  const rows = [
+    { label:'Annual Tuition', vals: results.map(r => r && !r.skip ? fmtUSD(r.roi ? r.roi.netTuition : null) : '—'), raw: results.map(r => r && !r.skip ? (r.roi ? r.roi.netTuition : null) : null), lowerBetter: true },
+    { label:'Program Length', vals: results.map(r => r && !r.skip ? fmtYrs(r.prog ? r.prog.years : null) : '—'), raw: results.map(r => r && !r.skip ? (r.prog ? r.prog.years : null) : null), lowerBetter: true },
+    { label:'Total Investment', vals: results.map(r => r && !r.skip ? fmtUSD(r.roi ? r.roi.totalInvestment : null, true) : '—'), raw: results.map(r => r && !r.skip ? (r.roi ? r.roi.totalInvestment : null) : null), lowerBetter: true },
+    { label:'Annual Premium', vals: results.map(r => r && !r.skip ? fmtUSD(r.roi ? r.roi.annualPremium : null) : '—'), raw: results.map(r => r && !r.skip ? (r.roi ? r.roi.annualPremium : null) : null), lowerBetter: false },
+    { label:'Break-Even', vals: results.map(r => r && !r.skip ? (r.roi && r.roi.breakEvenYear != null ? 'Yr ' + (r.roi.breakEvenYear + 1) : 'Never') : '—'), raw: results.map(r => r && !r.skip ? (r.roi ? r.roi.breakEvenYear : null) : null), lowerBetter: true },
+    { label:`NPV (${shared.careerHorizon} yr)`, vals: results.map(r => r && !r.skip ? fmtUSD(r.roi ? r.roi.npv : null) : '—'), raw: results.map(r => r && !r.skip ? (r.roi ? r.roi.npv : null) : null), lowerBetter: false },
+    { label:'IRR', vals: results.map(r => r && !r.skip ? (r.roi && r.roi.irr != null ? fmtPct(r.roi.irr) : '—') : '—'), raw: results.map(r => r && !r.skip ? (r.roi ? r.roi.irr : null) : null), lowerBetter: false },
+    { label:'10-Year Gain', vals: results.map(r => r && !r.skip ? fmtUSD(r.roi ? r.roi.tenYearCum : null, true) : '—'), raw: results.map(r => r && !r.skip ? (r.roi ? r.roi.tenYearCum : null) : null), lowerBetter: false }
+  ];
+
+  tbody.innerHTML = rows.map(row => {
+    const validRaws = row.raw.filter(v => v != null);
+    const bestRaw  = row.lowerBetter ? Math.min(...validRaws) : Math.max(...validRaws);
+    const worstRaw = row.lowerBetter ? Math.max(...validRaws) : Math.min(...validRaws);
+    const cells = row.raw.map((rv, i) => {
+      if (rv == null) return `<td class="num">—</td>`;
+      const isBest  = validRaws.length > 1 && rv === bestRaw;
+      const isWorst = validRaws.length > 1 && rv === worstRaw && bestRaw !== worstRaw;
+      const cls = isBest ? 'num best' : (isWorst ? 'num worst' : 'num');
+      return `<td class="${cls}">${row.vals[i]}</td>`;
+    });
+    return `<tr><td class="row-label">${row.label}</td>${cells.join('')}</tr>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §10  EXPORT FUNCTIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// § Markdown export
+function exportMarkdown() {
+  if (!_lastResults) return;
+  const { programs, results, shared, ts } = _lastResults;
+  const d = new Date(ts);
+  const dateStr = d.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+
+  let md = `# Graduate School ROI Comparison\n`;
+  md += `**Generated:** ${dateStr} | **Tool:** AL-26 Graduate School ROI Comparator · Apex Logics\n`;
+  md += `**Data:** NCES IPEDS 2023-24 · BLS OEWS May 2023\n\n`;
+  md += `## Shared Assumptions\n`;
+  md += `- Current salary: ${fmtUSD(shared.currentSalary)}\n`;
+  md += `- Career horizon: ${shared.careerHorizon} years\n`;
+  md += `- Discount rate: ${(shared.discountRate*100).toFixed(1)}%\n`;
+  md += `- Annual salary growth: ${(shared.salaryGrowth*100).toFixed(1)}%\n\n`;
+  md += `## Program Results\n\n`;
+
+  results.forEach((r, i) => {
+    if (!r || r.skip) return;
+    const roi = r.roi;
+    md += `### Program ${i+1}: ${r.prog.label}\n`;
+    md += `- Annual tuition (net): ${fmtUSD(roi.netTuition)}\n`;
+    md += `- Program length: ${r.prog.years} years\n`;
+    md += `- Total investment: ${fmtUSD(roi.totalInvestment)}\n`;
+    md += `- Annual salary premium: ${fmtUSD(roi.annualPremium)}\n`;
+    md += `- Break-even: ${roi.breakEvenYear != null ? 'Year ' + (roi.breakEvenYear+1) : 'Beyond horizon'}\n`;
+    md += `- 10-year cumulative gain: ${fmtUSD(roi.tenYearCum)}\n`;
+    md += `- NPV (${shared.careerHorizon} yr): ${fmtUSD(roi.npv)}\n`;
+    md += `- IRR: ${roi.irr != null ? fmtPct(roi.irr) : '—'}\n\n`;
+  });
+
+  md += `---\n*All computations are local and deterministic. No data was transmitted. CC 4.0 BY — Apex Advisors · apexlogics.org*\n`;
+
+  const blob = new Blob([md], { type:'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `AL-26_grad-roi_${tsCompact()}.md`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Markdown exported', 'success');
+}
+
+// § AP2 export (CONTRACT §3.3 — validate before download)
+function buildAP2Mandate() {
+  if (!_lastResults) return null;
+  const { programs, results, shared, ts } = _lastResults;
+  const validResults = results.filter(r => r && !r.skip);
+  const winner = validResults.reduce((best, r) => r.roi.npv > best.roi.npv ? r : best, validResults[0]);
+
+  const mandate = {
+    ap2_version: '1.0',
+    mandate_id: crypto.randomUUID(),
+    issued_at: ts,
+    issued_by: 'apexlogics.org',
+    tool_id: 'graduate-school-roi-comparator',
+    tool_version: '1.0.0',
+    al_id: 'AL-26',
+    mandate_type: 'graduate_school_roi_record',
+    jurisdiction: ['US'],
+    regulatory_frameworks: ['NCES IPEDS 2023-24', 'BLS OEWS May 2023'],
+    payload: {
+      programs: results.map((r, i) => r && !r.skip ? {
+        label: r.prog.label,
+        institution_id: r.prog.instId,
+        field: r.prog.field,
+        annual_tuition_net: r.roi.netTuition,
+        program_years: r.prog.years,
+        total_investment: r.roi.totalInvestment,
+        post_degree_salary: r.prog.postSalary,
+        annual_premium: r.roi.annualPremium,
+        break_even_year: r.roi.breakEvenYear != null ? r.roi.breakEvenYear + 1 : null,
+        npv: Math.round(r.roi.npv),
+        irr: r.roi.irr != null ? parseFloat(r.roi.irr.toFixed(4)) : null,
+        ten_year_gain: Math.round(r.roi.tenYearCum)
+      } : null),
+      winner_label: winner ? winner.prog.label : null,
+      assumptions: {
+        current_salary: shared.currentSalary,
+        career_horizon_years: shared.careerHorizon,
+        discount_rate: shared.discountRate,
+        annual_salary_growth: shared.salaryGrowth
+      }
+    },
+    summary: winner
+      ? `Graduate school ROI analysis comparing ${validResults.length} program(s). Best NPV outcome: ${winner.prog.label} with NPV of ${fmtUSD(winner.roi.npv)} over ${shared.careerHorizon} years. Break-even at Year ${winner.roi.breakEvenYear != null ? winner.roi.breakEvenYear+1 : 'N/A'}.`
+      : 'Graduate school ROI analysis — no valid programs configured.',
+    agent_instructions: [
+      'Review NPV and IRR across programs to identify the highest-return option.',
+      'Note that break-even year accounts for opportunity cost of foregone salary during enrollment.',
+      'For PhD programs: verify funding status — fully funded programs dramatically alter the ROI.',
+      'Verify salary assumptions against BLS OEWS data for the specific occupation and geography.',
+      'Consider non-financial factors: program fit, network, location, brand before final decision.'
+    ],
+    valid_from: ts,
+    valid_until: new Date(new Date(ts).setFullYear(new Date(ts).getFullYear() + 1)).toISOString(),
+    last_reviewed: ts,
+    source_tool_inputs: {
+      programs: programs.map((p, i) => ({
+        slot: i + 1,
+        label: p.label,
+        institution_id: p.instId,
+        field: p.field,
+        annual_tuition: p.tuition,
+        fellowship: p.fellowship,
+        living_delta: p.livingDelta,
+        years: p.years,
+        post_salary: p.postSalary
+      })),
+      shared: {
+        current_salary: shared.currentSalary,
+        career_horizon: shared.careerHorizon,
+        discount_rate_pct: parseFloat((shared.discountRate * 100).toFixed(2)),
+        salary_growth_pct: parseFloat((shared.salaryGrowth * 100).toFixed(2))
+      }
+    },
+    regulatory_citations: [
+      'NCES IPEDS 2023-24 Institutional Characteristics Survey — graduate tuition data',
+      'Bureau of Labor Statistics Occupational Employment and Wage Statistics (OEWS) May 2023',
+      'School-published MBA Employment Reports, Class of 2023'
+    ],
+    downstream_handoff_candidates: [],  // AL-26 has no downstream in §6.3 handoff map
+    audit_metadata: {
+      client_side_executed: true,
+      zero_pii_verified: true,
+      deterministic_run: true,
+      data_vintage: 'NCES IPEDS 2023-24 · BLS OEWS May 2023'
+    }
+  };
+  return mandate;
+}
+
+function exportAP2() {
+  const mandate = buildAP2Mandate();
+  if (!mandate) { showToast('Run a comparison first', 'error'); return; }
+  const result = AP2Schema.validate(mandate);
+  if (!result.valid) {
+    showToast('AP2 validation failed: ' + result.errors.join('; '), 'error');
+    return;
+  }
+  const blob = new Blob([JSON.stringify(mandate, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `AL-26_graduate-school-roi-comparator_${tsCompact()}.ap2.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('AP2 mandate exported', 'success');
+}
+
+function showAP2Help() {
+  showToast('AP2 (Agent Purchase Protocol) is Google\'s agent authorization standard. This file carries your scenario state to other AI tools. Learn more: ap2-protocol.org', 'info');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §11  AP2 INBOUND HANDOFF (URL param + paste modal)
+   ═══════════════════════════════════════════════════════════════════════════ */
+function openAP2Modal() {
+  document.getElementById('ap2Modal').hidden = false;
+  document.getElementById('ap2PasteArea').focus();
+}
+function closeAP2Modal() {
+  document.getElementById('ap2Modal').hidden = true;
+  document.getElementById('ap2PasteArea').value = '';
+}
+
+// Core AP2 inbound parser — populates Program 1 from mandate payload
+function ingestAP2Mandate(mandate) {
+  const supported = ['credential_roi_evaluation', 'fafsa_sai_estimate'];
+  if (!supported.includes(mandate.mandate_type)) {
+    showToast(`Unsupported mandate type "${mandate.mandate_type}" for AL-26 inbound handoff`, 'error');
+    return false;
+  }
+
+  const p = mandate.payload || {};
+
+  if (mandate.mandate_type === 'credential_roi_evaluation') {
+    // From AL-02 Credential ROI Suite
+    if (p.institution_name) document.getElementById('p1Name').value = p.institution_name;
+    if (p.program_cost_annual_usd != null) document.getElementById('p1Tuition').value = p.program_cost_annual_usd;
+    if (p.program_length_years) document.getElementById('p1Years').value = p.program_length_years;
+    if (p.salary_post_degree) {
+      document.getElementById('p1PostSalary').value = p.salary_post_degree;
+      // Also set shared current salary if present
+    }
+    if (p.salary_current) document.getElementById('sharedCurrentSalary').value = p.salary_current;
+    if (p.field_key) {
+      const fld = BLS_FIELDS.find(f => f.key === p.field_key);
+      if (fld) document.getElementById('p1Field').value = fld.key;
+    }
+    updateNetCost(1);
+    showInboundBanner('credential_roi_evaluation', mandate.al_id,
+      `Credential ROI data loaded from ${mandate.al_id || 'AL-02'}. Program 1 pre-populated with cost and salary inputs from your credential evaluation.`);
+
+  } else if (mandate.mandate_type === 'fafsa_sai_estimate') {
+    // From AL-17 FAFSA SAI Simulator
+    if (p.household_income_agi != null) {
+      document.getElementById('sharedCurrentSalary').value = p.household_income_agi;
+    }
+    const sai = p.estimated_sai;
+    showInboundBanner('fafsa_sai_estimate', mandate.al_id,
+      `FAFSA data loaded from ${mandate.al_id || 'AL-17'}. Household income pre-populated as current salary baseline.${sai != null ? ' Estimated SAI: ' + fmtUSD(sai) + ' — adjust fellowship amounts to reflect expected need-based aid.' : ''}`);
+  }
+
+  return true;
+}
+
+function loadAP2FromModal() {
+  const raw = document.getElementById('ap2PasteArea').value.trim();
+  if (!raw) { showToast('Paste an AP2 mandate JSON first', 'error'); return; }
+  let mandate;
+  try { mandate = JSON.parse(raw); }
+  catch (e) { showToast('Invalid JSON — check pasted text', 'error'); return; }
+
+  if (!mandate.ap2_version || !mandate.mandate_type) {
+    showToast('Not a valid AP2 mandate (missing ap2_version or mandate_type)', 'error');
+    return;
+  }
+
+  const ok = ingestAP2Mandate(mandate);
+  if (ok) {
+    closeAP2Modal();
+    showToast('AP2 mandate loaded — Program 1 inputs pre-populated', 'success');
+  }
+}
+
+// Parse ?ap2= URL parameter on page load
+function parseAP2URLParam() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('ap2');
+    if (!raw) return;
+    const mandate = JSON.parse(decodeURIComponent(raw));
+    if (mandate.ap2_version && mandate.mandate_type) {
+      ingestAP2Mandate(mandate);
+    }
+  } catch (e) {
+    // Silently ignore malformed URL param
+  }
+}
+
+function showInboundBanner(mandateType, fromAlId, message) {
+  const banner = document.getElementById('ap2InboundBanner');
+  const text = document.getElementById('ap2InboundText');
+  text.textContent = message || `AP2 mandate loaded from ${fromAlId || 'another tool'}.`;
+  banner.classList.add('visible');
+}
+function dismissInboundBanner() {
+  document.getElementById('ap2InboundBanner').classList.remove('visible');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §12  MCP PANEL — embed manifest.json for agent discovery
+   ═══════════════════════════════════════════════════════════════════════════ */
+const MANIFEST = {
+  tool_id: 'graduate-school-roi-comparator',
+  al_id: 'AL-26',
+  version: '1.0.0',
+  title: 'Graduate School ROI Comparator',
+  description: 'Compare up to 3 graduate programs on NPV, IRR, break-even, and total investment using NCES IPEDS 2023-24 tuition data and BLS OEWS May 2023 wage data. Accepts AP2 inbound mandates from AL-02 (Credential ROI Suite) and AL-17 (FAFSA SAI Simulator).',
+  category: 'education_path_roi',
+  journeys: ['education_path'],
+  personas: ['student', 'career_changer', 'working_professional', 'counselor'],
+  tags: ['graduate school', 'roi', 'npv', 'irr', 'mba', 'tuition', 'salary', 'career'],
+  status: 'shipped',
+  maintenance: 'low',
+  data_vintage: 'NCES IPEDS 2023-24 · BLS OEWS May 2023 · MBA Employment Reports 2023',
+  frozen_baseline: true,
+  input_schema: {
+    type: 'object',
+    properties: {
+      programs: { type: 'array', items: { type: 'object', properties: {
+        institution_id: { type: 'string' },
+        annual_tuition: { type: 'number' },
+        fellowship_annual: { type: 'number' },
+        living_delta_annual: { type: 'number' },
+        program_years: { type: 'number' },
+        post_degree_salary: { type: 'number' }
+      }}},
+      current_salary: { type: 'number' },
+      career_horizon_years: { type: 'number' },
+      discount_rate_pct: { type: 'number' },
+      salary_growth_pct: { type: 'number' }
+    }
+  },
+  output_schema: {
+    type: 'object',
+    properties: {
+      programs: { type: 'array', items: { type: 'object', properties: {
+        label: { type: 'string' },
+        total_investment: { type: 'number' },
+        annual_premium: { type: 'number' },
+        break_even_year: { type: 'number' },
+        npv: { type: 'number' },
+        irr: { type: 'number' },
+        ten_year_gain: { type: 'number' }
+      }}},
+      winner_label: { type: 'string' }
+    }
+  },
+  mcp_tool_definition: {
+    name: 'compare_graduate_school_roi',
+    description: 'Compare up to 3 graduate programs on NPV, IRR, break-even, and total investment. Returns full ROI analysis using NCES IPEDS tuition and BLS wage data.',
+    inputSchema: {
+      type: 'object',
+      required: ['programs', 'current_salary'],
+      properties: {
+        programs: { type: 'array', maxItems: 3 },
+        current_salary: { type: 'number', description: 'Pre-degree annual salary in USD' },
+        career_horizon_years: { type: 'number', default: 25 },
+        discount_rate_pct: { type: 'number', default: 5 },
+        salary_growth_pct: { type: 'number', default: 2 }
+      }
+    }
+  },
+  execution: {
+    type: 'browser-javascript',
+    entry: 'index.html',
+    function_name: 'runComparison',
+    timeout_ms: 5000
+  },
+  ap2_export: true,
+  ap2_mandate_types: ['graduate_school_roi_record'],
+  ap2_inbound_mandate_types: ['credential_roi_evaluation', 'fafsa_sai_estimate'],
+  sister_suite: 'https://ainumbers.co',
+  consulting_site: 'https://apexadvisory.site',
+  license: 'CC-BY-4.0'
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §13  INIT
+   ═══════════════════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function () {
+  initProgGrid();
+  document.getElementById('mcpJson').textContent = JSON.stringify(MANIFEST, null, 2);
+  parseAP2URLParam();  // check for ?ap2= inbound mandate
+  // Close AP2 modal on overlay click
+  document.getElementById('ap2Modal').addEventListener('click', function(e) {
+    if (e.target === this) closeAP2Modal();
+  });
+});
+</script>
+</body>
+</html>

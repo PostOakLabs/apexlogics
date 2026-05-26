@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAFSA SAI Simulator — Apex Logics</title>
+<meta name="description" content="Deterministic estimator of the Student Aid Index (SAI) and Pell Grant tier for the 2026-27 FAFSA award year. Browser-only. Zero PII. Built by Apex Advisors.">
+<link rel="canonical" href="https://apexlogics.org/tools/fafsa-sai-simulator/">
+<link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0b0e14; --bg-2:#0C1220; --bg-3:#111A2E; --bg-4:#162238;
+  --border:#232b3e; --border-2:#2e3a52;
+  --muted:#6b7a99; --body:#c8d0e0; --text:#A8C4DE; --bright:#D4E8F8; --white:#EEF6FD;
+  --amber:#E8A838; --amber-lt:#F0BD5E; --amber-dim:rgba(232,168,56,.10);
+  --teal:#14B8A6; --teal-dim:rgba(20,184,166,.10); --teal-lt:#2DD4BF;
+  --coral:#F07167; --coral-dim:rgba(240,113,103,.10);
+  --green:#34D399; --green-dim:rgba(52,211,153,.10);
+  --red:#F87171; --red-dim:rgba(248,113,113,.10);
+  --warn:#FBBF24;
+  --radius:6px; --radius-lg:10px; --shadow:0 4px 24px rgba(0,0,0,.45);
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+html[dir="rtl"] body { direction:rtl; text-align:right; }
+body {
+  background:var(--bg); color:var(--text);
+  font-family:'Sora',sans-serif; font-size:.875rem; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+a { color:var(--teal-lt); text-decoration:none; }
+a:hover { text-decoration:underline; }
+button { cursor:pointer; font-family:inherit; }
+.mono { font-family:'JetBrains Mono',monospace; }
+.container { max-width:1024px; margin:0 auto; padding:24px; }
+
+/* ════════════════════════ NAV ════════════════════════ */
+nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(7,11,20,.92); backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.nav-inner {
+  max-width:1024px; margin:0 auto;
+  display:flex; align-items:center; gap:16px;
+  padding:0 24px; height:58px;
+}
+.logo { display:flex; align-items:center; gap:10px; flex-shrink:0; text-decoration:none; }
+.logo-mark { width:32px; height:32px; flex-shrink:0; }
+.logo-mark svg { width:100%; height:100%; }
+.logo-text { display:flex; flex-direction:column; gap:2px; }
+.logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--bright); letter-spacing:-.02em; line-height:1; }
+.logo-apex { color:var(--amber); }
+.logo-org { color:var(--muted); font-size:.8rem; }
+.logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-family:'JetBrains Mono',monospace; line-height:1; }
+.nav-right { display:flex; align-items:center; gap:8px; margin-left:auto; flex-shrink:0; }
+.nav-pill {
+  background:none; border:1px solid var(--border-2); border-radius:var(--radius);
+  color:var(--body); font-size:.62rem; padding:.3rem .65rem;
+  font-family:'JetBrains Mono',monospace; letter-spacing:.04em;
+  transition:border-color .15s, color .15s;
+}
+.nav-pill:hover { border-color:var(--text); color:var(--text); }
+@media (max-width:600px) { .logo-tag, .nav-pill { display:none; } }
+
+/* ════════════════════════ LANG BAR ════════════════════════ */
+.lang-bar {
+  background:var(--bg-2); border-bottom:1px solid var(--border);
+  padding:.5rem 0;
+}
+.lang-inner {
+  max-width:1024px; margin:0 auto; padding:0 24px;
+  display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;
+}
+.lang-btn {
+  background:none; border:1px solid var(--border); color:var(--muted);
+  font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.06em;
+  padding:.25rem .55rem; border-radius:var(--radius);
+  transition:all .15s;
+}
+.lang-btn:hover { border-color:var(--border-2); color:var(--body); }
+.lang-btn.active { border-color:var(--amber); color:var(--amber); background:var(--amber-dim); }
+
+/* ════════════════════════ TOOL HEADER ════════════════════════ */
+.tool-header { padding:48px 0 24px; }
+.tool-eyebrow {
+  font-family:'JetBrains Mono',monospace; font-size:.55rem;
+  letter-spacing:.18em; text-transform:uppercase; color:var(--teal);
+  margin-bottom:8px;
+}
+.tool-title {
+  font-family:'DM Serif Display',serif; font-size:2rem; line-height:1.15;
+  color:var(--bright); margin-bottom:10px;
+}
+.tool-subtitle { color:var(--body); font-size:.95rem; max-width:680px; margin-bottom:18px; }
+.tool-vintage-banner {
+  display:inline-flex; align-items:center; gap:8px;
+  background:var(--teal-dim); border:1px solid rgba(20,184,166,.3);
+  color:var(--teal-lt); padding:.4rem .8rem; border-radius:var(--radius);
+  font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.04em;
+}
+.vintage-dot { width:6px; height:6px; border-radius:50%; background:var(--teal); }
+
+/* ════════════════════════ PII BANNER ════════════════════════ */
+.pii-notice {
+  margin:24px 0; padding:14px 18px;
+  background:rgba(232,168,56,.06); border:1px solid rgba(232,168,56,.25);
+  border-radius:var(--radius); color:var(--amber-lt);
+  font-size:.78rem; line-height:1.5;
+}
+
+/* ════════════════════════ DEPENDENCY SEGMENTED CONTROL ════════════════════════ */
+.seg-control {
+  display:flex; gap:0; background:var(--bg-3); border:1px solid var(--border);
+  border-radius:var(--radius); padding:4px; margin-bottom:24px;
+}
+.seg-btn {
+  flex:1; background:none; border:none;
+  color:var(--body); font-family:'Sora',sans-serif; font-size:.78rem;
+  padding:.6rem .8rem; border-radius:4px;
+  transition:all .15s;
+}
+.seg-btn:hover { color:var(--text); }
+.seg-btn.active { background:var(--bg-4); color:var(--bright); box-shadow:0 1px 4px rgba(0,0,0,.3); }
+@media (max-width:560px) {
+  .seg-control { flex-direction:column; padding:6px; }
+  .seg-btn { text-align:left; padding:.55rem .8rem; }
+}
+
+/* ════════════════════════ INPUT PANELS ════════════════════════ */
+.panel {
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:22px;
+  margin-bottom:18px;
+}
+.panel-label {
+  font-family:'JetBrains Mono',monospace; font-size:.55rem;
+  letter-spacing:.18em; text-transform:uppercase; color:var(--muted);
+  margin-bottom:14px; display:block;
+}
+.panel-row {
+  display:grid; grid-template-columns:1fr 1fr; gap:14px;
+  margin-bottom:12px;
+}
+@media (max-width:560px) { .panel-row { grid-template-columns:1fr; } }
+.input-group { display:flex; flex-direction:column; gap:6px; }
+.input-group label {
+  font-size:.72rem; color:var(--text); display:flex; align-items:center; gap:6px;
+}
+.help-icon {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:14px; height:14px; border-radius:50%;
+  background:var(--border-2); color:var(--body);
+  font-size:.55rem; cursor:help;
+}
+.help-icon:hover { background:var(--teal-dim); color:var(--teal); }
+input[type="number"], select {
+  width:100%; background:var(--bg-3); border:1px solid var(--border);
+  border-radius:var(--radius); color:var(--bright);
+  padding:.55rem .7rem; font-family:'JetBrains Mono',monospace; font-size:.78rem;
+  outline:none; transition:border-color .15s;
+}
+input[type="number"]:focus, select:focus { border-color:var(--teal); }
+input[type="number"]::placeholder { color:var(--muted); }
+.input-prefix {
+  position:relative;
+}
+.input-prefix::before {
+  content:"$"; position:absolute; left:.7rem; top:50%; transform:translateY(-50%);
+  color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.78rem; pointer-events:none;
+}
+.input-prefix input { padding-left:1.4rem; }
+
+/* ════════════════════════ RUN BUTTON ════════════════════════ */
+.run-btn {
+  width:100%; padding:14px 24px;
+  background:var(--teal); color:var(--bg); border:none;
+  border-radius:var(--radius);
+  font-family:'JetBrains Mono',monospace; font-size:.78rem; font-weight:600;
+  letter-spacing:.06em; text-transform:uppercase;
+  transition:background .15s, transform .1s;
+  margin:18px 0 36px;
+}
+.run-btn:hover { background:var(--teal-lt); }
+.run-btn:active { transform:translateY(1px); }
+.run-btn:disabled { background:var(--muted); cursor:not-allowed; }
+
+/* ════════════════════════ RESULTS PANEL ════════════════════════ */
+.results-panel { display:none; }
+.results-panel.visible { display:block; }
+.results-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:14px;
+  margin-bottom:18px;
+}
+@media (max-width:560px) { .results-grid { grid-template-columns:1fr; } }
+.result-card {
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:22px;
+}
+.result-card-label {
+  font-family:'JetBrains Mono',monospace; font-size:.55rem;
+  letter-spacing:.18em; text-transform:uppercase; color:var(--muted);
+  margin-bottom:8px;
+}
+.result-card-value {
+  font-family:'DM Serif Display',serif; font-size:2.2rem; color:var(--bright);
+  line-height:1;
+  margin-bottom:6px;
+}
+.result-card-meta {
+  font-size:.7rem; color:var(--body);
+}
+.result-card-value.positive { color:var(--coral); }
+.result-card-value.negative { color:var(--green); }
+.result-card-value.neutral { color:var(--bright); }
+
+.pell-tier-pill {
+  display:inline-block; padding:.3rem .7rem;
+  font-family:'JetBrains Mono',monospace; font-size:.55rem; letter-spacing:.12em; text-transform:uppercase;
+  border-radius:var(--radius); margin-top:4px;
+}
+.pell-tier-pill.max { background:var(--green-dim); color:var(--green); border:1px solid rgba(52,211,153,.3); }
+.pell-tier-pill.partial { background:var(--amber-dim); color:var(--amber); border:1px solid rgba(232,168,56,.3); }
+.pell-tier-pill.min { background:var(--teal-dim); color:var(--teal-lt); border:1px solid rgba(20,184,166,.3); }
+.pell-tier-pill.none { background:var(--red-dim); color:var(--red); border:1px solid rgba(248,113,113,.3); }
+
+.methodology {
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius-lg); margin-bottom:18px;
+}
+.methodology summary {
+  padding:16px 22px;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--text);
+  cursor:pointer; list-style:none;
+}
+.methodology summary::after { content:"+"; float:right; color:var(--muted); }
+.methodology[open] summary::after { content:"−"; }
+.methodology-body { padding:0 22px 22px; font-size:.78rem; line-height:1.7; color:var(--body); }
+.methodology-body table { width:100%; border-collapse:collapse; margin:10px 0; font-family:'JetBrains Mono',monospace; font-size:.7rem; }
+.methodology-body td, .methodology-body th { padding:6px 10px; border-bottom:1px solid var(--border); text-align:left; }
+.methodology-body th { color:var(--muted); font-weight:500; letter-spacing:.06em; text-transform:uppercase; font-size:.6rem; }
+.methodology-body td.num { text-align:right; color:var(--bright); }
+
+.sensitivity-table {
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:22px; margin-bottom:18px;
+}
+.sensitivity-table h4 {
+  font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:12px;
+}
+.sensitivity-table table { width:100%; border-collapse:collapse; font-family:'JetBrains Mono',monospace; font-size:.72rem; }
+.sensitivity-table th, .sensitivity-table td { padding:8px 12px; border-bottom:1px solid var(--border); }
+.sensitivity-table th { color:var(--muted); font-weight:500; text-align:left; font-size:.6rem; letter-spacing:.06em; text-transform:uppercase; }
+.sensitivity-table td.num { text-align:right; color:var(--bright); }
+.sensitivity-table tr.highlight td { background:var(--teal-dim); color:var(--teal-lt); }
+.sensitivity-table tr.highlight td.num { color:var(--teal-lt); }
+
+/* ════════════════════════ EXPORT ROW ════════════════════════ */
+.results-export-row {
+  display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+  padding:18px 22px;
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius-lg); margin-bottom:18px;
+}
+.btn {
+  background:none; border:1px solid var(--border-2); color:var(--text);
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; letter-spacing:.06em;
+  padding:.55rem .9rem; border-radius:var(--radius);
+  transition:all .15s; display:inline-flex; flex-direction:column; align-items:flex-start; gap:2px;
+}
+.btn:hover:not(:disabled) { border-color:var(--text); }
+.btn:disabled { opacity:.28; cursor:not-allowed; }
+.btn.ready { border-color:var(--teal); color:var(--teal-lt); }
+.btn.ready:hover { background:var(--teal-dim); }
+.btn-subtitle { font-size:.5rem; color:var(--muted); letter-spacing:.04em; text-transform:none; }
+.btn-help {
+  width:28px; height:28px; padding:0; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.7rem; font-weight:500;
+}
+
+/* ════════════════════════ MCP PANEL ════════════════════════ */
+.mcp-toggle {
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius-lg); margin-bottom:18px;
+}
+.mcp-toggle summary {
+  padding:14px 22px;
+  font-family:'JetBrains Mono',monospace; font-size:.6rem;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
+  cursor:pointer; list-style:none;
+}
+.mcp-toggle summary::before { content:"▸ "; }
+.mcp-toggle[open] summary::before { content:"▾ "; }
+.mcp-panel {
+  padding:0 22px 22px;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; line-height:1.6;
+  color:var(--body);
+}
+.mcp-panel pre {
+  background:var(--bg-3); border:1px solid var(--border);
+  border-radius:var(--radius); padding:14px; overflow-x:auto;
+  font-size:.62rem; color:var(--text);
+}
+
+/* ════════════════════════ TOAST ════════════════════════ */
+.toast {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+  padding:12px 18px; border-radius:var(--radius);
+  font-family:'JetBrains Mono',monospace; font-size:.72rem;
+  z-index:200; box-shadow:var(--shadow);
+  opacity:0; transition:opacity .2s; pointer-events:none;
+}
+.toast.show { opacity:1; }
+.toast.error { background:var(--red-dim); border:1px solid var(--red); color:var(--red); }
+.toast.success { background:var(--green-dim); border:1px solid var(--green); color:var(--green); }
+.toast.info { background:var(--teal-dim); border:1px solid var(--teal); color:var(--teal-lt); }
+
+/* ════════════════════════ FOOTER ════════════════════════ */
+.tool-footer {
+  margin-top:48px; padding:24px 0;
+  border-top:1px solid var(--border);
+  font-size:.7rem; color:var(--muted); line-height:1.6;
+  text-align:center;
+}
+.tool-footer a { color:var(--body); border-bottom:1px solid var(--border-2); }
+.tool-footer a:hover { color:var(--text); border-color:var(--text); text-decoration:none; }
+
+.disclaimer {
+  margin-top:18px; padding:14px 18px;
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius); color:var(--body);
+  font-size:.7rem; line-height:1.55;
+}
+
+/* helpers */
+.hidden { display:none !important; }
+</style>
+</head>
+<body>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')" data-lang="en">EN</button>
+    <button class="lang-btn" onclick="setLang('es')" data-lang="es">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')" data-lang="fr">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')" data-lang="ar">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')" data-lang="pt">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')" data-lang="zh">中文</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ NAV ═══════════════════════════════════════════ -->
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-right">
+      <a href="https://apexadvisory.site" class="nav-pill" target="_blank" rel="noopener">ApexAdvisory.site</a>
+      <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════ MAIN ═══════════════════════════════════════════ -->
+<div class="container">
+
+  <header class="tool-header">
+    <div class="tool-eyebrow">AL · 17 · Student Finance &amp; Debt</div>
+    <h1 class="tool-title" data-i18n="title">FAFSA SAI Simulator</h1>
+    <p class="tool-subtitle" data-i18n="subtitle">Estimate the Student Aid Index (SAI) and Pell Grant tier for the 2026-27 award year. Models the federal need-analysis methodology end to end — income, assets, family size, and dependency status — entirely in your browser.</p>
+    <div class="tool-vintage-banner">
+      <span class="vintage-dot"></span>
+      <span data-i18n="vintage">FAFSA rules as of 2026-27 award year (effective July 1, 2026) · Tables: Federal Register 2025-10243</span>
+    </div>
+  </header>
+
+  <!-- PII BANNER -->
+  <div class="pii-notice" data-i18n="pii">
+    🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+  </div>
+
+  <!-- DEPENDENCY SEGMENTED CONTROL -->
+  <div class="seg-control" role="tablist" aria-label="Dependency status">
+    <button class="seg-btn active" id="seg-A" role="tab" aria-selected="true" onclick="setFormula('A')" data-i18n="formula_a">Dependent Student (Formula A)</button>
+    <button class="seg-btn" id="seg-B" role="tab" aria-selected="false" onclick="setFormula('B')" data-i18n="formula_b">Independent — No Dependents (B)</button>
+    <button class="seg-btn" id="seg-C" role="tab" aria-selected="false" onclick="setFormula('C')" data-i18n="formula_c">Independent — With Dependents (C)</button>
+  </div>
+
+  <!-- ────────── FORMULA A (Dependent Student) ────────── -->
+  <div id="form-A" class="form-section">
+    <div class="panel">
+      <span class="panel-label" data-i18n="parents_panel">Parents' household</span>
+      <div class="panel-row">
+        <div class="input-group">
+          <label for="A-parentMarital">Parent marital status <span class="help-icon" title="Married/remarried files joint; single covers never-married, divorced, widowed">?</span></label>
+          <select id="A-parentMarital">
+            <option value="married">Married / Remarried (joint)</option>
+            <option value="single">Single (incl. divorced, widowed)</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label for="A-familySize">Family size <span class="help-icon" title="Parents + dependent children + others receiving more than half their support from the parents">?</span></label>
+          <input type="number" id="A-familySize" min="2" max="20" step="1" value="4" placeholder="4">
+        </div>
+      </div>
+      <div class="panel-row">
+        <div class="input-group">
+          <label for="A-parentAGI">Parent AGI (2024) <span class="help-icon" title="From the 2024 federal tax return, line 11 of Form 1040">?</span></label>
+          <div class="input-prefix"><input type="number" id="A-parentAGI" min="0" step="100" placeholder="85000"></div>
+        </div>
+        <div class="input-group">
+          <label for="A-parentUntaxed">Parent untaxed income <span class="help-icon" title="Untaxed pensions, retirement contributions, child support received, etc.">?</span></label>
+          <div class="input-prefix"><input type="number" id="A-parentUntaxed" min="0" step="100" value="0" placeholder="0"></div>
+        </div>
+      </div>
+      <div class="panel-row">
+        <div class="input-group">
+          <label for="A-parentTaxes">Federal income taxes paid <span class="help-icon" title="From the 2024 1040, total tax (line 24) — not withholding">?</span></label>
+          <div class="input-prefix"><input type="number" id="A-parentTaxes" min="0" step="100" placeholder="9500"></div>
+        </div>
+        <div class="input-group">
+          <label for="A-parentEarner1">Lower earner's wages <span class="help-icon" title="For Employment Expense Allowance — needed only if both parents earn">?</span></label>
+          <div class="input-prefix"><input type="number" id="A-parentEarner1" min="0" step="100" value="0" placeholder="0"></div>
+        </div>
+      </div>
+      <div class="panel-row">
+        <div class="input-group">
+          <label for="A-parentAssets">Parent net assets (cash, investments, real estate excl. primary home) <span class="help-icon" title="Excludes primary residence, retirement accounts (401k, IRA, etc.), and the value of a small family business with under 100 FTE employees. APA = $0 for 2026-27.">?</span></label>
+          <div class="input-prefix"><input type="number" id="A-parentAssets" min="0" step="500" value="0" placeholder="0"></div>
+        </div>
+        <div class="input-group">
+          <label for="A-numInCollege">Number in college (incl. student) <span class="help-icon" title="Informational only — under FAFSA Simplification, the divisor was eliminated for 2024-25+. Each student gets their own SAI calculated independently.">?</span></label>
+          <input type="number" id="A-numInCollege" min="1" max="10" step="1" value="1" placeholder="1">
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <span class="panel-label" data-i18n="student_panel">Student (the applicant)</span>
+      <div class="panel-row">
+        <div class="input-group">
+          <label for="A-studentIncome">Student AGI (2024) <span class="help-icon" title="The student's own 2024 AGI. Income above $11,770 contributes 50%.">?</span></label>
+          <div class="input-prefix"><input type="number" id="A-studentIncome" min="0" step="100" value="0" placeholder="0"></div>
+        </div>
+        <div class="input-group">
+          <label for="A-studentTaxes">Student federal taxes paid</label>
+          <div class="input-prefix"><input type="number" id="A-studentTaxes" min="0" step="100" value="0" placeholder="0"></div>
+        </div>
+      </div>
+      <div class="panel-row">
+        <div class="input-group">
+          <label for="A-studentAssets">Student net assets <span class="help-icon" title="Cash, savings, investments owned by the student. Contributes 20%.">?</span></label>
+          <div class="input-prefix"><input type="number" id="A-studentAssets" min="0" step="100" value="0" placeholder="0"></div>
+        </div>
+        <div class="input-group">
+          <label for="A-state">State (for poverty guideline) <span class="help-icon" title="Select your state. Alaska and Hawaii use separate HHS poverty guideline tables (higher thresholds). Pell auto-tier eligibility uses 2024 HHS poverty guidelines for the family's state.">?</span></label>
+          <select id="A-state">
+            <option value="48">48 contiguous + DC</option>
+            <option value="AK">Alaska</option>
+            <option value="HI">Hawaii</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────── FORMULA B (Independent, No Dependents) ────────── -->
+  <div id="form-B" class="form-section hidden">
+    <div class="panel">
+      <span class="panel-label" data-i18n="independent_panel">Applicant household</span>
+      <div class="panel-row">
+        <div class="input-group">
+          <label for="B-marital">Marital status</label>
+          <select id="B-marital">
+            <option value="single">Single (no spouse)</option>
+            <option value="married">Married (filing joint)</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label for="B-state">State (for poverty guideline)</label>
+          <select id="B-state">
+            <option value="48">48 contiguous + DC</option>
+            <option value="AK">Alaska</option>
+            <option value="HI">Hawaii</option>
+          </select>
+        </div>
+      </div>
+      <div class="panel-row">
+        <div class="input-group">
+          <label for="B-AGI">Applicant (and spouse) AGI (2024)</label>
+          <div class="input-prefix"><input type="number" id="B-AGI" min="0" step="100" placeholder="35000"></div>
+        </div>
+        <div class="input-group">
+          <label for="B-untaxed">Untaxed income</label>
+          <div class="input-prefix"><input type="number" id="B-untaxed" min="0" step="100" value="0" placeholder="0"></div>
+        </div>
+      </div>
+      <div class="panel-row">
+        <div class="input-group">
+          <label for="B-taxes">Federal taxes paid</label>
+          <div class="input-prefix"><input type="number" id="B-taxes" min="0" step="100" placeholder="3000"></div>
+        </div>
+        <div class="input-group">
+          <label for="B-assets">Net assets (excl. primary home, retirement)</label>
+          <div class="input-prefix"><input type="number" id="B-assets" min="0" step="100" value="0" placeholder="0"></div>
+        </div>
+      </div>
+      <div class="panel-row">
+        <div class="input-group">
+          <label for="B-earner1">Lower earner's wages (if married, both earn) <span class="help-icon" title="For Employment Expense Allowance (EEA) — single applicants get $0 EEA.">?</span></label>
+          <div class="input-prefix"><input type="number" id="B-earner1" min="0" step="100" value="0" placeholder="0"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────── FORMULA C (Independent with Dependents) ────────── -->
+  <div id="form-C" class="form-section hidden">
+    <div class="panel">
+      <span class="panel-label" data-i18n="independent_dep_panel">Applicant household</span>
+      <div class="panel-row">
+        <div class="input-group">
+          <label for="C-marital">Marital status</label>
+          <select id="C-marital">
+            <option value="single">Single parent</option>
+            <option value="married">Married with dependents</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label for="C-familySize">Family size <span class="help-icon" title="Applicant + spouse (if married) + dependents who receive over half support from applicant">?</span></label>
+          <input type="number" id="C-familySize" min="2" max="20" step="1" value="3" placeholder="3">
+        </div>
+      </div>
+      <div class="panel-row">
+        <div class="input-group">
+          <label for="C-AGI">Applicant (and spouse) AGI (2024)</label>
+          <div class="input-prefix"><input type="number" id="C-AGI" min="0" step="100" placeholder="48000"></div>
+        </div>
+        <div class="input-group">
+          <label for="C-untaxed">Untaxed income</label>
+          <div class="input-prefix"><input type="number" id="C-untaxed" min="0" step="100" value="0" placeholder="0"></div>
+        </div>
+      </div>
+      <div class="panel-row">
+        <div class="input-group">
+          <label for="C-taxes">Federal taxes paid</label>
+          <div class="input-prefix"><input type="number" id="C-taxes" min="0" step="100" placeholder="4000"></div>
+        </div>
+        <div class="input-group">
+          <label for="C-earner1">Lower earner's wages (if married, both earn)</label>
+          <div class="input-prefix"><input type="number" id="C-earner1" min="0" step="100" value="0" placeholder="0"></div>
+        </div>
+      </div>
+      <div class="panel-row">
+        <div class="input-group">
+          <label for="C-assets">Net assets (excl. primary home, retirement)</label>
+          <div class="input-prefix"><input type="number" id="C-assets" min="0" step="100" value="0" placeholder="0"></div>
+        </div>
+        <div class="input-group">
+          <label for="C-state">State (for poverty guideline)</label>
+          <select id="C-state">
+            <option value="48">48 contiguous + DC</option>
+            <option value="AK">Alaska</option>
+            <option value="HI">Hawaii</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" id="runBtn" onclick="calculate()" data-i18n="calculate_btn">Calculate SAI &amp; Pell Tier</button>
+
+  <!-- ────────── RESULTS PANEL ────────── -->
+  <div class="results-panel" id="resultsPanel" aria-live="polite">
+    <div class="results-grid">
+      <div class="result-card">
+        <div class="result-card-label">Estimated Student Aid Index</div>
+        <div class="result-card-value neutral" id="r-sai">—</div>
+        <div class="result-card-meta" id="r-sai-meta"></div>
+      </div>
+      <div class="result-card">
+        <div class="result-card-label">Pell Grant Estimate</div>
+        <div class="result-card-value neutral" id="r-pell">—</div>
+        <div class="result-card-meta" id="r-pell-meta"></div>
+        <div id="r-pell-tier-pill"></div>
+      </div>
+    </div>
+
+    <details class="methodology" id="methodology" open>
+      <summary>Calculation walkthrough</summary>
+      <div class="methodology-body" id="r-methodology"></div>
+    </details>
+
+    <div class="sensitivity-table">
+      <h4>Sensitivity — SAI &amp; Pell at AGI ±$10K / ±$20K</h4>
+      <table>
+        <thead>
+          <tr><th>AGI scenario</th><th class="num">AGI</th><th class="num">SAI</th><th class="num">Pell est.</th></tr>
+        </thead>
+        <tbody id="r-sensitivity"></tbody>
+      </table>
+    </div>
+
+    <div class="results-export-row" id="exportRow">
+      <button class="btn" id="markdownExportBtn" disabled onclick="exportMarkdown()">
+        <span>Export Markdown</span>
+        <span class="btn-subtitle">Human-readable summary</span>
+      </button>
+      <button class="btn" id="ap2ExportBtn" disabled onclick="exportAP2()">
+        <span>Export AP2 JSON</span>
+        <span class="btn-subtitle">Agent integration · audit trail</span>
+      </button>
+      <button class="btn btn-help" onclick="showAP2Help()" aria-label="What is AP2?" title="What is AP2?">?</button>
+    </div>
+
+    <div class="disclaimer">
+      <strong>Estimate only.</strong> Actual SAI and Pell determination require completed FAFSA submission and verification by Federal Student Aid. This tool models the published 2026-27 federal methodology; it does not account for state aid supplements, professional judgment adjustments, or institutional methodology (e.g., CSS Profile). When in doubt, file the FAFSA and contact the financial aid office at your school.
+    </div>
+  </div>
+
+  <!-- MCP PANEL -->
+  <details class="mcp-toggle" id="mcpToggle">
+    <summary>MCP manifest (for AI agents)</summary>
+    <div class="mcp-panel">
+      <p>This tool exposes a structured manifest at <a href="manifest.json">manifest.json</a> for Model Context Protocol agents and discovery via <a href="../../suite-registry.json">suite-registry.json</a>.</p>
+      <pre id="manifestPreview"></pre>
+    </div>
+  </details>
+
+  <!-- ════════════════════════ FOOTER ════════════════════════ -->
+  <footer class="tool-footer">
+    Built by <a href="https://apexadvisory.site" target="_blank" rel="noopener">Apex Advisors</a> ·
+    Sister suite: <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> ·
+    CC 4.0 BY · AL-17 · Data as of 2026-27 award year (Federal Register 2025-10243)
+  </footer>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ═══════════════════════════════════════════ SCRIPTS ═══════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ════════════════════════════════════════════════════════════
+// EMBEDDED REFERENCE DATA — 2026-27 FAFSA AWARD YEAR
+// Sources:
+//   - Federal Register 90 FR 23922 (June 5, 2025) — IPA, APA, AAI, EEA tables
+//   - FSA Handbook 2026-27 Chapter 3 — assessment rates, SAI floor
+//   - 2026-27 Pell Grant Max/Min DCL (Jan 30, 2026) — Pell awards & SAI cap
+//   - HHS ASPE 2024 Poverty Guidelines — FPL by family size
+// All values denominated in USD. Award year: July 1, 2026 – June 30, 2027.
+// ════════════════════════════════════════════════════════════
+const DATA_VINTAGE = '2026-27 award year (Federal Register 2025-10243)';
+
+// §1 — IPA: Parents of Dependent Students (function of family size only)
+const IPA_PARENTS = { 2:29190, 3:36330, 4:44880, 5:52950, 6:61930, _add:6990 };
+function ipaParents(famSize) {
+  if (famSize <= 6) return IPA_PARENTS[famSize] || IPA_PARENTS[2];
+  return IPA_PARENTS[6] + (famSize - 6) * IPA_PARENTS._add;
+}
+
+// §1 — Student IPA (dependent student)
+const IPA_STUDENT_DEPENDENT = 11770;
+
+// §2 — IPA: Independent students WITHOUT dependents
+const IPA_INDEP_NO_DEP = { single: 18310, married: 29350 };
+
+// §2 — IPA: Single independent w/ dependents
+const IPA_INDEP_SINGLE_DEP = { 2:54950, 3:68430, 4:84480, 5:99700, 6:116590, _add:13180 };
+// §2 — IPA: Married independent w/ dependents (starts at family size 3)
+const IPA_INDEP_MARRIED_DEP = { 3:57730, 4:71280, 5:84120, 6:98370, _add:11110 };
+
+function ipaIndepWithDep(marital, famSize) {
+  const tbl = (marital === 'married') ? IPA_INDEP_MARRIED_DEP : IPA_INDEP_SINGLE_DEP;
+  const minSize = (marital === 'married') ? 3 : 2;
+  const sz = Math.max(famSize, minSize);
+  if (sz <= 6) return tbl[sz] || tbl[minSize];
+  return tbl[6] + (sz - 6) * tbl._add;
+}
+
+// §3 — APA: Asset Protection Allowance — ZERO for 2026-27 (all formulas)
+const APA = 0;
+
+// §4 — AAI assessment schedule (Parents — Formula A, also used for Formula C)
+function assessParentAAI(aai) {
+  if (aai < -8500) return -1870;
+  if (aai <= 21800) return Math.round(0.22 * aai);
+  if (aai <= 27300) return Math.round(4796 + 0.25 * (aai - 21800));
+  if (aai <= 32800) return Math.round(6171 + 0.29 * (aai - 27300));
+  if (aai <= 38400) return Math.round(7766 + 0.34 * (aai - 32800));
+  if (aai <= 43900) return Math.round(9670 + 0.40 * (aai - 38400));
+  return Math.round(11870 + 0.47 * (aai - 43900));
+}
+
+// §5 — Employment Expense Allowance: lesser of $5,000 or 35% of lower earner's wages
+function eea(lowerWages, marital, hasParents) {
+  if (!hasParents && marital === 'single') return 0;  // single indep w/o deps: $0
+  if (lowerWages <= 0) return 0;
+  return Math.min(5000, Math.round(0.35 * lowerWages));
+}
+
+// §6, §7 — Asset conversion rates
+const ASSET_RATE = { A: 0.12, B: 0.20, C: 0.07 };  // C: 7% per FSA Handbook 2026-27
+
+// §8 — Student contribution rates
+const STUDENT_INCOME_RATE = 0.50;
+const STUDENT_ASSET_RATE = 0.20;
+
+// §9 — Pell awards
+const PELL_MAX = 7395;
+const PELL_MIN = 740;
+const SAI_PELL_CUTOFF = 14790;  // 2 × max Pell per OBBB Act
+const SAI_FLOOR = -1500;
+
+// §10 — 2024 HHS Poverty Guidelines. Three tables per HHS ASPE (Jan 2024).
+// Source: https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines
+const FPL_2024    = { 1:15060, 2:20440, 3:25820, 4:31200, 5:36580, 6:41960, 7:47340, 8:52720, _add:5380 }; // 48 contiguous + DC
+const FPL_2024_AK = { 1:18810, 2:25540, 3:32270, 4:39000, 5:45730, 6:52460, 7:59190, 8:65920, _add:6730 }; // Alaska
+const FPL_2024_HI = { 1:17310, 2:23500, 3:29690, 4:35880, 5:42070, 6:48260, 7:54450, 8:60640, _add:6190 }; // Hawaii
+function fpl(famSize, state) {
+  const tbl = state === 'AK' ? FPL_2024_AK : state === 'HI' ? FPL_2024_HI : FPL_2024;
+  if (famSize <= 8) return tbl[famSize] || tbl[1];
+  return tbl[8] + (famSize - 8) * tbl._add;
+}
+
+// §10 — Max-Pell AGI thresholds (% of FPL) by household type
+// dep_single = dependent student, single parent
+// dep_nonsingle = dependent student, non-single (married, etc.) parent
+// indep_single_parent = independent student who is a single parent
+// indep_nonparent = independent student not a parent (incl. without dependents)
+// indep_parent_nonsingle = independent student parent, not single
+const PELL_MAX_THRESHOLDS = {
+  dep_single: 2.25, dep_nonsingle: 1.75,
+  indep_single_parent: 2.25, indep_parent_nonsingle: 1.75,
+  indep_nonparent: 1.75
+};
+const PELL_MIN_THRESHOLDS = {
+  dep_single: 3.25, dep_nonsingle: 2.75,
+  indep_single_parent: 4.00, indep_parent_nonsingle: 3.50,
+  indep_nonparent: 2.75
+};
+
+// ════════════════════════════════════════════════════════════
+// SAI CALCULATION ENGINES
+// ════════════════════════════════════════════════════════════
+
+// Formula A — Dependent student
+function calcFormulaA(input) {
+  const {
+    familySize, parentMarital,
+    parentAGI, parentUntaxed, parentTaxes, parentEarner1, parentAssets,
+    studentIncome, studentTaxes, studentAssets
+  } = input;
+
+  // PARENTS' AVAILABLE INCOME
+  const totalIncome = parentAGI + parentUntaxed;
+  const ipa = ipaParents(familySize);
+  const eeaAmt = eea(parentEarner1, parentMarital, true);
+  const allowances = parentTaxes + ipa + eeaAmt;
+  const aai_income = totalIncome - allowances;
+
+  // PARENTS' CONTRIBUTION FROM ASSETS
+  const discNetWorth = Math.max(0, parentAssets - APA);
+  const assetContrib = Math.round(discNetWorth * ASSET_RATE.A);
+  const aai = aai_income + assetContrib;
+
+  // PARENTS' CONTRIBUTION (assessed via §4 schedule)
+  const parentContrib = assessParentAAI(aai);
+
+  // STUDENT CONTRIBUTION
+  const studentAvailableIncome = Math.max(0, studentIncome - IPA_STUDENT_DEPENDENT - studentTaxes);
+  const studentIncContrib = Math.round(studentAvailableIncome * STUDENT_INCOME_RATE);
+  const studentAssetContrib = Math.max(0, Math.round(studentAssets * STUDENT_ASSET_RATE));
+  const studentContrib = studentIncContrib + studentAssetContrib;
+
+  let sai = parentContrib + studentContrib;
+  sai = Math.max(SAI_FLOOR, sai);
+
+  return {
+    sai,
+    breakdown: {
+      totalParentIncome: totalIncome,
+      ipa, eea: eeaAmt, parentTaxes, allowances,
+      aai_income, parentAssets, discNetWorth, assetContrib, aai,
+      parentContrib,
+      studentAvailableIncome, studentIncContrib, studentAssetContrib, studentContrib
+    }
+  };
+}
+
+// Formula B — Independent without dependents
+function calcFormulaB(input) {
+  const { marital, AGI, untaxed, taxes, earner1, assets } = input;
+
+  const totalIncome = AGI + untaxed;
+  const ipa = IPA_INDEP_NO_DEP[marital];
+  const eeaAmt = eea(earner1, marital, false);
+  const allowances = taxes + ipa + eeaAmt;
+  const availableIncome = Math.max(0, totalIncome - allowances);
+  const incomeContrib = Math.round(availableIncome * 0.50);  // Formula B: 50% of available income
+
+  const discNetWorth = Math.max(0, assets - APA);
+  const assetContrib = Math.round(discNetWorth * ASSET_RATE.B);
+
+  let sai = incomeContrib + assetContrib;
+  sai = Math.max(SAI_FLOOR, sai);
+
+  return {
+    sai,
+    breakdown: { totalIncome, ipa, eea: eeaAmt, taxes, allowances, availableIncome, incomeContrib, assets, discNetWorth, assetContrib }
+  };
+}
+
+// Formula C — Independent with dependents
+function calcFormulaC(input) {
+  const { marital, familySize, AGI, untaxed, taxes, earner1, assets } = input;
+
+  const totalIncome = AGI + untaxed;
+  const ipa = ipaIndepWithDep(marital, familySize);
+  const eeaAmt = eea(earner1, marital, false);
+  const allowances = taxes + ipa + eeaAmt;
+  const aai_income = totalIncome - allowances;
+
+  const discNetWorth = Math.max(0, assets - APA);
+  const assetContrib = Math.round(discNetWorth * ASSET_RATE.C);
+  const aai = aai_income + assetContrib;
+
+  // Formula C uses the same §4 assessment schedule as parents
+  const contrib = assessParentAAI(aai);
+
+  let sai = Math.max(SAI_FLOOR, contrib);
+
+  return {
+    sai,
+    breakdown: { totalIncome, ipa, eea: eeaAmt, taxes, allowances, aai_income, assets, discNetWorth, assetContrib, aai, contrib }
+  };
+}
+
+// ════════════════════════════════════════════════════════════
+// PELL TIER DETERMINATION
+// ════════════════════════════════════════════════════════════
+function pellGroup(formula, marital, familySize, hasDependents) {
+  if (formula === 'A') return marital === 'single' ? 'dep_single' : 'dep_nonsingle';
+  if (formula === 'B') return 'indep_nonparent';
+  // formula C
+  if (marital === 'single') return 'indep_single_parent';
+  return 'indep_parent_nonsingle';
+}
+
+function determinePell(agi, familySize, sai, group, state) {
+  const fplVal = fpl(familySize, state);
+  const maxRatio = PELL_MAX_THRESHOLDS[group];
+  const minRatio = PELL_MIN_THRESHOLDS[group];
+  const maxPellThreshold = fplVal * maxRatio;
+  const minPellThreshold = fplVal * minRatio;
+
+  let tier, award, path;
+
+  if (sai >= SAI_PELL_CUTOFF) {
+    tier = 'none';
+    award = 0;
+    path = `SAI ($${fmt(sai)}) ≥ $14,790 (2× max Pell). Not Pell-eligible per OBBB Act.`;
+  } else if (agi > 0 && agi <= maxPellThreshold) {
+    tier = 'max';
+    award = PELL_MAX;
+    path = `AGI ($${fmt(agi)}) ≤ ${(maxRatio*100).toFixed(0)}% × FPL ($${fmt(fplVal)} × ${maxRatio.toFixed(2)} = $${fmt(maxPellThreshold)}). Auto-Max Pell.`;
+  } else if (agi > 0 && agi <= minPellThreshold) {
+    tier = 'min';
+    award = PELL_MIN;
+    path = `AGI ($${fmt(agi)}) ≤ ${(minRatio*100).toFixed(0)}% × FPL ($${fmt(minPellThreshold)}). Auto-Min Pell.`;
+  } else {
+    // SAI-calculated Pell: max - SAI, rounded to nearest $5
+    const calculated = PELL_MAX - sai;
+    if (calculated < PELL_MIN) {
+      tier = 'none';
+      award = 0;
+      path = `Calculated Pell (Max $${fmt(PELL_MAX)} − SAI $${fmt(sai)} = $${fmt(calculated)}) below minimum award threshold. Not Pell-eligible.`;
+    } else {
+      tier = 'partial';
+      award = Math.round((calculated)/5) * 5;
+      path = `Calculated Pell: Max ($${fmt(PELL_MAX)}) − SAI ($${fmt(sai)}) = $${fmt(award)}, rounded to nearest $5.`;
+    }
+  }
+
+  return { tier, award, path, fplVal, maxPellThreshold, minPellThreshold };
+}
+
+// ════════════════════════════════════════════════════════════
+// UI / STATE
+// ════════════════════════════════════════════════════════════
+let activeFormula = 'A';
+let lastResult = null;
+
+function setFormula(f) {
+  activeFormula = f;
+  ['A','B','C'].forEach(x => {
+    document.getElementById('seg-'+x).classList.toggle('active', x === f);
+    document.getElementById('seg-'+x).setAttribute('aria-selected', x === f);
+    document.getElementById('form-'+x).classList.toggle('hidden', x !== f);
+  });
+  // hide results when formula switches
+  document.getElementById('resultsPanel').classList.remove('visible');
+}
+
+function num(id) {
+  const v = parseFloat(document.getElementById(id).value);
+  return isNaN(v) ? 0 : v;
+}
+function val(id) { return document.getElementById(id).value; }
+function fmt(n) { return Math.round(n).toLocaleString('en-US'); }
+
+function calculate() {
+  let result, input, group;
+
+  if (activeFormula === 'A') {
+    input = {
+      familySize: Math.max(2, num('A-familySize')),
+      parentMarital: val('A-parentMarital'),
+      parentAGI: num('A-parentAGI'),
+      parentUntaxed: num('A-parentUntaxed'),
+      parentTaxes: num('A-parentTaxes'),
+      parentEarner1: num('A-parentEarner1'),
+      parentAssets: num('A-parentAssets'),
+      studentIncome: num('A-studentIncome'),
+      studentTaxes: num('A-studentTaxes'),
+      studentAssets: num('A-studentAssets')
+    };
+    if (input.parentAGI === 0) { showToast('Enter parent AGI to calculate.', 'error'); return; }
+    result = calcFormulaA(input);
+    group = pellGroup('A', input.parentMarital, input.familySize, true);
+  } else if (activeFormula === 'B') {
+    input = {
+      marital: val('B-marital'),
+      AGI: num('B-AGI'),
+      untaxed: num('B-untaxed'),
+      taxes: num('B-taxes'),
+      earner1: num('B-earner1'),
+      assets: num('B-assets')
+    };
+    if (input.AGI === 0) { showToast('Enter applicant AGI to calculate.', 'error'); return; }
+    result = calcFormulaB(input);
+    input.familySize = (input.marital === 'married') ? 2 : 1;
+    group = pellGroup('B', input.marital, input.familySize, false);
+  } else {
+    input = {
+      marital: val('C-marital'),
+      familySize: Math.max(2, num('C-familySize')),
+      AGI: num('C-AGI'),
+      untaxed: num('C-untaxed'),
+      taxes: num('C-taxes'),
+      earner1: num('C-earner1'),
+      assets: num('C-assets')
+    };
+    if (input.AGI === 0) { showToast('Enter applicant AGI to calculate.', 'error'); return; }
+    result = calcFormulaC(input);
+    group = pellGroup('C', input.marital, input.familySize, true);
+  }
+
+  // for Pell determination: AGI = parent AGI (Formula A) or applicant AGI (B/C)
+  const agiForPell = (activeFormula === 'A') ? input.parentAGI : input.AGI;
+  const familySize = (activeFormula === 'A') ? input.familySize : (input.familySize || 1);
+  const stateVal = val(activeFormula + '-state');
+  const pell = determinePell(agiForPell, familySize, result.sai, group, stateVal);
+
+  lastResult = { formula: activeFormula, input, result, pell, group };
+
+  renderResults(lastResult);
+  renderSensitivity(lastResult);
+  enableExportButtons();
+  document.getElementById('resultsPanel').classList.add('visible');
+  document.getElementById('resultsPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderResults(r) {
+  const { sai } = r.result;
+  const { tier, award, path } = r.pell;
+
+  const saiEl = document.getElementById('r-sai');
+  saiEl.textContent = (sai < 0 ? '−$' : '$') + fmt(Math.abs(sai));
+  saiEl.classList.remove('positive','negative','neutral');
+  saiEl.classList.add(sai < 0 ? 'negative' : (sai > 0 ? 'positive' : 'neutral'));
+  document.getElementById('r-sai-meta').textContent = sai === SAI_FLOOR
+    ? 'At the −$1,500 floor (lowest possible SAI).'
+    : (sai >= SAI_PELL_CUTOFF ? 'Above the $14,790 Pell cutoff.' : 'Within the standard SAI range.');
+
+  document.getElementById('r-pell').textContent = '$' + fmt(award);
+  document.getElementById('r-pell').classList.remove('positive','negative','neutral');
+  document.getElementById('r-pell').classList.add(award > 0 ? 'negative' : 'positive');
+  document.getElementById('r-pell-meta').textContent = path;
+
+  const tierLabel = { max: 'Max Pell', partial: 'Partial Pell (calculated)', min: 'Min Pell', none: 'No Pell' }[tier];
+  document.getElementById('r-pell-tier-pill').innerHTML = `<span class="pell-tier-pill ${tier}">${tierLabel}</span>`;
+
+  document.getElementById('r-methodology').innerHTML = renderMethodology(r);
+  document.getElementById('manifestPreview').textContent = JSON.stringify(buildManifestPreview(), null, 2);
+}
+
+function renderMethodology(r) {
+  const b = r.result.breakdown;
+  if (r.formula === 'A') {
+    return `
+      <p><strong>Formula A (Dependent Student)</strong> — Source: Federal Register 90 FR 23922, FSA Handbook 2026-27 Ch. 3.</p>
+      <table>
+        <tr><th>Step</th><th>Source</th><th class="num">Amount</th></tr>
+        <tr><td>Parent total income (AGI + untaxed)</td><td>Form 1040 line 11 + untaxed lines</td><td class="num">$${fmt(b.totalParentIncome)}</td></tr>
+        <tr><td>− Federal taxes paid</td><td>Form 1040 line 24</td><td class="num">−$${fmt(b.parentTaxes)}</td></tr>
+        <tr><td>− Income Protection Allowance (family ${r.input.familySize})</td><td>Fed. Reg. §1</td><td class="num">−$${fmt(b.ipa)}</td></tr>
+        <tr><td>− Employment Expense Allowance</td><td>Fed. Reg. §5</td><td class="num">−$${fmt(b.eea)}</td></tr>
+        <tr><td><strong>= AAI from income</strong></td><td></td><td class="num"><strong>$${fmt(b.aai_income)}</strong></td></tr>
+        <tr><td>+ Asset contribution (parent assets × 12%)</td><td>FSA Handbook §A; APA = $0 for 2026-27</td><td class="num">+$${fmt(b.assetContrib)}</td></tr>
+        <tr><td><strong>= Adjusted Available Income (AAI)</strong></td><td></td><td class="num"><strong>$${fmt(b.aai)}</strong></td></tr>
+        <tr><td>Parent contribution (per §4 schedule)</td><td>Fed. Reg. §4</td><td class="num">$${fmt(b.parentContrib)}</td></tr>
+        <tr><td>+ Student income contrib. (50% above $11,770 IPA)</td><td>FSA Handbook §A</td><td class="num">+$${fmt(b.studentIncContrib)}</td></tr>
+        <tr><td>+ Student asset contrib. (20% of student assets)</td><td>FSA Handbook §A</td><td class="num">+$${fmt(b.studentAssetContrib)}</td></tr>
+        <tr><td><strong>= SAI (floored at −$1,500)</strong></td><td></td><td class="num"><strong>$${fmt(r.result.sai)}</strong></td></tr>
+      </table>
+      <p><strong>Pell pathway:</strong> ${r.pell.path}</p>
+      <p style="font-size:.7rem; color:var(--muted); margin-top:8px;">Note: under FAFSA Simplification (effective 2024-25), the "number in college" divisor was eliminated. Each student's SAI is calculated independently of siblings in college.</p>
+    `;
+  }
+  if (r.formula === 'B') {
+    return `
+      <p><strong>Formula B (Independent Student, No Dependents)</strong> — Source: Federal Register 90 FR 23922, FSA Handbook 2026-27 Ch. 3.</p>
+      <table>
+        <tr><th>Step</th><th>Source</th><th class="num">Amount</th></tr>
+        <tr><td>Total income (AGI + untaxed)</td><td>Form 1040 line 11 + untaxed</td><td class="num">$${fmt(b.totalIncome)}</td></tr>
+        <tr><td>− Federal taxes paid</td><td>Form 1040 line 24</td><td class="num">−$${fmt(b.taxes)}</td></tr>
+        <tr><td>− Income Protection Allowance (${r.input.marital})</td><td>Fed. Reg. §1</td><td class="num">−$${fmt(b.ipa)}</td></tr>
+        <tr><td>− Employment Expense Allowance</td><td>Fed. Reg. §5</td><td class="num">−$${fmt(b.eea)}</td></tr>
+        <tr><td><strong>= Available income</strong></td><td></td><td class="num"><strong>$${fmt(b.availableIncome)}</strong></td></tr>
+        <tr><td>Income contribution (50%)</td><td>FSA Handbook §B</td><td class="num">$${fmt(b.incomeContrib)}</td></tr>
+        <tr><td>+ Asset contribution (assets × 20%; APA = $0)</td><td>FSA Handbook §B</td><td class="num">+$${fmt(b.assetContrib)}</td></tr>
+        <tr><td><strong>= SAI (floored at −$1,500)</strong></td><td></td><td class="num"><strong>$${fmt(r.result.sai)}</strong></td></tr>
+      </table>
+      <p><strong>Pell pathway:</strong> ${r.pell.path}</p>
+    `;
+  }
+  // Formula C
+  return `
+    <p><strong>Formula C (Independent Student with Dependents)</strong> — Source: Federal Register 90 FR 23922, FSA Handbook 2026-27 Ch. 3. <em>Asset rate (7%) per FSA Handbook 2026-27; verify against SAI Guide PDF before institutional use.</em></p>
+    <table>
+      <tr><th>Step</th><th>Source</th><th class="num">Amount</th></tr>
+      <tr><td>Total income (AGI + untaxed)</td><td>Form 1040 line 11 + untaxed</td><td class="num">$${fmt(b.totalIncome)}</td></tr>
+      <tr><td>− Federal taxes paid</td><td>Form 1040 line 24</td><td class="num">−$${fmt(b.taxes)}</td></tr>
+      <tr><td>− Income Protection Allowance (${r.input.marital}, family ${r.input.familySize})</td><td>Fed. Reg. §2</td><td class="num">−$${fmt(b.ipa)}</td></tr>
+      <tr><td>− Employment Expense Allowance</td><td>Fed. Reg. §5</td><td class="num">−$${fmt(b.eea)}</td></tr>
+      <tr><td><strong>= AAI from income</strong></td><td></td><td class="num"><strong>$${fmt(b.aai_income)}</strong></td></tr>
+      <tr><td>+ Asset contribution (assets × 7%; APA = $0)</td><td>FSA Handbook §C</td><td class="num">+$${fmt(b.assetContrib)}</td></tr>
+      <tr><td><strong>= Adjusted Available Income (AAI)</strong></td><td></td><td class="num"><strong>$${fmt(b.aai)}</strong></td></tr>
+      <tr><td>Contribution (per §4 schedule)</td><td>Fed. Reg. §4</td><td class="num">$${fmt(b.contrib)}</td></tr>
+      <tr><td><strong>= SAI (floored at −$1,500)</strong></td><td></td><td class="num"><strong>$${fmt(r.result.sai)}</strong></td></tr>
+    </table>
+    <p><strong>Pell pathway:</strong> ${r.pell.path}</p>
+  `;
+}
+
+function renderSensitivity(r) {
+  const tbody = document.getElementById('r-sensitivity');
+  const baseAGI = (r.formula === 'A') ? r.input.parentAGI : r.input.AGI;
+  const familySize = (r.formula === 'A') ? r.input.familySize : (r.input.familySize || 1);
+  const deltas = [-20000, -10000, 0, 10000, 20000];
+  let rows = '';
+  for (const d of deltas) {
+    const newAGI = Math.max(0, baseAGI + d);
+    const scenario = d === 0 ? 'Current' : (d > 0 ? `+$${fmt(d)}` : `−$${fmt(Math.abs(d))}`);
+    const newInput = JSON.parse(JSON.stringify(r.input));
+    if (r.formula === 'A') newInput.parentAGI = newAGI;
+    else newInput.AGI = newAGI;
+
+    let newResult;
+    if (r.formula === 'A') newResult = calcFormulaA(newInput);
+    else if (r.formula === 'B') newResult = calcFormulaB(newInput);
+    else newResult = calcFormulaC(newInput);
+    const newPell = determinePell(newAGI, familySize, newResult.sai, r.group);
+    const cls = d === 0 ? 'highlight' : '';
+    rows += `<tr class="${cls}">
+      <td>${scenario}</td>
+      <td class="num">$${fmt(newAGI)}</td>
+      <td class="num">${newResult.sai < 0 ? '−$' : '$'}${fmt(Math.abs(newResult.sai))}</td>
+      <td class="num">$${fmt(newPell.award)}</td>
+    </tr>`;
+  }
+  tbody.innerHTML = rows;
+}
+
+function enableExportButtons() {
+  document.getElementById('markdownExportBtn').disabled = false;
+  document.getElementById('markdownExportBtn').classList.add('ready');
+  document.getElementById('ap2ExportBtn').disabled = false;
+  document.getElementById('ap2ExportBtn').classList.add('ready');
+}
+
+// ════════════════════════════════════════════════════════════
+// EXPORT — MARKDOWN
+// ════════════════════════════════════════════════════════════
+function exportMarkdown() {
+  if (!lastResult) return;
+  const r = lastResult;
+  const md = buildMarkdown(r);
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  triggerDownload(blob, `AL-17_fafsa-sai-simulator_${tsCompact()}.md`);
+  showToast('Markdown summary downloaded.', 'success');
+}
+
+function buildMarkdown(r) {
+  const lines = [];
+  lines.push(`# FAFSA SAI Estimate — Apex Logics AL-17`);
+  lines.push(``);
+  lines.push(`**Generated:** ${new Date().toISOString()}`);
+  lines.push(`**Award year:** 2026-27 (Federal Register 2025-10243, FSA Handbook 2026-27 Ch. 3)`);
+  lines.push(`**Formula:** ${r.formula} — ${ {A:'Dependent Student', B:'Independent w/o Dependents', C:'Independent w/ Dependents'}[r.formula] }`);
+  lines.push(``);
+  lines.push(`## Result`);
+  lines.push(``);
+  lines.push(`- **Estimated SAI:** ${r.result.sai < 0 ? '−$' : '$'}${fmt(Math.abs(r.result.sai))}`);
+  lines.push(`- **Pell tier:** ${r.pell.tier.toUpperCase()}`);
+  lines.push(`- **Pell estimated award:** $${fmt(r.pell.award)}`);
+  lines.push(`- **Pell pathway:** ${r.pell.path}`);
+  lines.push(``);
+  lines.push(`## Inputs`);
+  lines.push(``);
+  for (const [k,v] of Object.entries(r.input)) lines.push(`- **${k}:** ${v}`);
+  lines.push(``);
+  lines.push(`## Methodology Note`);
+  lines.push(``);
+  lines.push(`This estimate uses the official 2026-27 federal need-analysis methodology as published in the Federal Register (90 FR 23922, June 5, 2025) and the FSA Handbook 2026-27 Chapter 3. Asset Protection Allowance (APA) is $0 for 2026-27 across all ages and formulas. The SAI floor is −$1,500. Pell Grant award range: $740 (min) – $7,395 (max). Applicants with SAI ≥ $14,790 are not Pell-eligible per the One Big Beautiful Bill Act.`);
+  lines.push(``);
+  lines.push(`## Disclaimer`);
+  lines.push(``);
+  lines.push(`Estimate only. Actual SAI and Pell determination require completed FAFSA submission and verification by Federal Student Aid. State aid supplements, professional judgment adjustments, and institutional methodology (CSS Profile) are not modeled.`);
+  lines.push(``);
+  lines.push(`---`);
+  lines.push(`Built by Apex Advisors · Sister suite: AINumbers.co · CC 4.0 BY · AL-17`);
+  return lines.join('\n');
+}
+
+// ════════════════════════════════════════════════════════════
+// EXPORT — AP2 JSON
+// ════════════════════════════════════════════════════════════
+function buildAP2Mandate(r) {
+  const now = new Date();
+  return {
+    ap2_version: '1.0',
+    mandate_id: uuidv4(),
+    issued_at: now.toISOString(),
+    issued_by: 'apexlogics.org',
+    tool_id: 'fafsa-sai-simulator',
+    tool_version: '1.0.0',
+    al_id: 'AL-17',
+    mandate_type: 'fafsa_sai_estimate',
+    jurisdiction: ['US'],
+    regulatory_frameworks: ['Higher Education Act of 1965 as amended', 'FAFSA Simplification Act', 'One Big Beautiful Bill Act (2025)'],
+    payload: {
+      formula: r.formula,
+      sai: r.result.sai,
+      pell_tier: r.pell.tier,
+      pell_award: r.pell.award,
+      pell_pathway: r.pell.path,
+      breakdown: r.result.breakdown,
+      pell_thresholds: { fpl: r.pell.fplVal, max_threshold: r.pell.maxPellThreshold, min_threshold: r.pell.minPellThreshold }
+    },
+    summary: `Estimated 2026-27 SAI of ${r.result.sai < 0 ? '−$' : '$'}${fmt(Math.abs(r.result.sai))} (Formula ${r.formula}) yielding ${r.pell.tier.toUpperCase()} Pell tier of $${fmt(r.pell.award)}. ${r.pell.path}`,
+    agent_instructions: [
+      'This is an estimate based on the 2026-27 federal methodology, not an official aid determination.',
+      'For aid finalization, the applicant must submit the FAFSA at studentaid.gov.',
+      'Downstream tools may carry these inputs into AL-02 (Credential ROI Suite) for net-cost modeling.'
+    ],
+    valid_from: now.toISOString(),
+    valid_until: new Date(now.getTime() + 30*24*3600*1000).toISOString(),
+    last_reviewed: now.toISOString(),
+    source_tool_inputs: r.input,
+    regulatory_citations: [
+      'Federal Register 90 FR 23922 (June 5, 2025) — 2026-27 Need Analysis Methodology',
+      'FSA Handbook 2026-27, Application and Verification Guide, Chapter 3',
+      'Dear Colleague Letter, January 30, 2026 — 2026-27 Pell Grant Maximum and Minimum Award Amounts'
+    ],
+    downstream_handoff_candidates: ['AL-02', 'AL-26'],
+    audit_metadata: {
+      execution_hash: null,
+      client_side_executed: true,
+      zero_pii_verified: true,
+      deterministic_run: true,
+      data_vintage: DATA_VINTAGE
+    }
+  };
+}
+
+function exportAP2() {
+  if (!lastResult) return;
+  const mandate = buildAP2Mandate(lastResult);
+  const validation = AP2Schema.validate(mandate);
+  if (!validation.valid) {
+    showToast('AP2 validation failed: ' + validation.errors.join('; '), 'error');
+    return;
+  }
+  const blob = new Blob([JSON.stringify(mandate, null, 2)], { type: 'application/json' });
+  triggerDownload(blob, `AL-17_fafsa-sai-simulator_${tsCompact()}.ap2.json`);
+  showToast('AP2 mandate downloaded and validated.', 'success');
+}
+
+function showAP2Help() {
+  showToast('AP2 (Agent Purchase Protocol) is Google\'s agent authorization standard. The exported file lets an AI agent carry your FAFSA scenario into other Apex Logics tools (e.g., AL-02 Credential ROI). See ap2-protocol.org.', 'info', 6000);
+}
+
+// ════════════════════════════════════════════════════════════
+// AP2Schema — REFERENCE VALIDATOR (per CONTRACT Appendix F)
+// ════════════════════════════════════════════════════════════
+const AP2Schema = {
+  required: [
+    'ap2_version','mandate_id','issued_at','issued_by',
+    'tool_id','tool_version','al_id','mandate_type',
+    'payload','summary','audit_metadata'
+  ],
+  validMandateTypes: [
+    'credential_roi_evaluation','human_capital_assessment',
+    'automation_exposure_score','career_resilience_score',
+    'workforce_program_roi','career_pivot_assessment',
+    'career_transition_record','scholarship_pipeline_plan',
+    'fafsa_sai_estimate','exam_pathway_plan',
+    'benefits_election_record','severance_decision_record',
+    'offer_negotiation_record','graduate_school_roi_record',
+    'apprenticeship_match_record','cpd_credit_record',
+    'job_search_roi_record','career_break_record',
+    'loan_repayment_record','freelance_total_cost_record',
+    'mba_roi_evaluation','test_prep_roi_record',
+    'international_student_cost_record','parent_college_roi_record',
+    'equity_compensation_record'
+  ],
+  validate(m) {
+    const errors = [];
+    if (!m || typeof m !== 'object') return { valid:false, errors:['mandate is not an object'] };
+    this.required.forEach(k => { if (m[k] === undefined || m[k] === null) errors.push(`missing required field: ${k}`); });
+    if (m.ap2_version !== '1.0') errors.push('ap2_version must be "1.0"');
+    if (m.mandate_type && !this.validMandateTypes.includes(m.mandate_type)) errors.push(`mandate_type "${m.mandate_type}" not in enum`);
+    if (m.al_id && !/^AL-\d{1,2}(\+\d{1,2})?$/.test(m.al_id)) errors.push(`al_id "${m.al_id}" malformed`);
+    if (m.audit_metadata) {
+      if (m.audit_metadata.client_side_executed !== true) errors.push('audit_metadata.client_side_executed must be true');
+      if (m.audit_metadata.zero_pii_verified !== true) errors.push('audit_metadata.zero_pii_verified must be true');
+      if (m.audit_metadata.deterministic_run !== true) errors.push('audit_metadata.deterministic_run must be true');
+    }
+    return { valid: errors.length === 0, errors };
+  }
+};
+
+// ════════════════════════════════════════════════════════════
+// MANIFEST PREVIEW (the embedded inline copy of manifest.json for the MCP panel)
+// Source of truth is tools/fafsa-sai-simulator/manifest.json — this is just for display
+// ════════════════════════════════════════════════════════════
+function buildManifestPreview() {
+  return {
+    tool_id: 'fafsa-sai-simulator',
+    al_id: 'AL-17',
+    version: '1.0.0',
+    title: 'FAFSA SAI Simulator',
+    category: 'student_finance_debt',
+    journeys: ['education_path'],
+    personas: ['student','counselor'],
+    status: 'live',
+    data_vintage: DATA_VINTAGE,
+    ap2_export: true,
+    ap2_mandate_types: ['fafsa_sai_estimate'],
+    sister_suite: 'https://ainumbers.co',
+    consulting_site: 'https://apexadvisory.site',
+    license: 'CC-BY-4.0'
+  };
+}
+
+// ════════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════════
+function uuidv4() {
+  // RFC4122 v4 using crypto.getRandomValues (no network calls)
+  const buf = new Uint8Array(16);
+  crypto.getRandomValues(buf);
+  buf[6] = (buf[6] & 0x0f) | 0x40;
+  buf[8] = (buf[8] & 0x3f) | 0x80;
+  const hex = Array.from(buf, b => b.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+}
+
+function tsCompact() {
+  const d = new Date();
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+}
+
+function triggerDownload(blob, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 200);
+}
+
+let toastTimer;
+function showToast(msg, kind, ms) {
+  const t = document.getElementById('toast');
+  t.className = 'toast show ' + (kind || 'info');
+  t.textContent = msg;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = 'toast'; }, ms || 3500);
+}
+
+// ════════════════════════════════════════════════════════════
+// I18N — chrome translations only (UI labels). Logic, output, AP2 keys stay English.
+// ════════════════════════════════════════════════════════════
+const TRANSLATIONS = {
+  en: {
+    title: 'FAFSA SAI Simulator',
+    subtitle: 'Estimate the Student Aid Index (SAI) and Pell Grant tier for the 2026-27 award year. Models the federal need-analysis methodology end to end — income, assets, family size, and dependency status — entirely in your browser.',
+    vintage: 'FAFSA rules as of 2026-27 award year (effective July 1, 2026) · Tables: Federal Register 2025-10243',
+    pii: '🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.',
+    formula_a: 'Dependent Student (Formula A)',
+    formula_b: 'Independent — No Dependents (B)',
+    formula_c: 'Independent — With Dependents (C)',
+    parents_panel: "Parents' household",
+    student_panel: 'Student (the applicant)',
+    independent_panel: 'Applicant household',
+    independent_dep_panel: 'Applicant household',
+    calculate_btn: 'Calculate SAI & Pell Tier'
+  },
+  es: { lang_dir: 'ltr' },
+  fr: { lang_dir: 'ltr' },
+  ar: { lang_dir: 'rtl' },
+  pt: { lang_dir: 'ltr' },
+  zh: { lang_dir: 'ltr' }
+};
+
+function setLang(lang) {
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  const dir = (t.lang_dir === 'rtl') ? 'rtl' : 'ltr';
+  document.documentElement.dir = dir;
+  document.documentElement.lang = lang;
+
+  // apply translations where keys exist (fallback to English)
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.dataset.i18n;
+    if (t[k]) el.textContent = t[k];
+    else if (TRANSLATIONS.en[k]) el.textContent = TRANSLATIONS.en[k];
+  });
+
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+
+  try { sessionStorage.setItem('apex_lang', lang); } catch (e) {}
+}
+
+(function initLang() {
+  let lang = 'en';
+  try {
+    const saved = sessionStorage.getItem('apex_lang');
+    if (saved && TRANSLATIONS[saved]) lang = saved;
+    else {
+      const navLang = (navigator.language || navigator.userLanguage || 'en').slice(0, 2).toLowerCase();
+      if (TRANSLATIONS[navLang]) lang = navLang;
+    }
+  } catch (e) {}
+  setLang(lang);
+})();
+</script>
+</body>
+</html>

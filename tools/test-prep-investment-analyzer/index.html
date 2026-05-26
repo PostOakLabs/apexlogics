@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Prep Investment Analyzer — Apex Logics</title>
+<meta name="description" content="Score gap → admissions tier → earnings premium. GMAT, GRE, TOEFL, IELTS, LSAT, MCAT. Prep cost ROI vs. scholarship and salary lift. Browser-only. Zero PII.">
+<link rel="canonical" href="https://apexlogics.org/tools/test-prep-investment-analyzer/">
+<link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   CSS DESIGN TOKENS — Apex Logics Contract §8 Appendix A
+   Primary accent: --amber (#E8A838) — Education Path & ROI
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --bg:#0b0e14; --bg-2:#0C1220; --bg-3:#111A2E; --bg-4:#162238;
+  --border:#232b3e; --border-2:#2e3a52;
+  --muted:#6b7a99; --body:#c8d0e0; --text:#A8C4DE; --bright:#D4E8F8;
+  --amber:#E8A838; --amber-dim:rgba(232,168,56,.10); --amber-lt:#F0BD5E;
+  --teal:#14B8A6; --teal-dim:rgba(20,184,166,.10); --teal-lt:#2DD4BF;
+  --coral:#F07167; --coral-dim:rgba(240,113,103,.10);
+  --lavender:#A78BFA; --lavender-dim:rgba(167,139,250,.10);
+  --green:#34D399; --green-dim:rgba(52,211,153,.10);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,.10);
+  --red:#F87171; --red-dim:rgba(248,113,113,.10);
+  --warn:#FBBF24;
+  --radius:6px; --radius-lg:10px; --shadow:0 4px 24px rgba(0,0,0,.45);
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+html[dir="rtl"] body { direction:rtl; text-align:right; }
+body { background:var(--bg); color:var(--text); font-family:'Sora',sans-serif; font-size:.875rem; line-height:1.6; -webkit-font-smoothing:antialiased; min-height:100vh; }
+a { color:var(--amber-lt); text-decoration:none; }
+a:hover { text-decoration:underline; }
+button { cursor:pointer; font-family:inherit; }
+.container { max-width:1024px; margin:0 auto; padding:24px; }
+
+/* ════ NAV ════ */
+nav { position:sticky; top:0; z-index:100; background:rgba(7,11,20,.92); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+.nav-inner { max-width:1024px; margin:0 auto; display:flex; align-items:center; gap:16px; padding:0 24px; height:58px; }
+.logo { display:flex; align-items:center; gap:10px; flex-shrink:0; text-decoration:none; }
+.logo-mark { width:32px; height:32px; flex-shrink:0; }
+.logo-mark svg { width:100%; height:100%; }
+.logo-text { display:flex; flex-direction:column; gap:2px; }
+.logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--bright); letter-spacing:-.02em; line-height:1; }
+.logo-apex { color:var(--amber); }
+.logo-org { color:var(--muted); font-size:.8rem; }
+.logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-family:'JetBrains Mono',monospace; line-height:1; }
+.nav-right { display:flex; align-items:center; gap:8px; margin-left:auto; flex-shrink:0; }
+.nav-pill { background:none; border:1px solid var(--border-2); border-radius:var(--radius); color:var(--body); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; transition:border-color .15s, color .15s; text-decoration:none; display:inline-block; }
+.nav-pill:hover { border-color:var(--amber); color:var(--text); text-decoration:none; }
+@media (max-width:600px) { .logo-tag, .nav-pill { display:none; } }
+
+/* ════ LANG BAR ════ */
+.lang-bar { background:var(--bg-2); border-bottom:1px solid var(--border); padding:.5rem 0; }
+.lang-inner { max-width:1024px; margin:0 auto; padding:0 24px; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+.lang-btn { background:none; border:1px solid var(--border); color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.06em; padding:.25rem .55rem; border-radius:var(--radius); transition:all .15s; }
+.lang-btn:hover { border-color:var(--border-2); color:var(--body); }
+.lang-btn.active { border-color:var(--amber); color:var(--amber); background:var(--amber-dim); }
+
+/* ════ TOOL HEADER ════ */
+.tool-header { padding:40px 0 20px; }
+.tool-eyebrow { font-family:'JetBrains Mono',monospace; font-size:.55rem; letter-spacing:.18em; text-transform:uppercase; color:var(--amber); margin-bottom:8px; }
+.tool-title { font-family:'DM Serif Display',serif; font-size:2rem; line-height:1.15; color:var(--bright); margin-bottom:10px; }
+.tool-subtitle { color:var(--body); font-size:.95rem; max-width:680px; margin-bottom:14px; }
+.tool-vintage-banner { display:inline-flex; align-items:center; gap:8px; background:var(--amber-dim); border:1px solid rgba(232,168,56,.25); border-radius:var(--radius); padding:.35rem .75rem; font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.07em; color:var(--amber); text-transform:uppercase; }
+.tool-vintage-banner::before { content:"◆"; font-size:.5rem; }
+
+/* ════ PII BANNER ════ */
+.pii-notice { display:flex; align-items:flex-start; gap:10px; background:rgba(232,168,56,.07); border:1px solid rgba(232,168,56,.2); border-left:3px solid var(--amber); border-radius:var(--radius); padding:.75rem 1rem; color:var(--body); font-size:.78rem; line-height:1.5; margin-bottom:20px; }
+
+/* ════ TABS ════ */
+.tab-bar { display:flex; gap:4px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:0; }
+.tab-btn { background:none; border:none; border-bottom:2px solid transparent; color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; padding:.6rem 1.1rem; margin-bottom:-1px; transition:all .15s; }
+.tab-btn:hover { color:var(--body); }
+.tab-btn.active { color:var(--amber); border-bottom-color:var(--amber); }
+.tab-pane { display:none; }
+.tab-pane.active { display:block; }
+
+/* ════ EXAM SELECTOR ════ */
+.exam-grid { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+.exam-btn { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius); color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.68rem; letter-spacing:.06em; padding:.4rem .85rem; transition:all .15s; display:flex; flex-direction:column; align-items:center; gap:2px; }
+.exam-btn:hover { border-color:var(--border-2); color:var(--body); }
+.exam-btn.active { border-color:var(--amber); color:var(--amber); background:var(--amber-dim); }
+.exam-btn-sub { font-size:.52rem; color:var(--muted); }
+.exam-btn.active .exam-btn-sub { color:rgba(232,168,56,.7); }
+
+/* ════ PANEL ════ */
+.panel { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; margin-bottom:14px; }
+.panel-title { font-family:'JetBrains Mono',monospace; font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; color:var(--amber); margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+.panel-row { margin-bottom:14px; }
+.panel-row:last-child { margin-bottom:0; }
+.panel-label { display:block; font-size:.72rem; color:var(--text); margin-bottom:5px; font-weight:500; }
+.panel-label span { color:var(--muted); font-weight:400; }
+select, input[type="number"] { width:100%; background:var(--bg-3); border:1px solid var(--border-2); color:var(--bright); border-radius:var(--radius); padding:.5rem .75rem; font-family:'Sora',sans-serif; font-size:.82rem; transition:border-color .15s; -webkit-appearance:none; appearance:none; }
+select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%233E5675'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right .75rem center; padding-right:2rem; }
+select:focus, input:focus { outline:none; border-color:var(--amber); box-shadow:0 0 0 2px rgba(232,168,56,.12); }
+select option { background:var(--bg-3); color:var(--bright); }
+.input-hint { font-size:.67rem; color:var(--muted); margin-top:4px; }
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+@media (max-width:600px) { .two-col { grid-template-columns:1fr; } }
+.three-col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+@media (max-width:700px) { .three-col { grid-template-columns:1fr 1fr; } }
+@media (max-width:480px) { .three-col { grid-template-columns:1fr; } }
+
+/* ════ SCORE DISPLAY ════ */
+.score-display { background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px 20px; margin-bottom:14px; }
+.score-big { font-family:'DM Serif Display',serif; font-size:2.8rem; color:var(--bright); line-height:1; }
+.score-unit { font-family:'JetBrains Mono',monospace; font-size:.7rem; color:var(--muted); margin-top:2px; }
+.score-pct { font-family:'JetBrains Mono',monospace; font-size:1.1rem; color:var(--amber); margin-top:4px; }
+.score-pct-label { font-size:.6rem; color:var(--muted); font-family:'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; }
+
+/* ════ TIER LADDER ════ */
+.tier-ladder { display:flex; flex-direction:column; gap:6px; }
+.tier-rung { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:var(--radius); border:1px solid var(--border); background:var(--bg-3); transition:all .2s; }
+.tier-rung.current { border-color:var(--amber); background:var(--amber-dim); }
+.tier-rung.above { opacity:.5; }
+.tier-rung.below { opacity:.35; }
+.tier-dot { width:8px; height:8px; border-radius:50%; background:var(--border-2); flex-shrink:0; }
+.tier-rung.current .tier-dot { background:var(--amber); box-shadow:0 0 6px rgba(232,168,56,.5); }
+.tier-name { font-family:'JetBrains Mono',monospace; font-size:.68rem; color:var(--text); flex:1; }
+.tier-rung.current .tier-name { color:var(--amber); font-weight:500; }
+.tier-range { font-family:'JetBrains Mono',monospace; font-size:.62rem; color:var(--muted); }
+.tier-gap { font-family:'JetBrains Mono',monospace; font-size:.6rem; color:var(--teal); background:var(--teal-dim); border:1px solid rgba(20,184,166,.2); padding:.15rem .4rem; border-radius:3px; flex-shrink:0; }
+
+/* ════ RUN BUTTON ════ */
+.run-row { display:flex; justify-content:center; margin:20px 0; }
+.run-btn { background:var(--amber); color:#070B14; border:none; font-family:'Sora',sans-serif; font-size:.88rem; font-weight:600; padding:.75rem 2.5rem; border-radius:var(--radius); letter-spacing:.03em; transition:all .15s; min-width:200px; }
+.run-btn:hover { background:var(--amber-lt); }
+.run-btn:active { transform:scale(.98); }
+
+/* ════ RESULTS ════ */
+.results-panel { display:none; }
+.results-panel.visible { display:block; }
+.results-section { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:16px; overflow:hidden; }
+.results-section-head { background:var(--bg-3); padding:12px 18px; border-bottom:1px solid var(--border); font-family:'JetBrains Mono',monospace; font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; color:var(--amber); display:flex; align-items:center; gap:8px; }
+.results-section-head::before { content:"▸"; font-size:.7rem; }
+.results-section-body { padding:18px; }
+
+/* ════ METRIC GRID ════ */
+.metric-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
+.metric-item { display:flex; flex-direction:column; gap:3px; }
+.metric-label { font-size:.58rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+.metric-val { font-size:.9rem; color:var(--bright); font-family:'JetBrains Mono',monospace; font-weight:500; }
+.metric-val.amber { color:var(--amber); }
+.metric-val.green { color:var(--green); }
+.metric-val.coral { color:var(--coral); }
+.metric-val.teal { color:var(--teal); }
+
+/* ════ PREP METHOD CARDS ════ */
+.prep-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; margin-bottom:14px; }
+.prep-card { background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px; cursor:pointer; transition:all .15s; }
+.prep-card:hover { border-color:var(--border-2); }
+.prep-card.selected { border-color:var(--amber); background:var(--amber-dim); }
+.prep-card-name { font-size:.78rem; font-weight:600; color:var(--bright); margin-bottom:4px; }
+.prep-card.selected .prep-card-name { color:var(--amber); }
+.prep-card-cost { font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--teal); }
+.prep-card-improve { font-family:'JetBrains Mono',monospace; font-size:.62rem; color:var(--muted); margin-top:2px; }
+.prep-card.selected .prep-card-improve { color:rgba(232,168,56,.7); }
+
+/* ════ ROI RESULT CARD ════ */
+.roi-card { background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px 18px; }
+.roi-headline { font-family:'DM Serif Display',serif; font-size:1.4rem; color:var(--bright); margin-bottom:10px; }
+.roi-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+@media (max-width:500px) { .roi-grid { grid-template-columns:1fr; } }
+.roi-item { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius); padding:10px 12px; }
+.roi-item-label { font-size:.58rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:3px; }
+.roi-item-val { font-size:1rem; font-family:'JetBrains Mono',monospace; font-weight:500; color:var(--bright); }
+.roi-item-val.positive { color:var(--green); }
+.roi-item-val.negative { color:var(--coral); }
+.roi-item-val.amber { color:var(--amber); }
+.roi-summary { background:var(--amber-dim); border:1px solid rgba(232,168,56,.25); border-radius:var(--radius); padding:10px 12px; margin-top:10px; font-size:.78rem; color:var(--text); line-height:1.6; }
+.roi-summary strong { color:var(--amber); }
+
+/* ════ SCORE DELTA BADGE ════ */
+.delta-badge { display:inline-flex; align-items:center; gap:6px; background:var(--teal-dim); border:1px solid rgba(20,184,166,.25); border-radius:var(--radius); padding:.3rem .7rem; font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--teal); margin-bottom:12px; }
+
+/* ════ PROGRESS BAR ════ */
+.prog-wrap { margin-bottom:10px; }
+.prog-label-row { display:flex; justify-content:space-between; margin-bottom:4px; font-size:.65rem; font-family:'JetBrains Mono',monospace; }
+.prog-track { height:6px; background:var(--bg-4); border-radius:3px; overflow:hidden; position:relative; }
+.prog-fill { height:100%; border-radius:3px; background:var(--amber); transition:width .4s ease; }
+.prog-fill-new { height:100%; border-radius:3px; background:var(--green); position:absolute; top:0; left:0; transition:width .4s ease; }
+.prog-markers { position:relative; height:14px; margin-top:2px; }
+.prog-marker { position:absolute; font-family:'JetBrains Mono',monospace; font-size:.5rem; color:var(--muted); transform:translateX(-50%); }
+
+/* ════ EXPORT ROW ════ */
+.results-export-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:14px 18px; background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:16px; }
+.export-label { font-size:.65rem; color:var(--muted); font-family:'JetBrains Mono',monospace; letter-spacing:.08em; text-transform:uppercase; margin-right:4px; }
+.btn { display:inline-flex; flex-direction:column; align-items:center; gap:1px; background:none; border:1px solid var(--border-2); border-radius:var(--radius); color:var(--body); padding:.45rem .9rem; font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .15s; line-height:1.2; }
+.btn:hover:not(:disabled) { border-color:var(--amber); color:var(--amber); }
+.btn.ready { border-color:var(--amber); color:var(--amber); background:var(--amber-dim); }
+.btn:disabled { opacity:.28; cursor:not-allowed; }
+.btn-subtitle { font-size:.55rem; color:var(--muted); display:block; }
+.btn.ready .btn-subtitle { color:rgba(232,168,56,.7); }
+
+/* ════ HANDOFF ROW ════ */
+.handoff-btn { background:none; border:1px solid var(--border-2); border-radius:var(--radius); color:var(--body); padding:.4rem .85rem; font-size:.65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; transition:all .15s; display:inline-flex; flex-direction:column; align-items:flex-start; gap:2px; }
+.handoff-btn:hover { border-color:var(--teal); color:var(--teal); }
+.handoff-btn-sub { font-size:.55rem; color:var(--muted); }
+
+/* ════ MCP / MANIFEST TOGGLE ════ */
+.mcp-toggle { display:flex; align-items:center; gap:8px; background:none; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted); padding:.45rem 1rem; font-size:.65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.07em; transition:all .15s; margin-bottom:12px; }
+.mcp-toggle:hover { border-color:var(--border-2); color:var(--body); }
+.mcp-toggle::before { content:"▸"; transition:transform .2s; }
+.mcp-toggle.open::before { transform:rotate(90deg); }
+.mcp-panel { display:none; background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; margin-bottom:16px; }
+.mcp-panel.open { display:block; }
+.mcp-panel pre { font-family:'JetBrains Mono',monospace; font-size:.68rem; color:var(--body); line-height:1.55; overflow-x:auto; white-space:pre-wrap; word-break:break-word; }
+
+/* ════ TOAST ════ */
+.toast { position:fixed; bottom:24px; right:24px; z-index:9999; max-width:380px; padding:.75rem 1rem; background:var(--bg-4); border:1px solid var(--border-2); border-radius:var(--radius); box-shadow:var(--shadow); font-size:.78rem; color:var(--text); opacity:0; transform:translateY(8px); transition:all .25s; pointer-events:none; }
+.toast.show { opacity:1; transform:translateY(0); }
+.toast.success { border-color:var(--green); color:var(--green); }
+.toast.error { border-color:var(--red); color:var(--red); }
+
+/* ════ FOOTER ════ */
+.tool-footer { text-align:center; padding:24px; border-top:1px solid var(--border); font-size:.68rem; color:var(--muted); font-family:'JetBrains Mono',monospace; letter-spacing:.04em; line-height:1.8; }
+.tool-footer a { color:var(--amber-lt); }
+
+@media (max-width:480px) { .tool-title { font-size:1.5rem; } .results-export-row { flex-direction:column; align-items:flex-start; } }
+</style>
+</head>
+<body>
+
+<!-- LANG BAR -->
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-right">
+      <a href="https://apexadvisory.site" class="nav-pill" target="_blank" rel="noopener">ApexAdvisory.site</a>
+      <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <header class="tool-header">
+    <div class="tool-eyebrow" data-i18n="eyebrow">AL · 30 · Education Path &amp; ROI</div>
+    <h1 class="tool-title" data-i18n="tool_title">Test Prep Investment Analyzer</h1>
+    <p class="tool-subtitle" data-i18n="tool_subtitle">Score gap → admissions tier → earnings premium. Model the ROI of test prep for GMAT, GRE, TOEFL, IELTS, LSAT, and MCAT. Prep cost vs. scholarship lift and salary premium — all in your browser.</p>
+    <div class="tool-vintage-banner">Data: GMAT 2024 Percentiles · GRE 2024 · LSAT 2024 · MCAT 2024 · Kaplan/Princeton Review 2024</div>
+  </header>
+
+  <div class="pii-notice" role="note" aria-label="Privacy notice">
+    🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('score')" id="tab-score" data-i18n="tab_score">Score Analysis</button>
+    <button class="tab-btn" onclick="switchTab('roi')" id="tab-roi" data-i18n="tab_roi">Prep ROI</button>
+  </div>
+
+  <!-- ═══ TAB 1: SCORE ANALYSIS ═══ -->
+  <div class="tab-pane active" id="pane-score">
+
+    <div class="panel">
+      <div class="panel-title" data-i18n="panel_exam">Select Exam</div>
+      <div class="exam-grid" id="examGrid"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title" data-i18n="panel_score_inputs">Your Score</div>
+      <div class="two-col">
+        <div class="panel-row">
+          <label class="panel-label" for="currentScore" data-i18n="lbl_current_score">Current Score</label>
+          <input type="number" id="currentScore" oninput="onScoreInput()">
+          <div class="input-hint" id="scoreRangeHint"></div>
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="targetTier" data-i18n="lbl_target_tier">Target Admissions Tier</label>
+          <select id="targetTier" onchange="onScoreInput()">
+          </select>
+          <div class="input-hint" data-i18n="hint_target_tier">Select the tier you're aiming for.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live score display (updates on input) -->
+    <div id="liveScoreBox" style="display:none;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div class="score-display">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;" data-i18n="lbl_your_score">Your Score</div>
+          <div class="score-big" id="liveBigScore">—</div>
+          <div class="score-unit" id="liveUnit"></div>
+          <div class="score-pct" id="livePct">—</div>
+          <div class="score-pct-label" data-i18n="lbl_percentile">Percentile</div>
+        </div>
+        <div class="score-display">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;" data-i18n="lbl_target_score_needed">Score Needed for Target</div>
+          <div class="score-big" id="liveTargetScore">—</div>
+          <div class="score-unit" id="liveTargetUnit"></div>
+          <div id="liveGapBadge" style="margin-top:8px;"></div>
+        </div>
+      </div>
+      <!-- Tier ladder -->
+      <div class="panel">
+        <div class="panel-title" data-i18n="lbl_tier_placement">Admissions Tier Placement</div>
+        <div class="tier-ladder" id="tierLadder"></div>
+      </div>
+    </div>
+
+  </div><!-- /pane-score -->
+
+  <!-- ═══ TAB 2: PREP ROI ═══ -->
+  <div class="tab-pane" id="pane-roi">
+
+    <div class="panel">
+      <div class="panel-title" data-i18n="panel_exam_roi">Exam &amp; Score Inputs</div>
+      <div class="three-col">
+        <div class="panel-row">
+          <label class="panel-label" for="roiExam" data-i18n="lbl_exam_type">Exam Type</label>
+          <select id="roiExam" onchange="onROIExamChange()">
+            <option value="gmat">GMAT Focus</option>
+            <option value="gre">GRE General</option>
+            <option value="toefl">TOEFL iBT</option>
+            <option value="ielts">IELTS Academic</option>
+            <option value="lsat">LSAT</option>
+            <option value="mcat">MCAT</option>
+          </select>
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="roiCurrent" data-i18n="lbl_current_score">Current Score</label>
+          <input type="number" id="roiCurrent" value="580" oninput="onROIInput()">
+          <div class="input-hint" id="roiScoreHint"></div>
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="roiTarget" data-i18n="lbl_target_score">Target Score</label>
+          <input type="number" id="roiTarget" value="680" oninput="onROIInput()">
+          <div class="input-hint" id="roiTargetHint"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title" data-i18n="panel_prep_method">Prep Method</div>
+      <div class="prep-grid" id="prepGrid"></div>
+      <div class="two-col" style="margin-top:14px;">
+        <div class="panel-row">
+          <label class="panel-label" for="retakeCount" data-i18n="lbl_retakes">Number of Retakes <span>(incl. first attempt)</span></label>
+          <select id="retakeCount" onchange="onROIInput()">
+            <option value="1">1 (first attempt only)</option>
+            <option value="2" selected>2 attempts</option>
+            <option value="3">3 attempts</option>
+          </select>
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="scholarshipValue" data-i18n="lbl_scholarship">Scholarship at Target Tier <span>(USD/yr, opt.)</span></label>
+          <input type="number" id="scholarshipValue" value="20000" oninput="onROIInput()">
+          <div class="input-hint" data-i18n="hint_scholarship">Annual scholarship or tuition reduction at target tier. Leave 0 to use salary-lift only.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="run-row">
+      <button class="run-btn" onclick="runROI()" data-i18n="btn_run_roi">Calculate Prep ROI →</button>
+    </div>
+
+    <!-- ROI RESULTS -->
+    <div class="results-panel" id="roiResults">
+
+      <div class="results-section">
+        <div class="results-section-head" data-i18n="head_score_delta">Score Projection</div>
+        <div class="results-section-body">
+          <div id="scoreDeltaContent"></div>
+        </div>
+      </div>
+
+      <div class="results-section">
+        <div class="results-section-head" data-i18n="head_roi_breakdown">ROI Breakdown</div>
+        <div class="results-section-body">
+          <div class="roi-card" id="roiCard"></div>
+        </div>
+      </div>
+
+      <div class="results-export-row">
+        <span class="export-label" data-i18n="lbl_export">Export</span>
+        <button class="btn" onclick="exportMarkdown()" title="Markdown report">
+          Markdown
+          <span class="btn-subtitle">report</span>
+        </button>
+        <button class="btn ready" onclick="exportAP2()" title="AP2 JSON export">
+          AP2 JSON
+          <span class="btn-subtitle">test_prep_roi_record</span>
+        </button>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;" data-i18n="lbl_handoff">Continue With</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="handoff-btn" onclick="location.href='../mba-program-fit-ranker/index.html'">
+            AL-29 · MBA Program Fit &amp; ROI Ranker
+            <span class="handoff-btn-sub">Compare MBA programs at your target tier</span>
+          </button>
+          <button class="handoff-btn" onclick="location.href='../exam-cost-planner/index.html'">
+            AL-20 · Exam Cost &amp; Timeline Planner
+            <span class="handoff-btn-sub">Map full exam schedule, fees &amp; retake windows</span>
+          </button>
+          <button class="handoff-btn" onclick="location.href='../graduate-school-roi-comparator/index.html'">
+            AL-26 · Graduate School ROI Comparator
+            <span class="handoff-btn-sub">Broader program comparison beyond MBA</span>
+          </button>
+        </div>
+      </div>
+
+      <button class="mcp-toggle" id="mcpToggle" onclick="toggleMCP()">MCP · AP2 Payload Preview</button>
+      <div class="mcp-panel" id="mcpPanel"><pre id="mcpPre"></pre></div>
+
+    </div><!-- /roiResults -->
+
+  </div><!-- /pane-roi -->
+
+  <!-- MANIFEST — always visible -->
+  <button class="mcp-toggle" id="manifestToggle" onclick="toggleManifest()" style="margin-top:8px;">manifest.json · Tool Discovery</button>
+  <div class="mcp-panel" id="manifestPanel"><pre id="manifestPre"></pre></div>
+
+</div><!-- /container -->
+
+<div class="toast" id="toast"></div>
+
+<footer class="tool-footer">
+  <div>AL-30 · Test Prep Investment Analyzer · <a href="https://apexlogics.org" target="_blank" rel="noopener">ApexLogics.org</a> · CC BY 4.0</div>
+  <div style="margin-top:4px;font-size:.6rem;opacity:.6">Educational use only. Score improvement estimates reflect average outcomes; individual results vary by baseline, effort, and prep quality.</div>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   AL-30 Test Prep Investment Analyzer
+   Apex Logics — apexlogics.org
+   CONTRACT: Zero network calls post-load · Zero PII · CC BY 4.0
+   Data: GMAT 2024 · GRE 2024 · LSAT 2024 · MCAT 2024 · Kaplan/Princeton Review 2024
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── EXAM DATA ──────────────────────────────────────────────── */
+const EXAMS = {
+  gmat: {
+    name:"GMAT Focus Edition", short:"GMAT",
+    range:[205,805], step:10, default:580, fee:300,
+    unit:"pts", retake_info:"16-day waiting period between attempts; max 5 lifetime",
+    // [score, percentile]
+    pcts:[[805,99],[785,98],[765,97],[745,95],[725,93],[705,89],[685,83],[665,76],[645,66],[625,58],[605,49],[585,40],[565,32],[545,25],[525,18],[505,13],[485,8],[465,5],[445,3],[425,2],[405,1],[205,1]],
+    tiers:[
+      {name:"M7 Programs",     range:[720,805], salary_premium:45000, scholarship_yr:22000},
+      {name:"Top 10 US",       range:[700,719], salary_premium:30000, scholarship_yr:15000},
+      {name:"Top 15 US",       range:[680,699], salary_premium:20000, scholarship_yr:10000},
+      {name:"Top 20 US",       range:[655,679], salary_premium:12000, scholarship_yr:6000},
+      {name:"Top 30 US",       range:[630,654], salary_premium:6000,  scholarship_yr:3000},
+      {name:"Non-Competitive", range:[205,629], salary_premium:0,     scholarship_yr:0}
+    ]
+  },
+  gre: {
+    name:"GRE General Test", short:"GRE",
+    range:[260,340], step:1, default:308, fee:220,
+    unit:"pts (Q+V)", retake_info:"21-day waiting period; unlimited attempts",
+    pcts:[[340,99],[336,98],[332,96],[328,93],[324,89],[320,83],[316,76],[312,67],[308,57],[304,47],[300,38],[296,30],[292,23],[288,17],[284,12],[280,8],[276,5],[272,3],[268,2],[260,1]],
+    tiers:[
+      {name:"M7 Programs",     range:[325,340], salary_premium:42000, scholarship_yr:20000},
+      {name:"Top 10 US",       range:[315,324], salary_premium:28000, scholarship_yr:14000},
+      {name:"Top 15 US",       range:[307,314], salary_premium:18000, scholarship_yr:9000},
+      {name:"Top 20 US",       range:[298,306], salary_premium:10000, scholarship_yr:5000},
+      {name:"Top 30 US",       range:[288,297], salary_premium:5000,  scholarship_yr:2500},
+      {name:"Non-Competitive", range:[260,287], salary_premium:0,     scholarship_yr:0}
+    ]
+  },
+  toefl: {
+    name:"TOEFL iBT", short:"TOEFL",
+    range:[0,120], step:1, default:95, fee:235,
+    unit:"pts", retake_info:"3-day waiting period; unlimited attempts",
+    pcts:[[120,100],[115,97],[110,93],[105,80],[100,65],[95,50],[90,34],[85,22],[80,13],[75,7],[65,2],[0,1]],
+    tiers:[
+      {name:"US Top 30 MBA",       range:[107,120], salary_premium:15000, scholarship_yr:8000},
+      {name:"US T30-T50 MBA",      range:[100,106], salary_premium:8000,  scholarship_yr:4000},
+      {name:"Non-US Top Programs", range:[90,99],   salary_premium:4000,  scholarship_yr:2000},
+      {name:"Conditional Admit",   range:[79,89],   salary_premium:0,     scholarship_yr:0},
+      {name:"Below Minimum",       range:[0,78],    salary_premium:0,     scholarship_yr:0}
+    ]
+  },
+  ielts: {
+    name:"IELTS Academic", short:"IELTS",
+    range:[0,9], step:0.5, default:6.5, fee:225,
+    unit:"band", retake_info:"No waiting period; take as often as needed",
+    pcts:[[9.0,99],[8.5,97],[8.0,93],[7.5,83],[7.0,65],[6.5,48],[6.0,32],[5.5,18],[5.0,8],[4.5,3],[0,1]],
+    tiers:[
+      {name:"US Top 30 MBA",       range:[7.5,9.0], salary_premium:15000, scholarship_yr:8000},
+      {name:"US T30-T50 MBA",      range:[7.0,7.4], salary_premium:8000,  scholarship_yr:4000},
+      {name:"Non-US Top Programs", range:[6.5,6.9], salary_premium:4000,  scholarship_yr:2000},
+      {name:"Conditional Admit",   range:[6.0,6.4], salary_premium:0,     scholarship_yr:0},
+      {name:"Below Minimum",       range:[0,5.9],   salary_premium:0,     scholarship_yr:0}
+    ]
+  },
+  lsat: {
+    name:"LSAT", short:"LSAT",
+    range:[120,180], step:1, default:155, fee:200,
+    unit:"pts", retake_info:"No waiting period (digital format); max 3× per testing year",
+    pcts:[[180,99],[175,99],[170,97],[167,93],[165,90],[163,86],[160,80],[157,72],[155,67],[153,61],[150,47],[147,34],[145,26],[142,18],[140,13],[137,8],[135,5],[132,3],[120,1]],
+    tiers:[
+      {name:"T14 (Yale–Georgetown)", range:[170,180], salary_premium:35000, scholarship_yr:30000},
+      {name:"T20 Law Schools",       range:[163,169], salary_premium:20000, scholarship_yr:18000},
+      {name:"T50 Law Schools",       range:[155,162], salary_premium:10000, scholarship_yr:10000},
+      {name:"T100 Law Schools",      range:[147,154], salary_premium:4000,  scholarship_yr:5000},
+      {name:"Unranked",              range:[120,146], salary_premium:0,     scholarship_yr:0}
+    ]
+  },
+  mcat: {
+    name:"MCAT", short:"MCAT",
+    range:[472,528], step:1, default:508, fee:330,
+    unit:"pts", retake_info:"91-day waiting period; max 3× per year, 7× lifetime",
+    pcts:[[528,100],[524,97],[520,84],[518,76],[516,66],[514,61],[512,52],[510,47],[508,37],[506,33],[504,26],[502,20],[500,15],[498,11],[496,8],[490,3],[480,1],[472,1]],
+    tiers:[
+      {name:"Top 20 Med Schools",   range:[519,528], salary_premium:20000, scholarship_yr:25000},
+      {name:"T21–T50",              range:[514,518], salary_premium:12000, scholarship_yr:15000},
+      {name:"T51–T100",             range:[510,513], salary_premium:6000,  scholarship_yr:8000},
+      {name:"T100+ Programs",       range:[505,509], salary_premium:2000,  scholarship_yr:4000},
+      {name:"Competitive Range",    range:[500,504], salary_premium:0,     scholarship_yr:2000},
+      {name:"Below Competitive",    range:[472,499], salary_premium:0,     scholarship_yr:0}
+    ]
+  }
+};
+
+/* ─── PREP METHODS ───────────────────────────────────────────── */
+const PREP_METHODS = [
+  { id:"self_free",    name:"Self-Study (Free)",        cost:25,    hrs:50,  improve:{gmat:25,gre:5,toefl:4,ielts:0.4,lsat:3,mcat:3} },
+  { id:"books",        name:"Books + Practice Tests",   cost:120,   hrs:80,  improve:{gmat:40,gre:7,toefl:6,ielts:0.5,lsat:5,mcat:5} },
+  { id:"online_self",  name:"Online Course (Self-Paced)",cost:350,  hrs:100, improve:{gmat:55,gre:9,toefl:8,ielts:0.6,lsat:7,mcat:6} },
+  { id:"live_course",  name:"Live Online Course",        cost:1200, hrs:120, improve:{gmat:70,gre:11,toefl:10,ielts:0.7,lsat:10,mcat:8} },
+  { id:"tutor_20",     name:"Private Tutoring (20 hrs)", cost:2500, hrs:20,  improve:{gmat:85,gre:13,toefl:11,ielts:0.9,lsat:12,mcat:10} },
+  { id:"tutor_40",     name:"Private Tutoring (40 hrs)", cost:5000, hrs:40,  improve:{gmat:105,gre:16,toefl:13,ielts:1.0,lsat:16,mcat:12} },
+  { id:"elite",        name:"Elite Tutoring (50+ hrs)",  cost:12000,hrs:60,  improve:{gmat:120,gre:18,toefl:15,ielts:1.3,lsat:18,mcat:14} }
+];
+
+/* ─── I18N ───────────────────────────────────────────────────── */
+const I18N = {
+  en:{
+    eyebrow:"AL · 30 · Education Path & ROI",
+    tool_title:"Test Prep Investment Analyzer",
+    tool_subtitle:"Score gap → admissions tier → earnings premium. Model the ROI of test prep for GMAT, GRE, TOEFL, IELTS, LSAT, and MCAT. Prep cost vs. scholarship lift and salary premium — all in your browser.",
+    tab_score:"Score Analysis", tab_roi:"Prep ROI",
+    panel_exam:"Select Exam", panel_score_inputs:"Your Score",
+    panel_exam_roi:"Exam & Score Inputs", panel_prep_method:"Prep Method",
+    lbl_current_score:"Current Score", lbl_target_tier:"Target Admissions Tier",
+    lbl_target_score:"Target Score", lbl_your_score:"Your Score",
+    lbl_percentile:"Percentile", lbl_target_score_needed:"Score Needed for Target",
+    lbl_tier_placement:"Admissions Tier Placement", hint_target_tier:"Select the tier you're aiming for.",
+    lbl_exam_type:"Exam Type", lbl_retakes:"Number of Retakes (incl. first attempt)",
+    lbl_scholarship:"Scholarship at Target Tier (USD/yr, opt.)",
+    hint_scholarship:"Annual scholarship or tuition reduction at target tier.",
+    btn_run_roi:"Calculate Prep ROI →",
+    head_score_delta:"Score Projection", head_roi_breakdown:"ROI Breakdown",
+    lbl_export:"Export", lbl_handoff:"Continue With",
+    toast_ap2:"AP2 JSON downloaded.", toast_md:"Markdown downloaded.",
+    err_invalid:"Enter a valid score to see analysis.",
+    err_target_below:"Target score must be above current score."
+  },
+  es:{
+    eyebrow:"AL · 30 · Educación & ROI",
+    tool_title:"Analizador de ROI de Preparación para Examen",
+    tool_subtitle:"Brecha de puntaje → nivel de admisión → prima salarial. Modela el ROI de la preparación para GMAT, GRE, TOEFL, IELTS, LSAT y MCAT.",
+    tab_score:"Análisis de Puntaje", tab_roi:"ROI de Preparación",
+    panel_exam:"Seleccionar Examen", panel_score_inputs:"Tu Puntaje",
+    panel_exam_roi:"Examen y Puntajes", panel_prep_method:"Método de Preparación",
+    lbl_current_score:"Puntaje Actual", lbl_target_tier:"Nivel Objetivo de Admisión",
+    lbl_target_score:"Puntaje Objetivo", lbl_your_score:"Tu Puntaje",
+    lbl_percentile:"Percentil", lbl_target_score_needed:"Puntaje Necesario",
+    lbl_tier_placement:"Nivel de Admisión Actual", hint_target_tier:"Selecciona el nivel al que apuntas.",
+    lbl_exam_type:"Tipo de Examen", lbl_retakes:"Número de Intentos",
+    lbl_scholarship:"Beca en Nivel Objetivo (USD/año, opc.)",
+    hint_scholarship:"Reducción anual de matrícula en el nivel objetivo.",
+    btn_run_roi:"Calcular ROI de Preparación →",
+    head_score_delta:"Proyección de Puntaje", head_roi_breakdown:"Desglose de ROI",
+    lbl_export:"Exportar", lbl_handoff:"Continuar Con",
+    toast_ap2:"JSON AP2 descargado.", toast_md:"Markdown descargado.",
+    err_invalid:"Ingresa un puntaje válido.", err_target_below:"El puntaje objetivo debe ser mayor al actual."
+  },
+  fr:{
+    eyebrow:"AL · 30 · Parcours Éducatif & ROI",
+    tool_title:"Analyseur de ROI de Préparation aux Examens",
+    tool_subtitle:"Écart de score → niveau d'admission → prime salariale. Modélisez le ROI de la préparation pour GMAT, GRE, TOEFL, IELTS, LSAT et MCAT.",
+    tab_score:"Analyse de Score", tab_roi:"ROI de Préparation",
+    panel_exam:"Sélectionner l'Examen", panel_score_inputs:"Votre Score",
+    panel_exam_roi:"Examen & Scores", panel_prep_method:"Méthode de Préparation",
+    lbl_current_score:"Score Actuel", lbl_target_tier:"Niveau d'Admission Cible",
+    lbl_target_score:"Score Cible", lbl_your_score:"Votre Score",
+    lbl_percentile:"Percentile", lbl_target_score_needed:"Score Requis",
+    lbl_tier_placement:"Placement par Niveau", hint_target_tier:"Sélectionnez le niveau visé.",
+    lbl_exam_type:"Type d'Examen", lbl_retakes:"Nombre de Tentatives",
+    lbl_scholarship:"Bourse au Niveau Cible (USD/an, opt.)",
+    hint_scholarship:"Réduction annuelle de frais de scolarité au niveau cible.",
+    btn_run_roi:"Calculer le ROI de Préparation →",
+    head_score_delta:"Projection de Score", head_roi_breakdown:"Détail du ROI",
+    lbl_export:"Exporter", lbl_handoff:"Continuer Avec",
+    toast_ap2:"JSON AP2 téléchargé.", toast_md:"Markdown téléchargé.",
+    err_invalid:"Entrez un score valide.", err_target_below:"Le score cible doit dépasser le score actuel."
+  },
+  ar:{
+    eyebrow:"AL · 30 · المسار التعليمي والعائد على الاستثمار",
+    tool_title:"محلل عائد الاستثمار في التحضير للامتحانات",
+    tool_subtitle:"فجوة الدرجة → مستوى القبول → العلاوة على الراتب. نمذجة عائد الاستثمار في التحضير لـ GMAT وGRE وTOEFL وIELTS وLSAT وMCAT.",
+    tab_score:"تحليل الدرجة", tab_roi:"عائد التحضير",
+    panel_exam:"اختر الامتحان", panel_score_inputs:"درجتك",
+    panel_exam_roi:"الامتحان والدرجات", panel_prep_method:"طريقة التحضير",
+    lbl_current_score:"الدرجة الحالية", lbl_target_tier:"مستوى القبول المستهدف",
+    lbl_target_score:"الدرجة المستهدفة", lbl_your_score:"درجتك",
+    lbl_percentile:"الشريحة المئوية", lbl_target_score_needed:"الدرجة المطلوبة",
+    lbl_tier_placement:"مستوى القبول الحالي", hint_target_tier:"اختر المستوى الذي تستهدفه.",
+    lbl_exam_type:"نوع الامتحان", lbl_retakes:"عدد المحاولات",
+    lbl_scholarship:"المنحة في المستوى المستهدف (دولار/سنة، اختياري)",
+    hint_scholarship:"تخفيض سنوي في الرسوم الدراسية في المستوى المستهدف.",
+    btn_run_roi:"احسب عائد التحضير ←",
+    head_score_delta:"توقع الدرجة", head_roi_breakdown:"تفصيل العائد",
+    lbl_export:"تصدير", lbl_handoff:"المتابعة مع",
+    toast_ap2:"تم تنزيل JSON AP2.", toast_md:"تم تنزيل Markdown.",
+    err_invalid:"أدخل درجة صالحة.", err_target_below:"يجب أن تكون الدرجة المستهدفة أعلى من الدرجة الحالية."
+  },
+  pt:{
+    eyebrow:"AL · 30 · Percurso Educacional & ROI",
+    tool_title:"Analisador de ROI de Preparação para Exame",
+    tool_subtitle:"Lacuna de pontuação → nível de admissão → prêmio salarial. Modele o ROI da preparação para GMAT, GRE, TOEFL, IELTS, LSAT e MCAT.",
+    tab_score:"Análise de Pontuação", tab_roi:"ROI de Preparação",
+    panel_exam:"Selecionar Exame", panel_score_inputs:"Sua Pontuação",
+    panel_exam_roi:"Exame e Pontuações", panel_prep_method:"Método de Preparação",
+    lbl_current_score:"Pontuação Atual", lbl_target_tier:"Nível de Admissão Alvo",
+    lbl_target_score:"Pontuação Alvo", lbl_your_score:"Sua Pontuação",
+    lbl_percentile:"Percentil", lbl_target_score_needed:"Pontuação Necessária",
+    lbl_tier_placement:"Posicionamento por Nível", hint_target_tier:"Selecione o nível que você almeja.",
+    lbl_exam_type:"Tipo de Exame", lbl_retakes:"Número de Tentativas",
+    lbl_scholarship:"Bolsa no Nível Alvo (USD/ano, opc.)",
+    hint_scholarship:"Redução anual de mensalidade no nível alvo.",
+    btn_run_roi:"Calcular ROI de Preparação →",
+    head_score_delta:"Projeção de Pontuação", head_roi_breakdown:"Detalhamento do ROI",
+    lbl_export:"Exportar", lbl_handoff:"Continuar Com",
+    toast_ap2:"JSON AP2 baixado.", toast_md:"Markdown baixado.",
+    err_invalid:"Insira uma pontuação válida.", err_target_below:"A pontuação alvo deve ser maior que a atual."
+  },
+  zh:{
+    eyebrow:"AL · 30 · 教育路径与投资回报",
+    tool_title:"考试备考投资回报分析工具",
+    tool_subtitle:"分数差距 → 录取层级 → 收入溢价。分析GMAT、GRE、TOEFL、IELTS、LSAT和MCAT备考的投资回报率。备考成本与奖学金提升及薪资溢价对比。",
+    tab_score:"分数分析", tab_roi:"备考投资回报",
+    panel_exam:"选择考试", panel_score_inputs:"您的分数",
+    panel_exam_roi:"考试与分数输入", panel_prep_method:"备考方式",
+    lbl_current_score:"当前分数", lbl_target_tier:"目标录取层级",
+    lbl_target_score:"目标分数", lbl_your_score:"您的分数",
+    lbl_percentile:"百分位数", lbl_target_score_needed:"达到目标所需分数",
+    lbl_tier_placement:"录取层级定位", hint_target_tier:"选择您的目标层级。",
+    lbl_exam_type:"考试类型", lbl_retakes:"考试次数（含首次）",
+    lbl_scholarship:"目标层级奖学金（美元/年，可选）",
+    hint_scholarship:"目标层级的年度学费减免。",
+    btn_run_roi:"计算备考投资回报 →",
+    head_score_delta:"分数预测", head_roi_breakdown:"投资回报细项",
+    lbl_export:"导出", lbl_handoff:"继续前往",
+    toast_ap2:"AP2 JSON已下载。", toast_md:"Markdown已下载。",
+    err_invalid:"请输入有效分数。", err_target_below:"目标分数必须高于当前分数。"
+  }
+};
+
+/* ─── STATE ──────────────────────────────────────────────────── */
+let currentLang = 'en';
+let currentExam = 'gmat';
+let selectedPrep = 'books';
+let lastROIResult = null;
+
+/* ─── LANG ───────────────────────────────────────────────────── */
+function setLang(lang) {
+  currentLang = lang;
+  try { sessionStorage.setItem('apex_lang', lang); } catch(e) {}
+  document.querySelectorAll('.lang-btn').forEach(b =>
+    b.classList.toggle('active', b.textContent.trim().toLowerCase() === lang || (lang==='zh' && b.textContent.trim()==='中文')));
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.documentElement.lang = lang;
+  applyI18n();
+}
+function t(key) { return (I18N[currentLang]||I18N.en)[key] || I18N.en[key] || key; }
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (el.tagName === 'INPUT') el.placeholder = t(key);
+    else el.textContent = t(key);
+  });
+}
+
+/* ─── TAB SWITCHING ──────────────────────────────────────────── */
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('pane-'+tab).classList.add('active');
+  if (tab === 'roi') syncROIExamFromTab1();
+}
+
+/* ─── EXAM BUTTONS (Tab 1) ───────────────────────────────────── */
+function buildExamGrid() {
+  const grid = document.getElementById('examGrid');
+  grid.innerHTML = '';
+  Object.entries(EXAMS).forEach(([key, ex]) => {
+    const btn = document.createElement('button');
+    btn.className = 'exam-btn' + (key === currentExam ? ' active' : '');
+    btn.innerHTML = `${ex.short}<span class="exam-btn-sub">${ex.range[0]}–${ex.range[1]} ${ex.unit}</span>`;
+    btn.onclick = () => selectExam(key);
+    grid.appendChild(btn);
+  });
+}
+
+function selectExam(key) {
+  currentExam = key;
+  buildExamGrid();
+  const ex = EXAMS[key];
+  const input = document.getElementById('currentScore');
+  input.min = ex.range[0]; input.max = ex.range[1]; input.step = ex.step;
+  if (!input.value || parseFloat(input.value) < ex.range[0] || parseFloat(input.value) > ex.range[1]) {
+    input.value = ex.default;
+  }
+  document.getElementById('scoreRangeHint').textContent = `Range: ${ex.range[0]}–${ex.range[1]} ${ex.unit}. Exam fee: $${ex.fee}.`;
+
+  // Build target tier select
+  const sel = document.getElementById('targetTier');
+  sel.innerHTML = ex.tiers.map((ti,i) => `<option value="${i}">${ti.name} (${ti.range[0]}–${ti.range[1]})</option>`).join('');
+
+  onScoreInput();
+}
+
+function onScoreInput() {
+  const ex = EXAMS[currentExam];
+  const score = parseFloat(document.getElementById('currentScore').value);
+  if (isNaN(score) || score < ex.range[0] || score > ex.range[1]) {
+    document.getElementById('liveScoreBox').style.display = 'none'; return;
+  }
+  document.getElementById('liveScoreBox').style.display = 'block';
+
+  const pct = getPercentile(ex, score);
+  const currentTierIdx = getTierIdx(ex, score);
+  const targetTierIdx = parseInt(document.getElementById('targetTier').value) || 0;
+  const targetTier = ex.tiers[targetTierIdx];
+  const targetScore = targetTier.range[0];
+  const gap = Math.max(0, targetScore - score);
+
+  document.getElementById('liveBigScore').textContent = score;
+  document.getElementById('liveUnit').textContent = ex.unit;
+  document.getElementById('livePct').textContent = pct + 'th';
+  document.getElementById('liveTargetScore').textContent = targetScore;
+  document.getElementById('liveTargetUnit').textContent = ex.unit + ' minimum';
+
+  const gapEl = document.getElementById('liveGapBadge');
+  if (gap <= 0) {
+    gapEl.innerHTML = `<span style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--green);background:var(--green-dim);border:1px solid rgba(52,211,153,.2);padding:.25rem .6rem;border-radius:3px;">✓ Already at target tier</span>`;
+  } else {
+    gapEl.innerHTML = `<span class="delta-badge">+${gap} pts needed</span>`;
+  }
+
+  renderTierLadder(ex, currentTierIdx, targetTierIdx, score);
+}
+
+function renderTierLadder(ex, currentIdx, targetIdx, score) {
+  const ladder = document.getElementById('tierLadder');
+  ladder.innerHTML = '';
+  ex.tiers.forEach((ti, i) => {
+    const rung = document.createElement('div');
+    const isCurrent = i === currentIdx;
+    const isAbove = i < currentIdx;
+    rung.className = 'tier-rung' + (isCurrent ? ' current' : isAbove ? ' above' : ' below');
+    const gap = Math.max(0, ti.range[0] - score);
+    const gapHTML = (!isCurrent && gap > 0) ? `<span class="tier-gap">+${gap} to reach</span>` : '';
+    const checkHTML = isCurrent ? `<span style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--amber);background:var(--amber-dim);border:1px solid rgba(232,168,56,.2);padding:.12rem .4rem;border-radius:3px;">YOU ARE HERE</span>` : '';
+    rung.innerHTML = `
+      <div class="tier-dot"></div>
+      <span class="tier-name">${ti.name}</span>
+      <span class="tier-range">${ti.range[0]}–${ti.range[1]}</span>
+      ${gapHTML}${checkHTML}`;
+    ladder.appendChild(rung);
+  });
+}
+
+/* ─── PREP GRID ──────────────────────────────────────────────── */
+function buildPrepGrid() {
+  const grid = document.getElementById('prepGrid');
+  grid.innerHTML = '';
+  const examKey = document.getElementById('roiExam').value || 'gmat';
+  PREP_METHODS.forEach(m => {
+    const impr = m.improve[examKey] || 0;
+    const card = document.createElement('div');
+    card.className = 'prep-card' + (m.id === selectedPrep ? ' selected' : '');
+    card.innerHTML = `<div class="prep-card-name">${m.name}</div>
+      <div class="prep-card-cost">$${m.cost.toLocaleString()}</div>
+      <div class="prep-card-improve">~+${impr} pts avg · ${m.hrs} hrs</div>`;
+    card.onclick = () => { selectedPrep = m.id; buildPrepGrid(); };
+    grid.appendChild(card);
+  });
+}
+
+function onROIExamChange() {
+  const ex = EXAMS[document.getElementById('roiExam').value];
+  document.getElementById('roiScoreHint').textContent = `Range: ${ex.range[0]}–${ex.range[1]} ${ex.unit}`;
+  document.getElementById('roiTargetHint').textContent = `Exam fee: $${ex.fee} · ${ex.retake_info}`;
+  buildPrepGrid();
+}
+
+function onROIInput() { buildPrepGrid(); }
+
+function syncROIExamFromTab1() {
+  document.getElementById('roiExam').value = currentExam;
+  const ex = EXAMS[currentExam];
+  const curScore = parseFloat(document.getElementById('currentScore').value);
+  if (!isNaN(curScore)) document.getElementById('roiCurrent').value = curScore;
+  document.getElementById('roiScoreHint').textContent = `Range: ${ex.range[0]}–${ex.range[1]} ${ex.unit}`;
+  document.getElementById('roiTargetHint').textContent = `Exam fee: $${ex.fee} · ${ex.retake_info}`;
+  buildPrepGrid();
+}
+
+/* ─── HELPERS ────────────────────────────────────────────────── */
+function getPercentile(ex, score) {
+  const pts = ex.pcts;
+  for (let i = 0; i < pts.length - 1; i++) {
+    if (score >= pts[i+1][0] && score <= pts[i][0]) {
+      const frac = (score - pts[i+1][0]) / (pts[i][0] - pts[i+1][0]);
+      return Math.round(pts[i+1][1] + frac * (pts[i][1] - pts[i+1][1]));
+    }
+  }
+  if (score >= pts[0][0]) return pts[0][1];
+  return pts[pts.length-1][1];
+}
+
+function getTierIdx(ex, score) {
+  for (let i = 0; i < ex.tiers.length; i++) {
+    const [lo, hi] = ex.tiers[i].range;
+    if (score >= lo && score <= hi) return i;
+  }
+  return ex.tiers.length - 1;
+}
+
+/* ─── ROI CALCULATION ────────────────────────────────────────── */
+function runROI() {
+  const examKey = document.getElementById('roiExam').value;
+  const ex = EXAMS[examKey];
+  const current = parseFloat(document.getElementById('roiCurrent').value);
+  const target = parseFloat(document.getElementById('roiTarget').value);
+  const retakes = parseInt(document.getElementById('retakeCount').value) || 1;
+  const scholarshipYr = parseFloat(document.getElementById('scholarshipValue').value) || 0;
+
+  if (isNaN(current) || current < ex.range[0] || current > ex.range[1]) {
+    showToast(t('err_invalid'), 'error'); return;
+  }
+  if (target <= current) {
+    showToast(t('err_target_below'), 'error'); return;
+  }
+
+  const prep = PREP_METHODS.find(m => m.id === selectedPrep) || PREP_METHODS[1];
+  const projectedScore = Math.min(ex.range[1], current + prep.improve[examKey]);
+  const projectedPct = getPercentile(ex, projectedScore);
+  const currentPct = getPercentile(ex, current);
+  const targetPct = getPercentile(ex, target);
+
+  const currentTierIdx = getTierIdx(ex, current);
+  const projectedTierIdx = getTierIdx(ex, projectedScore);
+  const targetTierIdx = getTierIdx(ex, target);
+
+  const currentTier = ex.tiers[currentTierIdx];
+  const projectedTier = ex.tiers[projectedTierIdx];
+  const targetTier = ex.tiers[targetTierIdx];
+
+  const tierUpgraded = projectedTierIdx < currentTierIdx;
+  const reachesTier = projectedScore >= targetTier.range[0];
+
+  // Financial model
+  const prepCost = prep.cost;
+  const examFees = ex.fee * retakes;
+  const totalCost = prepCost + examFees;
+
+  const salaryLift10yr = tierUpgraded ? (projectedTier.salary_premium - currentTier.salary_premium) * 10 * 0.72 : 0;
+  const scholarshipLift2yr = tierUpgraded ? Math.min(scholarshipYr, projectedTier.scholarship_yr) * 2 : 0;
+  const totalBenefit = salaryLift10yr + scholarshipLift2yr;
+  const netROI = totalBenefit - totalCost;
+  const roi_multiple = totalCost > 0 ? totalBenefit / totalCost : 0;
+  const paybackMonths = salaryLift10yr > 0 ? (totalCost / (salaryLift10yr / 120)) : null;
+
+  const result = {
+    examKey, ex, current, target, prep, retakes, scholarshipYr,
+    projectedScore, projectedPct, currentPct, targetPct,
+    currentTier, projectedTier, targetTier, tierUpgraded, reachesTier,
+    prepCost, examFees, totalCost, salaryLift10yr, scholarshipLift2yr,
+    totalBenefit, netROI, roi_multiple, paybackMonths
+  };
+  lastROIResult = result;
+
+  renderROIResults(result);
+  document.getElementById('roiResults').classList.add('visible');
+  setTimeout(() => document.getElementById('roiResults').scrollIntoView({ behavior:'smooth', block:'start' }), 50);
+}
+
+function renderROIResults(r) {
+  // Score delta section
+  const pctRange = r.ex.range[1] - r.ex.range[0];
+  const pctCurrent = ((r.current - r.ex.range[0]) / pctRange) * 100;
+  const pctProjected = ((r.projectedScore - r.ex.range[0]) / pctRange) * 100;
+  const pctTarget = ((r.target - r.ex.range[0]) / pctRange) * 100;
+  const reachClass = r.reachesTier ? 'color:var(--green)' : 'color:var(--coral)';
+
+  document.getElementById('scoreDeltaContent').innerHTML = `
+    <div class="metric-grid" style="margin-bottom:16px;">
+      <div class="metric-item"><div class="metric-label">Current Score</div><div class="metric-val amber">${r.current} <span style="font-size:.65rem;color:var(--muted)">(${r.currentPct}th pct)</span></div></div>
+      <div class="metric-item"><div class="metric-label">Projected After Prep</div><div class="metric-val green">+${r.projectedScore - r.current} → ${r.projectedScore} <span style="font-size:.65rem;color:var(--muted)">(${r.projectedPct}th pct)</span></div></div>
+      <div class="metric-item"><div class="metric-label">Target Score</div><div class="metric-val" style="${reachClass}">${r.target} (${r.targetPct}th pct)</div></div>
+      <div class="metric-item"><div class="metric-label">Reaches Target Tier?</div><div class="metric-val" style="${reachClass}">${r.reachesTier ? '✓ Yes' : '✗ Not quite'}</div></div>
+    </div>
+    <div class="prog-wrap">
+      <div class="prog-label-row">
+        <span style="color:var(--muted)">Min (${r.ex.range[0]})</span>
+        <span style="color:var(--amber)">Current: ${r.current}</span>
+        <span style="color:var(--green)">Projected: ${r.projectedScore}</span>
+        <span style="color:var(--muted)">Max (${r.ex.range[1]})</span>
+      </div>
+      <div class="prog-track">
+        <div class="prog-fill" style="width:${pctCurrent.toFixed(1)}%"></div>
+        <div class="prog-fill-new" style="width:${pctProjected.toFixed(1)}%;opacity:.65"></div>
+      </div>
+      <div class="prog-markers">
+        <div class="prog-marker" style="left:${pctTarget.toFixed(1)}%;color:var(--amber);">▲<br>Target</div>
+      </div>
+    </div>
+    <div style="margin-top:14px;font-size:.75rem;color:var(--muted);font-family:'JetBrains Mono',monospace;">
+      ${r.ex.retake_info} · Prep: ${r.prep.name} (~${r.prep.improve[r.examKey]} pt avg improvement)
+    </div>`;
+
+  // ROI card
+  const netClass = r.netROI >= 0 ? 'positive' : 'negative';
+  const netStr = (r.netROI >= 0 ? '+' : '') + '$' + Math.abs(Math.round(r.netROI)).toLocaleString();
+  const roiMultStr = r.roi_multiple.toFixed(1) + '×';
+  const pbStr = r.paybackMonths ? (r.paybackMonths < 1 ? '<1 mo' : Math.round(r.paybackMonths) + ' mo') : 'N/A';
+
+  document.getElementById('roiCard').innerHTML = `
+    <div class="roi-grid">
+      <div class="roi-item"><div class="roi-item-label">Prep Cost</div><div class="roi-item-val amber">$${r.prepCost.toLocaleString()}</div></div>
+      <div class="roi-item"><div class="roi-item-label">Exam Fees (${r.retakes}× @ $${r.ex.fee})</div><div class="roi-item-val">$${r.examFees.toLocaleString()}</div></div>
+      <div class="roi-item"><div class="roi-item-label">Total Prep Investment</div><div class="roi-item-val amber">$${r.totalCost.toLocaleString()}</div></div>
+      <div class="roi-item"><div class="roi-item-label">10-yr Salary Lift (after-tax)</div><div class="roi-item-val green">$${Math.round(r.salaryLift10yr).toLocaleString()}</div></div>
+      <div class="roi-item"><div class="roi-item-label">Scholarship Lift (2 yr)</div><div class="roi-item-val teal">$${Math.round(r.scholarshipLift2yr).toLocaleString()}</div></div>
+      <div class="roi-item"><div class="roi-item-label">Total Estimated Benefit</div><div class="roi-item-val green">$${Math.round(r.totalBenefit).toLocaleString()}</div></div>
+    </div>
+    <div class="roi-grid">
+      <div class="roi-item"><div class="roi-item-label">Net ROI</div><div class="roi-item-val ${netClass}">${netStr}</div></div>
+      <div class="roi-item"><div class="roi-item-label">ROI Multiple</div><div class="roi-item-val ${r.roi_multiple >= 1 ? 'positive' : 'coral'}">${roiMultStr}</div></div>
+      <div class="roi-item"><div class="roi-item-label">Payback Period</div><div class="roi-item-val">${pbStr}</div></div>
+      <div class="roi-item"><div class="roi-item-label">Tier Upgrade?</div><div class="roi-item-val ${r.tierUpgraded ? 'positive' : ''}">${r.tierUpgraded ? `✓ ${r.currentTier.name} → ${r.projectedTier.name}` : 'No tier change'}</div></div>
+    </div>
+    <div class="roi-summary">
+      ${r.tierUpgraded
+        ? `<strong>${r.prep.name}</strong> is projected to lift your score by ~<strong>+${r.prep.improve[r.examKey]} pts</strong>, moving you from <strong>${r.currentTier.name}</strong> to <strong>${r.projectedTier.name}</strong>. Estimated total benefit: <strong>$${Math.round(r.totalBenefit).toLocaleString()}</strong> vs. a <strong>$${r.totalCost.toLocaleString()}</strong> investment — a <strong>${roiMultStr} return</strong>.`
+        : `<strong>${r.prep.name}</strong> is projected to improve your score by ~<strong>+${r.prep.improve[r.examKey]} pts</strong>, but may not be enough to move to a higher admissions tier from your current score. Consider a more intensive prep method or setting a longer-term score goal.`
+      }
+      ${!r.reachesTier ? ` <strong>Note:</strong> This prep method may not fully close the gap to your target score of ${r.target}.` : ''}
+    </div>`;
+}
+
+/* ─── AP2 EXPORT ─────────────────────────────────────────────── */
+const AP2Schema = {
+  required: [
+    'ap2_version','mandate_id','issued_at','issued_by',
+    'tool_id','tool_version','al_id','mandate_type',
+    'payload','summary','audit_metadata'
+  ],
+  validMandateTypes: [
+    'credential_roi_evaluation','human_capital_assessment',
+    'automation_exposure_score','career_resilience_score',
+    'workforce_program_roi','career_pivot_assessment',
+    'career_transition_record','scholarship_pipeline_plan',
+    'fafsa_sai_estimate','exam_pathway_plan',
+    'benefits_election_record','severance_decision_record',
+    'offer_negotiation_record','graduate_school_roi_record',
+    'apprenticeship_match_record','cpd_credit_record',
+    'job_search_roi_record','career_break_record',
+    'loan_repayment_record','freelance_total_cost_record',
+    'mba_roi_evaluation','test_prep_roi_record',
+    'international_student_cost_record','parent_college_roi_record',
+    'equity_compensation_record'
+  ],
+  validate(m) {
+    const errors = [];
+    if (!m || typeof m !== 'object') return { valid:false, errors:['mandate is not an object'] };
+    this.required.forEach(k => { if (m[k] === undefined || m[k] === null) errors.push(`missing required field: ${k}`); });
+    if (m.ap2_version !== '1.0') errors.push('ap2_version must be "1.0"');
+    if (m.mandate_type && !this.validMandateTypes.includes(m.mandate_type)) errors.push(`mandate_type "${m.mandate_type}" not in enum`);
+    if (m.al_id && !/^AL-\d{1,2}(\+\d{1,2})?$/.test(m.al_id)) errors.push(`al_id "${m.al_id}" malformed`);
+    if (m.audit_metadata) {
+      if (m.audit_metadata.client_side_executed !== true) errors.push('audit_metadata.client_side_executed must be true');
+      if (m.audit_metadata.zero_pii_verified !== true) errors.push('audit_metadata.zero_pii_verified must be true');
+      if (m.audit_metadata.deterministic_run !== true) errors.push('audit_metadata.deterministic_run must be true');
+    }
+    return { valid: errors.length === 0, errors };
+  }
+};
+
+function uuidv4() {
+  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+}
+
+function buildAP2Mandate(r) {
+  const now = new Date();
+  return {
+    ap2_version: "1.0",
+    mandate_id: uuidv4(),
+    issued_at: now.toISOString(),
+    issued_by: "apexlogics.org",
+    tool_id: "test-prep-investment-analyzer",
+    tool_version: "1.0.0",
+    al_id: "AL-30",
+    mandate_type: "test_prep_roi_record",
+    payload: {
+      exam: {
+        type: r.examKey, name: r.ex.name,
+        score_range: r.ex.range, unit: r.ex.unit,
+        exam_fee_usd: r.ex.fee, retake_policy: r.ex.retake_info
+      },
+      scores: {
+        current: r.current, current_percentile: r.currentPct,
+        target: r.target, target_percentile: r.targetPct,
+        projected_after_prep: r.projectedScore, projected_percentile: r.projectedPct
+      },
+      tiers: {
+        current_tier: r.currentTier.name,
+        projected_tier: r.projectedTier.name,
+        target_tier: r.targetTier.name,
+        tier_upgrade_achieved: r.tierUpgraded,
+        reaches_target_score: r.reachesTier
+      },
+      prep_method: {
+        id: r.prep.id, name: r.prep.name,
+        cost_usd: r.prepCost, hours: r.prep.hrs,
+        avg_score_improvement: r.prep.improve[r.examKey]
+      },
+      financials: {
+        exam_fees_usd: r.examFees, total_investment_usd: r.totalCost,
+        salary_lift_10yr_aftertax_usd: Math.round(r.salaryLift10yr),
+        scholarship_lift_2yr_usd: Math.round(r.scholarshipLift2yr),
+        total_benefit_usd: Math.round(r.totalBenefit),
+        net_roi_usd: Math.round(r.netROI),
+        roi_multiple: parseFloat(r.roi_multiple.toFixed(2)),
+        payback_months: r.paybackMonths ? Math.round(r.paybackMonths) : null
+      },
+      downstream_handoffs: ["AL-29","AL-20","AL-26"],
+      disclaimer: "Educational use only. Score improvements are averages; individual results vary by baseline, effort, and prep quality."
+    },
+    summary: `${r.ex.name}: ${r.current}→${r.projectedScore} projected (${r.currentTier.name}→${r.projectedTier.name}). ROI: ${r.roi_multiple.toFixed(1)}×, payback ${r.paybackMonths ? Math.round(r.paybackMonths) + ' mo' : 'N/A'}. Total cost: $${r.totalCost.toLocaleString()}, benefit: $${Math.round(r.totalBenefit).toLocaleString()}.`,
+    audit_metadata: {
+      execution_hash: null,
+      client_side_executed: true,
+      zero_pii_verified: true,
+      deterministic_run: true,
+      data_vintage: "2024"
+    }
+  };
+}
+
+function exportAP2() {
+  if (!lastROIResult) return;
+  const mandate = buildAP2Mandate(lastROIResult);
+  const result = AP2Schema.validate(mandate);
+  if (!result.valid) {
+    showToast('AP2 validation failed: ' + result.errors.join('; '), 'error');
+    return;
+  }
+  downloadJSON(mandate, 'AL30_test_prep_roi.ap2.json');
+  document.getElementById('mcpPre').textContent = JSON.stringify(mandate, null, 2);
+  showToast(t('toast_ap2'), 'success');
+}
+
+function exportMarkdown() {
+  if (!lastROIResult) return;
+  const r = lastROIResult;
+  let md = `# Test Prep Investment Analyzer — AL-30\n**Generated:** ${new Date().toLocaleDateString()}\n\n`;
+  md += `## Exam: ${r.ex.name}\n- Current Score: ${r.current} (${r.currentPct}th percentile)\n`;
+  md += `- Target Score: ${r.target} | Projected After Prep: ${r.projectedScore} (${r.projectedPct}th pct)\n`;
+  md += `- Prep Method: ${r.prep.name} — $${r.prepCost.toLocaleString()}, ~+${r.prep.improve[r.examKey]} pts avg\n\n`;
+  md += `## ROI Summary\n| Metric | Value |\n|--------|-------|\n`;
+  md += `| Total Investment | $${r.totalCost.toLocaleString()} |\n`;
+  md += `| Total Benefit (10yr) | $${Math.round(r.totalBenefit).toLocaleString()} |\n`;
+  md += `| Net ROI | ${r.netROI>=0?'+':''}$${Math.round(r.netROI).toLocaleString()} |\n`;
+  md += `| ROI Multiple | ${r.roi_multiple.toFixed(1)}× |\n`;
+  md += `| Tier Upgrade | ${r.tierUpgraded ? r.currentTier.name+' → '+r.projectedTier.name : 'None'} |\n\n`;
+  md += `---\n*Data: GMAT 2024 · GRE 2024 · LSAT 2024 · MCAT 2024 · Kaplan/Princeton Review 2024 · CC BY 4.0 · ApexLogics.org*\n`;
+  downloadText(md, 'AL30_test_prep_roi.md', 'text/markdown');
+  showToast(t('toast_md'), 'success');
+}
+
+/* ─── MCP / MANIFEST ─────────────────────────────────────────── */
+function toggleMCP() {
+  const btn = document.getElementById('mcpToggle');
+  const panel = document.getElementById('mcpPanel');
+  btn.classList.toggle('open'); panel.classList.toggle('open');
+  if (panel.classList.contains('open') && lastROIResult) {
+    document.getElementById('mcpPre').textContent = JSON.stringify(buildAP2Mandate(lastROIResult), null, 2);
+  }
+}
+
+const MANIFEST = {
+  al_id:"AL-30", title:"Test Prep Investment Analyzer", slug:"test-prep-investment-analyzer",
+  version:"1.0.0", url:"https://apexlogics.org/tools/test-prep-investment-analyzer/",
+  category:"education_path_roi", tier:"A",
+  description:"Score gap → admissions tier → earnings premium. 6 exams: GMAT, GRE, TOEFL, IELTS, LSAT, MCAT. 7 prep methods. Prep ROI vs. scholarship and salary lift.",
+  exams:["GMAT Focus","GRE General","TOEFL iBT","IELTS Academic","LSAT","MCAT"],
+  prep_methods:7,
+  data_sources:["GMAT 2024 percentiles","GRE 2024","LSAT 2024","MCAT 2024","Kaplan/Princeton Review 2024"],
+  personas:["student","counselor","parent","career_changer"],
+  ap2:{ export_schema:"test_prep_roi_record", inbound_schemas:["mba_roi_evaluation"], handoff_targets:["AL-29","AL-20","AL-26"] },
+  features:["2_tab_interface","live_tier_ladder","score_progress_bar","prep_roi_calculator","ap2_json_export","markdown_export","6_language_i18n"],
+  contract:{ version:"1.2", zero_pii:true, zero_network_post_load:true, storage:"sessionStorage:apex_lang only", license:"CC BY 4.0" },
+  built:"2026-05-18", suite:"apexlogics.org"
+};
+
+function toggleManifest() {
+  const btn = document.getElementById('manifestToggle');
+  const panel = document.getElementById('manifestPanel');
+  btn.classList.toggle('open'); panel.classList.toggle('open');
+  if (panel.classList.contains('open')) {
+    document.getElementById('manifestPre').textContent = JSON.stringify(MANIFEST, null, 2);
+  }
+}
+
+/* ─── FILE UTILS ─────────────────────────────────────────────── */
+function downloadJSON(obj, fn) { const b = new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}); triggerDownload(b,fn); }
+function downloadText(txt, fn, mime) { triggerDownload(new Blob([txt],{type:mime}), fn); }
+function triggerDownload(blob, fn) { const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fn; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href); }
+
+function showToast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast show ' + type;
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+/* ─── INIT ───────────────────────────────────────────────────── */
+(function init() {
+  try { const s = sessionStorage.getItem('apex_lang'); if (s && I18N[s]) currentLang = s; } catch(e) {}
+  setLang(currentLang);
+  buildExamGrid();
+  selectExam('gmat');
+  buildPrepGrid();
+  onROIExamChange();
+})();
+</script>
+</body>
+</html>

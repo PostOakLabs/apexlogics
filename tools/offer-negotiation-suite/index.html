@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offer Negotiation Suite — Apex Logics</title>
+<meta name="description" content="Two-tab deterministic tool for compensation negotiation: script builder + multi-offer comparison matrix. Browser-only. Zero PII. Built by Apex Advisors.">
+<link rel="canonical" href="https://apexlogics.org/tools/offer-negotiation-suite/">
+<link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0b0e14; --bg-2:#0C1220; --bg-3:#111A2E; --bg-4:#162238;
+  --border:#232b3e; --border-2:#2e3a52;
+  --muted:#6b7a99; --body:#c8d0e0; --text:#A8C4DE; --bright:#D4E8F8; --white:#EEF6FD;
+  --amber:#E8A838; --amber-lt:#F0BD5E; --amber-dim:rgba(232,168,56,.10);
+  --teal:#14B8A6; --teal-dim:rgba(20,184,166,.10); --teal-lt:#2DD4BF;
+  --coral:#F07167; --coral-dim:rgba(240,113,103,.10); --coral-lt:#F5938B;
+  --green:#34D399; --green-dim:rgba(52,211,153,.10);
+  --red:#F87171; --red-dim:rgba(248,113,113,.10);
+  --warn:#FBBF24;
+  --radius:6px; --radius-lg:10px; --shadow:0 4px 24px rgba(0,0,0,.45);
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+html[dir="rtl"] body { direction:rtl; text-align:right; }
+body { background:var(--bg); color:var(--text); font-family:'Sora',sans-serif; font-size:.875rem; line-height:1.6; -webkit-font-smoothing:antialiased; min-height:100vh; }
+a { color:var(--coral-lt); text-decoration:none; }
+a:hover { text-decoration:underline; }
+button { cursor:pointer; font-family:inherit; }
+.mono { font-family:'JetBrains Mono',monospace; }
+.container { max-width:1024px; margin:0 auto; padding:24px; }
+
+/* NAV */
+nav { position:sticky; top:0; z-index:100; background:rgba(7,11,20,.92); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+.nav-inner { max-width:1024px; margin:0 auto; display:flex; align-items:center; gap:16px; padding:0 24px; height:58px; }
+.logo { display:flex; align-items:center; gap:10px; flex-shrink:0; text-decoration:none; }
+.logo-mark { width:32px; height:32px; flex-shrink:0; }
+.logo-mark svg { width:100%; height:100%; }
+.logo-text { display:flex; flex-direction:column; gap:2px; }
+.logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--bright); letter-spacing:-.02em; line-height:1; }
+.logo-apex { color:var(--amber); } .logo-org { color:var(--muted); font-size:.8rem; }
+.logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-family:'JetBrains Mono',monospace; line-height:1; }
+.nav-right { display:flex; align-items:center; gap:8px; margin-left:auto; flex-shrink:0; }
+.nav-pill { background:none; border:1px solid var(--border-2); border-radius:var(--radius); color:var(--body); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; transition:border-color .15s, color .15s; }
+.nav-pill:hover { border-color:var(--text); color:var(--text); }
+@media (max-width:600px) { .logo-tag, .nav-pill { display:none; } }
+
+/* LANG BAR */
+.lang-bar { background:var(--bg-2); border-bottom:1px solid var(--border); padding:.5rem 0; }
+.lang-inner { max-width:1024px; margin:0 auto; padding:0 24px; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+.lang-btn { background:none; border:1px solid var(--border); color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.06em; padding:.25rem .55rem; border-radius:var(--radius); transition:all .15s; }
+.lang-btn:hover { border-color:var(--border-2); color:var(--body); }
+.lang-btn.active { border-color:var(--amber); color:var(--amber); background:var(--amber-dim); }
+
+/* TOOL HEADER */
+.tool-header { padding:48px 0 24px; }
+.tool-eyebrow { font-family:'JetBrains Mono',monospace; font-size:.55rem; letter-spacing:.18em; text-transform:uppercase; color:var(--coral); margin-bottom:8px; }
+.tool-title { font-family:'DM Serif Display',serif; font-size:2rem; line-height:1.15; color:var(--bright); margin-bottom:10px; }
+.tool-subtitle { color:var(--body); font-size:.95rem; max-width:740px; margin-bottom:18px; }
+.tool-vintage-banner { display:inline-flex; align-items:center; gap:8px; background:var(--coral-dim); border:1px solid rgba(240,113,103,.3); color:var(--coral-lt); padding:.4rem .8rem; border-radius:var(--radius); font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.04em; }
+.vintage-dot { width:6px; height:6px; border-radius:50%; background:var(--coral); }
+
+/* PII BANNER */
+.pii-notice { margin:24px 0; padding:14px 18px; background:rgba(232,168,56,.06); border:1px solid rgba(232,168,56,.25); border-radius:var(--radius); color:var(--amber-lt); font-size:.78rem; line-height:1.5; }
+
+/* TABS */
+.tabs { display:flex; gap:0; border-bottom:1px solid var(--border); margin-bottom:24px; }
+.tab-btn { background:none; border:none; color:var(--body); font-family:'Sora',sans-serif; font-size:.85rem; padding:.9rem 1.4rem; border-bottom:2px solid transparent; transition:all .15s; }
+.tab-btn:hover { color:var(--text); }
+.tab-btn.active { color:var(--coral-lt); border-bottom-color:var(--coral); }
+.tab-num { font-family:'JetBrains Mono',monospace; font-size:.55rem; letter-spacing:.12em; color:var(--muted); margin-right:8px; }
+.tab-btn.active .tab-num { color:var(--coral); }
+
+.tab-section { display:none; }
+.tab-section.active { display:block; }
+
+/* PANELS */
+.panel { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:22px; margin-bottom:18px; }
+.panel-label { font-family:'JetBrains Mono',monospace; font-size:.55rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; display:block; }
+.panel-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:12px; }
+@media (max-width:560px) { .panel-row { grid-template-columns:1fr; } }
+.panel-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:12px; }
+@media (max-width:760px) { .panel-row-3 { grid-template-columns:1fr; } }
+.input-group { display:flex; flex-direction:column; gap:6px; }
+.input-group label { font-size:.72rem; color:var(--text); display:flex; align-items:center; gap:6px; }
+.help-icon { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; background:var(--border-2); color:var(--body); font-size:.55rem; cursor:help; }
+.help-icon:hover { background:var(--coral-dim); color:var(--coral); }
+input[type="number"], input[type="text"], select { width:100%; background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius); color:var(--bright); padding:.55rem .7rem; font-family:'JetBrains Mono',monospace; font-size:.78rem; outline:none; transition:border-color .15s; }
+input:focus, select:focus { border-color:var(--coral); }
+input::placeholder { color:var(--muted); }
+.input-prefix { position:relative; }
+.input-prefix::before { content:"$"; position:absolute; left:.7rem; top:50%; transform:translateY(-50%); color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.78rem; pointer-events:none; }
+.input-prefix input { padding-left:1.4rem; }
+.input-suffix { position:relative; }
+.input-suffix::after { content:"%"; position:absolute; right:.7rem; top:50%; transform:translateY(-50%); color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.78rem; pointer-events:none; }
+
+/* RUN BUTTON */
+.run-btn { width:100%; padding:14px 24px; background:var(--coral); color:var(--bg); border:none; border-radius:var(--radius); font-family:'JetBrains Mono',monospace; font-size:.78rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase; transition:background .15s, transform .1s; margin:18px 0 36px; }
+.run-btn:hover { background:var(--coral-lt); }
+.run-btn:active { transform:translateY(1px); }
+.run-btn:disabled { background:var(--muted); cursor:not-allowed; }
+
+/* RESULTS */
+.results-panel { display:none; }
+.results-panel.visible { display:block; }
+.results-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:18px; }
+@media (max-width:760px) { .results-grid-3 { grid-template-columns:1fr; } }
+.result-card { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:22px; }
+.result-card-label { font-family:'JetBrains Mono',monospace; font-size:.55rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+.result-card-value { font-family:'DM Serif Display',serif; font-size:1.7rem; color:var(--bright); line-height:1; margin-bottom:6px; }
+.result-card-meta { font-size:.7rem; color:var(--body); }
+.result-card-value.anchor { color:var(--coral-lt); }
+.result-card-value.target { color:var(--amber); }
+.result-card-value.floor { color:var(--green); }
+
+/* SCRIPT OUTPUT */
+.script-block { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; margin-bottom:18px; }
+.script-block h3 { font-family:'DM Serif Display',serif; font-size:1.05rem; color:var(--bright); margin-bottom:12px; }
+.script-block h4 { font-family:'JetBrains Mono',monospace; font-size:.65rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:18px 0 8px; }
+.script-block p { font-size:.82rem; color:var(--body); line-height:1.7; margin-bottom:10px; }
+.script-block blockquote { border-left:2px solid var(--coral); padding:10px 14px; margin:10px 0; background:var(--coral-dim); color:var(--bright); font-style:italic; font-size:.82rem; line-height:1.6; border-radius:0 var(--radius) var(--radius) 0; }
+.script-block ul { margin-left:1.2rem; font-size:.78rem; color:var(--body); line-height:1.7; }
+.script-block ul li { margin-bottom:4px; }
+.script-block .obj-pair { background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px; margin-bottom:8px; }
+.script-block .obj-pair .obj-q { color:var(--amber-lt); font-weight:500; margin-bottom:6px; font-size:.78rem; }
+.script-block .obj-pair .obj-a { color:var(--text); font-size:.78rem; }
+
+/* OFFER MATRIX */
+.offer-card-input { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px; margin-bottom:14px; }
+.offer-card-input.disabled { opacity:.4; pointer-events:none; }
+.offer-card-input h4 { font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.12em; text-transform:uppercase; color:var(--coral); margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
+.offer-toggle { font-family:'JetBrains Mono',monospace; font-size:.55rem; padding:.2rem .5rem; border:1px solid var(--border-2); border-radius:3px; background:none; color:var(--muted); }
+.offer-toggle.active { color:var(--coral); border-color:var(--coral); background:var(--coral-dim); }
+
+.weights-panel { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:22px; margin-bottom:18px; }
+.weights-panel h3 { font-family:'DM Serif Display',serif; font-size:1.05rem; color:var(--bright); margin-bottom:14px; }
+.weight-row { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+.weight-row label { flex:1; font-size:.75rem; color:var(--text); }
+.weight-row input[type="range"] { flex:2; accent-color:var(--coral); }
+.weight-row .weight-val { font-family:'JetBrains Mono',monospace; font-size:.7rem; color:var(--coral-lt); width:40px; text-align:right; }
+
+.matrix-table { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); overflow-x:auto; margin-bottom:18px; }
+.matrix-table table { width:100%; border-collapse:collapse; font-family:'JetBrains Mono',monospace; font-size:.7rem; }
+.matrix-table th, .matrix-table td { padding:8px 12px; border-bottom:1px solid var(--border); white-space:nowrap; }
+.matrix-table th { color:var(--muted); font-weight:500; text-align:left; font-size:.55rem; letter-spacing:.06em; text-transform:uppercase; background:var(--bg-3); position:sticky; top:0; }
+.matrix-table td.num { text-align:right; }
+.matrix-table .rag-r { background:var(--red-dim); color:var(--red); }
+.matrix-table .rag-a { background:var(--amber-dim); color:var(--amber); }
+.matrix-table .rag-g { background:var(--green-dim); color:var(--green); }
+.matrix-table .total { font-weight:600; color:var(--bright); border-left:2px solid var(--border-2); }
+.matrix-table .winner { background:var(--coral-dim); color:var(--coral-lt); font-weight:600; }
+
+/* EXPORT ROW */
+.results-export-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; padding:18px 22px; background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:18px; }
+.btn { background:none; border:1px solid var(--border-2); color:var(--text); font-family:'JetBrains Mono',monospace; font-size:.65rem; letter-spacing:.06em; padding:.55rem .9rem; border-radius:var(--radius); transition:all .15s; display:inline-flex; flex-direction:column; align-items:flex-start; gap:2px; }
+.btn:hover:not(:disabled) { border-color:var(--text); }
+.btn:disabled { opacity:.28; cursor:not-allowed; }
+.btn.ready { border-color:var(--coral); color:var(--coral-lt); }
+.btn.ready:hover { background:var(--coral-dim); }
+.btn-subtitle { font-size:.5rem; color:var(--muted); letter-spacing:.04em; text-transform:none; }
+.btn-help { width:28px; height:28px; padding:0; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.7rem; font-weight:500; }
+
+/* MCP PANEL */
+.mcp-toggle { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:18px; }
+.mcp-toggle summary { padding:14px 22px; font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); cursor:pointer; list-style:none; }
+.mcp-toggle summary::before { content:"▸ "; }
+.mcp-toggle[open] summary::before { content:"▾ "; }
+.mcp-panel { padding:0 22px 22px; font-family:'JetBrains Mono',monospace; font-size:.65rem; line-height:1.6; color:var(--body); }
+.mcp-panel pre { background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius); padding:14px; overflow-x:auto; font-size:.62rem; color:var(--text); }
+
+/* TOAST */
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); padding:12px 18px; border-radius:var(--radius); font-family:'JetBrains Mono',monospace; font-size:.72rem; z-index:200; box-shadow:var(--shadow); opacity:0; transition:opacity .2s; pointer-events:none; max-width:520px; text-align:center; }
+.toast.show { opacity:1; }
+.toast.error { background:var(--red-dim); border:1px solid var(--red); color:var(--red); }
+.toast.success { background:var(--green-dim); border:1px solid var(--green); color:var(--green); }
+.toast.info { background:var(--coral-dim); border:1px solid var(--coral); color:var(--coral-lt); }
+
+/* FOOTER */
+.tool-footer { margin-top:48px; padding:24px 0; border-top:1px solid var(--border); font-size:.7rem; color:var(--muted); line-height:1.6; text-align:center; }
+.tool-footer a { color:var(--body); border-bottom:1px solid var(--border-2); }
+.tool-footer a:hover { color:var(--text); border-color:var(--text); text-decoration:none; }
+
+.disclaimer { margin-top:18px; padding:14px 18px; background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius); color:var(--body); font-size:.7rem; line-height:1.55; }
+.hidden { display:none !important; }
+</style>
+</head>
+<body>
+
+<!-- LANG BAR -->
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')" data-lang="en">EN</button>
+    <button class="lang-btn" onclick="setLang('es')" data-lang="es">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')" data-lang="fr">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')" data-lang="ar">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')" data-lang="pt">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')" data-lang="zh">中文</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-right">
+      <a href="https://apexadvisory.site" class="nav-pill" target="_blank" rel="noopener">ApexAdvisory.site</a>
+      <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="container">
+
+  <header class="tool-header">
+    <div class="tool-eyebrow">AL · 25 · Compensation &amp; Offers</div>
+    <h1 class="tool-title" data-i18n="title">Offer Negotiation Suite</h1>
+    <p class="tool-subtitle" data-i18n="subtitle">Two deterministic frameworks for offer negotiation: a structured script builder with anchoring tiers and objection responses, plus a multi-offer comparison matrix scoring up to 6 offers across weighted dimensions. Entirely user-input — zero embedded data.</p>
+    <div class="tool-vintage-banner">
+      <span class="vintage-dot"></span>
+      <span data-i18n="vintage">Frameworks based on Galinsky anchoring research, Fisher &amp; Ury BATNA model, and 2026 negotiation best practices · No embedded data</span>
+    </div>
+  </header>
+
+  <div class="pii-notice" data-i18n="pii">
+    🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs" role="tablist" aria-label="Tool tabs">
+    <button class="tab-btn active" id="tab-1" role="tab" aria-selected="true" onclick="setTab(1)">
+      <span class="tab-num">TAB 01</span> Negotiation Script Builder
+    </button>
+    <button class="tab-btn" id="tab-2" role="tab" aria-selected="false" onclick="setTab(2)">
+      <span class="tab-num">TAB 02</span> Multi-Offer Comparison Matrix
+    </button>
+  </div>
+
+  <!-- ════════════════════ TAB 1 — SCRIPT BUILDER ════════════════════ -->
+  <section class="tab-section active" id="section-1" role="tabpanel" aria-labelledby="tab-1">
+
+    <div class="panel">
+      <span class="panel-label">The current offer (your starting point)</span>
+      <div class="panel-row-3">
+        <div class="input-group">
+          <label for="t1-base">Base salary</label>
+          <div class="input-prefix"><input type="number" id="t1-base" min="0" step="1000" placeholder="120000"></div>
+        </div>
+        <div class="input-group">
+          <label for="t1-bonus">Annual bonus target ($)</label>
+          <div class="input-prefix"><input type="number" id="t1-bonus" min="0" step="1000" value="0" placeholder="0"></div>
+        </div>
+        <div class="input-group">
+          <label for="t1-equity">Equity grant ($, total over vest)</label>
+          <div class="input-prefix"><input type="number" id="t1-equity" min="0" step="1000" value="0" placeholder="0"></div>
+        </div>
+      </div>
+      <div class="panel-row-3">
+        <div class="input-group">
+          <label for="t1-signon">Sign-on bonus</label>
+          <div class="input-prefix"><input type="number" id="t1-signon" min="0" step="1000" value="0" placeholder="0"></div>
+        </div>
+        <div class="input-group">
+          <label for="t1-vestyears">Equity vest years</label>
+          <input type="number" id="t1-vestyears" min="1" max="10" step="1" value="4">
+        </div>
+        <div class="input-group">
+          <label for="t1-style">Negotiation style <span class="help-icon" title="Collaborative tone uses 'we'/'together' framing; firm tone is more transactional; data-driven leans on market comps and BATNA explicitly.">?</span></label>
+          <select id="t1-style">
+            <option value="collaborative">Collaborative</option>
+            <option value="data_driven">Data-driven</option>
+            <option value="firm">Firm</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <span class="panel-label">Your target &amp; BATNA</span>
+      <div class="panel-row">
+        <div class="input-group">
+          <label for="t1-target">Target total comp <span class="help-icon" title="Your realistic best-case total compensation (base + bonus + equity-per-year). Sets your aim.">?</span></label>
+          <div class="input-prefix"><input type="number" id="t1-target" min="0" step="1000" placeholder="180000"></div>
+        </div>
+        <div class="input-group">
+          <label for="t1-batna">BATNA total comp <span class="help-icon" title="Best Alternative To a Negotiated Agreement: your next-best option (current job, another offer). Your floor — below this, walk away.">?</span></label>
+          <div class="input-prefix"><input type="number" id="t1-batna" min="0" step="1000" placeholder="135000"></div>
+        </div>
+      </div>
+      <div class="panel-row">
+        <div class="input-group">
+          <label for="t1-priority1">Top priority</label>
+          <select id="t1-priority1">
+            <option value="base">Base salary</option>
+            <option value="equity">Equity</option>
+            <option value="bonus">Bonus structure</option>
+            <option value="signon">Sign-on</option>
+            <option value="pto">PTO / time off</option>
+            <option value="remote">Remote / flex</option>
+            <option value="title">Title / scope</option>
+            <option value="reloc">Relocation</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label for="t1-priority2">Second priority</label>
+          <select id="t1-priority2">
+            <option value="equity">Equity</option>
+            <option value="base">Base salary</option>
+            <option value="bonus">Bonus structure</option>
+            <option value="signon">Sign-on</option>
+            <option value="pto">PTO / time off</option>
+            <option value="remote">Remote / flex</option>
+            <option value="title">Title / scope</option>
+            <option value="reloc">Relocation</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button class="run-btn" id="t1-runBtn" onclick="calculateScript()">Build my negotiation script</button>
+
+    <!-- TAB 1 RESULTS -->
+    <div class="results-panel" id="t1-results" aria-live="polite">
+
+      <div class="results-grid-3">
+        <div class="result-card">
+          <div class="result-card-label">Anchor (opening ask)</div>
+          <div class="result-card-value anchor" id="r1-anchor">—</div>
+          <div class="result-card-meta" id="r1-anchor-meta"></div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-label">Target (realistic)</div>
+          <div class="result-card-value target" id="r1-target">—</div>
+          <div class="result-card-meta" id="r1-target-meta"></div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-label">Floor (BATNA — walk if below)</div>
+          <div class="result-card-value floor" id="r1-floor">—</div>
+          <div class="result-card-meta" id="r1-floor-meta"></div>
+        </div>
+      </div>
+
+      <div class="script-block" id="r1-scriptBlock">
+        <h3>Suggested Negotiation Script</h3>
+        <div id="r1-script"></div>
+      </div>
+
+      <div class="results-export-row" id="t1-exportRow">
+        <button class="btn" id="t1-mdBtn" disabled onclick="exportMarkdown('script')">
+          <span>Export Markdown</span><span class="btn-subtitle">Full script + counter-tiers</span>
+        </button>
+        <button class="btn" id="t1-ap2Btn" disabled onclick="exportAP2('script')">
+          <span>Export AP2 JSON</span><span class="btn-subtitle">Agent integration · audit trail</span>
+        </button>
+        <button class="btn btn-help" onclick="showAP2Help()" aria-label="What is AP2?">?</button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ════════════════════ TAB 2 — COMPARISON MATRIX ════════════════════ -->
+  <section class="tab-section" id="section-2" role="tabpanel" aria-labelledby="tab-2">
+
+    <p style="color:var(--body); font-size:.82rem; margin-bottom:18px; line-height:1.7;">
+      Enter up to 6 offers. Each offer is scored across 12 dimensions. Adjust the weights below to reflect what matters most to you — the matrix re-ranks live.
+    </p>
+
+    <div id="offer-cards"></div>
+
+    <div class="weights-panel">
+      <h3>Dimension weights</h3>
+      <p style="color:var(--body); font-size:.75rem; margin-bottom:12px;">Drag sliders to set how much each dimension matters. Default = equal weighting.</p>
+      <div id="weight-rows"></div>
+    </div>
+
+    <button class="run-btn" id="t2-runBtn" onclick="calculateMatrix()">Score &amp; rank offers</button>
+
+    <!-- TAB 2 RESULTS -->
+    <div class="results-panel" id="t2-results" aria-live="polite">
+
+      <div class="result-card" style="margin-bottom:18px;">
+        <div class="result-card-label">Top-ranked offer</div>
+        <div class="result-card-value" id="r2-winner">—</div>
+        <div class="result-card-meta" id="r2-winner-meta"></div>
+      </div>
+
+      <div class="matrix-table">
+        <table id="r2-matrix"></table>
+      </div>
+
+      <div class="results-export-row" id="t2-exportRow">
+        <button class="btn" id="t2-mdBtn" disabled onclick="exportMarkdown('matrix')">
+          <span>Export Markdown</span><span class="btn-subtitle">Comparison summary</span>
+        </button>
+        <button class="btn" id="t2-csvBtn" disabled onclick="exportCSV()">
+          <span>Export CSV</span><span class="btn-subtitle">Tier 2 · spreadsheet-ready</span>
+        </button>
+        <button class="btn" id="t2-ap2Btn" disabled onclick="exportAP2('matrix')">
+          <span>Export AP2 JSON</span><span class="btn-subtitle">Agent integration · audit trail</span>
+        </button>
+        <button class="btn btn-help" onclick="showAP2Help()" aria-label="What is AP2?">?</button>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="disclaimer">
+    <strong>Framework, not advice.</strong> This tool surfaces a structured negotiation plan and side-by-side offer comparison; it doesn't know your industry, leverage, or relationship dynamics. Treat the outputs as inputs to your own judgment, your mentor's, or your career counselor's. Equity valuations are nominal grant value at offer — actual realized value depends on company outcome.
+  </div>
+
+  <details class="mcp-toggle" id="mcpToggle">
+    <summary>MCP manifest (for AI agents)</summary>
+    <div class="mcp-panel">
+      <p>This tool exposes a structured manifest at <a href="manifest.json">manifest.json</a> for Model Context Protocol agents and discovery via <a href="../../suite-registry.json">suite-registry.json</a>.</p>
+      <pre id="manifestPreview"></pre>
+    </div>
+  </details>
+
+  <footer class="tool-footer">
+    Built by <a href="https://apexadvisory.site" target="_blank" rel="noopener">Apex Advisors</a> ·
+    Sister suite: <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> ·
+    CC 4.0 BY · AL-25 · Frameworks based on negotiation research (Fisher &amp; Ury, Galinsky)
+  </footer>
+
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+
+// ════════════════════ DIMENSION CATALOG (12 dimensions, default equal weights) ════════════════════
+const DIMENSIONS = [
+  { id: 'base',      label: 'Base salary',           kind: 'currency',  defaultWeight: 12 },
+  { id: 'bonus',     label: 'Bonus (target $)',      kind: 'currency',  defaultWeight: 8 },
+  { id: 'equity',    label: 'Equity (annualized $)', kind: 'currency',  defaultWeight: 10 },
+  { id: 'signon',    label: 'Sign-on bonus',         kind: 'currency',  defaultWeight: 4 },
+  { id: 'match',     label: '401(k) match $',        kind: 'currency',  defaultWeight: 5 },
+  { id: 'pto',       label: 'PTO days',              kind: 'count',     defaultWeight: 6 },
+  { id: 'remote',    label: 'Remote/hybrid (1-5)',   kind: 'score',     defaultWeight: 8 },
+  { id: 'col',       label: 'COL-adjusted base',     kind: 'currency',  defaultWeight: 10 },
+  { id: 'growth',    label: 'Growth potential (1-5)',kind: 'score',     defaultWeight: 9 },
+  { id: 'wlb',       label: 'Work-life balance (1-5)',kind:'score',     defaultWeight: 8 },
+  { id: 'mission',   label: 'Mission fit (1-5)',     kind: 'score',     defaultWeight: 6 },
+  { id: 'scope',     label: 'Scope/title (1-5)',     kind: 'score',     defaultWeight: 7 }
+];
+
+const NUM_OFFERS = 6;
+let weights = {};
+let offerData = [];
+
+// init weights from defaults
+DIMENSIONS.forEach(d => weights[d.id] = d.defaultWeight);
+
+// ════════════════════ TAB CONTROL ════════════════════
+function setTab(n) {
+  for (let i = 1; i <= 2; i++) {
+    document.getElementById('tab-'+i).classList.toggle('active', i === n);
+    document.getElementById('tab-'+i).setAttribute('aria-selected', i === n);
+    document.getElementById('section-'+i).classList.toggle('active', i === n);
+  }
+}
+
+// ════════════════════ TAB 1 — SCRIPT BUILDER ════════════════════
+let scriptResult = null;
+
+function calculateScript() {
+  const base = num('t1-base'), bonus = num('t1-bonus'), equity = num('t1-equity');
+  const signon = num('t1-signon'), vest = Math.max(1, num('t1-vestyears'));
+  const target = num('t1-target'), batna = num('t1-batna');
+  const style = val('t1-style');
+  const p1 = val('t1-priority1'), p2 = val('t1-priority2');
+
+  if (base === 0 || target === 0 || batna === 0) {
+    showToast('Enter base, target, and BATNA to build the script.', 'error');
+    return;
+  }
+  if (target < batna) {
+    showToast('Target should be ≥ BATNA — otherwise you have no upside.', 'error');
+    return;
+  }
+
+  const annualEquity = equity / vest;
+  const currentTotal = base + bonus + annualEquity;
+
+  // Anchoring tiers (Galinsky 2001/2008): anchor 5–25% above target depending on style
+  const anchorMultiplier = style === 'firm' ? 1.20 : (style === 'data_driven' ? 1.15 : 1.10);
+  const anchor = Math.round(target * anchorMultiplier / 1000) * 1000;
+  const floor = Math.max(batna, Math.round(currentTotal * 1.03 / 1000) * 1000);  // floor: at least 3% above current to be worth the move
+
+  scriptResult = {
+    inputs: { base, bonus, equity, signon, vest, target, batna, style, p1, p2, currentTotal, annualEquity },
+    anchor, target, floor,
+    components: distributeAcrossPriorities({ targetUplift: target - currentTotal, p1, p2, base, bonus, equity, signon })
+  };
+
+  renderScriptResult(scriptResult);
+  enableScriptExports();
+  document.getElementById('t1-results').classList.add('visible');
+  document.getElementById('t1-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function distributeAcrossPriorities(args) {
+  const { targetUplift, p1, p2, base } = args;
+  // 60% of the uplift to p1, 30% to p2, 10% to other levers
+  const lifts = {};
+  DIMENSIONS_FOR_NEGO.forEach(d => lifts[d] = 0);
+  if (targetUplift > 0) {
+    lifts[p1] = Math.round(targetUplift * 0.60);
+    if (p2 !== p1) lifts[p2] = Math.round(targetUplift * 0.30);
+    lifts.signon = Math.max(lifts.signon, Math.round(targetUplift * 0.10));
+  }
+  return lifts;
+}
+const DIMENSIONS_FOR_NEGO = ['base','equity','bonus','signon','pto','remote','title','reloc'];
+
+function renderScriptResult(r) {
+  const fmtCurr = (n) => '$' + Math.abs(Math.round(n)).toLocaleString('en-US');
+  document.getElementById('r1-anchor').textContent = fmtCurr(r.anchor);
+  document.getElementById('r1-anchor-meta').textContent = `${Math.round((r.anchor / r.target - 1) * 100)}% above target — your opening number`;
+  document.getElementById('r1-target').textContent = fmtCurr(r.target);
+  document.getElementById('r1-target-meta').textContent = `Where you're realistically aiming to land`;
+  document.getElementById('r1-floor').textContent = fmtCurr(r.floor);
+  document.getElementById('r1-floor-meta').textContent = `Below this, your BATNA is better — walk away`;
+
+  const i = r.inputs;
+  const styleHook = {
+    collaborative: `I'm excited about this opportunity and want to find a package that works for both of us.`,
+    data_driven:   `Based on the market data and my offers in hand, I'd like to discuss the structure.`,
+    firm:          `I appreciate the offer; before accepting, I need to discuss the compensation structure.`
+  }[i.style];
+
+  const html = `
+    <h4>Opening anchor</h4>
+    <p>${styleHook}</p>
+    <blockquote>"My target total compensation is around ${fmtCurr(r.anchor)} — that reflects ${i.style === 'data_driven' ? 'the market data and my' : 'the value I can bring and the'} alternative I'm currently considering. Can we work toward that?"</blockquote>
+
+    <h4>Counter-offer escalation tiers</h4>
+    <ul>
+      <li><strong>Tier 1 (anchor):</strong> ${fmtCurr(r.anchor)} — opening request</li>
+      <li><strong>Tier 2 (concession 1):</strong> ${fmtCurr(Math.round((r.anchor + r.target)/2/1000)*1000)} — first concession; you've signaled flexibility</li>
+      <li><strong>Tier 3 (target):</strong> ${fmtCurr(r.target)} — your honest aim; lock here if possible</li>
+      <li><strong>Tier 4 (floor):</strong> ${fmtCurr(r.floor)} — minimum acceptable; below this, walk to BATNA (${fmtCurr(i.batna)})</li>
+    </ul>
+
+    <h4>How to distribute the lift across components</h4>
+    <p>The gap from current offer (${fmtCurr(i.currentTotal)}) to your target (${fmtCurr(r.target)}) is <strong>${fmtCurr(r.target - i.currentTotal)}</strong>. Allocate it like this, weighted toward your priorities:</p>
+    <ul>
+      ${Object.entries(r.components).filter(([,v]) => v > 0).map(([k,v]) => `<li><strong>${labelFor(k)}:</strong> +${fmtCurr(v)}</li>`).join('')}
+    </ul>
+
+    <h4>Likely objections &amp; how to respond</h4>
+    ${renderObjections(r)}
+
+    <h4>Closing language</h4>
+    <p>${i.style === 'collaborative'
+      ? `"If you can get to ${fmtCurr(r.target)}, I'm ready to commit today. Let me know what's possible — I'd love to make this work."`
+      : i.style === 'data_driven'
+      ? `"At ${fmtCurr(r.target)} the package matches the market and my BATNA. If that's workable, I'll sign by ${nextFridayString()}."`
+      : `"I need ${fmtCurr(r.target)} to make this move. Can you confirm by ${nextFridayString()}?"`}</p>
+
+    <h4>Important reminders</h4>
+    <ul>
+      <li>Always negotiate the <strong>full package</strong>, not just base. The non-cash levers (PTO, remote, sign-on, equity refresh) often have more flexibility than base.</li>
+      <li>Ask for the offer in writing before negotiating verbally — anchors stick better.</li>
+      <li>Use <strong>silence</strong> after stating your number. Don't fill the pause.</li>
+      <li>If they say "best and final," ask: <em>"Is that the best you can do today, or the best the company will ever do?"</em> — distinguishes hard limit from positioning.</li>
+    </ul>
+  `;
+  document.getElementById('r1-script').innerHTML = html;
+  document.getElementById('manifestPreview').textContent = JSON.stringify(buildManifestPreview(), null, 2);
+}
+
+function renderObjections(r) {
+  const fmtCurr = (n) => '$' + Math.abs(Math.round(n)).toLocaleString('en-US');
+  const objs = [
+    {
+      q: `"That's significantly above our budget for this role."`,
+      a: `Acknowledge, then re-anchor on value: "I understand budgets matter. The number reflects my BATNA at ${fmtCurr(r.inputs.batna)} plus the cost of switching. If base is constrained, can we look at sign-on, equity refresh, or accelerated bonus?"`
+    },
+    {
+      q: `"This is our best and final offer."`,
+      a: `"I appreciate that. Before I respond, can you help me understand which components are genuinely fixed vs. which have any flexibility — sometimes equity, PTO, or sign-on have different approval paths than base."`
+    },
+    {
+      q: `"What other offers do you have?"`,
+      a: r.inputs.batna > 0
+         ? `"I have an alternative at approximately ${fmtCurr(r.inputs.batna)} total. I'd prefer to be here for [reasons], but the gap matters."`
+         : `"I'm in active conversations with [N] other companies and weighing total comp, role scope, and growth. I'd rather discuss the structure here than compare numbers across companies."`
+    },
+    {
+      q: `"We can't go higher on base, but..."`,
+      a: `Excellent opening. Switch to your second priority: ask for ${labelFor(r.inputs.p2)}. Specifically: "If base is locked at ${fmtCurr(r.inputs.base)}, can we increase ${labelFor(r.inputs.p2)} by ${fmtCurr(r.components[r.inputs.p2] || 5000)}?"`
+    }
+  ];
+  return objs.map(o => `<div class="obj-pair"><div class="obj-q">${o.q}</div><div class="obj-a">${o.a}</div></div>`).join('');
+}
+
+function labelFor(p) {
+  return ({ base:'base salary', equity:'equity', bonus:'bonus', signon:'sign-on bonus', pto:'PTO', remote:'remote/flex arrangement', title:'title or scope', reloc:'relocation package' })[p] || p;
+}
+
+function nextFridayString() {
+  const d = new Date(); const day = d.getDay();
+  const offset = (5 - day + 7) % 7 || 7;
+  d.setDate(d.getDate() + offset);
+  return d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
+}
+
+function enableScriptExports() {
+  ['t1-mdBtn', 't1-ap2Btn'].forEach(id => {
+    const b = document.getElementById(id);
+    b.disabled = false; b.classList.add('ready');
+  });
+}
+
+// ════════════════════ TAB 2 — COMPARISON MATRIX ════════════════════
+let matrixResult = null;
+
+function renderOfferCards() {
+  const container = document.getElementById('offer-cards');
+  let html = '';
+  for (let i = 1; i <= NUM_OFFERS; i++) {
+    html += `<div class="offer-card-input ${i > 2 ? 'disabled' : ''}" id="offer-${i}">
+      <h4>
+        <span>Offer ${i}</span>
+        <button class="offer-toggle ${i <= 2 ? 'active' : ''}" onclick="toggleOffer(${i})" id="offer-toggle-${i}">${i <= 2 ? 'Enabled' : 'Disabled'}</button>
+      </h4>
+      <div class="panel-row">
+        <div class="input-group"><label>Company / role</label><input type="text" id="o${i}-name" placeholder="Company ${i}"></div>
+        <div class="input-group"><label>Base salary</label><div class="input-prefix"><input type="number" id="o${i}-base" min="0" step="1000" placeholder="${110000 + i*10000}"></div></div>
+      </div>
+      <div class="panel-row-3">
+        <div class="input-group"><label>Bonus target ($)</label><div class="input-prefix"><input type="number" id="o${i}-bonus" min="0" step="500" value="0"></div></div>
+        <div class="input-group"><label>Equity (4yr total $)</label><div class="input-prefix"><input type="number" id="o${i}-equity" min="0" step="1000" value="0"></div></div>
+        <div class="input-group"><label>Sign-on bonus</label><div class="input-prefix"><input type="number" id="o${i}-signon" min="0" step="500" value="0"></div></div>
+      </div>
+      <div class="panel-row-3">
+        <div class="input-group"><label>401(k) match $/yr</label><div class="input-prefix"><input type="number" id="o${i}-match" min="0" step="500" value="0"></div></div>
+        <div class="input-group"><label>PTO days</label><input type="number" id="o${i}-pto" min="0" max="60" step="1" value="15"></div>
+        <div class="input-group"><label>COL multiplier <span class="help-icon" title="1.0 = baseline; 1.30 = 30% more expensive than baseline (NYC, SF); 0.85 = 15% cheaper. Adjusts the COL-adjusted base score.">?</span></label><input type="number" id="o${i}-col" min="0.5" max="2.5" step="0.05" value="1.00"></div>
+      </div>
+      <div class="panel-row-3">
+        <div class="input-group"><label>Remote/hybrid (1-5)</label><input type="number" id="o${i}-remote" min="1" max="5" step="1" value="3"></div>
+        <div class="input-group"><label>Growth potential (1-5)</label><input type="number" id="o${i}-growth" min="1" max="5" step="1" value="3"></div>
+        <div class="input-group"><label>Work-life balance (1-5)</label><input type="number" id="o${i}-wlb" min="1" max="5" step="1" value="3"></div>
+      </div>
+      <div class="panel-row-3">
+        <div class="input-group"><label>Mission fit (1-5)</label><input type="number" id="o${i}-mission" min="1" max="5" step="1" value="3"></div>
+        <div class="input-group"><label>Scope/title (1-5)</label><input type="number" id="o${i}-scope" min="1" max="5" step="1" value="3"></div>
+      </div>
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+function toggleOffer(i) {
+  const card = document.getElementById('offer-'+i);
+  const toggle = document.getElementById('offer-toggle-'+i);
+  const enabled = card.classList.toggle('disabled');
+  // toggle returns true if class was added (i.e., now disabled)
+  toggle.classList.toggle('active', !enabled);
+  toggle.textContent = enabled ? 'Disabled' : 'Enabled';
+}
+
+function renderWeightRows() {
+  const container = document.getElementById('weight-rows');
+  container.innerHTML = DIMENSIONS.map(d => `
+    <div class="weight-row">
+      <label for="w-${d.id}">${d.label}</label>
+      <input type="range" id="w-${d.id}" min="0" max="20" step="1" value="${d.defaultWeight}" oninput="updateWeight('${d.id}', this.value)">
+      <span class="weight-val" id="wv-${d.id}">${d.defaultWeight}</span>
+    </div>
+  `).join('');
+}
+
+function updateWeight(id, v) {
+  weights[id] = parseInt(v, 10);
+  document.getElementById('wv-'+id).textContent = v;
+}
+
+function calculateMatrix() {
+  // collect enabled offers
+  const offers = [];
+  for (let i = 1; i <= NUM_OFFERS; i++) {
+    if (document.getElementById('offer-'+i).classList.contains('disabled')) continue;
+    const o = {
+      idx: i,
+      name: val('o'+i+'-name') || `Offer ${i}`,
+      base: num('o'+i+'-base'),
+      bonus: num('o'+i+'-bonus'),
+      equity: num('o'+i+'-equity'),
+      signon: num('o'+i+'-signon'),
+      match: num('o'+i+'-match'),
+      pto: num('o'+i+'-pto'),
+      col: parseFloat(document.getElementById('o'+i+'-col').value) || 1.00,
+      remote: num('o'+i+'-remote'),
+      growth: num('o'+i+'-growth'),
+      wlb: num('o'+i+'-wlb'),
+      mission: num('o'+i+'-mission'),
+      scope: num('o'+i+'-scope')
+    };
+    if (o.base === 0) continue;
+    o.equityAnnual = Math.round(o.equity / 4);  // annualize equity over 4 yr
+    o.colAdjustedBase = Math.round(o.base / o.col);
+    offers.push(o);
+  }
+
+  if (offers.length < 2) {
+    showToast('Enable and fill at least 2 offers (with non-zero base) to compare.', 'error');
+    return;
+  }
+
+  // compute per-dimension values per offer
+  const dimVals = {};
+  DIMENSIONS.forEach(d => {
+    dimVals[d.id] = offers.map(o => valueFor(d, o));
+  });
+
+  // normalize each dimension (0-100)
+  const normalized = {};
+  DIMENSIONS.forEach(d => {
+    const vs = dimVals[d.id];
+    const mn = Math.min(...vs), mx = Math.max(...vs);
+    normalized[d.id] = vs.map(v => mx === mn ? 50 : Math.round(((v - mn) / (mx - mn)) * 100));
+  });
+
+  // weighted score per offer
+  const totalWeight = DIMENSIONS.reduce((s,d) => s + weights[d.id], 0);
+  const weightedScores = offers.map((o, idx) => {
+    const total = DIMENSIONS.reduce((s, d) => s + (normalized[d.id][idx] * weights[d.id]), 0);
+    return Math.round(total / totalWeight);
+  });
+
+  // RAG bands
+  const ragForVal = (norm) => norm >= 67 ? 'g' : (norm >= 34 ? 'a' : 'r');
+
+  const ranking = offers.map((o, idx) => ({ offer: o, score: weightedScores[idx], normalized: DIMENSIONS.reduce((acc, d) => { acc[d.id] = normalized[d.id][idx]; return acc; }, {}), raw: DIMENSIONS.reduce((acc, d) => { acc[d.id] = dimVals[d.id][idx]; return acc; }, {}) }))
+    .sort((a, b) => b.score - a.score);
+
+  matrixResult = { offers, ranking, weights: { ...weights }, dimensions: DIMENSIONS, totalWeight };
+
+  renderMatrixResult(matrixResult, ragForVal);
+  enableMatrixExports();
+  document.getElementById('t2-results').classList.add('visible');
+  document.getElementById('t2-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function valueFor(dim, o) {
+  switch (dim.id) {
+    case 'base': return o.base;
+    case 'bonus': return o.bonus;
+    case 'equity': return o.equityAnnual;
+    case 'signon': return o.signon;
+    case 'match': return o.match;
+    case 'pto': return o.pto;
+    case 'remote': return o.remote;
+    case 'col': return o.colAdjustedBase;
+    case 'growth': return o.growth;
+    case 'wlb': return o.wlb;
+    case 'mission': return o.mission;
+    case 'scope': return o.scope;
+  }
+  return 0;
+}
+
+function renderMatrixResult(m, ragFn) {
+  const fmt = (v) => v >= 1000 ? '$'+v.toLocaleString('en-US') : v.toString();
+  const winner = m.ranking[0];
+  const runnerUp = m.ranking[1];
+  const margin = winner.score - runnerUp.score;
+  document.getElementById('r2-winner').textContent = winner.offer.name;
+  document.getElementById('r2-winner-meta').textContent = `Weighted score ${winner.score}/100 · ${margin > 5 ? `${margin}-point margin over ${runnerUp.offer.name}` : `narrow ${margin}-point margin over ${runnerUp.offer.name} — re-weight to test sensitivity`}`;
+
+  // build matrix table
+  const head = ['Dimension', 'Weight', ...m.offers.map(o => o.name)];
+  let html = `<thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+  m.dimensions.forEach(d => {
+    html += `<tr><td>${d.label}</td><td class="num">${m.weights[d.id]}</td>`;
+    m.offers.forEach((o, idx) => {
+      const norm = m.ranking.find(r => r.offer.idx === o.idx).normalized[d.id];
+      const raw = m.ranking.find(r => r.offer.idx === o.idx).raw[d.id];
+      const rag = ragFn(norm);
+      html += `<td class="num rag-${rag}">${fmt(raw)}</td>`;
+    });
+    html += `</tr>`;
+  });
+  // weighted total row
+  html += `<tr><td><strong>Weighted total /100</strong></td><td class="num">${m.totalWeight}</td>`;
+  m.offers.forEach(o => {
+    const r = m.ranking.find(rr => rr.offer.idx === o.idx);
+    const winnerCls = r === m.ranking[0] ? ' winner' : '';
+    html += `<td class="num total${winnerCls}">${r.score}</td>`;
+  });
+  html += `</tr></tbody>`;
+  document.getElementById('r2-matrix').innerHTML = html;
+}
+
+function enableMatrixExports() {
+  ['t2-mdBtn', 't2-csvBtn', 't2-ap2Btn'].forEach(id => {
+    const b = document.getElementById(id);
+    b.disabled = false; b.classList.add('ready');
+  });
+}
+
+// ════════════════════ EXPORTS ════════════════════
+function exportMarkdown(kind) {
+  const md = (kind === 'script') ? buildScriptMarkdown(scriptResult) : buildMatrixMarkdown(matrixResult);
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  triggerDownload(blob, `AL-25_offer-negotiation-${kind}_${tsCompact()}.md`);
+  showToast('Markdown summary downloaded.', 'success');
+}
+
+function buildScriptMarkdown(r) {
+  const fmt = (n) => '$' + Math.round(n).toLocaleString('en-US');
+  const i = r.inputs;
+  return [
+    `# Negotiation Script — Apex Logics AL-25`,
+    ``,
+    `**Generated:** ${new Date().toISOString()}`,
+    ``,
+    `## Counter-Offer Tiers`,
+    ``,
+    `| Tier | Amount | Purpose |`,
+    `|---|---|---|`,
+    `| Anchor | ${fmt(r.anchor)} | Opening request |`,
+    `| Target | ${fmt(r.target)} | Realistic aim |`,
+    `| Floor (BATNA) | ${fmt(r.floor)} | Walk away below this |`,
+    ``,
+    `## Inputs Used`,
+    ``,
+    `- Current offer (base + bonus + ann. equity): ${fmt(i.currentTotal)}`,
+    `- Target: ${fmt(i.target)} · BATNA: ${fmt(i.batna)}`,
+    `- Style: ${i.style} · Top priority: ${i.p1} · Second: ${i.p2}`,
+    ``,
+    `## Suggested Lift Distribution`,
+    ``,
+    Object.entries(r.components).filter(([,v]) => v > 0).map(([k,v]) => `- **${labelFor(k)}:** +${fmt(v)}`).join('\n'),
+    ``,
+    `## Disclaimer`,
+    `Framework, not advice. Treat as input to your judgment, mentor, or counselor.`,
+    ``,
+    `---`,
+    `Built by Apex Advisors · Sister suite: AINumbers.co · CC 4.0 BY · AL-25`
+  ].join('\n');
+}
+
+function buildMatrixMarkdown(m) {
+  const fmt = (v) => v >= 1000 ? '$'+v.toLocaleString('en-US') : v.toString();
+  const lines = [
+    `# Multi-Offer Comparison — Apex Logics AL-25`,
+    ``,
+    `**Generated:** ${new Date().toISOString()}`,
+    `**Top-ranked offer:** ${m.ranking[0].offer.name} (weighted score ${m.ranking[0].score}/100)`,
+    ``,
+    `## Comparison Matrix`,
+    ``,
+    `| Dimension | Weight | ${m.offers.map(o => o.name).join(' | ')} |`,
+    `|---|---|${m.offers.map(() => '---').join('|')}|`
+  ];
+  m.dimensions.forEach(d => {
+    const row = [`${d.label}`, `${m.weights[d.id]}`].concat(
+      m.offers.map(o => fmt(m.ranking.find(r => r.offer.idx === o.idx).raw[d.id]))
+    );
+    lines.push(`| ${row.join(' | ')} |`);
+  });
+  lines.push(`| **Weighted total /100** | ${m.totalWeight} | ${m.offers.map(o => m.ranking.find(r => r.offer.idx === o.idx).score).join(' | ')} |`);
+  lines.push(``, `## Disclaimer`, `Framework, not advice.`, ``, `---`, `Built by Apex Advisors · Sister suite: AINumbers.co · CC 4.0 BY · AL-25`);
+  return lines.join('\n');
+}
+
+function exportCSV() {
+  if (!matrixResult) return;
+  const m = matrixResult;
+  const header = ['Dimension', 'Weight', ...m.offers.map(o => o.name)];
+  const rows = [header.join(',')];
+  m.dimensions.forEach(d => {
+    const row = [`"${d.label}"`, m.weights[d.id]].concat(
+      m.offers.map(o => m.ranking.find(r => r.offer.idx === o.idx).raw[d.id])
+    );
+    rows.push(row.join(','));
+  });
+  rows.push(['"Weighted total /100"', m.totalWeight, ...m.offers.map(o => m.ranking.find(r => r.offer.idx === o.idx).score)].join(','));
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8' });
+  triggerDownload(blob, `AL-25_offer-comparison-matrix_${tsCompact()}.csv`);
+  showToast('CSV downloaded.', 'success');
+}
+
+function exportAP2(kind) {
+  const mandate = (kind === 'script') ? buildAP2Script(scriptResult) : buildAP2Matrix(matrixResult);
+  const validation = AP2Schema.validate(mandate);
+  if (!validation.valid) {
+    showToast('AP2 validation failed: ' + validation.errors.join('; '), 'error');
+    return;
+  }
+  const blob = new Blob([JSON.stringify(mandate, null, 2)], { type: 'application/json' });
+  triggerDownload(blob, `AL-25_offer-negotiation-${kind}_${tsCompact()}.ap2.json`);
+  showToast('AP2 mandate downloaded and validated.', 'success');
+}
+
+function buildAP2Script(r) {
+  const now = new Date();
+  const fmt = (n) => '$' + Math.round(n).toLocaleString('en-US');
+  return {
+    ap2_version: '1.0',
+    mandate_id: uuidv4(),
+    issued_at: now.toISOString(),
+    issued_by: 'apexlogics.org',
+    tool_id: 'offer-negotiation-suite',
+    tool_version: '1.0.0',
+    al_id: 'AL-25',
+    mandate_type: 'offer_negotiation_record',
+    jurisdiction: ['US'],
+    payload: {
+      tab: 'script_builder',
+      anchor: r.anchor,
+      target: r.target,
+      floor: r.floor,
+      counter_tiers: [r.anchor, Math.round((r.anchor + r.target)/2/1000)*1000, r.target, r.floor],
+      style: r.inputs.style,
+      priorities: [r.inputs.p1, r.inputs.p2],
+      lift_distribution: r.components
+    },
+    summary: `Negotiation script with anchor ${fmt(r.anchor)}, target ${fmt(r.target)}, floor ${fmt(r.floor)}. Style: ${r.inputs.style}. Top priority: ${r.inputs.p1}.`,
+    agent_instructions: [
+      'These are anchoring tiers, not commitments. Use as starting points for live conversation.',
+      'Lift distribution allocates 60% to top priority, 30% to second, 10% to sign-on.',
+      'Downstream tools may carry these numbers into AL-27 (job search ROI tracker, proposed) for cross-search modeling.'
+    ],
+    valid_from: now.toISOString(),
+    valid_until: new Date(now.getTime() + 30*24*3600*1000).toISOString(),
+    last_reviewed: now.toISOString(),
+    source_tool_inputs: r.inputs,
+    regulatory_citations: [],
+    downstream_handoff_candidates: ['AL-27'],
+    audit_metadata: {
+      execution_hash: null,
+      client_side_executed: true,
+      zero_pii_verified: true,
+      deterministic_run: true,
+      data_vintage: 'No embedded data — entirely user-input'
+    }
+  };
+}
+
+function buildAP2Matrix(m) {
+  const now = new Date();
+  return {
+    ap2_version: '1.0',
+    mandate_id: uuidv4(),
+    issued_at: now.toISOString(),
+    issued_by: 'apexlogics.org',
+    tool_id: 'offer-negotiation-suite',
+    tool_version: '1.0.0',
+    al_id: 'AL-25',
+    mandate_type: 'offer_negotiation_record',
+    jurisdiction: ['US'],
+    payload: {
+      tab: 'comparison_matrix',
+      offers: m.offers.map(o => ({ name: o.name, base: o.base, bonus: o.bonus, equityAnnual: o.equityAnnual, signon: o.signon, pto: o.pto, col: o.col })),
+      ranking: m.ranking.map(r => ({ name: r.offer.name, weighted_score: r.score })),
+      winner: m.ranking[0].offer.name,
+      weights: m.weights,
+      dimensions: m.dimensions.map(d => d.id)
+    },
+    summary: `${m.offers.length}-offer comparison. Top-ranked: ${m.ranking[0].offer.name} (${m.ranking[0].score}/100), margin ${m.ranking[0].score - m.ranking[1].score} points over ${m.ranking[1].offer.name}.`,
+    agent_instructions: [
+      'Weighted scores reflect user-provided dimension weights. Re-weight to test sensitivity.',
+      'COL multiplier adjusts base for cost-of-living parity; verify the multiplier against cited sources before relying on it.'
+    ],
+    valid_from: now.toISOString(),
+    valid_until: new Date(now.getTime() + 30*24*3600*1000).toISOString(),
+    last_reviewed: now.toISOString(),
+    source_tool_inputs: { offer_count: m.offers.length, weights: m.weights },
+    regulatory_citations: [],
+    downstream_handoff_candidates: ['AL-27'],
+    audit_metadata: {
+      execution_hash: null,
+      client_side_executed: true,
+      zero_pii_verified: true,
+      deterministic_run: true,
+      data_vintage: 'No embedded data — entirely user-input'
+    }
+  };
+}
+
+function showAP2Help() {
+  showToast('AP2 (Agent Purchase Protocol) is Google\'s agent authorization standard. Lets your offer scenario carry into other Apex Logics tools (e.g., AL-27 Job Search ROI). See ap2-protocol.org.', 'info', 6000);
+}
+
+// ════════════════════ AP2Schema (CONTRACT Appendix F reference impl) ════════════════════
+const AP2Schema = {
+  required: ['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata'],
+  validMandateTypes: ['credential_roi_evaluation','human_capital_assessment','automation_exposure_score','career_resilience_score','workforce_program_roi','career_pivot_assessment','career_transition_record','scholarship_pipeline_plan','fafsa_sai_estimate','exam_pathway_plan','benefits_election_record','severance_decision_record','offer_negotiation_record','graduate_school_roi_record','apprenticeship_match_record','cpd_credit_record','job_search_roi_record','career_break_record',
+    'loan_repayment_record','freelance_total_cost_record',
+    'mba_roi_evaluation','test_prep_roi_record',
+    'international_student_cost_record','parent_college_roi_record',
+    'equity_compensation_record'
+  ],
+  validate(m) {
+    const errors = [];
+    if (!m || typeof m !== 'object') return { valid:false, errors:['mandate is not an object'] };
+    this.required.forEach(k => { if (m[k] === undefined || m[k] === null) errors.push(`missing required field: ${k}`); });
+    if (m.ap2_version !== '1.0') errors.push('ap2_version must be "1.0"');
+    if (m.mandate_type && !this.validMandateTypes.includes(m.mandate_type)) errors.push(`mandate_type "${m.mandate_type}" not in enum`);
+    if (m.al_id && !/^AL-\d{1,2}(\+\d{1,2})?$/.test(m.al_id)) errors.push(`al_id "${m.al_id}" malformed`);
+    if (m.audit_metadata) {
+      if (m.audit_metadata.client_side_executed !== true) errors.push('audit_metadata.client_side_executed must be true');
+      if (m.audit_metadata.zero_pii_verified !== true) errors.push('audit_metadata.zero_pii_verified must be true');
+      if (m.audit_metadata.deterministic_run !== true) errors.push('audit_metadata.deterministic_run must be true');
+    }
+    return { valid: errors.length === 0, errors };
+  }
+};
+
+// ════════════════════ MANIFEST PREVIEW ════════════════════
+function buildManifestPreview() {
+  return {
+    tool_id: 'offer-negotiation-suite',
+    al_id: 'AL-25',
+    version: '1.0.0',
+    title: 'Offer Negotiation Suite',
+    category: 'compensation_offers',
+    journeys: ['compensation_benefits'],
+    personas: ['working_professional','career_changer'],
+    status: 'shipped',
+    ap2_export: true,
+    ap2_mandate_types: ['offer_negotiation_record'],
+    sister_suite: 'https://ainumbers.co',
+    consulting_site: 'https://apexadvisory.site',
+    license: 'CC-BY-4.0'
+  };
+}
+
+// ════════════════════ HELPERS ════════════════════
+function num(id) { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? 0 : v; }
+function val(id) { return document.getElementById(id).value; }
+function uuidv4() {
+  const buf = new Uint8Array(16);
+  crypto.getRandomValues(buf);
+  buf[6] = (buf[6] & 0x0f) | 0x40;
+  buf[8] = (buf[8] & 0x3f) | 0x80;
+  const hex = Array.from(buf, b => b.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+}
+function tsCompact() {
+  const d = new Date(); const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+}
+function triggerDownload(blob, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 200);
+}
+let toastTimer;
+function showToast(msg, kind, ms) {
+  const t = document.getElementById('toast');
+  t.className = 'toast show ' + (kind || 'info');
+  t.textContent = msg;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = 'toast'; }, ms || 3500);
+}
+
+// ════════════════════ I18N ════════════════════
+const TRANSLATIONS = {
+  en: {
+    title: 'Offer Negotiation Suite',
+    subtitle: 'Two deterministic frameworks for offer negotiation: a structured script builder with anchoring tiers and objection responses, plus a multi-offer comparison matrix scoring up to 6 offers across weighted dimensions. Entirely user-input — zero embedded data.',
+    vintage: 'Frameworks based on Galinsky anchoring research, Fisher & Ury BATNA model, and 2026 negotiation best practices · No embedded data',
+    pii: '🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.'
+  },
+  es: { lang_dir: 'ltr' }, fr: { lang_dir: 'ltr' }, ar: { lang_dir: 'rtl' }, pt: { lang_dir: 'ltr' }, zh: { lang_dir: 'ltr' }
+};
+function setLang(lang) {
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  document.documentElement.dir = (t.lang_dir === 'rtl') ? 'rtl' : 'ltr';
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.dataset.i18n;
+    if (t[k]) el.textContent = t[k];
+    else if (TRANSLATIONS.en[k]) el.textContent = TRANSLATIONS.en[k];
+  });
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+  try { sessionStorage.setItem('apex_lang', lang); } catch (e) {}
+}
+(function initLang() {
+  let lang = 'en';
+  try {
+    const saved = sessionStorage.getItem('apex_lang');
+    if (saved && TRANSLATIONS[saved]) lang = saved;
+    else { const navLang = (navigator.language || 'en').slice(0,2); if (TRANSLATIONS[navLang]) lang = navLang; }
+  } catch (e) {}
+  setLang(lang);
+})();
+
+// ════════════════════ INIT ════════════════════
+renderOfferCards();
+renderWeightRows();
+
+</script>
+</body>
+</html>

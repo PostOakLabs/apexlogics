@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>#26 · Geo-Fiscal Arbitrage Simulator · Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#070B14;--bg-2:#0C1220;--bg-3:#111A2E;--bg-4:#162238;
+  --border:#1C2D48;--border-2:#253754;--muted:#3E5675;
+  --body:#6A8BAE;--text:#A8C4DE;--bright:#D4E8F8;--white:#EEF6FD;
+  --amber:#E8A838;--amber-dim:rgba(232,168,56,.10);
+  --teal:#14B8A6;--teal-dim:rgba(20,184,166,.10);
+  --coral:#F07167;--coral-dim:rgba(240,113,103,.10);
+  --lavender:#A78BFA;--lavender-dim:rgba(167,139,250,.10);
+  --green:#34D399;--green-dim:rgba(52,211,153,.10);
+  --blue:#60A5FA;--blue-dim:rgba(96,165,250,.10);
+  --red:#F87171;--red-dim:rgba(248,113,113,.10);
+  --warn:#FBBF24;--radius:6px;--radius-lg:10px;
+  --shadow:0 4px 24px rgba(0,0,0,.45);
+  --accent:var(--coral);--accent-dim:var(--coral-dim);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;font-size:.95rem;line-height:1.6}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+input,select,button{font-family:inherit}
+h1,h2,h3{font-family:'DM Serif Display',serif;color:var(--bright)}
+code,pre,.mono{font-family:'JetBrains Mono',monospace}
+.lang-bar{background:var(--bg-2);border-bottom:1px solid var(--border);padding:.35rem 1.25rem}
+.lang-inner{display:flex;gap:.25rem;flex-wrap:wrap}
+.lang-btn{background:none;border:none;color:var(--body);cursor:pointer;font-size:.72rem;font-weight:500;letter-spacing:.04em;padding:.2rem .5rem;border-radius:var(--radius);border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
+.lang-btn:hover{color:var(--bright)}
+.lang-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+nav{position:sticky;top:0;z-index:100;background:rgba(7,11,20,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{display:flex;align-items:center;gap:.6rem;text-decoration:none}
+.nav-wordmark{font-family:'DM Serif Display',serif;font-size:1rem;color:var(--amber);letter-spacing:.04em}
+.nav-right{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.nav-pill{background:none;border:1px solid var(--border-2);border-radius:20px;color:var(--body);font-size:.7rem;padding:.2rem .65rem;text-decoration:none;transition:color .15s,border-color .15s}
+.nav-pill:hover{color:var(--bright);border-color:var(--text);text-decoration:none}
+.sub-nav{background:var(--bg-3);border-bottom:1px solid var(--border);padding:.4rem 1.5rem;display:flex;align-items:center;justify-content:space-between;font-size:.7rem;color:var(--body);flex-wrap:wrap;gap:.5rem}
+.sub-nav-breadcrumb{display:flex;align-items:center;gap:.4rem}
+.sub-nav-breadcrumb a{color:var(--body)} .sub-nav-breadcrumb a:hover{color:var(--accent)}
+.sub-nav-links{display:flex;gap:.75rem}
+.sub-nav-links a{color:var(--body)} .sub-nav-links a:hover{color:var(--accent)}
+.container{max-width:1000px;margin:0 auto;padding:2rem 1.25rem 4rem}
+.tool-header{margin-bottom:1.75rem}
+.tool-eyebrow{font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.5rem}
+.tool-title{font-size:2rem;color:var(--white);margin-bottom:.4rem;line-height:1.2}
+.tool-subtitle{color:var(--body);font-size:.9rem;margin-bottom:.75rem}
+.vintage-banner{display:inline-flex;align-items:center;gap:.4rem;background:var(--amber-dim);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:.25rem .65rem;font-size:.7rem;color:var(--amber);font-family:'JetBrains Mono',monospace}
+.pii-notice{background:var(--bg-3);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:.6rem 1rem;font-size:.78rem;color:var(--body);margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:.5rem}
+.tab-bar{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1.75rem}
+.tab-btn{background:none;border:none;color:var(--body);cursor:pointer;font-size:.82rem;font-weight:500;padding:.65rem 1.25rem;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s,border-color .15s}
+.tab-btn:hover{color:var(--bright)} .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none} .tab-panel.active{display:block}
+.panel{background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem}
+.panel-title{font-size:.75rem;font-family:'JetBrains Mono',monospace;color:var(--accent);text-transform:uppercase;letter-spacing:.08em;margin-bottom:1rem}
+.panel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.85rem}
+.panel-row{display:flex;flex-direction:column;gap:.3rem}
+label{font-size:.78rem;color:var(--body)}
+input[type="number"],input[type="text"],select{background:var(--bg-4);border:1px solid var(--border-2);border-radius:var(--radius);color:var(--bright);font-size:.85rem;padding:.5rem .75rem;width:100%;transition:border-color .15s}
+input:focus,select:focus{outline:none;border-color:var(--accent)}
+.input-note{font-size:.7rem;color:var(--muted);margin-top:.2rem}
+.radio-group{display:flex;gap:.75rem;flex-wrap:wrap}
+.radio-label{display:flex;align-items:center;gap:.35rem;font-size:.8rem;cursor:pointer;color:var(--text)}
+.radio-label input[type="radio"]{accent-color:var(--accent)}
+.run-btn{background:var(--accent);border:none;border-radius:var(--radius);color:#000;cursor:pointer;font-size:.9rem;font-weight:600;padding:.7rem 2rem;transition:opacity .15s;width:100%;margin-top:1rem}
+.run-btn:hover{opacity:.88}
+.btn{background:none;border:1px solid var(--border-2);border-radius:var(--radius);color:var(--text);cursor:pointer;font-size:.78rem;padding:.45rem .9rem;transition:all .15s;display:flex;align-items:center;gap:.4rem;flex-direction:column}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.ready{border-color:var(--accent);color:var(--accent)}
+.btn:disabled{opacity:.28;cursor:not-allowed}
+.btn-subtitle{font-size:.65rem;color:var(--muted)}
+.btn.ready .btn-subtitle{color:var(--accent);opacity:.7}
+.btn-ghost{background:var(--bg-3)} .btn-sm{padding:.35rem .8rem}
+.btn-help{border-radius:50%;width:2rem;height:2rem;flex-direction:row;justify-content:center;font-size:.8rem}
+.results-panel{display:none;margin-top:1.5rem}
+.results-panel.visible{display:block}
+.results-export-row{display:flex;gap:.75rem;margin-top:1.25rem;flex-wrap:wrap;align-items:flex-start}
+.results-title{font-size:1.1rem;color:var(--white);margin-bottom:1rem}
+.stat-row{display:flex;flex-wrap:wrap;gap:.75rem;margin-bottom:1.25rem}
+.stat-box{background:var(--bg-4);border:1px solid var(--border);border-radius:var(--radius);padding:.7rem 1rem;flex:1;min-width:140px}
+.stat-label{font-size:.68rem;color:var(--body);margin-bottom:.25rem;text-transform:uppercase;letter-spacing:.05em}
+.stat-value{font-size:1.05rem;font-weight:600;color:var(--bright);font-family:'JetBrains Mono',monospace}
+.stat-note{font-size:.67rem;color:var(--muted);margin-top:.15rem}
+.compare-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.compare-table th{background:var(--bg-4);border:1px solid var(--border);padding:.5rem .75rem;text-align:left;color:var(--body);font-weight:500;font-size:.75rem}
+.compare-table td{border:1px solid var(--border);padding:.5rem .75rem;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.8rem}
+.compare-table tr:hover td{background:var(--bg-4)}
+.compare-table .row-label{font-family:'Sora',sans-serif;font-size:.78rem;color:var(--body)}
+.cost-bar-wrap{margin:1rem 0}
+.cost-bar{display:flex;height:18px;border-radius:var(--radius);overflow:hidden;background:var(--bg-4);margin-bottom:.4rem}
+.cost-seg{transition:flex .3s}
+.cost-legend{display:flex;flex-wrap:wrap;gap:.4rem .8rem;margin-top:.4rem}
+.legend-item{display:flex;align-items:center;gap:.35rem;font-size:.7rem;color:var(--body)}
+.legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.city-badge{display:inline-block;background:var(--bg-4);border:1px solid var(--border);border-radius:var(--radius);padding:.15rem .5rem;font-size:.72rem;font-family:'JetBrains Mono',monospace;color:var(--text);margin-right:.3rem;margin-bottom:.3rem}
+.city-badge.tier1{border-color:var(--red)} .city-badge.tier2{border-color:var(--amber)} .city-badge.tier3{border-color:var(--teal)} .city-badge.tier4{border-color:var(--blue)}
+.scenario-row{display:flex;flex-wrap:wrap;gap:.75rem;margin-bottom:1rem}
+.scenario-card{background:var(--bg-4);border:1px solid var(--border);border-radius:var(--radius);padding:.85rem 1rem;flex:1;min-width:180px}
+.scenario-card.positive{border-color:var(--green)}
+.scenario-card.negative{border-color:var(--red)}
+.mcp-toggle{background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-top:1.5rem}
+.mcp-toggle-btn{background:none;border:none;width:100%;padding:.85rem 1.25rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;color:var(--body);font-size:.8rem;font-family:'JetBrains Mono',monospace}
+.mcp-toggle-btn:hover{color:var(--bright)}
+.mcp-panel{display:none;padding:1rem 1.25rem;border-top:1px solid var(--border)}
+.mcp-panel.open{display:block}
+.mcp-json{background:var(--bg-4);border:1px solid var(--border);border-radius:var(--radius);padding:.85rem 1rem;font-size:.72rem;color:var(--text);white-space:pre-wrap;overflow-x:auto;max-height:340px;overflow-y:auto;line-height:1.5}
+.ap2-inbound-section{background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-top:.75rem}
+.ap2-inbound-btn{background:none;border:none;width:100%;padding:.7rem 1.25rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;color:var(--body);font-size:.78rem;font-family:'JetBrains Mono',monospace}
+.ap2-inbound-btn:hover{color:var(--bright)}
+.ap2-inbound-panel{display:none;padding:.85rem 1.25rem;border-top:1px solid var(--border)}
+.ap2-inbound-panel.open{display:block}
+.paste-ap2-btn{background:var(--bg-4);border:1px solid var(--border-2);border-radius:var(--radius);color:var(--text);cursor:pointer;font-size:.78rem;padding:.45rem 1rem;margin-top:.5rem;transition:all .15s}
+.paste-ap2-btn:hover{border-color:var(--accent);color:var(--accent)}
+.import-badge{background:var(--green-dim);border:1px solid var(--green);color:var(--green);border-radius:var(--radius);font-family:'JetBrains Mono',monospace;font-size:.65rem;padding:.25rem .6rem;display:inline-block;margin-bottom:.75rem}
+.tool-footer{background:var(--bg-2);border-top:1px solid var(--border);padding:1rem 1.5rem;text-align:center;font-size:.72rem;color:var(--muted);margin-top:3rem}
+.tool-footer a{color:var(--body)} .tool-footer a:hover{color:var(--accent)}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:.75rem 1.25rem;font-size:.82rem;color:var(--bright);box-shadow:var(--shadow);z-index:999;display:none;max-width:340px}
+.toast.show{display:block} .toast.error{border-color:var(--red);color:var(--red)} .toast.success{border-color:var(--green);color:var(--green)}
+.divider{border:none;border-top:1px solid var(--border);margin:1.25rem 0}
+@media(max-width:640px){.tool-title{font-size:1.5rem} .panel-grid{grid-template-columns:1fr} nav{padding:.6rem 1rem}}
+</style>
+</head>
+<body>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<nav>
+  <a href="../../index.html" class="nav-brand">
+    <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="13,2 24,20 2,20" fill="none" stroke="#E8A838" stroke-width="2.2" stroke-linejoin="round"/>
+      <line x1="13" y1="8" x2="13" y2="15" stroke="#E8A838" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="13" cy="18" r="1.3" fill="#E8A838"/>
+    </svg>
+    <span class="nav-wordmark">APEX LOGICS</span>
+  </a>
+  <div class="nav-right">
+    <a class="nav-pill" href="https://apexadvisory.site" target="_blank" rel="noopener">ApexAdvisory.site</a>
+    <a class="nav-pill" href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a>
+    <button class="lang-btn active" style="font-size:.75rem;padding:.25rem .7rem;border-radius:20px;border:1px solid var(--accent);border-bottom:1px solid var(--accent)" onclick="document.querySelector('.lang-bar').scrollIntoView()" data-i18n="nav_lang">EN</button>
+  </div>
+</nav>
+
+<div class="sub-nav">
+  <div class="sub-nav-breadcrumb">
+    <a href="../../index.html">← Apex Logics</a>
+    <span>/</span>
+    <span>Compensation &amp; Offers</span>
+    <span>/</span>
+    <span style="color:var(--accent)">#26 · AL · 04</span>
+  </div>
+  <div class="sub-nav-links">
+    <a href="https://apexadvisory.site" target="_blank" rel="noopener">ApexAdvisory.site</a>
+    <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="tool-header">
+    <div class="tool-eyebrow">#26 · AL · 04 · Compensation &amp; Offers</div>
+    <h1 class="tool-title" data-i18n="tool_title">Geo-Fiscal Arbitrage Simulator</h1>
+    <p class="tool-subtitle" data-i18n="tool_subtitle">Model the real purchasing power of your salary across 70 US metros and simulate remote-work pay cuts with cost-of-living math.</p>
+    <span class="vintage-banner">⚡ Data: Expatistan / ERI / SmartAsset 2026 CoL Indices · Tax Foundation 2026</span>
+  </div>
+
+  <div class="pii-notice">
+    <span>🔒</span>
+    <span data-i18n="pii_text">All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+  </div>
+
+  <div id="importBadgeWrap"></div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab(1)" data-i18n="tab1_label">Geographic Purchasing Power</button>
+    <button class="tab-btn" onclick="switchTab(2)" data-i18n="tab2_label">Remote Work Negotiation</button>
+  </div>
+
+  <!-- ===== TAB 1 ===== -->
+  <div class="tab-panel active" id="tab1">
+
+    <div class="panel">
+      <div class="panel-title" data-i18n="p_cities_label">City Comparison</div>
+      <div class="panel-grid">
+        <div class="panel-row">
+          <label for="sourceCity" data-i18n="l_source">Current City</label>
+          <select id="sourceCity"></select>
+        </div>
+        <div class="panel-row">
+          <label for="targetCity" data-i18n="l_target">Target City</label>
+          <select id="targetCity"></select>
+        </div>
+        <div class="panel-row">
+          <label for="currentSalary" data-i18n="l_salary">Current Salary ($)</label>
+          <input type="number" id="currentSalary" min="0" step="5000" placeholder="120000">
+        </div>
+        <div class="panel-row">
+          <label data-i18n="l_filing">Filing Status</label>
+          <div class="radio-group">
+            <label class="radio-label"><input type="radio" name="filingStatus1" value="single" checked> Single</label>
+            <label class="radio-label"><input type="radio" name="filingStatus1" value="mfj"> MFJ</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="run-btn" onclick="runTab1()" data-i18n="btn_compare">Compare Cities</button>
+
+    <div class="results-panel" id="results1">
+      <h2 class="results-title" data-i18n="r_title">Purchasing Power Analysis</h2>
+      <div id="tab1Results"></div>
+      <div class="results-export-row">
+        <button class="btn btn-ghost btn-sm" id="mdBtn1" disabled onclick="exportMarkdown1()">
+          <span data-i18n="btn_md">Export Markdown</span>
+          <span class="btn-subtitle" data-i18n="sub_md">Human-readable summary</span>
+        </button>
+        <button class="btn btn-ghost btn-sm" id="ap2Btn1" disabled onclick="exportAP2()">
+          <span data-i18n="btn_ap2">Export AP2 JSON</span>
+          <span class="btn-subtitle" data-i18n="sub_ap2">Agent integration · audit trail</span>
+        </button>
+        <button class="btn btn-ghost btn-sm btn-help" onclick="showAP2Help()">?</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 2 ===== -->
+  <div class="tab-panel" id="tab2">
+
+    <div class="panel">
+      <div class="panel-title" data-i18n="p_remote_label">Remote Work Pay Scenario</div>
+      <div class="panel-grid">
+        <div class="panel-row">
+          <label for="remoteSalary" data-i18n="l_r_salary">Current Salary ($)</label>
+          <input type="number" id="remoteSalary" min="0" step="5000" placeholder="130000">
+        </div>
+        <div class="panel-row">
+          <label for="employerCity" data-i18n="l_r_employer">Employer Office City</label>
+          <select id="employerCity"></select>
+        </div>
+        <div class="panel-row">
+          <label for="remoteCity" data-i18n="l_r_remote">Your Remote Location</label>
+          <select id="remoteCity"></select>
+        </div>
+        <div class="panel-row">
+          <label for="payPolicy" data-i18n="l_pay_policy">Employer Pay Policy</label>
+          <select id="payPolicy">
+            <option value="full_location">Full location-based (salary adjusts 100% to your CoL)</option>
+            <option value="partial_50" selected>Partial adjustment (50% of CoL difference)</option>
+            <option value="uniform">Uniform pay (no adjustment)</option>
+          </select>
+        </div>
+        <div class="panel-row">
+          <label for="reductionOffered" data-i18n="l_reduction">Pay Reduction Offered (%)</label>
+          <input type="number" id="reductionOffered" min="0" max="50" step="1" placeholder="10">
+          <div class="input-note">If employer proposes a specific % cut</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3-city comparison in Tab 2 -->
+    <div class="panel">
+      <div class="panel-title">Three-City Comparison (Optional)</div>
+      <div style="font-size:.78rem;color:var(--body);margin-bottom:.75rem">Add up to 2 additional target cities for side-by-side comparison.</div>
+      <div class="panel-grid">
+        <div class="panel-row">
+          <label for="altCity1">Alternative City 1</label>
+          <select id="altCity1"><option value="">— Skip —</option></select>
+        </div>
+        <div class="panel-row">
+          <label for="altCity2">Alternative City 2</label>
+          <select id="altCity2"><option value="">— Skip —</option></select>
+        </div>
+      </div>
+    </div>
+
+    <button class="run-btn" onclick="runTab2()" data-i18n="btn_model">Model Remote Scenario</button>
+
+    <div class="results-panel" id="results2">
+      <h2 class="results-title" data-i18n="r2_title">Remote Work Analysis</h2>
+      <div id="tab2Results"></div>
+      <div class="results-export-row">
+        <button class="btn btn-ghost btn-sm" id="mdBtn2" disabled onclick="exportMarkdown2()">
+          <span data-i18n="btn_md">Export Markdown</span>
+          <span class="btn-subtitle" data-i18n="sub_md">Human-readable summary</span>
+        </button>
+        <button class="btn btn-ghost btn-sm" id="ap2Btn2" disabled onclick="exportAP2Tab2()">
+          <span data-i18n="btn_ap2">Export AP2 JSON</span>
+          <span class="btn-subtitle" data-i18n="sub_ap2">Agent integration · audit trail</span>
+        </button>
+        <button class="btn btn-ghost btn-sm btn-help" onclick="showAP2Help()">?</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MANIFEST -->
+  <div class="mcp-toggle">
+    <button class="mcp-toggle-btn" onclick="toggleManifest()">
+      <span>⚙ manifest.json — MCP discovery</span>
+      <span class="arrow" id="manifestArrow">▼</span>
+    </button>
+    <div class="mcp-panel" id="manifestPanel">
+      <pre class="mcp-json" id="manifestJson"></pre>
+    </div>
+  </div>
+
+  <!-- AP2 INBOUND -->
+  <div class="ap2-inbound-section">
+    <button class="ap2-inbound-btn" onclick="toggleAP2Inbound()">
+      <span>↙ AP2 Inbound — import from AL-25 (Offer Negotiation)</span>
+      <span class="arrow" id="ap2InboundArrow">▼</span>
+    </button>
+    <div class="ap2-inbound-panel" id="ap2InboundPanel">
+      <p style="font-size:.78rem;color:var(--body);margin-bottom:.75rem">Accepts AP2 mandates from: <strong style="color:var(--text)">AL-25 Offer Negotiation Suite</strong>. Pre-fills salary for relocation analysis.</p>
+      <button class="paste-ap2-btn" onclick="openPasteModal()">Paste AP2 JSON mandate</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="tool-footer">
+  Built by <a href="https://apexadvisory.site" target="_blank" rel="noopener">Apex Advisors</a> ·
+  Sister suite: <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> ·
+  CC 4.0 BY · AL-04 · Data as of 2026
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// TRANSLATIONS
+// ═══════════════════════════════════════════════════════════
+const TRANSLATIONS = {
+  en:{tool_title:'Geo-Fiscal Arbitrage Simulator',tool_subtitle:'Model the real purchasing power of your salary across 70 US metros.',pii_text:'All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.',tab1_label:'Geographic Purchasing Power',tab2_label:'Remote Work Negotiation',p_cities_label:'City Comparison',l_source:'Current City',l_target:'Target City',l_salary:'Current Salary ($)',l_filing:'Filing Status',btn_compare:'Compare Cities',r_title:'Purchasing Power Analysis',btn_md:'Export Markdown',sub_md:'Human-readable summary',btn_ap2:'Export AP2 JSON',sub_ap2:'Agent integration · audit trail',p_remote_label:'Remote Work Pay Scenario',l_r_salary:'Current Salary ($)',l_r_employer:'Employer Office City',l_r_remote:'Your Remote Location',l_pay_policy:'Employer Pay Policy',l_reduction:'Pay Reduction Offered (%)',btn_model:'Model Remote Scenario',r2_title:'Remote Work Analysis',nav_lang:'EN'},
+  es:{tool_title:'Simulador de Arbitraje Geofiscal',tab1_label:'Poder Adquisitivo',tab2_label:'Negociación Remota',btn_compare:'Comparar Ciudades',btn_model:'Modelar Escenario',nav_lang:'ES',pii_text:'Todas las entradas se procesan localmente. Nada se transmite.'},
+  fr:{tool_title:'Simulateur d\'Arbitrage Géo-Fiscal',tab1_label:'Pouvoir d\'Achat',tab2_label:'Négociation Télétravail',btn_compare:'Comparer les Villes',btn_model:'Modéliser',nav_lang:'FR',pii_text:'Toutes les saisies sont traitées localement. Rien n\'est transmis.'},
+  ar:{tool_title:'محاكي المراجحة الجغرافية الضريبية',tab1_label:'القوة الشرائية',tab2_label:'التفاوض على العمل عن بعد',btn_compare:'مقارنة المدن',btn_model:'نمذجة السيناريو',lang_dir:'rtl',nav_lang:'AR',pii_text:'تتم معالجة جميع المدخلات محليًا.'},
+  pt:{tool_title:'Simulador de Arbitragem Geo-Fiscal',tab1_label:'Poder de Compra',tab2_label:'Negociação Remota',btn_compare:'Comparar Cidades',btn_model:'Modelar Cenário',nav_lang:'PT',pii_text:'Todas as entradas são processadas localmente.'},
+  zh:{tool_title:'地理财税套利模拟器',tab1_label:'地理购买力分析',tab2_label:'远程工作谈判',btn_compare:'对比城市',btn_model:'模拟方案',nav_lang:'中文',pii_text:'所有输入均在浏览器本地处理，不传输任何数据。'}
+};
+
+function setLang(lang){
+  const t=TRANSLATIONS[lang]; if(!t) return;
+  document.documentElement.dir=(t.lang_dir==='rtl')?'rtl':'ltr';
+  document.documentElement.lang=lang;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.dataset.i18n;if(t[k])el.textContent=t[k];});
+  document.querySelectorAll('.lang-btn').forEach(b=>{b.classList.toggle('active',b.textContent.toLowerCase()===lang||(lang==='zh'&&b.textContent==='中文'));});
+  sessionStorage.setItem('apex_lang',lang);
+}
+(function initLang(){const s=sessionStorage.getItem('apex_lang');const f=(navigator.language||'en').slice(0,2);setLang(s||(TRANSLATIONS[f]?f:'en'));})();
+
+// ═══════════════════════════════════════════════════════════
+// CITY DATA — 70 US Metros
+// Format: [name, state_abbr, col_index, state_tax_tier, metro_tier]
+// CoL: national avg = 100. Source: Expatistan/ERI/SmartAsset 2026 estimates.
+// Metro tiers: 1=mega (5M+), 2=major (1-5M), 3=mid (250k-1M), 4=small (<250k)
+// ═══════════════════════════════════════════════════════════
+const CITIES = [
+  // Mega metros (tier 1)
+  ['New York City, NY',       'NY', 226, 7, 1],
+  ['Los Angeles, CA',         'CA', 198, 6, 1],
+  ['Chicago, IL',             'IL', 118, 1, 1],
+  ['Dallas, TX',              'TX', 108, 0, 1],
+  ['Houston, TX',             'TX', 102, 0, 1],
+  ['Washington, DC',          'DC', 182, 4, 1],
+  ['Philadelphia, PA',        'PA', 118, 1, 1],
+  ['Miami, FL',               'FL', 157, 0, 1],
+  ['Atlanta, GA',             'GA', 108, 3, 1],
+  ['Phoenix, AZ',             'AZ', 115, 1, 1],
+  // Major metros (tier 2)
+  ['San Francisco, CA',       'CA', 246, 6, 2],
+  ['Seattle, WA',             'WA', 175, 0, 2],
+  ['San Jose, CA',            'CA', 252, 6, 2],
+  ['Boston, MA',              'MA', 188, 2, 2],
+  ['Denver, CO',              'CO', 142, 1, 2],
+  ['Minneapolis, MN',         'MN', 128, 5, 2],
+  ['San Diego, CA',           'CA', 188, 6, 2],
+  ['Tampa, FL',               'FL', 110, 0, 2],
+  ['Portland, OR',            'OR', 155, 5, 2],
+  ['Baltimore, MD',           'MD', 128, 4, 2],
+  ['St. Louis, MO',           'MO', 88,  3, 2],
+  ['Pittsburgh, PA',          'PA', 93,  1, 2],
+  ['Sacramento, CA',          'CA', 162, 6, 2],
+  ['Austin, TX',              'TX', 138, 0, 2],
+  ['Las Vegas, NV',           'NV', 112, 0, 2],
+  ['Nashville, TN',           'TN', 120, 0, 2],
+  ['Charlotte, NC',           'NC', 105, 1, 2],
+  ['Salt Lake City, UT',      'UT', 118, 1, 2],
+  ['Raleigh, NC',             'NC', 108, 1, 2],
+  ['Hartford, CT',            'CT', 138, 4, 2],
+  // Mid metros (tier 3)
+  ['Newark, NJ',              'NJ', 168, 5, 3],
+  ['Bridgeport, CT',          'CT', 148, 4, 3],
+  ['Tacoma, WA',              'WA', 148, 0, 3],
+  ['Providence, RI',          'RI', 125, 4, 3],
+  ['Columbus, OH',            'OH', 90,  3, 3],
+  ['Indianapolis, IN',        'IN', 88,  1, 3],
+  ['Kansas City, MO',         'MO', 90,  3, 3],
+  ['Cincinnati, OH',          'OH', 88,  3, 3],
+  ['Cleveland, OH',           'OH', 88,  3, 3],
+  ['Milwaukee, WI',           'WI', 95,  4, 3],
+  ['Madison, WI',             'WI', 102, 4, 3],
+  ['Detroit, MI',             'MI', 90,  1, 3],
+  ['Orlando, FL',             'FL', 108, 0, 3],
+  ['Jacksonville, FL',        'FL', 92,  0, 3],
+  ['San Antonio, TX',         'TX', 92,  0, 3],
+  ['Fort Worth, TX',          'TX', 100, 0, 3],
+  ['Virginia Beach, VA',      'VA', 102, 3, 3],
+  ['Richmond, VA',            'VA', 102, 3, 3],
+  ['Louisville, KY',          'KY', 87,  1, 3],
+  ['Birmingham, AL',          'AL', 80,  4, 3],
+  ['Honolulu, HI',            'HI', 195, 3, 3],
+  ['Colorado Springs, CO',    'CO', 115, 1, 3],
+  ['Boise, ID',               'ID', 118, 3, 3],
+  ['Tucson, AZ',              'AZ', 98,  1, 3],
+  ['Albuquerque, NM',         'NM', 92,  3, 3],
+  ['New Orleans, LA',         'LA', 92,  4, 3],
+  // Smaller metros (tier 4)
+  ['Buffalo, NY',             'NY', 95,  7, 4],
+  ['Albany, NY',              'NY', 102, 7, 4],
+  ['Rochester, NY',           'NY', 95,  7, 4],
+  ['Grand Rapids, MI',        'MI', 90,  1, 4],
+  ['Des Moines, IA',          'IA', 87,  3, 4],
+  ['Omaha, NE',               'NE', 87,  3, 4],
+  ['Lincoln, NE',             'NE', 85,  3, 4],
+  ['Oklahoma City, OK',       'OK', 80,  3, 4],
+  ['Tulsa, OK',               'OK', 78,  3, 4],
+  ['Memphis, TN',             'TN', 78,  0, 4],
+  ['El Paso, TX',             'TX', 78,  0, 4],
+  ['Spokane, WA',             'WA', 102, 0, 4],
+  ['Fargo, ND',               'ND', 85,  3, 4],
+  ['Sioux Falls, SD',         'SD', 82,  0, 4]
+];
+
+// State tax effective rates per tier (for after-tax calculation)
+const STATE_RATES = [0, 0.038, 0.050, 0.050, 0.065, 0.095, 0.093, 0.105];
+const TIER_LABELS  = ['No state tax','Flat ~3.8%','Flat 5% (MA)','Progressive ~5%','Progressive ~6.5%','Progressive ~9.5%','California ~9.3%','NY+NYC ~10.5%'];
+
+// Federal tax brackets 2026 (estimated)
+const FED_BRACKETS = {
+  single: [[11925,0.10],[48475,0.12],[103350,0.22],[197300,0.24],[250525,0.32],[626350,0.35],[Infinity,0.37]],
+  mfj:    [[23850,0.10],[96950,0.12],[206700,0.22],[394600,0.24],[501050,0.32],[751600,0.35],[Infinity,0.37]]
+};
+const STD_DED = {single:15000, mfj:30000};
+const SS_BASE = 176100;
+
+function calcFedTax(agi, filing) {
+  const taxable = Math.max(0, agi - (STD_DED[filing]||15000));
+  const brackets = FED_BRACKETS[filing]||FED_BRACKETS.single;
+  let tax=0, prev=0;
+  for(const [lim,rate] of brackets){ if(taxable<=prev) break; tax+=Math.min(taxable-prev,lim-prev)*rate; prev=lim; }
+  return tax;
+}
+function calcFICA(wages) {
+  return Math.min(wages,SS_BASE)*0.062 + wages*0.0145;
+}
+function calcAfterTax(salary, stateTierIdx, filing) {
+  const fed = calcFedTax(salary, filing);
+  const state = salary * STATE_RATES[stateTierIdx];
+  const fica = calcFICA(salary);
+  return { fed, state, fica, total: fed+state+fica, afterTax: salary - fed - state - fica };
+}
+
+// Cost category breakdown weights
+const CAT_WEIGHTS = {
+  housing:     0.30,
+  food:        0.14,
+  healthcare:  0.10,
+  transport:   0.12,
+  misc:        0.34
+};
+const CAT_COLORS = {
+  housing:'var(--coral)', food:'var(--amber)', healthcare:'var(--teal)',
+  transport:'var(--blue)', misc:'var(--lavender)'
+};
+
+// Populate city dropdowns
+function populateCityDropdowns() {
+  const sorted = [...CITIES].sort((a,b)=>a[0].localeCompare(b[0]));
+  const selIds = ['sourceCity','targetCity','employerCity','remoteCity','altCity1','altCity2'];
+  selIds.forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    // Keep leading "skip" option for alt cities
+    const isAlt = id.startsWith('alt');
+    if (!isAlt) sel.innerHTML = '';
+    sorted.forEach(([name,,colIdx,,tier]) => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    });
+  });
+  // Set defaults
+  const nyc = CITIES.find(c=>c[0].startsWith('New York'));
+  const sf  = CITIES.find(c=>c[0].startsWith('San Francisco'));
+  const aus = CITIES.find(c=>c[0].startsWith('Austin'));
+  if (nyc) { document.getElementById('sourceCity').value = nyc[0]; document.getElementById('employerCity').value = nyc[0]; }
+  if (sf)  document.getElementById('targetCity').value = sf[0];
+  if (aus) document.getElementById('remoteCity').value = aus[0];
+}
+
+function getCity(name) { return CITIES.find(c=>c[0]===name); }
+
+// ═══════════════════════════════════════════════════════════
+// TAB 1: PURCHASING POWER COMPARATOR
+// ═══════════════════════════════════════════════════════════
+let tab1Result = null;
+
+function runTab1() {
+  const srcName = document.getElementById('sourceCity').value;
+  const tgtName = document.getElementById('targetCity').value;
+  const salary  = parseFloat(document.getElementById('currentSalary').value)||0;
+  const filing  = document.querySelector('input[name="filingStatus1"]:checked')?.value||'single';
+  if (!salary) { showToast('Enter your current salary','error'); return; }
+  const src = getCity(srcName);
+  const tgt = getCity(tgtName);
+  if (!src||!tgt) { showToast('City not found','error'); return; }
+  const [,, srcCoL, srcTier] = src;
+  const [,, tgtCoL, tgtTier] = tgt;
+  // Equivalent salary needed in target
+  const equivalentSalary = salary * (tgtCoL / srcCoL);
+  const salaryDelta = equivalentSalary - salary;
+  const ppGainLoss   = ((srcCoL / tgtCoL) - 1) * 100; // positive = more purchasing power
+  // After-tax in each city
+  const srcTax = calcAfterTax(salary, srcTier, filing);
+  const tgtTax = calcAfterTax(equivalentSalary, tgtTier, filing);
+  // Cost breakdown for each city (absolute estimates)
+  function costBreakdown(sal, coL) {
+    const scale = coL / 100;
+    return {
+      housing:    sal * CAT_WEIGHTS.housing * scale,
+      food:       sal * CAT_WEIGHTS.food * scale,
+      healthcare: sal * CAT_WEIGHTS.healthcare * scale,
+      transport:  sal * CAT_WEIGHTS.transport * scale,
+      misc:       sal * CAT_WEIGHTS.misc * scale
+    };
+  }
+  const srcCosts = costBreakdown(salary, srcCoL);
+  const tgtCosts = costBreakdown(equivalentSalary, tgtCoL);
+  // Annual delta (if they kept same salary)
+  const sameSalaryDelta = (salary - equivalentSalary); // positive = save money by moving
+  tab1Result = { srcName, tgtName, salary, equivalentSalary, salaryDelta, ppGainLoss,
+    srcCoL, tgtCoL, srcTier, tgtTier, filing, srcTax, tgtTax, srcCosts, tgtCosts, sameSalaryDelta };
+  renderTab1Results();
+}
+
+function renderTab1Results() {
+  const r = tab1Result;
+  const movedUp = r.tgtCoL > r.srcCoL;
+  const ppChange = r.ppGainLoss;
+  let html = `
+    <div class="stat-row">
+      <div class="stat-box"><div class="stat-label">Current Salary</div><div class="stat-value">${fmt(r.salary)}</div><div class="stat-note">In ${r.srcName} (CoL ${r.srcCoL})</div></div>
+      <div class="stat-box" style="border-color:var(--accent);background:var(--accent-dim)">
+        <div class="stat-label">Equivalent Salary Needed</div>
+        <div class="stat-value" style="color:var(--accent)">${fmt(r.equivalentSalary)}</div>
+        <div class="stat-note">In ${r.tgtName} (CoL ${r.tgtCoL})</div>
+      </div>
+      <div class="stat-box" style="border-color:${ppChange>0?'var(--green)':'var(--red)'}">
+        <div class="stat-label">Purchasing Power Change</div>
+        <div class="stat-value" style="color:${ppChange>0?'var(--green)':'var(--red)'}">${ppChange>0?'+':''}${ppChange.toFixed(1)}%</div>
+        <div class="stat-note">Keeping your current salary</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Annual Savings / Cost Delta</div>
+        <div class="stat-value" style="color:${r.sameSalaryDelta>0?'var(--green)':'var(--red)'}">${r.sameSalaryDelta>0?'+':'-'}${fmt(Math.abs(r.sameSalaryDelta))}/yr</div>
+        <div class="stat-note">${r.sameSalaryDelta>0?'Save by moving':'Additional cost'}</div>
+      </div>
+    </div>`;
+
+  // Cost breakdown comparison
+  const cats = ['housing','food','healthcare','transport','misc'];
+  const catLabels = {housing:'Housing',food:'Food',healthcare:'Healthcare',transport:'Transport',misc:'Misc.'};
+  function barHtml(costs) {
+    const total = Object.values(costs).reduce((a,b)=>a+b,0)||1;
+    const segs = cats.map(c=>`<div class="cost-seg" style="flex:${costs[c]/total*100};background:${CAT_COLORS[c]}" title="${catLabels[c]}: ${fmt(costs[c])}"></div>`).join('');
+    return `<div class="cost-bar">${segs}</div>`;
+  }
+  html += `
+    <div class="panel" style="margin-top:1rem">
+      <div class="panel-title">Cost Structure Comparison</div>
+      <div style="overflow-x:auto">
+        <table class="compare-table">
+          <thead><tr><th class="row-label">Category</th><th>${r.srcName.split(',')[0]}</th><th>${r.tgtName.split(',')[0]}</th><th>Delta</th></tr></thead>
+          <tbody>`;
+  cats.forEach(c => {
+    const delta = r.tgtCosts[c] - r.srcCosts[c];
+    html += `<tr>
+      <td class="row-label"><span class="legend-dot" style="background:${CAT_COLORS[c]};display:inline-block;margin-right:4px"></span>${catLabels[c]}</td>
+      <td>${fmt(r.srcCosts[c])}</td>
+      <td>${fmt(r.tgtCosts[c])}</td>
+      <td style="color:${delta>0?'var(--red)':'var(--green)'}">${delta>0?'+':'-'}${fmt(Math.abs(delta))}</td>
+    </tr>`;
+  });
+  html += `</tbody>
+        <tfoot>
+          <tr style="background:var(--bg-4)">
+            <td class="row-label" style="font-weight:600;color:var(--text)">Total CoL Impact</td>
+            <td>${fmt(r.salary)}</td>
+            <td>${fmt(r.equivalentSalary)}</td>
+            <td style="color:${r.salaryDelta>0?'var(--red)':'var(--green)'}">${r.salaryDelta>0?'+':'-'}${fmt(Math.abs(r.salaryDelta))}/yr</td>
+          </tr>
+        </tfoot>
+      </table></div>
+      <div class="cost-legend" style="margin-top:.75rem">
+        ${cats.map(c=>`<div class="legend-item"><div class="legend-dot" style="background:${CAT_COLORS[c]}"></div>${catLabels[c]}</div>`).join('')}
+      </div>
+    </div>`;
+
+  // After-tax comparison
+  html += `
+    <div class="panel" style="margin-top:1rem">
+      <div class="panel-title">After-Tax Comparison</div>
+      <div class="stat-row">
+        <div class="stat-box"><div class="stat-label">After-Tax in ${r.srcName.split(',')[0]}</div><div class="stat-value">${fmt(r.srcTax.afterTax)}</div><div class="stat-note">Fed ${fmt(r.srcTax.fed)} + State ${fmt(r.srcTax.state)} + FICA ${fmt(r.srcTax.fica)}</div></div>
+        <div class="stat-box"><div class="stat-label">After-Tax (Equiv. Salary, ${r.tgtName.split(',')[0]})</div><div class="stat-value">${fmt(r.tgtTax.afterTax)}</div><div class="stat-note">${TIER_LABELS[r.tgtTier]}</div></div>
+        <div class="stat-box"><div class="stat-label">Net After-Tax Delta</div><div class="stat-value" style="color:${(r.tgtTax.afterTax-r.srcTax.afterTax)>0?'var(--green)':'var(--red)'}">
+          ${(r.tgtTax.afterTax-r.srcTax.afterTax)>0?'+':''}${fmt(r.tgtTax.afterTax-r.srcTax.afterTax)}/yr</div></div>
+      </div>
+    </div>`;
+
+  document.getElementById('tab1Results').innerHTML = html;
+  const rp = document.getElementById('results1');
+  rp.classList.add('visible');
+  enableBtns('mdBtn1','ap2Btn1');
+}
+
+// ═══════════════════════════════════════════════════════════
+// TAB 2: REMOTE WORK NEGOTIATION
+// ═══════════════════════════════════════════════════════════
+let tab2Result = null;
+
+function runTab2() {
+  const salary   = parseFloat(document.getElementById('remoteSalary').value)||0;
+  const empName  = document.getElementById('employerCity').value;
+  const remName  = document.getElementById('remoteCity').value;
+  const policy   = document.getElementById('payPolicy').value;
+  const reductionPct = parseFloat(document.getElementById('reductionOffered').value)||0;
+  const alt1Name = document.getElementById('altCity1').value;
+  const alt2Name = document.getElementById('altCity2').value;
+  if (!salary) { showToast('Enter your current salary','error'); return; }
+  const emp = getCity(empName);
+  const rem = getCity(remName);
+  if (!emp||!rem) { showToast('City not found','error'); return; }
+  const targets = [rem];
+  if (alt1Name) { const c=getCity(alt1Name); if(c) targets.push(c); }
+  if (alt2Name) { const c=getCity(alt2Name); if(c) targets.push(c); }
+
+  const empCoL = emp[2];
+  // For each target city, compute adjusted salary and purchasing power
+  const scenarios = targets.map(tgt => {
+    const [tgtName,,tgtCoL,tgtTier] = tgt;
+    const equiv = salary * (tgtCoL / empCoL);
+    // Employer-adjusted salary based on policy
+    let adjustedSalary = salary;
+    if (policy === 'full_location')  adjustedSalary = equiv;
+    else if (policy === 'partial_50') adjustedSalary = salary + (equiv - salary) * 0.5;
+    // else uniform: no change
+    // Apply offered reduction on top
+    const salaryAfterReduction = adjustedSalary * (1 - reductionPct / 100);
+    // Purchasing power of adjusted salary in target
+    const ppOfAdjusted = salaryAfterReduction * (empCoL / tgtCoL);
+    const ppGainLoss = ((ppOfAdjusted / salary) - 1) * 100;
+    // Break-even: at what reduction % does move become neutral?
+    const breakEvenReduction = (1 - (equiv / salary)) * 100;
+    // After-tax
+    const srcTax = calcAfterTax(salary, emp[3], 'single');
+    const adjTax = calcAfterTax(salaryAfterReduction, tgtTier, 'single');
+    return { tgtName, tgtCoL, tgtTier, equiv, adjustedSalary, salaryAfterReduction,
+      ppOfAdjusted, ppGainLoss, breakEvenReduction, srcTax, adjTax };
+  });
+  tab2Result = { salary, empName, policy, reductionPct, empCoL, scenarios };
+  renderTab2Results();
+}
+
+function renderTab2Results() {
+  const r = tab2Result;
+  const POLICY_LABELS = {
+    full_location:'Full location-based',
+    partial_50:'Partial (50% CoL adj.)',
+    uniform:'Uniform (no adjustment)'
+  };
+  let html = `
+    <div class="stat-row">
+      <div class="stat-box"><div class="stat-label">Current Salary (at Employer)</div><div class="stat-value">${fmt(r.salary)}</div><div class="stat-note">${r.empName} · CoL ${r.empCoL}</div></div>
+      <div class="stat-box"><div class="stat-label">Employer Pay Policy</div><div class="stat-value" style="font-size:.8rem">${POLICY_LABELS[r.policy]||r.policy}</div></div>
+      ${r.reductionPct?`<div class="stat-box"><div class="stat-label">Proposed Reduction</div><div class="stat-value" style="color:var(--red)">−${r.reductionPct}%</div></div>`:''}
+    </div>`;
+
+  r.scenarios.forEach((s, i) => {
+    const netGain = s.ppGainLoss;
+    const borderColor = netGain > 3 ? 'var(--green)' : netGain > -3 ? 'var(--amber)' : 'var(--red)';
+    html += `
+      <div class="panel" style="border-color:${borderColor};margin-top:${i?'1rem':'0'}">
+        <div class="panel-title">${s.tgtName} — Scenario ${i+1}</div>
+        <div class="stat-row">
+          <div class="stat-box"><div class="stat-label">Equiv. Salary Needed</div><div class="stat-value">${fmt(s.equiv)}</div><div class="stat-note">CoL ${s.tgtCoL}</div></div>
+          <div class="stat-box"><div class="stat-label">Employer-Adjusted Salary</div><div class="stat-value">${fmt(s.adjustedSalary)}</div></div>
+          ${r.reductionPct?`<div class="stat-box"><div class="stat-label">After ${r.reductionPct}% Cut</div><div class="stat-value" style="color:var(--warn)">${fmt(s.salaryAfterReduction)}</div></div>`:''}
+          <div class="stat-box" style="border-color:${borderColor}">
+            <div class="stat-label">Net PP Change</div>
+            <div class="stat-value" style="color:${borderColor}">${netGain>0?'+':''}${netGain.toFixed(1)}%</div>
+            <div class="stat-note">vs. staying at ${r.empName}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Break-Even Cut</div>
+            <div class="stat-value">${s.breakEvenReduction.toFixed(1)}%</div>
+            <div class="stat-note">Max reduction to stay neutral</div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-box"><div class="stat-label">After-Tax (current)</div><div class="stat-value">${fmt(s.srcTax.afterTax)}</div></div>
+          <div class="stat-box"><div class="stat-label">After-Tax (adjusted, ${s.tgtName.split(',')[0]})</div><div class="stat-value">${fmt(s.adjTax.afterTax)}</div><div class="stat-note">${TIER_LABELS[s.tgtTier]}</div></div>
+          <div class="stat-box"><div class="stat-label">After-Tax Annual Delta</div>
+            <div class="stat-value" style="color:${s.adjTax.afterTax>s.srcTax.afterTax?'var(--green)':'var(--red)'}">
+              ${s.adjTax.afterTax>s.srcTax.afterTax?'+':''}${fmt(s.adjTax.afterTax-s.srcTax.afterTax)}/yr
+            </div>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  document.getElementById('tab2Results').innerHTML = html;
+  const rp = document.getElementById('results2');
+  rp.classList.add('visible');
+  enableBtns('mdBtn2','ap2Btn2');
+}
+
+// ═══════════════════════════════════════════════════════════
+// AP2 SCHEMA
+// ═══════════════════════════════════════════════════════════
+const AP2Schema = {
+  required:['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata'],
+  validMandateTypes:['credential_roi_evaluation','human_capital_assessment','automation_exposure_score','career_resilience_score','workforce_program_roi','career_pivot_assessment','career_transition_record','scholarship_pipeline_plan','fafsa_sai_estimate','exam_pathway_plan','benefits_election_record','severance_decision_record','offer_negotiation_record','graduate_school_roi_record','apprenticeship_match_record','cpd_credit_record','job_search_roi_record','career_break_record','loan_repayment_record','freelance_total_cost_record','education_savings_record','total_comp_record','geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_evaluation','test_prep_roi_record','international_student_cost_record','parent_college_roi_record','equity_compensation_record'],
+  validate(m){
+    const e=[];
+    if(!m||typeof m!=='object') return{valid:false,errors:['not an object']};
+    this.required.forEach(k=>{if(m[k]===undefined||m[k]===null)e.push('missing: '+k);});
+    if(m.ap2_version!=='1.0') e.push('ap2_version must be 1.0');
+    if(m.mandate_type&&!this.validMandateTypes.includes(m.mandate_type)) e.push('unknown mandate_type: '+m.mandate_type);
+    if(m.al_id&&!/^AL-\d{1,2}(\+\d{1,2})?$/.test(m.al_id)) e.push('al_id format invalid');
+    if(m.audit_metadata){
+      if(m.audit_metadata.client_side_executed!==true) e.push('client_side_executed must be true');
+      if(m.audit_metadata.zero_pii_verified!==true) e.push('zero_pii_verified must be true');
+      if(m.audit_metadata.deterministic_run!==true) e.push('deterministic_run must be true');
+    }
+    return{valid:e.length===0,errors:e};
+  }
+};
+function tsCompact(){return new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);}
+function uuidv4(){return'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&0x3|0x8)).toString(16)});}
+
+function buildAP2(tab){
+  const r = tab===1 ? tab1Result : tab2Result;
+  if (!r) return null;
+  const isTab1 = tab===1;
+  return {
+    ap2_version:'1.0', mandate_id:uuidv4(),
+    issued_at:new Date().toISOString(), issued_by:'apexlogics.org',
+    tool_id:'geo-fiscal-arbitrage-simulator', tool_version:'1.0.0',
+    al_id:'AL-04', mandate_type:'geo_arbitrage_record',
+    jurisdiction:['US'],
+    regulatory_frameworks:['Expatistan/ERI/SmartAsset 2026 CoL Indices','Tax Foundation 2026'],
+    payload: isTab1 ? {
+      tab:'geographic_purchasing_power',
+      source_city:r.srcName, target_city:r.tgtName,
+      source_col_index:r.srcCoL, target_col_index:r.tgtCoL,
+      current_salary:r.salary, equivalent_salary:r.equivalentSalary,
+      salary_delta:r.salaryDelta, purchasing_power_change_pct:r.ppGainLoss,
+      source_after_tax:r.srcTax?.afterTax, target_equivalent_salary:r.equivalentSalary,
+      filing_status:r.filing
+    } : {
+      tab:'remote_work_negotiation',
+      employer_city:r.empName, remote_city:r.scenarios[0]?.tgtName,
+      current_salary:r.salary, pay_policy:r.policy,
+      reduction_offered_pct:r.reductionPct,
+      equivalent_salary:r.scenarios[0]?.equiv,
+      adjusted_salary:r.scenarios[0]?.adjustedSalary,
+      net_pp_change_pct:r.scenarios[0]?.ppGainLoss,
+      break_even_reduction_pct:r.scenarios[0]?.breakEvenReduction
+    },
+    summary: isTab1
+      ? `Geo-fiscal analysis: ${r.srcName} → ${r.tgtName}. Current salary ${fmt(r.salary)}, equivalent needed ${fmt(r.equivalentSalary)} (${r.ppGainLoss>0?'+':''}${r.ppGainLoss.toFixed(1)}% purchasing power change).`
+      : `Remote work: ${r.empName} → ${r.scenarios[0]?.tgtName}. ${r.reductionPct}% cut offered. Break-even: ${r.scenarios[0]?.breakEvenReduction.toFixed(1)}%.`,
+    agent_instructions:['Use equivalent_salary to inform offer negotiation in AL-01 Total Compensation Suite.','Pass to AL-25 for offer comparison context.'],
+    valid_from:new Date().toISOString(), valid_until:new Date(Date.now()+90*24*60*60*1000).toISOString(),
+    last_reviewed:new Date().toISOString(),
+    source_tool_inputs: isTab1 ? {srcCity:r.srcName,tgtCity:r.tgtName,salary:r.salary} : {empCity:r.empName,remCity:r.scenarios[0]?.tgtName,salary:r.salary},
+    regulatory_citations:['Expatistan 2026 Cost of Living Index','ERI Economic Research Institute 2026','Tax Foundation 2026 State Income Tax Rates'],
+    downstream_handoff_candidates:['AL-01','AL-25'],
+    audit_metadata:{execution_hash:null,client_side_executed:true,zero_pii_verified:true,deterministic_run:true,data_vintage:'2026-01-01'}
+  };
+}
+
+function exportAP2(){
+  const m=buildAP2(1); if(!m){showToast('Run analysis first','error');return;}
+  const r=AP2Schema.validate(m); if(!r.valid){showToast('AP2 error: '+r.errors.join('; '),'error');return;}
+  download(JSON.stringify(m,null,2),'AL-04_geo-fiscal-arbitrage_'+tsCompact()+'.ap2.json','application/json');
+  showToast('AP2 mandate downloaded','success');
+}
+function exportAP2Tab2(){
+  const m=buildAP2(2); if(!m){showToast('Run analysis first','error');return;}
+  const r=AP2Schema.validate(m); if(!r.valid){showToast('AP2 error: '+r.errors.join('; '),'error');return;}
+  download(JSON.stringify(m,null,2),'AL-04_geo-fiscal-remote_'+tsCompact()+'.ap2.json','application/json');
+  showToast('AP2 mandate downloaded','success');
+}
+
+function exportMarkdown1(){
+  const r=tab1Result; if(!r){showToast('Run analysis first','error');return;}
+  const ts=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const md=`# Geo-Fiscal Arbitrage Analysis\n_Apex Logics · AL-04 · ${ts}_\n\n## ${r.srcName} → ${r.tgtName}\n| Metric | Value |\n|---|---|\n| Current Salary | ${fmt(r.salary)} |\n| Equivalent Salary Needed | ${fmt(r.equivalentSalary)} |\n| Purchasing Power Change | ${r.ppGainLoss>0?'+':''}${r.ppGainLoss.toFixed(1)}% |\n| Annual Delta (keeping salary) | ${fmt(r.sameSalaryDelta)}/yr |\n| Source CoL Index | ${r.srcCoL} |\n| Target CoL Index | ${r.tgtCoL} |\n\n## After-Tax\n| City | After-Tax |\n|---|---|\n| ${r.srcName} | ${fmt(r.srcTax?.afterTax)} |\n| ${r.tgtName} (equiv.) | ${fmt(r.tgtTax?.afterTax)} |\n\n---\n_Data: Expatistan/ERI/SmartAsset 2026 CoL Indices. Not financial advice._`;
+  download(md,'AL-04_geo-fiscal_'+tsCompact()+'.md','text/markdown');
+  showToast('Markdown exported','success');
+}
+function exportMarkdown2(){
+  const r=tab2Result; if(!r){showToast('Run analysis first','error');return;}
+  const ts=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  let md=`# Remote Work Geo-Fiscal Analysis\n_Apex Logics · AL-04 · ${ts}_\n\n## Setup\n- Current salary: ${fmt(r.salary)} at ${r.empName}\n- Pay policy: ${r.policy}\n- Reduction offered: ${r.reductionPct}%\n\n## Scenarios\n`;
+  r.scenarios.forEach((s,i)=>{md+=`### ${s.tgtName}\n| Metric | Value |\n|---|---|\n| Equiv. Salary | ${fmt(s.equiv)} |\n| Adjusted Salary | ${fmt(s.adjustedSalary)} |\n| After Cut | ${fmt(s.salaryAfterReduction)} |\n| Net PP Change | ${s.ppGainLoss>0?'+':''}${s.ppGainLoss.toFixed(1)}% |\n| Break-Even Cut | ${s.breakEvenReduction.toFixed(1)}% |\n\n`;});
+  md+=`---\n_Data: Expatistan/ERI/SmartAsset 2026 CoL Indices. Not financial advice._`;
+  download(md,'AL-04_remote-work_'+tsCompact()+'.md','text/markdown');
+  showToast('Markdown exported','success');
+}
+
+function download(content,filename,type){
+  const b=new Blob([content],{type});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=filename; a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ═══════════════════════════════════════════════════════════
+// MANIFEST
+// ═══════════════════════════════════════════════════════════
+function buildManifest(){
+  return{
+    tool_id:'geo-fiscal-arbitrage-simulator',al_id:'AL-04',version:'1.0.0',
+    title:'Geo-Fiscal Arbitrage Simulator',
+    description:'Models purchasing power equivalence across 70 US metros and simulates remote-work pay adjustments based on CoL indices and state tax tiers.',
+    category:'compensation_offers',journeys:['compensation_benefits','career_navigation'],
+    personas:['working_professional','career_changer'],
+    tags:['cost of living','relocation','remote work','purchasing power','salary equivalence','geo arbitrage'],
+    status:'shipped',maintenance:'very_low',data_vintage:'2026-01-01',frozen_baseline:true,
+    input_schema:{type:'object',properties:{source_city:{type:'string'},target_city:{type:'string'},salary:{type:'number'}}},
+    output_schema:{type:'object',properties:{equivalent_salary:{type:'number'},purchasing_power_change_pct:{type:'number'}}},
+    mcp_tool_definition:{name:'simulate_geo_fiscal_arbitrage',description:'Calculates salary equivalence and purchasing power across US metro areas with CoL and state tax adjustment.',inputSchema:{type:'object',properties:{source_city:{type:'string'},target_city:{type:'string'},current_salary:{type:'number',description:'Annual salary in USD'}}}},
+    execution:{type:'browser-javascript',entry:'index.html',function_name:'runTab1',timeout_ms:5000},
+    ap2_export:true,ap2_mandate_types:['geo_arbitrage_record'],
+    ap2_inbound_mandate_types:['offer_negotiation_record'],
+    downstream_handoff_candidates:['AL-01','AL-25'],
+    regulatory_citations:['Expatistan 2026 Cost of Living Index','Tax Foundation 2026 State Individual Income Tax Rates'],
+    sister_suite:'https://ainumbers.co',consulting_site:'https://apexadvisory.site',license:'CC-BY-4.0'
+  };
+}
+
+let manifestOpen=false;
+function toggleManifest(){
+  manifestOpen=!manifestOpen;
+  const p=document.getElementById('manifestPanel');
+  p.classList.toggle('open',manifestOpen);
+  document.getElementById('manifestArrow').textContent=manifestOpen?'▲':'▼';
+  if(manifestOpen&&!document.getElementById('manifestJson').textContent)
+    document.getElementById('manifestJson').textContent=JSON.stringify(buildManifest(),null,2);
+}
+let ap2InboundOpen=false;
+function toggleAP2Inbound(){
+  ap2InboundOpen=!ap2InboundOpen;
+  document.getElementById('ap2InboundPanel').classList.toggle('open',ap2InboundOpen);
+  document.getElementById('ap2InboundArrow').textContent=ap2InboundOpen?'▲':'▼';
+}
+
+// ═══════════════════════════════════════════════════════════
+// AP2 INBOUND
+// ═══════════════════════════════════════════════════════════
+function parseAP2Inbound(){
+  try{
+    const param=new URLSearchParams(window.location.search).get('ap2');
+    if(!param) return;
+    const m=JSON.parse(decodeURIComponent(param));
+    if(!m||!m.mandate_type) return;
+    const handlers={offer_negotiation_record:prefillFromOffer};
+    const h=handlers[m.mandate_type];
+    if(!h) return;
+    h(m.payload,m.al_id);
+    showImportBadge(m.al_id||'External Tool');
+  }catch(e){}
+}
+function prefillFromOffer(payload,sourceId){
+  const el=document.getElementById('currentSalary');
+  if(el&&el.value==='') el.value=payload.target_salary||payload.base_salary||'';
+  const el2=document.getElementById('remoteSalary');
+  if(el2&&el2.value==='') el2.value=payload.target_salary||payload.base_salary||'';
+}
+function showImportBadge(src){
+  const w=document.getElementById('importBadgeWrap');
+  const b=document.createElement('div'); b.className='import-badge';
+  b.textContent=`✓ Imported from ${src}`; w.appendChild(b);
+}
+function openPasteModal(){
+  const json=prompt('Paste AP2 JSON mandate:'); if(!json) return;
+  try{
+    const m=JSON.parse(json);
+    const handlers={offer_negotiation_record:prefillFromOffer};
+    const h=handlers[m.mandate_type];
+    if(h){h(m.payload,m.al_id);showImportBadge(m.al_id||'Pasted');showToast('Imported','success');}
+    else showToast('Unrecognized mandate_type','error');
+  }catch(e){showToast('Invalid AP2 JSON','error');}
+}
+document.addEventListener('DOMContentLoaded',()=>{populateCityDropdowns();parseAP2Inbound();});
+
+// ═══════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════
+function switchTab(n){
+  document.querySelectorAll('.tab-panel').forEach((p,i)=>p.classList.toggle('active',i+1===n));
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i+1===n));
+}
+function enableBtns(...ids){ids.forEach(id=>{const b=document.getElementById(id);if(b){b.disabled=false;b.classList.add('ready');}});}
+function fmt(n,d){
+  if(n===undefined||n===null||isNaN(n)) return'—';
+  return'$'+n.toFixed(d!==undefined?d:0).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+}
+function showAP2Help(){showToast("AP2 (Agent Purchase Protocol) — carries scenario state to the next tool. Learn more: ap2-protocol.org",'info');}
+let toastTimer;
+function showToast(msg,type='info'){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className=`toast show ${type}`;
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),4000);
+}
+</script>
+</body>
+</html>

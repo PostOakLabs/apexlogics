@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>International Student Cost Modeler — Apex Logics</title>
+<meta name="description" content="F-1 visa costs, OPT/STEM OPT earnings window, H-1B lottery odds FY2020-2024, and non-US program comparison. Browser-only. Zero PII.">
+<link rel="canonical" href="https://apexlogics.org/tools/international-student-cost-modeler/">
+<link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   CSS DESIGN TOKENS — Apex Logics Contract §8 Appendix A
+   Primary accent: --amber (#E8A838) — Education Path & ROI
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --bg:#0b0e14; --bg-2:#0C1220; --bg-3:#111A2E; --bg-4:#162238;
+  --border:#232b3e; --border-2:#2e3a52;
+  --muted:#6b7a99; --body:#c8d0e0; --text:#A8C4DE; --bright:#D4E8F8;
+  --amber:#E8A838; --amber-dim:rgba(232,168,56,.10); --amber-lt:#F0BD5E;
+  --teal:#14B8A6; --teal-dim:rgba(20,184,166,.10); --teal-lt:#2DD4BF;
+  --coral:#F07167; --coral-dim:rgba(240,113,103,.10);
+  --lavender:#A78BFA; --lavender-dim:rgba(167,139,250,.10);
+  --green:#34D399; --green-dim:rgba(52,211,153,.10);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,.10);
+  --red:#F87171; --red-dim:rgba(248,113,113,.10);
+  --warn:#FBBF24;
+  --radius:6px; --radius-lg:10px; --shadow:0 4px 24px rgba(0,0,0,.45);
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+html[dir="rtl"] body { direction:rtl; text-align:right; }
+body { background:var(--bg); color:var(--text); font-family:'Sora',sans-serif; font-size:.875rem; line-height:1.6; -webkit-font-smoothing:antialiased; min-height:100vh; }
+a { color:var(--amber-lt); text-decoration:none; }
+a:hover { text-decoration:underline; }
+button { cursor:pointer; font-family:inherit; }
+.container { max-width:1024px; margin:0 auto; padding:24px; }
+
+/* ════ NAV ════ */
+nav { position:sticky; top:0; z-index:100; background:rgba(7,11,20,.92); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+.nav-inner { max-width:1024px; margin:0 auto; display:flex; align-items:center; gap:16px; padding:0 24px; height:58px; }
+.logo { display:flex; align-items:center; gap:10px; flex-shrink:0; text-decoration:none; }
+.logo-mark { width:32px; height:32px; flex-shrink:0; }
+.logo-mark svg { width:100%; height:100%; }
+.logo-text { display:flex; flex-direction:column; gap:2px; }
+.logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--bright); letter-spacing:-.02em; line-height:1; }
+.logo-apex { color:var(--amber); }
+.logo-org { color:var(--muted); font-size:.8rem; }
+.logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-family:'JetBrains Mono',monospace; line-height:1; }
+.nav-right { display:flex; align-items:center; gap:8px; margin-left:auto; flex-shrink:0; }
+.nav-pill { background:none; border:1px solid var(--border-2); border-radius:var(--radius); color:var(--body); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; transition:border-color .15s,color .15s; text-decoration:none; display:inline-block; }
+.nav-pill:hover { border-color:var(--amber); color:var(--text); text-decoration:none; }
+@media (max-width:600px) { .logo-tag,.nav-pill { display:none; } }
+
+/* ════ LANG BAR ════ */
+.lang-bar { background:var(--bg-2); border-bottom:1px solid var(--border); padding:.5rem 0; }
+.lang-inner { max-width:1024px; margin:0 auto; padding:0 24px; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+.lang-btn { background:none; border:1px solid var(--border); color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.06em; padding:.25rem .55rem; border-radius:var(--radius); transition:all .15s; }
+.lang-btn:hover { border-color:var(--border-2); color:var(--body); }
+.lang-btn.active { border-color:var(--amber); color:var(--amber); background:var(--amber-dim); }
+
+/* ════ TOOL HEADER ════ */
+.tool-header { padding:40px 0 20px; }
+.tool-eyebrow { font-family:'JetBrains Mono',monospace; font-size:.55rem; letter-spacing:.18em; text-transform:uppercase; color:var(--amber); margin-bottom:8px; }
+.tool-title { font-family:'DM Serif Display',serif; font-size:2rem; line-height:1.15; color:var(--bright); margin-bottom:10px; }
+.tool-subtitle { color:var(--body); font-size:.95rem; max-width:680px; margin-bottom:14px; }
+.tool-vintage-banner { display:inline-flex; align-items:center; gap:8px; background:var(--amber-dim); border:1px solid rgba(232,168,56,.25); border-radius:var(--radius); padding:.35rem .75rem; font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.07em; color:var(--amber); text-transform:uppercase; }
+.tool-vintage-banner::before { content:"◆"; font-size:.5rem; }
+
+/* ════ BANNERS ════ */
+.pii-notice { display:flex; align-items:flex-start; gap:10px; background:rgba(232,168,56,.07); border:1px solid rgba(232,168,56,.2); border-left:3px solid var(--amber); border-radius:var(--radius); padding:.75rem 1rem; color:var(--body); font-size:.78rem; line-height:1.5; margin-bottom:12px; }
+.legal-notice { display:flex; align-items:flex-start; gap:10px; background:rgba(240,113,103,.07); border:1px solid rgba(240,113,103,.2); border-left:3px solid var(--coral); border-radius:var(--radius); padding:.75rem 1rem; color:var(--body); font-size:.75rem; line-height:1.5; margin-bottom:20px; }
+.legal-notice strong { color:var(--coral); }
+
+/* ════ TABS ════ */
+.tab-bar { display:flex; gap:4px; margin-bottom:20px; border-bottom:1px solid var(--border); }
+.tab-btn { background:none; border:none; border-bottom:2px solid transparent; color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; padding:.6rem 1.1rem; margin-bottom:-1px; transition:all .15s; }
+.tab-btn:hover { color:var(--body); }
+.tab-btn.active { color:var(--amber); border-bottom-color:var(--amber); }
+.tab-pane { display:none; }
+.tab-pane.active { display:block; }
+
+/* ════ PANEL ════ */
+.panel { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; margin-bottom:14px; }
+.panel-title { font-family:'JetBrains Mono',monospace; font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; color:var(--amber); margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+.panel-row { margin-bottom:14px; }
+.panel-row:last-child { margin-bottom:0; }
+.panel-label { display:block; font-size:.72rem; color:var(--text); margin-bottom:5px; font-weight:500; }
+.panel-label span { color:var(--muted); font-weight:400; }
+select, input[type="number"] { width:100%; background:var(--bg-3); border:1px solid var(--border-2); color:var(--bright); border-radius:var(--radius); padding:.5rem .75rem; font-family:'Sora',sans-serif; font-size:.82rem; transition:border-color .15s; -webkit-appearance:none; appearance:none; }
+select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%233E5675'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right .75rem center; padding-right:2rem; }
+select:focus,input:focus { outline:none; border-color:var(--amber); box-shadow:0 0 0 2px rgba(232,168,56,.12); }
+select option { background:var(--bg-3); color:var(--bright); }
+.input-hint { font-size:.67rem; color:var(--muted); margin-top:4px; }
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.three-col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+@media (max-width:700px) { .two-col,.three-col { grid-template-columns:1fr; } }
+
+/* ════ TOGGLE SWITCH ════ */
+.toggle-row { display:flex; align-items:center; gap:12px; }
+.toggle-label { font-size:.72rem; color:var(--text); font-weight:500; }
+.toggle { position:relative; width:38px; height:20px; flex-shrink:0; }
+.toggle input { opacity:0; width:0; height:0; }
+.toggle-slider { position:absolute; inset:0; background:var(--bg-4); border:1px solid var(--border-2); border-radius:20px; cursor:pointer; transition:.2s; }
+.toggle-slider::before { content:""; position:absolute; width:14px; height:14px; left:2px; top:2px; background:var(--muted); border-radius:50%; transition:.2s; }
+.toggle input:checked + .toggle-slider { background:var(--amber-dim); border-color:var(--amber); }
+.toggle input:checked + .toggle-slider::before { transform:translateX(18px); background:var(--amber); }
+
+/* ════ RUN BUTTON ════ */
+.run-row { display:flex; justify-content:center; margin:20px 0; }
+.run-btn { background:var(--amber); color:#070B14; border:none; font-family:'Sora',sans-serif; font-size:.88rem; font-weight:600; padding:.75rem 2.5rem; border-radius:var(--radius); letter-spacing:.03em; transition:all .15s; min-width:220px; }
+.run-btn:hover { background:var(--amber-lt); }
+.run-btn:active { transform:scale(.98); }
+
+/* ════ RESULTS ════ */
+.results-panel { display:none; }
+.results-panel.visible { display:block; }
+.results-section { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:16px; overflow:hidden; }
+.results-section-head { background:var(--bg-3); padding:12px 18px; border-bottom:1px solid var(--border); font-family:'JetBrains Mono',monospace; font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; color:var(--amber); display:flex; align-items:center; gap:8px; }
+.results-section-head::before { content:"▸"; font-size:.7rem; }
+.results-section-body { padding:18px; }
+
+/* ════ METRIC GRID ════ */
+.metric-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(155px,1fr)); gap:10px; }
+.metric-item { display:flex; flex-direction:column; gap:3px; }
+.metric-label { font-size:.58rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+.metric-val { font-size:.9rem; color:var(--bright); font-family:'JetBrains Mono',monospace; font-weight:500; }
+.metric-val.amber { color:var(--amber); }
+.metric-val.green { color:var(--green); }
+.metric-val.coral { color:var(--coral); }
+.metric-val.teal { color:var(--teal); }
+.metric-val.muted { color:var(--muted); font-size:.78rem; }
+
+/* ════ COST BREAKDOWN TABLE ════ */
+.cost-table { width:100%; border-collapse:collapse; }
+.cost-table td { padding:8px 12px; border-bottom:1px solid var(--border); font-size:.8rem; color:var(--text); }
+.cost-table tr:last-child td { border-bottom:none; }
+.cost-table .row-label { font-family:'JetBrains Mono',monospace; font-size:.65rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+.cost-table .row-val { font-family:'JetBrains Mono',monospace; color:var(--bright); text-align:right; }
+.cost-table .row-val.amber { color:var(--amber); font-weight:600; font-size:.88rem; }
+.cost-table .total-row td { background:var(--bg-3); border-top:1px solid var(--border-2); }
+
+/* ════ H-1B LOTTERY CHART ════ */
+.lottery-bars { display:flex; flex-direction:column; gap:8px; }
+.lottery-row { display:flex; align-items:center; gap:10px; }
+.lottery-yr { font-family:'JetBrains Mono',monospace; font-size:.62rem; color:var(--muted); width:46px; flex-shrink:0; }
+.lottery-track { flex:1; height:18px; background:var(--bg-4); border-radius:3px; overflow:hidden; position:relative; }
+.lottery-fill { height:100%; border-radius:3px; background:var(--amber); display:flex; align-items:center; padding-left:6px; transition:width .5s ease; }
+.lottery-fill-label { font-family:'JetBrains Mono',monospace; font-size:.58rem; color:#0b0e14; font-weight:600; white-space:nowrap; }
+.lottery-n { font-family:'JetBrains Mono',monospace; font-size:.6rem; color:var(--muted); width:90px; text-align:right; flex-shrink:0; }
+
+/* ════ PROBABILITY DISPLAY ════ */
+.prob-box { background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; text-align:center; }
+.prob-big { font-family:'DM Serif Display',serif; font-size:2.2rem; color:var(--amber); line-height:1; }
+.prob-label { font-family:'JetBrains Mono',monospace; font-size:.6rem; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; margin-top:4px; }
+.prob-sub { font-size:.72rem; color:var(--text); margin-top:6px; }
+
+/* ════ COMPARISON TABLE ════ */
+.cmp-wrap { overflow-x:auto; }
+.cmp-table { width:100%; border-collapse:collapse; min-width:520px; }
+.cmp-table th { text-align:left; padding:9px 12px; font-family:'JetBrains Mono',monospace; font-size:.58rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); background:var(--bg-3); }
+.cmp-table th.us-col { color:var(--teal); }
+.cmp-table th.alt-col { color:var(--amber); }
+.cmp-table td { padding:9px 12px; border-bottom:1px solid var(--border); font-size:.8rem; color:var(--text); vertical-align:top; }
+.cmp-table tr:last-child td { border-bottom:none; }
+.cmp-table .row-label { font-family:'JetBrains Mono',monospace; font-size:.62rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+.cmp-table .val-mono { font-family:'JetBrains Mono',monospace; color:var(--bright); }
+.cmp-table .val-green { font-family:'JetBrains Mono',monospace; color:var(--green); font-weight:500; }
+.cmp-table .val-amber { font-family:'JetBrains Mono',monospace; color:var(--amber); font-weight:500; }
+.cmp-table .val-coral { font-family:'JetBrains Mono',monospace; color:var(--coral); }
+.cmp-table .best { background:rgba(52,211,153,.04); }
+
+/* ════ PROS / CONS ════ */
+.pc-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+@media (max-width:600px) { .pc-grid { grid-template-columns:1fr; } }
+.pc-box { background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px; }
+.pc-title { font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; margin-bottom:8px; }
+.pc-title.pros { color:var(--green); }
+.pc-title.cons { color:var(--coral); }
+.pc-list { list-style:none; display:flex; flex-direction:column; gap:5px; }
+.pc-item { font-size:.75rem; color:var(--text); display:flex; gap:7px; }
+.pc-item::before { flex-shrink:0; }
+.pc-item.pro::before { content:"✓"; color:var(--green); font-family:'JetBrains Mono',monospace; }
+.pc-item.con::before { content:"✗"; color:var(--coral); font-family:'JetBrains Mono',monospace; }
+
+/* ════ SUMMARY BOX ════ */
+.summary-box { background:var(--amber-dim); border:1px solid rgba(232,168,56,.25); border-radius:var(--radius); padding:12px 14px; margin-top:12px; font-size:.78rem; color:var(--text); line-height:1.6; }
+.summary-box strong { color:var(--amber); }
+
+/* ════ EXPORT / HANDOFF ════ */
+.results-export-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:14px 18px; background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:16px; }
+.export-label { font-size:.65rem; color:var(--muted); font-family:'JetBrains Mono',monospace; letter-spacing:.08em; text-transform:uppercase; margin-right:4px; }
+.btn { display:inline-flex; flex-direction:column; align-items:center; gap:1px; background:none; border:1px solid var(--border-2); border-radius:var(--radius); color:var(--body); padding:.45rem .9rem; font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .15s; line-height:1.2; }
+.btn:hover:not(:disabled) { border-color:var(--amber); color:var(--amber); }
+.btn.ready { border-color:var(--amber); color:var(--amber); background:var(--amber-dim); }
+.btn:disabled { opacity:.28; cursor:not-allowed; }
+.btn-subtitle { font-size:.55rem; color:var(--muted); display:block; }
+.btn.ready .btn-subtitle { color:rgba(232,168,56,.7); }
+.handoff-btn { background:none; border:1px solid var(--border-2); border-radius:var(--radius); color:var(--body); padding:.4rem .85rem; font-size:.65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; transition:all .15s; display:inline-flex; flex-direction:column; align-items:flex-start; gap:2px; }
+.handoff-btn:hover { border-color:var(--teal); color:var(--teal); }
+.handoff-btn-sub { font-size:.55rem; color:var(--muted); }
+
+/* ════ MCP / MANIFEST ════ */
+.mcp-toggle { display:flex; align-items:center; gap:8px; background:none; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted); padding:.45rem 1rem; font-size:.65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.07em; transition:all .15s; margin-bottom:12px; }
+.mcp-toggle:hover { border-color:var(--border-2); color:var(--body); }
+.mcp-toggle::before { content:"▸"; transition:transform .2s; }
+.mcp-toggle.open::before { transform:rotate(90deg); }
+.mcp-panel { display:none; background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; margin-bottom:16px; }
+.mcp-panel.open { display:block; }
+.mcp-panel pre { font-family:'JetBrains Mono',monospace; font-size:.68rem; color:var(--body); line-height:1.55; overflow-x:auto; white-space:pre-wrap; word-break:break-word; }
+
+/* ════ TOAST ════ */
+.toast { position:fixed; bottom:24px; right:24px; z-index:9999; max-width:380px; padding:.75rem 1rem; background:var(--bg-4); border:1px solid var(--border-2); border-radius:var(--radius); box-shadow:var(--shadow); font-size:.78rem; color:var(--text); opacity:0; transform:translateY(8px); transition:all .25s; pointer-events:none; }
+.toast.show { opacity:1; transform:translateY(0); }
+.toast.success { border-color:var(--green); color:var(--green); }
+.toast.error { border-color:var(--red); color:var(--red); }
+
+/* ════ FOOTER ════ */
+.tool-footer { text-align:center; padding:24px; border-top:1px solid var(--border); font-size:.68rem; color:var(--muted); font-family:'JetBrains Mono',monospace; letter-spacing:.04em; line-height:1.8; }
+.tool-footer a { color:var(--amber-lt); }
+@media (max-width:480px) { .tool-title { font-size:1.5rem; } .results-export-row { flex-direction:column; align-items:flex-start; } }
+</style>
+</head>
+<body>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-right">
+      <a href="https://apexadvisory.site" class="nav-pill" target="_blank" rel="noopener">ApexAdvisory.site</a>
+      <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <header class="tool-header">
+    <div class="tool-eyebrow" data-i18n="eyebrow">AL · 31 · Education Path &amp; ROI</div>
+    <h1 class="tool-title" data-i18n="tool_title">International Student Cost Modeler</h1>
+    <p class="tool-subtitle" data-i18n="tool_subtitle">Model the full financial path of studying in the US on an F-1 visa — visa fees, OPT/STEM OPT earnings window, H-1B lottery odds — or compare the US against 8 alternative study destinations.</p>
+    <div class="tool-vintage-banner">Data: US Dept. of State 2024 · USCIS H-1B FY2020–2024 · 8 CFR 214.2 · QS Rankings 2024</div>
+  </header>
+
+  <div class="pii-notice" role="note">
+    🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+  </div>
+
+  <!-- LEGAL DISCLAIMER — required per CONTRACT spec flag -->
+  <div class="legal-notice" role="note">
+    <strong>⚠ Legal Notice:</strong>&nbsp; This tool provides general financial estimates only and does <strong>not</strong> constitute immigration, legal, or tax advice. Immigration rules, fees, and lottery rates change frequently. Always consult a licensed immigration attorney (USCIS-accredited or bar-admitted) and your Designated School Official (DSO) before making enrollment or visa decisions. Regulatory citations: 8 CFR §214.2(f); USCIS SEVIS Fee Schedule 2024; INA §101(a)(15)(H).
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('us')" id="tab-us" data-i18n="tab_us">US Study Path (F-1)</button>
+    <button class="tab-btn" onclick="switchTab('compare')" id="tab-compare" data-i18n="tab_compare">Country Comparison</button>
+  </div>
+
+  <!-- ═══ TAB 1: US STUDY PATH ═══ -->
+  <div class="tab-pane active" id="pane-us">
+
+    <div class="panel">
+      <div class="panel-title" data-i18n="panel_program">Program Details</div>
+      <div class="three-col">
+        <div class="panel-row">
+          <label class="panel-label" for="degreeType" data-i18n="lbl_degree">Degree Type</label>
+          <select id="degreeType" onchange="onUSInput()">
+            <option value="mba">MBA (Full-Time)</option>
+            <option value="masters" selected>Master's (MS/MA)</option>
+            <option value="phd">PhD / Doctoral</option>
+            <option value="other">Other Graduate</option>
+          </select>
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="programMonths" data-i18n="lbl_duration">Program Duration <span>(months)</span></label>
+          <input type="number" id="programMonths" value="24" min="9" max="60" step="3" oninput="onUSInput()">
+          <div class="input-hint" data-i18n="hint_duration">24 = typical 2-yr master's. 10 = INSEAD-style 1-yr MBA.</div>
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" data-i18n="lbl_stem">STEM-Designated Program?</label>
+          <div class="toggle-row" style="margin-top:8px;">
+            <label class="toggle"><input type="checkbox" id="isStem" checked onchange="onUSInput()"><span class="toggle-slider"></span></label>
+            <span class="toggle-label" id="stemLabel" data-i18n="lbl_stem_yes">Yes — STEM OPT extension eligible</span>
+          </div>
+          <div class="input-hint" data-i18n="hint_stem">STEM = 24-month OPT extension (36 months total). Non-STEM = 12 months only.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title" data-i18n="panel_costs">Annual Costs (USD)</div>
+      <div class="three-col">
+        <div class="panel-row">
+          <label class="panel-label" for="annualTuition" data-i18n="lbl_tuition">Annual Tuition &amp; Fees</label>
+          <input type="number" id="annualTuition" value="55000" min="0" max="200000" step="1000" oninput="onUSInput()">
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="annualLiving" data-i18n="lbl_living">Annual Living Cost</label>
+          <input type="number" id="annualLiving" value="22000" min="0" max="100000" step="500" oninput="onUSInput()">
+          <div class="input-hint" data-i18n="hint_living">Housing, food, transport. NYC/SF: ~$32k. Midwest: ~$18k.</div>
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="healthIns" data-i18n="lbl_health">Health Insurance <span>(USD/yr)</span></label>
+          <input type="number" id="healthIns" value="2500" min="0" max="15000" step="100" oninput="onUSInput()">
+          <div class="input-hint" data-i18n="hint_health">Many programs mandate enrollment in school plan.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title" data-i18n="panel_visa">Visa &amp; Entry Costs (USD)</div>
+      <div class="three-col">
+        <div class="panel-row">
+          <label class="panel-label" for="homeCountry" data-i18n="lbl_home_country">Home Country</label>
+          <select id="homeCountry" onchange="onUSInput()">
+            <option value="0">Most countries ($0 reciprocity)</option>
+            <option value="160">Canada / Australia / Some EU ($160)</option>
+            <option value="120">Brazil / Mexico / India ($120)</option>
+            <option value="85">China / South Korea / Japan ($85)</option>
+            <option value="0_free">UK / Germany / France ($0)</option>
+          </select>
+          <div class="input-hint" data-i18n="hint_country">US visa reciprocity fee varies by passport. Estimate only.</div>
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="flightCost" data-i18n="lbl_flights">Initial Flights &amp; Relocation</label>
+          <input type="number" id="flightCost" value="2000" min="0" max="20000" step="100" oninput="onUSInput()">
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="expectedSalary" data-i18n="lbl_salary_opt">Expected OPT Salary <span>(USD/yr)</span></label>
+          <input type="number" id="expectedSalary" value="110000" min="0" max="500000" step="1000" oninput="onUSInput()">
+          <div class="input-hint" data-i18n="hint_salary_opt">Base salary during OPT/STEM OPT. Used for earnings window calculation.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="run-row">
+      <button class="run-btn" onclick="runUS()" data-i18n="btn_run_us">Calculate US Path Costs →</button>
+    </div>
+
+    <!-- US RESULTS -->
+    <div class="results-panel" id="usResults">
+
+      <div class="results-section">
+        <div class="results-section-head" data-i18n="head_total_cost">Total Program Cost</div>
+        <div class="results-section-body">
+          <table class="cost-table" id="costTable"></table>
+        </div>
+      </div>
+
+      <div class="results-section">
+        <div class="results-section-head" data-i18n="head_opt_window">OPT / STEM OPT Earnings Window</div>
+        <div class="results-section-body">
+          <div class="metric-grid" id="optMetrics" style="margin-bottom:16px;"></div>
+          <div id="optNote" class="summary-box" style="margin-top:0;"></div>
+        </div>
+      </div>
+
+      <div class="results-section">
+        <div class="results-section-head" data-i18n="head_h1b">H-1B Lottery Historical Rates (FY2020–2024)</div>
+        <div class="results-section-body">
+          <div class="lottery-bars" id="lotteryBars" style="margin-bottom:16px;"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;" id="lotteryProbs"></div>
+          <div id="lotteryNote" class="summary-box" style="margin-top:0;"></div>
+        </div>
+      </div>
+
+      <div class="results-export-row">
+        <span class="export-label" data-i18n="lbl_export">Export</span>
+        <button class="btn" onclick="exportMarkdown()" title="Markdown report">
+          Markdown
+          <span class="btn-subtitle">report</span>
+        </button>
+        <button class="btn ready" onclick="exportAP2()" title="AP2 JSON export">
+          AP2 JSON
+          <span class="btn-subtitle">intl_student_cost_record</span>
+        </button>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;" data-i18n="lbl_handoff">Continue With</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="handoff-btn" onclick="location.href='../graduate-school-roi-comparator/index.html'">
+            AL-26 · Graduate School ROI Comparator
+            <span class="handoff-btn-sub">Full NPV/IRR across programs</span>
+          </button>
+          <button class="handoff-btn" onclick="location.href='../mba-program-fit-ranker/index.html'">
+            AL-29 · MBA Program Fit &amp; ROI Ranker
+            <span class="handoff-btn-sub">Compare specific MBA programs</span>
+          </button>
+          <button class="handoff-btn" onclick="location.href='../test-prep-investment-analyzer/index.html'">
+            AL-30 · Test Prep Investment Analyzer
+            <span class="handoff-btn-sub">TOEFL/IELTS score gap → tier</span>
+          </button>
+        </div>
+      </div>
+
+      <button class="mcp-toggle" id="mcpToggle" onclick="toggleMCP()">MCP · AP2 Payload Preview</button>
+      <div class="mcp-panel" id="mcpPanel"><pre id="mcpPre"></pre></div>
+
+    </div>
+  </div><!-- /pane-us -->
+
+  <!-- ═══ TAB 2: COUNTRY COMPARISON ═══ -->
+  <div class="tab-pane" id="pane-compare">
+
+    <div class="panel">
+      <div class="panel-title" data-i18n="panel_compare_inputs">Comparison Inputs</div>
+      <div class="two-col">
+        <div class="panel-row">
+          <label class="panel-label" for="altCountry" data-i18n="lbl_alt_country">Compare US Against</label>
+          <select id="altCountry" onchange="onCompareInput()">
+            <option value="uk">🇬🇧 United Kingdom</option>
+            <option value="canada">🇨🇦 Canada</option>
+            <option value="australia">🇦🇺 Australia</option>
+            <option value="germany">🇩🇪 Germany</option>
+            <option value="france">🇫🇷 France</option>
+            <option value="netherlands">🇳🇱 Netherlands</option>
+            <option value="singapore">🇸🇬 Singapore</option>
+            <option value="ireland">🇮🇪 Ireland</option>
+          </select>
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="cmpDegree" data-i18n="lbl_degree">Program Type</label>
+          <select id="cmpDegree" onchange="onCompareInput()">
+            <option value="mba">MBA (Full-Time)</option>
+            <option value="masters" selected>Master's (MS/MA)</option>
+          </select>
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="cmpUSTuition" data-i18n="lbl_us_tuition">US Annual Tuition (USD)</label>
+          <input type="number" id="cmpUSTuition" value="55000" min="0" max="200000" step="1000" oninput="onCompareInput()">
+        </div>
+        <div class="panel-row">
+          <label class="panel-label" for="cmpUSSalary" data-i18n="lbl_us_salary">Expected US Post-Grad Salary (USD/yr)</label>
+          <input type="number" id="cmpUSSalary" value="110000" min="0" max="500000" step="1000" oninput="onCompareInput()">
+        </div>
+      </div>
+    </div>
+
+    <div class="run-row">
+      <button class="run-btn" onclick="runCompare()" data-i18n="btn_run_compare">Compare Countries →</button>
+    </div>
+
+    <div class="results-panel" id="compareResults">
+
+      <div class="results-section">
+        <div class="results-section-head" id="compareHead">Side-by-Side Comparison</div>
+        <div class="results-section-body">
+          <div class="cmp-wrap">
+            <table class="cmp-table" id="cmpTable"></table>
+          </div>
+        </div>
+      </div>
+
+      <div class="results-section">
+        <div class="results-section-head" data-i18n="head_pros_cons">Pros &amp; Cons</div>
+        <div class="results-section-body" id="pcSection"></div>
+      </div>
+
+      <div id="compareNote" class="summary-box" style="margin-bottom:16px;"></div>
+
+    </div>
+  </div><!-- /pane-compare -->
+
+  <!-- MANIFEST — always visible -->
+  <button class="mcp-toggle" id="manifestToggle" onclick="toggleManifest()" style="margin-top:8px;">manifest.json · Tool Discovery</button>
+  <div class="mcp-panel" id="manifestPanel"><pre id="manifestPre"></pre></div>
+
+</div><!-- /container -->
+
+<div class="toast" id="toast"></div>
+
+<footer class="tool-footer">
+  <div>AL-31 · International Student Cost Modeler · <a href="https://apexlogics.org" target="_blank" rel="noopener">ApexLogics.org</a> · CC BY 4.0</div>
+  <div style="margin-top:4px;font-size:.6rem;opacity:.6">General estimates only — not legal or immigration advice. Consult a licensed immigration attorney and your DSO. Fees and lottery rates subject to change. Cites: 8 CFR §214.2(f) · USCIS SEVIS 2024 · INA §101(a)(15)(H).</div>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   AL-31 International Student Cost Modeler
+   Apex Logics — apexlogics.org
+   CONTRACT: Zero network calls post-load · Zero PII · CC BY 4.0
+   Data: US Dept. of State 2024 · USCIS H-1B FY2020-2024 · 8 CFR 214.2 · QS 2024
+   Legal disclaimer required per spec flag
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── FIXED VISA FEES (USCIS / DOS 2024) ────────────────────── */
+const VISA_FEES = {
+  ds160: 185,       // DS-160 MRV fee (non-immigrant visa application)
+  sevis: 350,       // SEVIS I-901 fee (F-1/M-1 students)
+  medical: 200,     // Estimated medical exam (varies widely by country/clinic)
+  opt_i765: 520,    // Form I-765 OPT application fee (FY2024)
+  stem_opt_i765: 520 // Same form for STEM OPT extension
+};
+
+/* ─── H-1B HISTORICAL DATA (USCIS FY2020–FY2024) ────────────── */
+const H1B_DATA = [
+  { fy:"FY2020", regs:201011, selected:85000, rate:42.3 },
+  { fy:"FY2021", regs:274237, selected:87500, rate:31.9 },
+  { fy:"FY2022", regs:479564, selected:131970, rate:27.5 },
+  { fy:"FY2023", regs:758994, selected:127600, rate:16.3 }, // after deduplication
+  { fy:"FY2024", regs:780884, selected:110791, rate:14.2 }
+];
+const CURRENT_H1B_RATE = H1B_DATA[H1B_DATA.length - 1].rate / 100; // 14.2%
+
+/* ─── COUNTRY DATA ───────────────────────────────────────────── */
+const COUNTRIES = {
+  uk: {
+    name:"United Kingdom", flag:"🇬🇧", currency:"GBP", fx:1.27,
+    mba: { tuition_usd:57000, months:12 },
+    masters: { tuition_usd:35000, months:12 },
+    living_yr_usd:22000,
+    post_study:{ name:"Graduate Route Visa", months:24, phd_months:36 },
+    pr_path:"5 years on Skilled Worker visa after Graduate Route",
+    pr_diff:"Medium", top_schools:"LBS · Oxford Saïd · Cambridge Judge",
+    tax_note:"Income tax up to 45% above £125,140. NI contributions.",
+    pros:["1-yr MBA (saves 1 yr vs US)", "No H-1B lottery required", "English-language", "EU access for some roles"],
+    cons:["Brexit limits EU work mobility", "High London living costs", "GBP/USD currency risk", "24-mo post-study only"]
+  },
+  canada: {
+    name:"Canada", flag:"🇨🇦", currency:"CAD", fx:0.74,
+    mba: { tuition_usd:48000, months:20 },
+    masters: { tuition_usd:20000, months:18 },
+    living_yr_usd:18000,
+    post_study:{ name:"Post-Graduation Work Permit (PGWP)", months:36, phd_months:36 },
+    pr_path:"Express Entry / PNP — typically 1-2 years post-graduation",
+    pr_diff:"Accessible (points-based)", top_schools:"Rotman · Ivey / HBA · Schulich",
+    tax_note:"Federal + provincial income tax; competitive for high earners.",
+    pros:["Fast, accessible PR pathway", "3-yr work permit (PGWP)", "Proximity to US market", "Lower COA than US"],
+    cons:["Smaller job market than US", "CAD/USD FX risk", "Some US companies prefer H-1B holders"]
+  },
+  australia: {
+    name:"Australia", flag:"🇦🇺", currency:"AUD", fx:0.65,
+    mba: { tuition_usd:49000, months:18 },
+    masters: { tuition_usd:28000, months:18 },
+    living_yr_usd:20000,
+    post_study:{ name:"Temporary Graduate Visa (subclass 485)", months:36, phd_months:48 },
+    pr_path:"Skilled Independent (189) / Employer Sponsored (186) — 2–4 years",
+    pr_diff:"Moderate (points-based)", top_schools:"Melbourne BS · AGSM · Macquarie",
+    tax_note:"Up to 45% marginal rate + 2% Medicare levy. Strong employer super.",
+    pros:["3-4 yr graduate work visa", "High quality of life", "No H-1B lottery", "Growing tech/finance sector"],
+    cons:["Geographically remote", "Smaller MBA ecosystem", "Points-based PR can be competitive"]
+  },
+  germany: {
+    name:"Germany", flag:"🇩🇪", currency:"EUR", fx:1.08,
+    mba: { tuition_usd:38000, months:18 },
+    masters: { tuition_usd:3200, months:24 }, // public unis ~€0-1.5k/semester
+    living_yr_usd:14000,
+    post_study:{ name:"Job Seeker Visa (§20 AufenthG)", months:18, phd_months:18 },
+    pr_path:"EU Blue Card → Niederlassungserlaubnis (21–33 months with German; 33 without)",
+    pr_diff:"Low with language / Medium without", top_schools:"ESMT Berlin · Mannheim · WHU Otto Beisheim",
+    tax_note:"Income tax up to 45% + solidarity surcharge. Strong social benefits included.",
+    pros:["Very low/free public tuition", "EU-wide mobility", "Strong engineering & manufacturing jobs", "Straightforward Blue Card PR"],
+    cons:["German required for most local roles", "Lower MBA salaries vs. US/UK", "18-mo post-study only", "Bureaucratic process"]
+  },
+  france: {
+    name:"France", flag:"🇫🇷", currency:"EUR", fx:1.08,
+    mba: { tuition_usd:54000, months:16 },
+    masters: { tuition_usd:19000, months:24 },
+    living_yr_usd:16000,
+    post_study:{ name:"APS Recherche d'emploi / Création d'entreprise", months:12, phd_months:12 },
+    pr_path:"Talent Passport (Passeport Talent) → 10-yr carte de résident",
+    pr_diff:"Medium", top_schools:"HEC Paris · INSEAD · ESSEC · Sciences Po",
+    tax_note:"High marginal income tax (45%+). Strong social benefits.",
+    pros:["World-class grandes écoles", "EU-wide work mobility", "Cultural & lifestyle premium", "INSEAD 10-month MBA"],
+    cons:["French essential for local corporate roles", "12-mo APS post-study only", "High overall tax burden", "Complex labor market"]
+  },
+  netherlands: {
+    name:"Netherlands", flag:"🇳🇱", currency:"EUR", fx:1.08,
+    mba: { tuition_usd:30000, months:18 },
+    masters: { tuition_usd:17000, months:18 },
+    living_yr_usd:17000,
+    post_study:{ name:"Orientation Year Permit (Zoekjaar Hoogopgeleiden)", months:12, phd_months:12 },
+    pr_path:"Highly Skilled Migrant → 5 years to permanent residence",
+    pr_diff:"Medium", top_schools:"RSM Rotterdam · Tias · TIAS / Tilburg",
+    tax_note:"30% Ruling for expats (30% tax-free for first 5 years) — substantial benefit.",
+    pros:["30% expat tax ruling", "English-language corporate culture", "EU hub for multinationals", "Lower tuition than US/UK"],
+    cons:["12-mo post-study permit only", "High Amsterdam housing costs", "Smaller domestic MBA market"]
+  },
+  singapore: {
+    name:"Singapore", flag:"🇸🇬", currency:"SGD", fx:0.74,
+    mba: { tuition_usd:53000, months:17 },
+    masters: { tuition_usd:30000, months:12 },
+    living_yr_usd:22000,
+    post_study:{ name:"Employment Pass (EP) via job offer", months:24, phd_months:24 },
+    pr_path:"PR application after 6 months EP — selective, no guaranteed timeline",
+    pr_diff:"Medium-High (discretionary)", top_schools:"NUS Business · NTU Nanyang · SMU Lee Kong Chian",
+    tax_note:"Progressive income tax max 22%. No capital gains tax. CPF contributions for PRs.",
+    pros:["Very low income tax", "Asia-Pacific finance & tech hub", "English is official language", "Gateway to SE Asian markets"],
+    cons:["High city-state living costs", "PR approval discretionary", "Smaller domestic job pool", "EP tied to employer"]
+  },
+  ireland: {
+    name:"Ireland", flag:"🇮🇪", currency:"EUR", fx:1.08,
+    mba: { tuition_usd:27000, months:18 },
+    masters: { tuition_usd:15000, months:12 },
+    living_yr_usd:19000,
+    post_study:{ name:"Third Level Graduate Programme Stay Back", months:24, phd_months:24 },
+    pr_path:"Critical Skills EP → Stamp 4 (after 2 yrs) → Citizenship (after 5 yrs)",
+    pr_diff:"Moderate (Critical Skills list)", top_schools:"UCD Smurfit · Trinity Business · DCU Business",
+    tax_note:"Income tax up to 40% + USC. BUT: FAANG/US multinationals concentrated in Dublin.",
+    pros:["EU access + US multinational ecosystem in Dublin", "English-language", "24-mo stay-back permit", "Accessible PR pathway"],
+    cons:["High Dublin housing costs (severe shortage)", "Smaller MBA talent pool", "USC adds effective tax burden"]
+  }
+};
+
+/* ─── I18N ───────────────────────────────────────────────────── */
+const I18N = {
+  en:{
+    eyebrow:"AL · 31 · Education Path & ROI",
+    tool_title:"International Student Cost Modeler",
+    tool_subtitle:"Model the full financial path of studying in the US on an F-1 visa — visa fees, OPT/STEM OPT earnings window, H-1B lottery odds — or compare the US against 8 alternative study destinations.",
+    tab_us:"US Study Path (F-1)", tab_compare:"Country Comparison",
+    panel_program:"Program Details", panel_costs:"Annual Costs (USD)",
+    panel_visa:"Visa & Entry Costs (USD)", panel_compare_inputs:"Comparison Inputs",
+    lbl_degree:"Degree Type", lbl_duration:"Program Duration (months)", hint_duration:"24 = typical 2-yr master's.",
+    lbl_stem:"STEM-Designated Program?", lbl_stem_yes:"Yes — STEM OPT extension eligible", lbl_stem_no:"No — standard 12-month OPT",
+    hint_stem:"STEM = 24-month OPT extension (36 months total).",
+    lbl_tuition:"Annual Tuition & Fees", lbl_living:"Annual Living Cost",
+    hint_living:"Housing, food, transport. NYC/SF: ~$32k. Midwest: ~$18k.",
+    lbl_health:"Health Insurance (USD/yr)", hint_health:"Many programs mandate enrollment in school plan.",
+    lbl_home_country:"Home Country", hint_country:"US visa reciprocity fee varies by passport.",
+    lbl_flights:"Initial Flights & Relocation",
+    lbl_salary_opt:"Expected OPT Salary (USD/yr)", hint_salary_opt:"Base salary during OPT/STEM OPT.",
+    btn_run_us:"Calculate US Path Costs →",
+    lbl_alt_country:"Compare US Against",
+    lbl_us_tuition:"US Annual Tuition (USD)", lbl_us_salary:"Expected US Post-Grad Salary (USD/yr)",
+    btn_run_compare:"Compare Countries →",
+    head_total_cost:"Total Program Cost", head_opt_window:"OPT / STEM OPT Earnings Window",
+    head_h1b:"H-1B Lottery Historical Rates (FY2020–2024)", head_pros_cons:"Pros & Cons",
+    lbl_export:"Export", lbl_handoff:"Continue With",
+    toast_ap2:"AP2 JSON downloaded.", toast_md:"Markdown downloaded.",
+    err_fill:"Please fill in all required fields."
+  },
+  es:{
+    eyebrow:"AL · 31 · Educación & ROI",
+    tool_title:"Modelador de Costos para Estudiantes Internacionales",
+    tool_subtitle:"Modela el camino financiero completo de estudiar en EE.UU. con visa F-1 — cuotas de visa, ventana de ingresos OPT/STEM OPT, probabilidades H-1B — o compara EE.UU. con 8 destinos alternativos.",
+    tab_us:"Ruta de Estudio EE.UU. (F-1)", tab_compare:"Comparación de Países",
+    panel_program:"Detalles del Programa", panel_costs:"Costos Anuales (USD)",
+    panel_visa:"Costos de Visa y Entrada (USD)", panel_compare_inputs:"Parámetros de Comparación",
+    lbl_degree:"Tipo de Título", lbl_duration:"Duración del Programa (meses)", hint_duration:"24 = maestría típica de 2 años.",
+    lbl_stem:"¿Programa Designado STEM?", lbl_stem_yes:"Sí — elegible para extensión STEM OPT", lbl_stem_no:"No — OPT estándar de 12 meses",
+    hint_stem:"STEM = extensión OPT de 24 meses (36 meses en total).",
+    lbl_tuition:"Matrícula y Cuotas Anuales", lbl_living:"Costo de Vida Anual",
+    hint_living:"Vivienda, comida, transporte.",
+    lbl_health:"Seguro de Salud (USD/año)", hint_health:"Muchos programas exigen inscripción en el plan de la escuela.",
+    lbl_home_country:"País de Origen", hint_country:"La cuota de reciprocidad de visa varía por pasaporte.",
+    lbl_flights:"Vuelos Iniciales y Reubicación",
+    lbl_salary_opt:"Salario OPT Esperado (USD/año)", hint_salary_opt:"Salario base durante OPT/STEM OPT.",
+    btn_run_us:"Calcular Costos de Ruta EE.UU. →",
+    lbl_alt_country:"Comparar EE.UU. Con",
+    lbl_us_tuition:"Matrícula Anual EE.UU. (USD)", lbl_us_salary:"Salario Post-Grado EE.UU. Esperado (USD/año)",
+    btn_run_compare:"Comparar Países →",
+    head_total_cost:"Costo Total del Programa", head_opt_window:"Ventana de Ingresos OPT / STEM OPT",
+    head_h1b:"Tasas Históricas Lotería H-1B (FY2020–2024)", head_pros_cons:"Pros y Contras",
+    lbl_export:"Exportar", lbl_handoff:"Continuar Con",
+    toast_ap2:"JSON AP2 descargado.", toast_md:"Markdown descargado.", err_fill:"Complete todos los campos requeridos."
+  },
+  fr:{ eyebrow:"AL · 31 · Parcours Éducatif & ROI", tool_title:"Modélisateur de Coûts Étudiant International", tool_subtitle:"Modélisez le parcours financier complet d'une étude aux États-Unis sous visa F-1, ou comparez avec 8 destinations alternatives.", tab_us:"Parcours US (F-1)", tab_compare:"Comparaison Pays", panel_program:"Détails du Programme", panel_costs:"Coûts Annuels (USD)", panel_visa:"Frais de Visa et d'Entrée (USD)", panel_compare_inputs:"Paramètres de Comparaison", lbl_degree:"Type de Diplôme", lbl_duration:"Durée du Programme (mois)", hint_duration:"24 = master typique 2 ans.", lbl_stem:"Programme Désigné STEM?", lbl_stem_yes:"Oui — éligible à l'extension STEM OPT", lbl_stem_no:"Non — OPT standard 12 mois", hint_stem:"STEM = extension OPT 24 mois (36 mois total).", lbl_tuition:"Frais de Scolarité Annuels", lbl_living:"Coût de Vie Annuel", hint_living:"Logement, nourriture, transport.", lbl_health:"Assurance Maladie (USD/an)", hint_health:"Nombreux programmes exigent le plan de l'école.", lbl_home_country:"Pays d'Origine", hint_country:"Les frais de réciprocité varient selon le passeport.", lbl_flights:"Vols Initiaux et Déménagement", lbl_salary_opt:"Salaire OPT Attendu (USD/an)", hint_salary_opt:"Salaire de base pendant l'OPT/STEM OPT.", btn_run_us:"Calculer les Coûts →", lbl_alt_country:"Comparer les États-Unis Avec", lbl_us_tuition:"Frais Annuels US (USD)", lbl_us_salary:"Salaire Post-Diplôme US Attendu (USD/an)", btn_run_compare:"Comparer les Pays →", head_total_cost:"Coût Total du Programme", head_opt_window:"Fenêtre de Revenus OPT / STEM OPT", head_h1b:"Taux Historiques Loterie H-1B (FY2020–2024)", head_pros_cons:"Avantages & Inconvénients", lbl_export:"Exporter", lbl_handoff:"Continuer Avec", toast_ap2:"JSON AP2 téléchargé.", toast_md:"Markdown téléchargé.", err_fill:"Veuillez remplir tous les champs requis." },
+  ar:{ eyebrow:"AL · 31 · المسار التعليمي والعائد على الاستثمار", tool_title:"نموذج تكاليف الطالب الدولي", tool_subtitle:"نمذجة المسار المالي الكامل للدراسة في الولايات المتحدة بتأشيرة F-1، أو مقارنة الولايات المتحدة مع 8 وجهات دراسية بديلة.", tab_us:"مسار الدراسة في الولايات المتحدة (F-1)", tab_compare:"مقارنة الدول", panel_program:"تفاصيل البرنامج", panel_costs:"التكاليف السنوية (دولار)", panel_visa:"رسوم التأشيرة والدخول (دولار)", panel_compare_inputs:"معطيات المقارنة", lbl_degree:"نوع الدرجة العلمية", lbl_duration:"مدة البرنامج (أشهر)", hint_duration:"24 = درجة ماجستير نموذجية لمدة عامين.", lbl_stem:"برنامج STEM؟", lbl_stem_yes:"نعم — مؤهل للتمديد STEM OPT", lbl_stem_no:"لا — OPT قياسي 12 شهراً", hint_stem:"STEM = تمديد OPT 24 شهراً (36 شهراً إجمالاً).", lbl_tuition:"الرسوم الدراسية السنوية", lbl_living:"تكلفة المعيشة السنوية", hint_living:"السكن والطعام والمواصلات.", lbl_health:"التأمين الصحي (دولار/سنة)", hint_health:"تلتزم كثير من البرامج بالتسجيل في خطة المدرسة.", lbl_home_country:"البلد الأصلي", hint_country:"رسوم المعاملة بالمثل تختلف حسب جواز السفر.", lbl_flights:"الرحلات الأولية والانتقال", lbl_salary_opt:"الراتب المتوقع خلال OPT (دولار/سنة)", hint_salary_opt:"الراتب الأساسي خلال OPT/STEM OPT.", btn_run_us:"احسب تكاليف المسار ←", lbl_alt_country:"مقارنة الولايات المتحدة مع", lbl_us_tuition:"الرسوم الدراسية السنوية في الولايات المتحدة (دولار)", lbl_us_salary:"الراتب المتوقع بعد التخرج في الولايات المتحدة (دولار/سنة)", btn_run_compare:"مقارنة الدول ←", head_total_cost:"التكلفة الإجمالية للبرنامج", head_opt_window:"نافذة دخل OPT / STEM OPT", head_h1b:"معدلات اليانصيب التاريخية H-1B (2020-2024)", head_pros_cons:"الإيجابيات والسلبيات", lbl_export:"تصدير", lbl_handoff:"المتابعة مع", toast_ap2:"تم تنزيل JSON AP2.", toast_md:"تم تنزيل Markdown.", err_fill:"يرجى ملء جميع الحقول المطلوبة." },
+  pt:{ eyebrow:"AL · 31 · Percurso Educacional & ROI", tool_title:"Modelador de Custos para Estudante Internacional", tool_subtitle:"Modele o caminho financeiro completo de estudar nos EUA com visto F-1, ou compare com 8 destinos alternativos.", tab_us:"Rota de Estudo EUA (F-1)", tab_compare:"Comparação de Países", panel_program:"Detalhes do Programa", panel_costs:"Custos Anuais (USD)", panel_visa:"Custos de Visto e Entrada (USD)", panel_compare_inputs:"Parâmetros de Comparação", lbl_degree:"Tipo de Grau", lbl_duration:"Duração do Programa (meses)", hint_duration:"24 = mestrado típico de 2 anos.", lbl_stem:"Programa Designado STEM?", lbl_stem_yes:"Sim — elegível para extensão STEM OPT", lbl_stem_no:"Não — OPT padrão de 12 meses", hint_stem:"STEM = extensão OPT de 24 meses (36 meses no total).", lbl_tuition:"Mensalidade Anual", lbl_living:"Custo de Vida Anual", hint_living:"Moradia, alimentação, transporte.", lbl_health:"Plano de Saúde (USD/ano)", hint_health:"Muitos programas exigem matrícula no plano da escola.", lbl_home_country:"País de Origem", hint_country:"A taxa de reciprocidade varia por passaporte.", lbl_flights:"Voos Iniciais e Realocação", lbl_salary_opt:"Salário OPT Esperado (USD/ano)", hint_salary_opt:"Salário base durante OPT/STEM OPT.", btn_run_us:"Calcular Custos da Rota EUA →", lbl_alt_country:"Comparar EUA Com", lbl_us_tuition:"Mensalidade Anual EUA (USD)", lbl_us_salary:"Salário Pós-Graduação EUA Esperado (USD/ano)", btn_run_compare:"Comparar Países →", head_total_cost:"Custo Total do Programa", head_opt_window:"Janela de Ganhos OPT / STEM OPT", head_h1b:"Taxas Históricas da Loteria H-1B (AF2020–2024)", head_pros_cons:"Prós & Contras", lbl_export:"Exportar", lbl_handoff:"Continuar Com", toast_ap2:"JSON AP2 baixado.", toast_md:"Markdown baixado.", err_fill:"Preencha todos os campos obrigatórios." },
+  zh:{ eyebrow:"AL · 31 · 教育路径与投资回报", tool_title:"国际学生费用建模工具", tool_subtitle:"模拟F-1签证在美留学的完整财务路径——签证费用、OPT/STEM OPT收入窗口、H-1B抽签概率——或将美国与8个备选留学目的地进行比较。", tab_us:"美国留学路径（F-1）", tab_compare:"国家比较", panel_program:"项目详情", panel_costs:"年度费用（美元）", panel_visa:"签证及入境费用（美元）", panel_compare_inputs:"比较参数", lbl_degree:"学位类型", lbl_duration:"项目时长（月）", hint_duration:"24 = 典型两年制硕士。", lbl_stem:"是否为STEM专业？", lbl_stem_yes:"是——可申请STEM OPT延期", lbl_stem_no:"否——标准12个月OPT", hint_stem:"STEM = 额外24个月OPT延期（共36个月）。", lbl_tuition:"年度学费及费用", lbl_living:"年度生活费", hint_living:"住房、餐饮、交通。纽约/旧金山约$32k，中西部约$18k。", lbl_health:"医疗保险（美元/年）", hint_health:"许多项目强制参加学校保险计划。", lbl_home_country:"祖国/母国", hint_country:"美国签证互惠费因护照国籍而异。", lbl_flights:"初始机票及搬迁费用", lbl_salary_opt:"预期OPT薪资（美元/年）", hint_salary_opt:"OPT/STEM OPT期间的基本薪资。", btn_run_us:"计算美国路径费用 →", lbl_alt_country:"将美国与以下国家比较", lbl_us_tuition:"美国年度学费（美元）", lbl_us_salary:"预期美国毕业后薪资（美元/年）", btn_run_compare:"比较国家 →", head_total_cost:"项目总费用", head_opt_window:"OPT / STEM OPT 收入窗口", head_h1b:"H-1B抽签历史数据（FY2020–2024）", head_pros_cons:"优缺点", lbl_export:"导出", lbl_handoff:"继续前往", toast_ap2:"AP2 JSON已下载。", toast_md:"Markdown已下载。", err_fill:"请填写所有必填字段。" }
+};
+
+/* ─── STATE ──────────────────────────────────────────────────── */
+let currentLang = 'en';
+let lastUSResult = null;
+
+/* ─── LANG ───────────────────────────────────────────────────── */
+function setLang(lang) {
+  currentLang = lang;
+  try { sessionStorage.setItem('apex_lang', lang); } catch(e) {}
+  document.querySelectorAll('.lang-btn').forEach(b =>
+    b.classList.toggle('active', b.textContent.trim().toLowerCase()===lang||(lang==='zh'&&b.textContent.trim()==='中文')));
+  document.documentElement.dir = lang==='ar' ? 'rtl' : 'ltr';
+  document.documentElement.lang = lang;
+  applyI18n();
+  updateStemLabel();
+}
+function t(key) { return (I18N[currentLang]||I18N.en)[key]||I18N.en[key]||key; }
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (el.tagName==='INPUT') el.placeholder=t(k); else el.textContent=t(k);
+  });
+}
+function updateStemLabel() {
+  const isStem = document.getElementById('isStem').checked;
+  document.getElementById('stemLabel').textContent = isStem ? t('lbl_stem_yes') : t('lbl_stem_no');
+}
+
+/* ─── TAB SWITCHING ──────────────────────────────────────────── */
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('pane-'+tab).classList.add('active');
+}
+
+function onUSInput() { updateStemLabel(); }
+function onCompareInput() {}
+
+/* ─── US PATH CALCULATION ────────────────────────────────────── */
+function runUS() {
+  const months = parseFloat(document.getElementById('programMonths').value) || 24;
+  const isStem = document.getElementById('isStem').checked;
+  const tuitionYr = parseFloat(document.getElementById('annualTuition').value) || 55000;
+  const livingYr = parseFloat(document.getElementById('annualLiving').value) || 22000;
+  const healthYr = parseFloat(document.getElementById('healthIns').value) || 2500;
+  const reciprocity = parseFloat(document.getElementById('homeCountry').value) || 0;
+  const flights = parseFloat(document.getElementById('flightCost').value) || 2000;
+  const optSalary = parseFloat(document.getElementById('expectedSalary').value) || 110000;
+
+  const yrs = months / 12;
+  const tuitionTotal = tuitionYr * yrs;
+  const livingTotal = livingYr * yrs;
+  const healthTotal = healthYr * yrs;
+  const annualCOA = tuitionYr + livingYr + healthYr;
+  const programCOA = annualCOA * yrs;
+
+  const visaFees = VISA_FEES.ds160 + VISA_FEES.sevis + reciprocity + VISA_FEES.medical;
+  const optFees = VISA_FEES.opt_i765 + (isStem ? VISA_FEES.stem_opt_i765 : 0);
+  const totalInvestment = programCOA + visaFees + optFees + flights;
+
+  const optMonths = isStem ? 36 : 12;
+  const optEarnings = optSalary * (optMonths / 12) * 0.72; // approx after-tax
+
+  // H-1B probability
+  const h1bRate = CURRENT_H1B_RATE;
+  const attempts = isStem ? 3 : 1; // STEM OPT gives 3 annual H-1B windows
+  const p_atleast1 = 1 - Math.pow(1 - h1bRate, attempts);
+
+  // 10-yr expected value of US path if H-1B succeeds
+  const ev_us = optEarnings + p_atleast1 * optSalary * 0.72 * 10;
+
+  lastUSResult = {
+    months, isStem, tuitionYr, livingYr, healthYr, reciprocity, flights, optSalary,
+    yrs, tuitionTotal, livingTotal, healthTotal, annualCOA, programCOA,
+    visaFees, optFees, totalInvestment, optMonths, optEarnings,
+    h1bRate, attempts, p_atleast1, ev_us
+  };
+
+  renderCostTable(lastUSResult);
+  renderOPTSection(lastUSResult);
+  renderH1BSection(lastUSResult);
+  document.getElementById('usResults').classList.add('visible');
+  setTimeout(() => document.getElementById('usResults').scrollIntoView({ behavior:'smooth', block:'start' }), 50);
+}
+
+function renderCostTable(r) {
+  document.getElementById('costTable').innerHTML = `
+    <tr><td class="row-label">Annual Tuition & Fees</td><td class="row-val">$${r.tuitionYr.toLocaleString()}</td></tr>
+    <tr><td class="row-label">Annual Living Costs</td><td class="row-val">$${r.livingYr.toLocaleString()}</td></tr>
+    <tr><td class="row-label">Annual Health Insurance</td><td class="row-val">$${r.healthYr.toLocaleString()}</td></tr>
+    <tr><td class="row-label">Annual COA Subtotal</td><td class="row-val">$${r.annualCOA.toLocaleString()}</td></tr>
+    <tr><td class="row-label">Program Duration</td><td class="row-val">${r.months} months (${r.yrs.toFixed(1)} yrs)</td></tr>
+    <tr><td class="row-label">Total Program COA</td><td class="row-val">$${Math.round(r.programCOA).toLocaleString()}</td></tr>
+    <tr class="total-row"><td class="row-label" style="padding-top:10px;">DS-160 Application Fee</td><td class="row-val" style="padding-top:10px;">$${VISA_FEES.ds160}</td></tr>
+    <tr><td class="row-label">SEVIS I-901 Fee</td><td class="row-val">$${VISA_FEES.sevis}</td></tr>
+    <tr><td class="row-label">Visa Reciprocity Fee (est.)</td><td class="row-val">$${r.reciprocity}</td></tr>
+    <tr><td class="row-label">Medical Exam (est.)</td><td class="row-val">$${VISA_FEES.medical}</td></tr>
+    <tr><td class="row-label">Initial Flights & Relocation</td><td class="row-val">$${r.flights.toLocaleString()}</td></tr>
+    <tr><td class="row-label">OPT I-765 Filing Fee${r.isStem ? ' (×2 incl. STEM extension)' : ''}</td><td class="row-val">$${r.optFees.toLocaleString()}</td></tr>
+    <tr class="total-row"><td class="row-label amber" style="font-weight:700;padding-top:10px;">TOTAL INVESTMENT</td><td class="row-val amber" style="padding-top:10px;">$${Math.round(r.totalInvestment).toLocaleString()}</td></tr>`;
+}
+
+function renderOPTSection(r) {
+  document.getElementById('optMetrics').innerHTML = `
+    <div class="metric-item"><div class="metric-label">OPT Type</div><div class="metric-val amber">${r.isStem ? 'STEM OPT (36 mo)' : 'Standard OPT (12 mo)'}</div></div>
+    <div class="metric-item"><div class="metric-label">Work Auth Window</div><div class="metric-val">${r.optMonths} months</div></div>
+    <div class="metric-item"><div class="metric-label">Expected OPT Salary</div><div class="metric-val teal">$${r.optSalary.toLocaleString()}/yr</div></div>
+    <div class="metric-item"><div class="metric-label">OPT Earnings (after-tax est.)</div><div class="metric-val green">$${Math.round(r.optEarnings).toLocaleString()}</div></div>
+    <div class="metric-item"><div class="metric-label">H-1B Attempts During OPT</div><div class="metric-val">${r.attempts} attempt${r.attempts>1?'s':''}</div></div>
+    <div class="metric-item"><div class="metric-label">OPT App Fee (I-765)</div><div class="metric-val coral">$${r.optFees.toLocaleString()}</div></div>`;
+  document.getElementById('optNote').innerHTML = `<p>
+    ${r.isStem
+      ? `<strong>STEM OPT advantage:</strong> Your STEM-designated program qualifies you for a 24-month extension on top of the standard 12-month OPT — <strong>36 months total</strong>. This gives you <strong>3 H-1B lottery cycles</strong> to attempt sponsorship before your work authorization expires.`
+      : `<strong>Standard OPT:</strong> 12 months of post-graduation work authorization. This gives you <strong>1 H-1B lottery cycle</strong>. Consider a STEM-CIP designated program or master's track if extended stay is a priority.`
+    }
+    OPT earnings of <strong>~$${Math.round(r.optEarnings).toLocaleString()}</strong> partially offset your total investment of <strong>$${Math.round(r.totalInvestment).toLocaleString()}</strong>.
+  </p>`;
+}
+
+function renderH1BSection(r) {
+  // Lottery bars
+  const maxRate = Math.max(...H1B_DATA.map(d=>d.rate));
+  document.getElementById('lotteryBars').innerHTML = H1B_DATA.map(d => {
+    const w = (d.rate / maxRate * 100).toFixed(1);
+    const color = d.rate > 30 ? 'var(--green)' : d.rate > 20 ? 'var(--amber)' : 'var(--coral)';
+    return `<div class="lottery-row">
+      <span class="lottery-yr">${d.fy}</span>
+      <div class="lottery-track">
+        <div class="lottery-fill" style="width:${w}%;background:${color};">
+          <span class="lottery-fill-label">${d.rate}%</span>
+        </div>
+      </div>
+      <span class="lottery-n">${(d.regs/1000).toFixed(0)}k regs</span>
+    </div>`;
+  }).join('');
+
+  // Probability boxes
+  const single = (r.h1bRate*100).toFixed(1);
+  const multi = (r.p_atleast1*100).toFixed(1);
+  document.getElementById('lotteryProbs').innerHTML = `
+    <div class="prob-box">
+      <div class="prob-big">${single}%</div>
+      <div class="prob-label">Single-Year Selection Rate (FY2024)</div>
+      <div class="prob-sub">~1 in ${Math.round(1/r.h1bRate)} registrations selected</div>
+    </div>
+    <div class="prob-box">
+      <div class="prob-big" style="color:${r.isStem?'var(--green)':'var(--amber)'}">${multi}%</div>
+      <div class="prob-label">${r.attempts}-Attempt Cumulative Probability</div>
+      <div class="prob-sub">${r.isStem ? 'STEM OPT: 3 lottery cycles' : '1 cycle — non-STEM OPT'}</div>
+    </div>`;
+
+  document.getElementById('lotteryNote').innerHTML = `<p>
+    At the FY2024 rate of <strong>${single}%</strong>, ${r.isStem
+      ? `a STEM OPT holder has a <strong>${multi}% cumulative probability</strong> of H-1B selection across 3 lottery cycles — still a majority-outcome of <em>not</em> being selected. Have a contingency plan: cap-exempt employers (universities, non-profits), Canada/Australia alternative visas, or return to home country are all common paths.`
+      : `a non-STEM OPT holder has a <strong>${multi}% probability</strong> in a single lottery cycle. Seek employers with cap-exempt status (research universities, §501(c)(3) non-profits) or consider STEM-designated programs for a longer window.`
+    }
+    <strong>Note:</strong> USCIS H-1B lottery rates reflect unique registrations after deduplication (FY2024 rule change). Past rates are not predictive of future outcomes.
+  </p>`;
+}
+
+/* ─── COUNTRY COMPARISON ─────────────────────────────────────── */
+function runCompare() {
+  const countryKey = document.getElementById('altCountry').value;
+  const degreeKey = document.getElementById('cmpDegree').value;
+  const usTuition = parseFloat(document.getElementById('cmpUSTuition').value) || 55000;
+  const usSalary = parseFloat(document.getElementById('cmpUSSalary').value) || 110000;
+
+  const c = COUNTRIES[countryKey];
+  const prog = c[degreeKey] || c.masters;
+
+  const usMonths = degreeKey==='mba' ? 24 : 24;
+  const altMonths = prog.months;
+  const usLiving = 22000; // default US living
+  const usTotal = usTuition * (usMonths/12) + usLiving * (usMonths/12) +
+                  2500 * (usMonths/12) + VISA_FEES.ds160 + VISA_FEES.sevis + VISA_FEES.medical + 2000;
+  const altTotal = prog.tuition_usd + c.living_yr_usd * (altMonths/12);
+  const usOPT = 36; // assume STEM
+  const altWork = c.post_study.months;
+
+  document.getElementById('compareHead').textContent = `${c.flag} US vs. ${c.name}`;
+
+  const usLower = usTotal < altTotal;
+  const altLongerWork = altWork >= usOPT;
+
+  document.getElementById('cmpTable').innerHTML = `
+    <thead>
+      <tr>
+        <th>Metric</th>
+        <th class="us-col">🇺🇸 United States (F-1)</th>
+        <th class="alt-col">${c.flag} ${c.name}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="row-label">Top Schools</td><td class="val-mono" style="font-size:.72rem;">MIT · Stanford · Harvard · Wharton</td><td class="val-mono" style="font-size:.72rem;">${c.top_schools}</td></tr>
+      <tr><td class="row-label">Program Length</td><td class="val-mono">${usMonths} months</td><td class="${altMonths<=usMonths?'best ':''} val-${altMonths<=usMonths?'green':'mono'}">${altMonths} months${altMonths<usMonths?' (shorter)':''}</td></tr>
+      <tr><td class="row-label">Est. Total Program Cost</td>
+        <td class="${usLower?'best ':''} val-${usLower?'green':'coral'}">~$${Math.round(usTotal).toLocaleString()}</td>
+        <td class="${!usLower?'best ':''} val-${!usLower?'green':'coral'}">~$${Math.round(altTotal).toLocaleString()}</td>
+      </tr>
+      <tr><td class="row-label">Post-Study Work Auth</td>
+        <td class="${usOPT>=altWork?'best ':''} val-${usOPT>=altWork?'green':'mono'}">Up to ${usOPT} mo (STEM OPT)</td>
+        <td class="${altLongerWork?'best ':''} val-${altLongerWork?'green':'mono'}">${c.post_study.name}: ${altWork} mo</td>
+      </tr>
+      <tr><td class="row-label">H-1B / Work Visa Lottery</td>
+        <td class="val-coral">~14% annual rate · 3 attempts (STEM)</td>
+        <td class="val-green">No H-1B equivalent — employer-sponsored visa</td>
+      </tr>
+      <tr><td class="row-label">PR / Long-Term Pathway</td>
+        <td class="val-mono" style="font-size:.72rem;">H-1B → EB-2/EB-3 green card (1–10+ yrs)</td>
+        <td class="val-mono" style="font-size:.72rem;">${c.pr_path}</td>
+      </tr>
+      <tr><td class="row-label">PR Difficulty</td>
+        <td class="val-coral">High (lottery + quota backlog)</td>
+        <td class="val-amber">${c.pr_diff}</td>
+      </tr>
+      <tr><td class="row-label">Tax Note</td>
+        <td class="val-mono" style="font-size:.72rem;">Federal 37% top rate + FICA + state (0–13%)</td>
+        <td class="val-mono" style="font-size:.72rem;">${c.tax_note}</td>
+      </tr>
+    </tbody>`;
+
+  document.getElementById('pcSection').innerHTML = `
+    <div class="pc-grid">
+      <div class="pc-box">
+        <div class="pc-title pros">🇺🇸 US Pros</div>
+        <ul class="pc-list">
+          <li class="pc-item pro">Highest absolute salaries for most fields</li>
+          <li class="pc-item pro">World's deepest tech & finance job market</li>
+          <li class="pc-item pro">STEM OPT: 3 H-1B lottery attempts</li>
+          <li class="pc-item pro">Most globally recognized degree prestige</li>
+        </ul>
+      </div>
+      <div class="pc-box">
+        <div class="pc-title cons">🇺🇸 US Cons</div>
+        <ul class="pc-list">
+          <li class="pc-item con">Highest COA of any study destination</li>
+          <li class="pc-item con">H-1B lottery (~14%) = majority risk of not staying</li>
+          <li class="pc-item con">Long, uncertain green card queue (EB backlog)</li>
+          <li class="pc-item con">Health insurance not universal</li>
+        </ul>
+      </div>
+      <div class="pc-box">
+        <div class="pc-title pros">${c.flag} ${c.name} Pros</div>
+        <ul class="pc-list">${c.pros.map(p=>`<li class="pc-item pro">${p}</li>`).join('')}</ul>
+      </div>
+      <div class="pc-box">
+        <div class="pc-title cons">${c.flag} ${c.name} Cons</div>
+        <ul class="pc-list">${c.cons.map(con=>`<li class="pc-item con">${con}</li>`).join('')}</ul>
+      </div>
+    </div>`;
+
+  const savings = altTotal < usTotal ? `$${Math.round(usTotal-altTotal).toLocaleString()} cheaper` : `$${Math.round(altTotal-usTotal).toLocaleString()} more expensive`;
+  document.getElementById('compareNote').innerHTML = `<p>
+    <strong>${c.flag} ${c.name}</strong> is <strong>${savings}</strong> than the US path for a ${degreeKey==='mba'?'full-time MBA':'master\'s'}.
+    Post-study work authorization: <strong>${altWork} months</strong> vs. up to <strong>${usOPT} months</strong> STEM OPT in the US.
+    The key trade-off: the US offers higher salaries but the H-1B lottery creates meaningful long-term residency risk.
+    ${c.name} offers a <strong>${c.pr_diff.toLowerCase()} PR pathway</strong> — worth weighing if long-term settlement is a priority.
+    This comparison uses estimated costs — verify with program offices and immigration counsel before decisions.
+  </p>`;
+
+  document.getElementById('compareResults').classList.add('visible');
+  setTimeout(() => document.getElementById('compareResults').scrollIntoView({ behavior:'smooth', block:'start' }), 50);
+}
+
+/* ─── AP2 EXPORT ─────────────────────────────────────────────── */
+const AP2Schema = {
+  required: [
+    'ap2_version','mandate_id','issued_at','issued_by',
+    'tool_id','tool_version','al_id','mandate_type',
+    'payload','summary','audit_metadata'
+  ],
+  validMandateTypes: [
+    'credential_roi_evaluation','human_capital_assessment',
+    'automation_exposure_score','career_resilience_score',
+    'workforce_program_roi','career_pivot_assessment',
+    'career_transition_record','scholarship_pipeline_plan',
+    'fafsa_sai_estimate','exam_pathway_plan',
+    'benefits_election_record','severance_decision_record',
+    'offer_negotiation_record','graduate_school_roi_record',
+    'apprenticeship_match_record','cpd_credit_record',
+    'job_search_roi_record','career_break_record',
+    'loan_repayment_record','freelance_total_cost_record',
+    'mba_roi_evaluation','test_prep_roi_record',
+    'international_student_cost_record','parent_college_roi_record',
+    'equity_compensation_record'
+  ],
+  validate(m) {
+    const errors = [];
+    if (!m || typeof m !== 'object') return { valid:false, errors:['mandate is not an object'] };
+    this.required.forEach(k => { if (m[k] === undefined || m[k] === null) errors.push(`missing required field: ${k}`); });
+    if (m.ap2_version !== '1.0') errors.push('ap2_version must be "1.0"');
+    if (m.mandate_type && !this.validMandateTypes.includes(m.mandate_type)) errors.push(`mandate_type "${m.mandate_type}" not in enum`);
+    if (m.al_id && !/^AL-\d{1,2}(\+\d{1,2})?$/.test(m.al_id)) errors.push(`al_id "${m.al_id}" malformed`);
+    if (m.audit_metadata) {
+      if (m.audit_metadata.client_side_executed !== true) errors.push('audit_metadata.client_side_executed must be true');
+      if (m.audit_metadata.zero_pii_verified !== true) errors.push('audit_metadata.zero_pii_verified must be true');
+      if (m.audit_metadata.deterministic_run !== true) errors.push('audit_metadata.deterministic_run must be true');
+    }
+    return { valid: errors.length === 0, errors };
+  }
+};
+
+function uuidv4() {
+  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+}
+
+function buildAP2Mandate(r) {
+  const now = new Date();
+  const degType = document.getElementById('degreeType').value;
+  return {
+    ap2_version: "1.0",
+    mandate_id: uuidv4(),
+    issued_at: now.toISOString(),
+    issued_by: "apexlogics.org",
+    tool_id: "international-student-cost-modeler",
+    tool_version: "1.0.0",
+    al_id: "AL-31",
+    mandate_type: "international_student_cost_record",
+    payload: {
+      program: {
+        months: r.months, degree_type: degType,
+        is_stem: r.isStem, annual_tuition_usd: r.tuitionYr,
+        annual_living_usd: r.livingYr, annual_health_ins_usd: r.healthYr
+      },
+      visa_costs: {
+        ds160_usd: VISA_FEES.ds160, sevis_usd: VISA_FEES.sevis,
+        reciprocity_usd: r.reciprocity, medical_usd: VISA_FEES.medical,
+        flights_relocation_usd: r.flights, opt_fees_usd: r.optFees,
+        total_visa_entry_usd: r.visaFees + r.optFees + r.flights
+      },
+      financials: {
+        total_program_coa_usd: Math.round(r.programCOA),
+        total_investment_usd: Math.round(r.totalInvestment),
+        opt_months: r.optMonths,
+        opt_salary_usd: r.optSalary,
+        opt_earnings_aftertax_usd: Math.round(r.optEarnings)
+      },
+      h1b: {
+        fy2024_selection_rate_pct: (CURRENT_H1B_RATE*100).toFixed(1),
+        lottery_attempts: r.attempts,
+        cumulative_probability_pct: (r.p_atleast1*100).toFixed(1),
+        historical_data: H1B_DATA
+      },
+      regulatory_citations: ["8 CFR §214.2(f)","USCIS SEVIS Fee Schedule 2024","INA §101(a)(15)(H)"],
+      downstream_handoffs: ["AL-26","AL-29","AL-30"],
+      disclaimer: "General financial estimates only. Not legal or immigration advice. Consult a licensed immigration attorney and your DSO."
+    },
+    summary: `${degType}, ${r.months} months, STEM: ${r.isStem ? 'Yes' : 'No'}. Total COA: $${Math.round(r.programCOA).toLocaleString()}. Total investment: $${Math.round(r.totalInvestment).toLocaleString()}. OPT earnings (${r.optMonths} mo): $${Math.round(r.optEarnings).toLocaleString()} after tax. H-1B cumulative prob (${r.attempts} attempts): ${(r.p_atleast1*100).toFixed(1)}%.`,
+    audit_metadata: {
+      execution_hash: null,
+      client_side_executed: true,
+      zero_pii_verified: true,
+      deterministic_run: true,
+      data_vintage: "2024"
+    }
+  };
+}
+
+function exportAP2() {
+  if (!lastUSResult) { showToast(t('err_fill'),'error'); return; }
+  const mandate = buildAP2Mandate(lastUSResult);
+  const result = AP2Schema.validate(mandate);
+  if (!result.valid) {
+    showToast('AP2 validation failed: ' + result.errors.join('; '), 'error');
+    return;
+  }
+  downloadJSON(mandate,'AL31_intl_student_cost.ap2.json');
+  document.getElementById('mcpPre').textContent = JSON.stringify(mandate,null,2);
+  showToast(t('toast_ap2'),'success');
+}
+
+function exportMarkdown() {
+  if (!lastUSResult) { showToast(t('err_fill'),'error'); return; }
+  const r = lastUSResult;
+  let md = `# International Student Cost Modeler — AL-31\n**Generated:** ${new Date().toLocaleDateString()}\n\n`;
+  md += `## Program Details\n- Duration: ${r.months} months | STEM: ${r.isStem?'Yes':'No'}\n`;
+  md += `- Annual Tuition: $${r.tuitionYr.toLocaleString()} | Living: $${r.livingYr.toLocaleString()} | Health: $${r.healthYr.toLocaleString()}\n\n`;
+  md += `## Cost Summary\n| Item | Amount |\n|------|--------|\n`;
+  md += `| Total Program COA | $${Math.round(r.programCOA).toLocaleString()} |\n`;
+  md += `| Visa & Entry Fees | $${Math.round(r.visaFees+r.optFees+r.flights).toLocaleString()} |\n`;
+  md += `| **Total Investment** | **$${Math.round(r.totalInvestment).toLocaleString()}** |\n\n`;
+  md += `## OPT / STEM OPT\n- Work Auth: ${r.optMonths} months | OPT Earnings: ~$${Math.round(r.optEarnings).toLocaleString()}\n\n`;
+  md += `## H-1B Lottery\n- FY2024 Rate: ${(CURRENT_H1B_RATE*100).toFixed(1)}% | Attempts: ${r.attempts} | Cumulative Probability: ${(r.p_atleast1*100).toFixed(1)}%\n\n`;
+  md += `---\n*Data: USCIS H-1B FY2020-2024 · 8 CFR §214.2(f) · Not legal advice · CC BY 4.0 · ApexLogics.org*\n`;
+  downloadText(md,'AL31_intl_student_cost.md','text/markdown');
+  showToast(t('toast_md'),'success');
+}
+
+/* ─── MCP / MANIFEST ─────────────────────────────────────────── */
+function toggleMCP() {
+  const btn=document.getElementById('mcpToggle'), panel=document.getElementById('mcpPanel');
+  btn.classList.toggle('open'); panel.classList.toggle('open');
+  if (panel.classList.contains('open') && lastUSResult) {
+    document.getElementById('mcpPre').textContent = JSON.stringify(buildAP2Mandate(lastUSResult),null,2);
+  }
+}
+const MANIFEST = {
+  al_id:"AL-31", title:"International Student Cost Modeler", slug:"international-student-cost-modeler",
+  version:"1.0.0", url:"https://apexlogics.org/tools/international-student-cost-modeler/",
+  category:"education_path_roi", tier:"A",
+  description:"F-1 visa cost model, OPT/STEM OPT earnings window, H-1B lottery odds (FY2020–2024), and 8-country comparison. Legal disclaimer required.",
+  tabs:["US Study Path (F-1)","Country Comparison"],
+  countries_compared:8, h1b_years_data:5,
+  data_sources:["US Dept. of State 2024","USCIS H-1B FY2020-FY2024","8 CFR §214.2","QS Rankings 2024"],
+  personas:["student","parent","counselor"],
+  legal_disclaimer_required:true,
+  regulatory_citations:["8 CFR §214.2(f)","USCIS SEVIS Fee Schedule 2024","INA §101(a)(15)(H)"],
+  ap2:{ export_schema:"international_student_cost_record", inbound_schemas:[], handoff_targets:["AL-26","AL-29","AL-30"] },
+  features:["f1_visa_cost_breakdown","opt_stem_opt_earnings_model","h1b_lottery_historical_bars","8_country_comparison","pros_cons_grid","ap2_json_export","markdown_export","6_language_i18n"],
+  contract:{ version:"1.2", zero_pii:true, zero_network_post_load:true, storage:"sessionStorage:apex_lang only", license:"CC BY 4.0" },
+  built:"2026-05-18", suite:"apexlogics.org"
+};
+function toggleManifest() {
+  const btn=document.getElementById('manifestToggle'), panel=document.getElementById('manifestPanel');
+  btn.classList.toggle('open'); panel.classList.toggle('open');
+  if (panel.classList.contains('open')) document.getElementById('manifestPre').textContent=JSON.stringify(MANIFEST,null,2);
+}
+
+/* ─── FILE UTILS ─────────────────────────────────────────────── */
+function downloadJSON(obj,fn){ const b=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}); triggerDownload(b,fn); }
+function downloadText(txt,fn,mime){ triggerDownload(new Blob([txt],{type:mime}),fn); }
+function triggerDownload(blob,fn){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fn; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href); }
+function showToast(msg,type=''){ const el=document.getElementById('toast'); el.textContent=msg; el.className='toast show '+type; setTimeout(()=>el.classList.remove('show'),3000); }
+
+/* ─── INIT ───────────────────────────────────────────────────── */
+(function init(){
+  try { const s=sessionStorage.getItem('apex_lang'); if(s&&I18N[s]) currentLang=s; } catch(e){}
+  setLang(currentLang);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parent College ROI Planner — Apex Logics AL-32</title>
+<meta name="description" content="529 projection, SAI/EFC impact, COA by school tier, loan vs. gift split. Free, browser-only, zero PII. AP2-compliant. Built by Apex Advisors.">
+<link rel="canonical" href="https://apexlogics.org/tools/parent-college-roi-planner/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════ DESIGN TOKENS ════════════════════════ */
+:root {
+  --bg:#070B14; --bg-2:#0C1220; --bg-3:#111A2E; --bg-4:#162238;
+  --border:#1C2D48; --border-2:#253754;
+  --muted:#3E5675; --body:#6A8BAE; --text:#A8C4DE; --bright:#D4E8F8; --white:#EEF6FD;
+  --amber:#E8A838; --amber-lt:#F0BD5E; --amber-dim:rgba(232,168,56,.10);
+  --teal:#14B8A6; --teal-dim:rgba(20,184,166,.10); --teal-lt:#2DD4BF;
+  --coral:#F07167; --coral-dim:rgba(240,113,103,.10);
+  --lavender:#A78BFA; --lavender-dim:rgba(167,139,250,.10);
+  --green:#34D399; --green-dim:rgba(52,211,153,.10);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,.10);
+  --red:#F87171; --red-dim:rgba(248,113,113,.10);
+  --warn:#FBBF24;
+  --radius:6px; --radius-lg:10px; --shadow:0 4px 24px rgba(0,0,0,.45);
+  --accent:var(--teal); --accent-lt:var(--teal-lt); --accent-dim:var(--teal-dim);
+}
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html { font-size:16px; scroll-behavior:smooth; }
+body { background:var(--bg); color:var(--text); font-family:'Sora',sans-serif; font-weight:400; line-height:1.6; min-height:100vh; }
+a { color:var(--teal-lt); text-decoration:none; }
+a:hover { text-decoration:underline; }
+
+/* ════════════════════════ NAV ════════════════════════ */
+nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(7,11,20,.92); backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.nav-inner {
+  max-width:860px; margin:0 auto;
+  display:flex; align-items:center; gap:12px;
+  padding:0 20px; height:56px;
+}
+.logo { display:flex; align-items:center; gap:10px; flex-shrink:0; text-decoration:none; }
+.logo-mark { width:30px; height:30px; flex-shrink:0; }
+.logo-mark svg { width:100%; height:100%; }
+.logo-text { display:flex; flex-direction:column; gap:2px; }
+.logo-name { font-family:'JetBrains Mono',monospace; font-size:.9rem; font-weight:500; color:var(--bright); letter-spacing:-.02em; line-height:1; }
+.logo-apex { color:var(--amber); }
+.logo-org { color:var(--muted); font-size:.78rem; }
+.logo-tag { font-size:.48rem; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-family:'JetBrains Mono',monospace; line-height:1; }
+.nav-right { display:flex; align-items:center; gap:4px; margin-left:auto; flex-shrink:0; flex-wrap:wrap; }
+.lang-btn {
+  background:none; border:1px solid var(--border); border-radius:var(--radius);
+  color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.58rem;
+  letter-spacing:.06em; padding:3px 8px; cursor:pointer; transition:all .2s;
+}
+.lang-btn:hover { border-color:var(--teal); color:var(--teal-lt); }
+.lang-btn.active { border-color:var(--teal); color:var(--teal-lt); background:var(--teal-dim); }
+@media(max-width:600px){ .logo-tag { display:none; } }
+
+/* ════════════════════════ LAYOUT ════════════════════════ */
+.container { max-width:860px; margin:0 auto; padding:0 20px 60px; }
+
+/* ════════════════════════ TOOL HEADER ════════════════════════ */
+.tool-header { padding:48px 0 24px; }
+.tool-eyebrow {
+  font-family:'JetBrains Mono',monospace; font-size:.55rem;
+  letter-spacing:.18em; text-transform:uppercase; color:var(--teal);
+  margin-bottom:8px;
+}
+.tool-title { font-family:'DM Serif Display',serif; font-size:clamp(1.8rem,4vw,2.6rem); color:var(--white); line-height:1.15; margin-bottom:10px; }
+.tool-subtitle { font-size:.9rem; color:var(--body); max-width:640px; line-height:1.65; }
+
+/* ════════════════════════ VINTAGE BADGE ════════════════════════ */
+.vintage-badge {
+  display:inline-flex; align-items:center; gap:8px;
+  background:var(--teal-dim); border:1px solid rgba(20,184,166,.3);
+  color:var(--teal-lt); padding:.4rem .8rem; border-radius:var(--radius);
+  font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.04em;
+  margin-top:14px;
+}
+.vintage-dot { width:6px; height:6px; border-radius:50%; background:var(--teal); }
+
+/* ════════════════════════ PII BANNER ════════════════════════ */
+.pii-banner {
+  background:rgba(20,184,166,.06); border:1px solid rgba(20,184,166,.25);
+  border-radius:var(--radius); padding:12px 16px; margin:18px 0;
+  font-size:.78rem; color:var(--teal-lt); display:flex; gap:10px; align-items:flex-start;
+}
+.pii-banner-icon { flex-shrink:0; margin-top:1px; }
+
+/* ════════════════════════ AP2 INBOUND PANEL ════════════════════════ */
+.ap2-inbound { margin-bottom:20px; }
+.ap2-inbound-toggle {
+  background:none; border:1px solid var(--border-2); border-radius:var(--radius);
+  color:var(--body); font-family:'JetBrains Mono',monospace; font-size:.6rem;
+  letter-spacing:.06em; padding:8px 14px; cursor:pointer; width:100%;
+  text-align:left; display:flex; align-items:center; gap:8px;
+  transition:border-color .2s, color .2s;
+}
+.ap2-inbound-toggle:hover { border-color:var(--teal); color:var(--teal-lt); }
+.ap2-inbound-toggle .chevron { margin-left:auto; transition:transform .25s; font-style:normal; }
+.ap2-inbound-toggle.open .chevron { transform:rotate(180deg); }
+.ap2-inbound-body { display:none; margin-top:6px; }
+.ap2-inbound-toggle.open + .ap2-inbound-body { display:block; }
+.ap2-inbound-body textarea {
+  width:100%; height:100px; background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius); color:var(--text); font-family:'JetBrains Mono',monospace;
+  font-size:.65rem; padding:10px; resize:vertical; outline:none;
+}
+.ap2-inbound-body textarea:focus { border-color:var(--teal); }
+.ap2-inbound-body .ap2-load-btn {
+  margin-top:6px; background:var(--teal-dim); border:1px solid rgba(20,184,166,.3);
+  color:var(--teal-lt); font-family:'Sora',sans-serif; font-size:.75rem;
+  padding:6px 14px; border-radius:var(--radius); cursor:pointer; transition:background .2s;
+}
+.ap2-inbound-body .ap2-load-btn:hover { background:rgba(20,184,166,.2); }
+
+/* ════════════════════════ TABS ════════════════════════ */
+.tab-bar { display:flex; gap:4px; margin-bottom:20px; border-bottom:2px solid var(--border); padding-bottom:0; }
+.tab-btn {
+  background:none; border:none; padding:10px 18px; cursor:pointer;
+  font-family:'Sora',sans-serif; font-size:.8rem; color:var(--muted);
+  border-bottom:2px solid transparent; margin-bottom:-2px; transition:color .2s, border-color .2s;
+}
+.tab-btn:hover { color:var(--text); }
+.tab-btn.active { color:var(--teal-lt); border-bottom-color:var(--teal); }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+
+/* ════════════════════════ SECTION LABELS ════════════════════════ */
+.section-label {
+  font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted); margin:24px 0 12px;
+  border-bottom:1px solid var(--border); padding-bottom:6px;
+}
+
+/* ════════════════════════ GRID ════════════════════════ */
+.input-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 20px; }
+.input-grid.triple { grid-template-columns:1fr 1fr 1fr; }
+.input-group { display:flex; flex-direction:column; gap:5px; }
+.input-group.span2 { grid-column:span 2; }
+label { font-size:.75rem; color:var(--body); }
+input[type="number"], input[type="text"], select {
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius); color:var(--white); font-family:'Sora',sans-serif;
+  font-size:.85rem; padding:9px 12px; outline:none; width:100%;
+  transition:border-color .2s;
+}
+input[type="number"]:focus, input[type="text"]:focus, select:focus { border-color:var(--teal); }
+select option { background:var(--bg-3); }
+.input-hint { font-size:.68rem; color:var(--muted); margin-top:2px; }
+
+/* ════════════════════════ RUN BUTTON ════════════════════════ */
+.run-row { margin-top:24px; }
+.run-btn {
+  width:100%; padding:14px 24px;
+  background:var(--teal); color:var(--bg); border:none;
+  border-radius:var(--radius);
+  font-family:'Sora',sans-serif; font-size:.9rem; font-weight:600;
+  cursor:pointer; letter-spacing:.02em; transition:background .2s, transform .1s;
+}
+.run-btn:hover { background:var(--teal-lt); }
+.run-btn:active { transform:translateY(1px); }
+
+/* ════════════════════════ RESULTS PANEL ════════════════════════ */
+.results-panel { display:none; margin-top:28px; }
+.results-panel.visible { display:block; }
+
+/* ════════════════════════ STAT BOXES ════════════════════════ */
+.stat-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:16px 0; }
+.stat-box {
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:16px;
+  display:flex; flex-direction:column; gap:4px;
+}
+.stat-box.highlight { border-color:rgba(20,184,166,.4); background:var(--teal-dim); }
+.stat-box.warn { border-color:rgba(251,191,36,.4); background:rgba(251,191,36,.07); }
+.stat-box.alert { border-color:rgba(248,113,113,.4); background:var(--red-dim); }
+.stat-n { font-family:'DM Serif Display',serif; font-size:1.5rem; color:var(--white); }
+.stat-n.teal { color:var(--teal-lt); }
+.stat-n.amber { color:var(--amber); }
+.stat-n.red { color:var(--red); }
+.stat-l { font-size:.72rem; color:var(--body); }
+
+/* ════════════════════════ TABLE ════════════════════════ */
+.results-table { width:100%; border-collapse:collapse; margin:16px 0; font-size:.82rem; }
+.results-table th {
+  background:var(--bg-3); color:var(--body); font-weight:500;
+  padding:10px 12px; text-align:left; border-bottom:1px solid var(--border);
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; letter-spacing:.06em; text-transform:uppercase;
+}
+.results-table td { padding:9px 12px; border-bottom:1px solid var(--border); color:var(--text); }
+.results-table tr:last-child td { border-bottom:none; }
+.results-table tr.total-row td { color:var(--white); font-weight:600; background:var(--bg-3); }
+.results-table td.money { font-family:'JetBrains Mono',monospace; font-size:.8rem; text-align:right; }
+.results-table th.right { text-align:right; }
+
+/* ════════════════════════ PROGRESS BAR ════════════════════════ */
+.progress-label { font-size:.75rem; color:var(--body); margin-bottom:6px; }
+.progress-track {
+  background:var(--bg-3); border-radius:4px; height:10px; overflow:hidden;
+  border:1px solid var(--border); margin-bottom:4px;
+}
+.progress-fill { height:100%; border-radius:4px; transition:width .5s ease; }
+.progress-fill.teal { background:var(--teal); }
+.progress-fill.amber { background:var(--amber); }
+.progress-fill.red { background:var(--red); }
+.progress-stack { display:flex; height:10px; border-radius:4px; overflow:hidden; border:1px solid var(--border); margin-bottom:8px; }
+.progress-stack .seg { height:100%; transition:width .5s ease; }
+
+/* ════════════════════════ COMPARISON TABLE ════════════════════════ */
+.comp-table { width:100%; border-collapse:collapse; margin:16px 0; font-size:.82rem; }
+.comp-table th {
+  background:var(--bg-3); color:var(--body); font-weight:500;
+  padding:10px 12px; border-bottom:1px solid var(--border);
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; letter-spacing:.06em; text-transform:uppercase;
+}
+.comp-table td { padding:9px 12px; border-bottom:1px solid var(--border); color:var(--text); vertical-align:top; }
+.comp-table tr:last-child td { border-bottom:none; }
+.comp-table td.val { font-family:'JetBrains Mono',monospace; font-size:.8rem; text-align:center; }
+.comp-table td.row-label { color:var(--body); font-size:.78rem; }
+.comp-table .best { color:var(--teal-lt); font-weight:600; }
+.comp-table .worst { color:var(--red); }
+.comp-table th.center { text-align:center; }
+.comp-table thead tr th:first-child { text-align:left; }
+
+/* ════════════════════════ LOAN PANEL ════════════════════════ */
+.loan-panel {
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:20px; margin:16px 0;
+}
+.loan-panel-title { font-family:'JetBrains Mono',monospace; font-size:.65rem; letter-spacing:.12em; text-transform:uppercase; color:var(--teal); margin-bottom:14px; }
+.loan-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--border); font-size:.83rem; }
+.loan-row:last-child { border-bottom:none; }
+.loan-row .lkey { color:var(--body); }
+.loan-row .lval { font-family:'JetBrains Mono',monospace; color:var(--white); }
+.loan-row .lval.teal { color:var(--teal-lt); }
+.loan-row .lval.warn { color:var(--warn); }
+
+/* ════════════════════════ SUMMARY BOX ════════════════════════ */
+.summary-box {
+  background:var(--bg-3); border:1px solid var(--border-2);
+  border-radius:var(--radius-lg); padding:20px; margin:16px 0;
+  border-left:3px solid var(--teal);
+}
+.summary-box p { font-size:.85rem; color:var(--text); line-height:1.7; }
+.summary-box strong { color:var(--white); }
+.summary-box .tag { display:inline-block; background:var(--teal-dim); color:var(--teal-lt); border:1px solid rgba(20,184,166,.3); padding:2px 8px; border-radius:3px; font-size:.72rem; font-family:'JetBrains Mono',monospace; margin:0 2px; }
+
+/* ════════════════════════ SCHOOL SELECT (Tab 2) ════════════════════════ */
+.school-select-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin:16px 0; }
+.school-slot { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:14px; }
+.school-slot-label { font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.12em; text-transform:uppercase; color:var(--teal); margin-bottom:8px; }
+
+/* ════════════════════════ EXPORT ROW ════════════════════════ */
+.results-export-row { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; padding-top:16px; border-top:1px solid var(--border); }
+.exp-btn {
+  background:var(--bg-2); border:1px solid var(--border-2);
+  border-radius:var(--radius); color:var(--text);
+  font-family:'JetBrains Mono',monospace; font-size:.6rem;
+  letter-spacing:.06em; padding:8px 16px; cursor:pointer; transition:border-color .2s, color .2s;
+}
+.exp-btn:hover { border-color:var(--teal); color:var(--teal-lt); }
+.exp-btn.ap2 { border-color:rgba(20,184,166,.4); color:var(--teal-lt); }
+.exp-btn.ap2:hover { background:var(--teal-dim); }
+
+/* ════════════════════════ MCP / MANIFEST PANEL ════════════════════════ */
+.mcp-toggle {
+  background:none; border:1px solid var(--border); border-radius:var(--radius);
+  color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.58rem;
+  letter-spacing:.06em; padding:7px 14px; cursor:pointer; width:100%;
+  text-align:left; margin-top:10px; transition:border-color .2s, color .2s;
+}
+.mcp-toggle:hover { border-color:var(--teal); color:var(--teal-lt); }
+.mcp-toggle.open { border-color:var(--teal); color:var(--teal-lt); }
+.mcp-panel { display:none; background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius); margin-top:4px; }
+.mcp-panel.open { display:block; }
+.mcp-panel pre { padding:16px; font-family:'JetBrains Mono',monospace; font-size:.65rem; color:var(--text); white-space:pre-wrap; overflow-x:auto; }
+
+/* ════════════════════════ FOOTER ════════════════════════ */
+.tool-footer { margin-top:40px; padding-top:20px; border-top:1px solid var(--border); text-align:center; font-size:.7rem; color:var(--muted); line-height:1.8; }
+.tool-footer a { color:var(--muted); }
+.tool-footer a:hover { color:var(--teal-lt); }
+
+/* ════════════════════════ TOAST ════════════════════════ */
+#toast { position:fixed; bottom:24px; right:24px; background:var(--bg-3); border:1px solid var(--border-2); color:var(--text); padding:12px 20px; border-radius:var(--radius); font-size:.8rem; opacity:0; pointer-events:none; transition:opacity .3s; z-index:999; max-width:320px; }
+#toast.show { opacity:1; }
+#toast.success { border-color:rgba(20,184,166,.5); color:var(--teal-lt); }
+#toast.error { border-color:rgba(248,113,113,.5); color:var(--red); }
+
+/* ════════════════════════ RTL ════════════════════════ */
+[dir="rtl"] .tab-bar { flex-direction:row-reverse; }
+[dir="rtl"] .loan-row { flex-direction:row-reverse; }
+
+/* (lang-btn styles defined in nav section above) */
+
+/* ════════════════════════ RESPONSIVE ════════════════════════ */
+@media(max-width:600px){
+  .input-grid { grid-template-columns:1fr; }
+  .input-grid.triple { grid-template-columns:1fr 1fr; }
+  .stat-row { grid-template-columns:1fr 1fr; }
+  .school-select-row { grid-template-columns:1fr; }
+  .input-group.span2 { grid-column:span 1; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════ NAV ════ -->
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-right" role="navigation" aria-label="Language selector">
+      <button class="lang-btn active" id="lb-en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" id="lb-es" onclick="setLang('es')">ES</button>
+      <button class="lang-btn" id="lb-fr" onclick="setLang('fr')">FR</button>
+      <button class="lang-btn" id="lb-ar" onclick="setLang('ar')">AR</button>
+      <button class="lang-btn" id="lb-pt" onclick="setLang('pt')">PT</button>
+      <button class="lang-btn" id="lb-zh" onclick="setLang('zh')">中文</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- ════ HEADER ════ -->
+  <header class="tool-header">
+    <div class="tool-eyebrow">AL · 32 · Student Finance &amp; Debt</div>
+    <h1 class="tool-title" data-i18n="title">Parent College ROI Planner</h1>
+    <p class="tool-subtitle" data-i18n="subtitle">Model your child's full 4-year cost of attendance, project your 529 balance, calculate the SAI/Pell aid gap, and compare loan vs. gift-aid scenarios — entirely in your browser.</p>
+    <div class="vintage-badge"><span class="vintage-dot"></span> NCES IPEDS 2023-24 · Federal Pell Grant 2024-25 · Parent PLUS 7.54% (2024-25)</div>
+  </header>
+
+  <!-- ════ PII BANNER ════ -->
+  <div class="pii-banner" role="note">
+    <span class="pii-banner-icon">🔒</span>
+    <span>🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+  </div>
+
+  <!-- ════ AP2 INBOUND (AL-17) ════ -->
+  <div class="ap2-inbound">
+    <button class="ap2-inbound-toggle" id="ap2InboundToggle" onclick="toggleAp2Inbound()">
+      ↙ Import AP2 from AL-17 FAFSA SAI Simulator — auto-fill SAI
+      <em class="chevron">▾</em>
+    </button>
+    <div class="ap2-inbound-body" id="ap2InboundBody">
+      <textarea id="ap2InboundText" placeholder='Paste AP2 JSON from AL-17 (fafsa_sai_estimate) here…'></textarea>
+      <button class="ap2-load-btn" onclick="loadAp2Inbound()">Load SAI from AP2 →</button>
+    </div>
+  </div>
+
+  <!-- ════ TAB BAR ════ -->
+  <div class="tab-bar" role="tablist">
+    <button class="tab-btn active" id="tab-t1" role="tab" aria-selected="true" onclick="switchTab('t1')" data-i18n-tab="tab1">529 &amp; Aid Gap</button>
+    <button class="tab-btn" id="tab-t2" role="tab" aria-selected="false" onclick="switchTab('t2')" data-i18n-tab="tab2">School Comparison</button>
+  </div>
+
+  <!-- ════════════ TAB 1: 529 & AID GAP ════════════ -->
+  <div class="tab-panel active" id="panel-t1" role="tabpanel">
+
+    <div class="section-label" data-i18n="sec_child">Child &amp; Timeline</div>
+    <div class="input-grid">
+      <div class="input-group">
+        <label for="childAge" data-i18n="lbl_age">Child's Current Age</label>
+        <input type="number" id="childAge" min="0" max="17" value="10" oninput="updateStartYear()">
+        <span class="input-hint" data-i18n="hint_age">Age 0–17</span>
+      </div>
+      <div class="input-group">
+        <label for="startYear" data-i18n="lbl_start">Estimated College Start Year</label>
+        <input type="number" id="startYear" min="2025" max="2045" value="2034">
+        <span class="input-hint" data-i18n="hint_start">Auto-set from age; override if needed</span>
+      </div>
+      <div class="input-group">
+        <label for="yearsToFund" data-i18n="lbl_years">Years of College to Fund</label>
+        <select id="yearsToFund">
+          <option value="2">2 years (community / transfer)</option>
+          <option value="3">3 years</option>
+          <option value="4" selected>4 years (standard)</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label for="schoolTier" data-i18n="lbl_tier">School Tier</label>
+        <select id="schoolTier" onchange="updateTierHint()">
+          <option value="community">Community College</option>
+          <option value="public_in" selected>Public 4-yr In-State</option>
+          <option value="public_out">Public 4-yr Out-of-State</option>
+          <option value="private">Private Non-Profit 4-yr</option>
+          <option value="elite">Elite Private (T20)</option>
+        </select>
+        <span class="input-hint" id="tierHint">NCES avg COA: $24,440/yr · Tuition $11,260 + R&amp;B $13,180</span>
+      </div>
+    </div>
+
+    <div class="section-label" data-i18n="sec_aid">Student Aid &amp; SAI</div>
+    <div class="input-grid">
+      <div class="input-group">
+        <label for="saiInput" data-i18n="lbl_sai">Student Aid Index (SAI / EFC)</label>
+        <input type="number" id="saiInput" min="-1500" max="999999" value="12000" oninput="autoCalcPell()">
+        <span class="input-hint" data-i18n="hint_sai">Estimated SAI from FAFSA (negative = maximum aid)</span>
+      </div>
+      <div class="input-group">
+        <label for="pellInput" data-i18n="lbl_pell">Expected Pell Grant (annual)</label>
+        <input type="number" id="pellInput" min="0" max="7395" value="0">
+        <span class="input-hint" data-i18n="hint_pell">Auto-calculated from SAI; editable · 2024-25 max $7,395</span>
+      </div>
+      <div class="input-group">
+        <label for="instGrant" data-i18n="lbl_inst">Expected Institutional / Merit Aid (annual)</label>
+        <input type="number" id="instGrant" min="0" value="5000">
+        <span class="input-hint" data-i18n="hint_inst">Scholarships, university grants, merit awards</span>
+      </div>
+      <div class="input-group">
+        <label for="otherAid" data-i18n="lbl_other">Other Annual Aid (work-study, external)</label>
+        <input type="number" id="otherAid" min="0" value="0">
+        <span class="input-hint" data-i18n="hint_other">Work-study, private scholarships, employer benefits</span>
+      </div>
+    </div>
+
+    <div class="section-label" data-i18n="sec_529">529 College Savings Account</div>
+    <div class="input-grid triple">
+      <div class="input-group">
+        <label for="bal529" data-i18n="lbl_bal">Current 529 Balance</label>
+        <input type="number" id="bal529" min="0" value="25000">
+      </div>
+      <div class="input-group">
+        <label for="monthly529" data-i18n="lbl_monthly">Monthly Contribution</label>
+        <input type="number" id="monthly529" min="0" value="400">
+      </div>
+      <div class="input-group">
+        <label for="return529" data-i18n="lbl_return">Expected Annual Return (%)</label>
+        <input type="number" id="return529" min="0" max="15" step="0.1" value="6.0">
+        <span class="input-hint" data-i18n="hint_return">Diversified portfolio; typical 5–7%</span>
+      </div>
+    </div>
+
+    <div class="section-label" data-i18n="sec_loan">Loan Assumptions</div>
+    <div class="input-grid">
+      <div class="input-group">
+        <label for="loanRate" data-i18n="lbl_rate">Parent PLUS Rate (%)</label>
+        <input type="number" id="loanRate" min="0" max="20" step="0.01" value="7.54">
+        <span class="input-hint" data-i18n="hint_rate">Federal 2024-25 fixed rate; +4.228% origination fee</span>
+      </div>
+      <div class="input-group">
+        <label for="loanTerm" data-i18n="lbl_term">Repayment Term (years)</label>
+        <select id="loanTerm">
+          <option value="10" selected>10 years (standard)</option>
+          <option value="15">15 years</option>
+          <option value="20">20 years</option>
+          <option value="25">25 years (extended)</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label for="inflationRate" data-i18n="lbl_inflation">Tuition Inflation Rate (%)</label>
+        <input type="number" id="inflationRate" min="0" max="10" step="0.1" value="3.5">
+        <span class="input-hint" data-i18n="hint_inflation">Historical avg 3–4% · NCES long-run trend</span>
+      </div>
+    </div>
+
+    <div class="run-row">
+      <button class="run-btn" onclick="runAnalysis()" data-i18n="run_btn">Run Cost Analysis →</button>
+    </div>
+
+  </div><!-- /tab-panel t1 -->
+
+  <!-- ════════════ TAB 2: SCHOOL COMPARISON ════════════ -->
+  <div class="tab-panel" id="panel-t2" role="tabpanel">
+
+    <p style="font-size:.82rem;color:var(--body);margin-bottom:16px;" data-i18n="t2_desc">Compare up to 3 school tiers side by side. All aid/529/loan assumptions are shared from the 529 &amp; Aid Gap tab — set your inputs there first, then run the comparison here.</p>
+
+    <div class="section-label" data-i18n="sec_compare">Select School Tiers to Compare</div>
+    <div class="school-select-row">
+      <div class="school-slot">
+        <div class="school-slot-label">School A</div>
+        <select id="compA">
+          <option value="community">Community College</option>
+          <option value="public_in" selected>Public In-State</option>
+          <option value="public_out">Public Out-of-State</option>
+          <option value="private">Private Non-Profit</option>
+          <option value="elite">Elite Private (T20)</option>
+        </select>
+      </div>
+      <div class="school-slot">
+        <div class="school-slot-label">School B</div>
+        <select id="compB">
+          <option value="community">Community College</option>
+          <option value="public_in">Public In-State</option>
+          <option value="public_out">Public Out-of-State</option>
+          <option value="private" selected>Private Non-Profit</option>
+          <option value="elite">Elite Private (T20)</option>
+        </select>
+      </div>
+      <div class="school-slot">
+        <div class="school-slot-label">School C</div>
+        <select id="compC">
+          <option value="community">Community College</option>
+          <option value="public_in">Public In-State</option>
+          <option value="public_out">Public Out-of-State</option>
+          <option value="private">Private Non-Profit</option>
+          <option value="elite" selected>Elite Private (T20)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="run-row">
+      <button class="run-btn" onclick="runComparison()" data-i18n="run_comp_btn">Run School Comparison →</button>
+    </div>
+
+    <div id="compResultsWrap" style="display:none; margin-top:24px;"></div>
+
+  </div><!-- /tab-panel t2 -->
+
+  <!-- ════════════ RESULTS PANEL (Tab 1) ════════════ -->
+  <div class="results-panel" id="resultsPanel">
+
+    <!-- Summary Stats -->
+    <div class="section-label" data-i18n="sec_summary">4-Year Cost Summary</div>
+    <div class="stat-row" id="summaryStats"></div>
+
+    <!-- 529 Projection Visual -->
+    <div class="section-label" data-i18n="sec_529proj">529 Projection to Enrollment</div>
+    <div id="proj529Wrap"></div>
+
+    <!-- Year-by-Year Table -->
+    <div class="section-label" data-i18n="sec_table">Year-by-Year Cost Breakdown</div>
+    <div style="overflow-x:auto;"><table class="results-table" id="yearTable"></table></div>
+
+    <!-- Funding Waterfall -->
+    <div class="section-label" data-i18n="sec_waterfall">Funding Waterfall</div>
+    <div id="waterfallWrap"></div>
+
+    <!-- Loan Panel -->
+    <div class="section-label" data-i18n="sec_loan_detail">Parent PLUS Loan Detail</div>
+    <div class="loan-panel" id="loanPanel"></div>
+
+    <!-- Narrative -->
+    <div class="summary-box" id="narrativeBox"></div>
+
+    <!-- Export -->
+    <div class="results-export-row" id="exportRow">
+      <button class="exp-btn" onclick="exportMarkdown()" data-i18n="btn_md">↓ Markdown Summary</button>
+      <button class="exp-btn ap2" onclick="exportAP2()" data-i18n="btn_ap2">↓ AP2 JSON (parent_college_roi_record)</button>
+    </div>
+
+  </div><!-- /results-panel -->
+
+  <!-- ════ MANIFEST TOGGLE (always visible) ════ -->
+  <button class="mcp-toggle" id="manifestToggle" onclick="toggleManifest()">manifest.json · Tool Discovery</button>
+  <div class="mcp-panel" id="manifestPanel">
+    <pre id="manifestPre"></pre>
+  </div>
+
+  <!-- ════ FOOTER ════ -->
+  <footer class="tool-footer">
+    AL-32 · Parent College ROI Planner · <a href="https://apexlogics.org" target="_blank" rel="noopener">ApexLogics.org</a> · <a href="https://apexadvisory.site" target="_blank" rel="noopener">Apex Advisors</a> · CC BY 4.0<br>
+    Data: NCES IPEDS 2023-24 · Federal Pell Grant 2024-25 · Parent PLUS 7.54% (2024-25) · Estimates only — not financial advice. Consult a financial aid administrator for official determinations.
+  </footer>
+
+</div><!-- /container -->
+
+<div id="toast"></div>
+
+<!-- ════════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ════════════════════════════════════════════════════════════
+// CONSTANTS & DATA
+// ════════════════════════════════════════════════════════════
+
+const PELL_MAX = 7395;   // 2024-25 maximum
+const PELL_PHASE_OUT_SAI = 6500; // approx SAI at which Pell reaches $0
+const PLUS_ORIG_FEE = 0.04228; // origination fee 4.228%
+
+// NCES IPEDS 2023-24 average total COA (tuition + fees + room & board + other)
+const SCHOOL_TIERS = {
+  community:  { label:'Community College',        tuition:3900,  fees:900,  room_board:0,     other:2200,  note:'NCES 2023-24 avg · commuter' },
+  public_in:  { label:'Public 4-yr In-State',     tuition:11260, fees:1200, room_board:13180, other:2800,  note:'NCES 2023-24 avg' },
+  public_out: { label:'Public 4-yr Out-of-State',  tuition:29150, fees:1200, room_board:13180, other:2800,  note:'NCES 2023-24 avg' },
+  private:    { label:'Private Non-Profit 4-yr',  tuition:41540, fees:1200, room_board:15030, other:3000,  note:'NCES 2023-24 avg' },
+  elite:      { label:'Elite Private (T20)',       tuition:63000, fees:1500, room_board:18000, other:3200,  note:'Avg FY2024 T20 sticker price' }
+};
+
+const AP2Schema = {
+  required: [
+    'ap2_version','mandate_id','issued_at','issued_by',
+    'tool_id','tool_version','al_id','mandate_type',
+    'payload','summary','audit_metadata'
+  ],
+  validMandateTypes: [
+    'credential_roi_evaluation','human_capital_assessment',
+    'automation_exposure_score','career_resilience_score',
+    'workforce_program_roi','career_pivot_assessment',
+    'career_transition_record','scholarship_pipeline_plan',
+    'fafsa_sai_estimate','exam_pathway_plan',
+    'benefits_election_record','severance_decision_record',
+    'offer_negotiation_record','graduate_school_roi_record',
+    'apprenticeship_match_record','cpd_credit_record',
+    'job_search_roi_record','career_break_record',
+    'loan_repayment_record','freelance_total_cost_record',
+    'mba_roi_evaluation','test_prep_roi_record',
+    'international_student_cost_record','parent_college_roi_record',
+    'equity_compensation_record'
+  ],
+  validate(m) {
+    const errors = [];
+    if (!m || typeof m !== 'object') return { valid:false, errors:['mandate is not an object'] };
+    this.required.forEach(k => { if (m[k] === undefined || m[k] === null) errors.push(`missing required field: ${k}`); });
+    if (m.ap2_version !== '1.0') errors.push('ap2_version must be "1.0"');
+    if (m.mandate_type && !this.validMandateTypes.includes(m.mandate_type)) errors.push(`mandate_type "${m.mandate_type}" not in enum`);
+    if (m.al_id && !/^AL-\d{1,2}(\+\d{1,2})?$/.test(m.al_id)) errors.push(`al_id "${m.al_id}" malformed`);
+    if (m.audit_metadata) {
+      if (m.audit_metadata.client_side_executed !== true) errors.push('audit_metadata.client_side_executed must be true');
+      if (m.audit_metadata.zero_pii_verified !== true) errors.push('audit_metadata.zero_pii_verified must be true');
+      if (m.audit_metadata.deterministic_run !== true) errors.push('audit_metadata.deterministic_run must be true');
+    }
+    return { valid: errors.length === 0, errors };
+  }
+};
+
+// Manifest definition
+const MANIFEST = {
+  al_id: 'AL-32',
+  title: 'Parent College ROI Planner',
+  slug: 'parent-college-roi-planner',
+  version: '1.0.0',
+  description: '529 projection, SAI/EFC impact, COA by school tier, loan vs. gift split. 2-tab: Tab 1 aid gap model, Tab 2 multi-school comparison.',
+  category: 'student_finance_debt',
+  journeys: ['education_path'],
+  personas: ['parent','counselor'],
+  inputs: ['child_age','school_tier','sai','pell','inst_grant','529_balance','monthly_contribution','return_rate','inflation_rate'],
+  outputs: ['coa_4yr_total','gift_aid_total','net_cost_4yr','529_proj_balance','loan_amount','parent_plus_monthly_pmt'],
+  ap2_mandate_types: ['parent_college_roi_record'],
+  ap2_inbound_mandate_types: ['fafsa_sai_estimate'],
+  downstream_handoff_candidates: ['AL-12','AL-17'],
+  data_sources: ['NCES IPEDS 2023-24','Federal Pell Grant 2024-25 (max $7,395)','Parent PLUS 7.54% (2024-25)'],
+  maintenance: 'low',
+  license: 'CC-BY-4.0',
+  tool_url: 'https://apexlogics.org/tools/parent-college-roi-planner/',
+  suite_url: 'https://apexlogics.org'
+};
+
+// ════════════════════════════════════════════════════════════
+// I18N
+// ════════════════════════════════════════════════════════════
+const I18N = {
+  en: {
+    title:'Parent College ROI Planner',
+    subtitle:'Model your child\'s full 4-year cost of attendance, project your 529 balance, calculate the SAI/Pell aid gap, and compare loan vs. gift-aid scenarios — entirely in your browser.',
+    tab1:'529 & Aid Gap', tab2:'School Comparison',
+    sec_child:'Child & Timeline', sec_aid:'Student Aid & SAI',
+    sec_529:'529 College Savings', sec_loan:'Loan Assumptions',
+    sec_summary:'4-Year Cost Summary', sec_529proj:'529 Projection to Enrollment',
+    sec_table:'Year-by-Year Cost Breakdown', sec_waterfall:'Funding Waterfall',
+    sec_loan_detail:'Parent PLUS Loan Detail', sec_compare:'Select School Tiers to Compare',
+    lbl_age:'Child\'s Current Age', hint_age:'Age 0–17',
+    lbl_start:'Estimated College Start Year', hint_start:'Auto-set from age; override if needed',
+    lbl_years:'Years of College to Fund', lbl_tier:'School Tier',
+    lbl_sai:'Student Aid Index (SAI / EFC)', hint_sai:'Estimated SAI from FAFSA (negative = maximum aid)',
+    lbl_pell:'Expected Pell Grant (annual)', hint_pell:'Auto-calculated from SAI · 2024-25 max $7,395',
+    lbl_inst:'Expected Institutional / Merit Aid (annual)', hint_inst:'Scholarships, university grants, merit awards',
+    lbl_other:'Other Annual Aid (work-study, external)', hint_other:'Work-study, private scholarships, employer benefits',
+    lbl_bal:'Current 529 Balance', lbl_monthly:'Monthly Contribution',
+    lbl_return:'Expected Annual Return (%)', hint_return:'Diversified portfolio; typical 5–7%',
+    lbl_rate:'Parent PLUS Rate (%)', hint_rate:'Federal 2024-25 fixed; +4.228% origination fee',
+    lbl_term:'Repayment Term (years)', lbl_inflation:'Tuition Inflation Rate (%)', hint_inflation:'Historical avg 3–4%',
+    run_btn:'Run Cost Analysis →', run_comp_btn:'Run School Comparison →',
+    t2_desc:'Compare up to 3 school tiers side by side. Aid/529/loan assumptions are shared from the 529 & Aid Gap tab.',
+    btn_ap2:'↓ AP2 JSON (parent_college_roi_record)', btn_md:'↓ Markdown Summary'
+  },
+  es: {
+    title:'Planificador ROI de Universidad para Padres',
+    subtitle:'Modela el costo total de 4 años, proyecta tu saldo del plan 529 y calcula la brecha de ayuda SAI/Pell — completamente en tu navegador.',
+    tab1:'529 y Brecha', tab2:'Comparar Universidades',
+    sec_child:'Datos del Hijo', sec_aid:'Ayuda y SAI',
+    sec_529:'Ahorros 529', sec_loan:'Supuestos de Préstamo',
+    run_btn:'Ejecutar Análisis →', run_comp_btn:'Comparar Universidades →',
+    btn_ap2:'↓ AP2 JSON', btn_md:'↓ Resumen Markdown'
+  },
+  fr: {
+    title:'Planificateur ROI Collège pour Parents',
+    subtitle:'Modélisez le coût total sur 4 ans, projetez votre solde 529, calculez l\'écart d\'aide SAI/Pell — entièrement dans votre navigateur.',
+    tab1:'529 & Aide', tab2:'Comparer les Universités',
+    run_btn:'Lancer l\'analyse →', run_comp_btn:'Comparer →',
+    btn_ap2:'↓ AP2 JSON', btn_md:'↓ Résumé Markdown'
+  },
+  ar: {
+    title:'مخطط عائد الاستثمار للكلية للآباء',
+    subtitle:'نمذجة التكلفة الكاملة لـ 4 سنوات وإسقاط رصيد 529 وحساب فجوة المساعدة — بالكامل في متصفحك.',
+    tab1:'529 وفجوة المساعدة', tab2:'مقارنة المدارس',
+    run_btn:'تشغيل التحليل →', run_comp_btn:'مقارنة →',
+    btn_ap2:'↓ AP2 JSON', btn_md:'↓ ملخص Markdown'
+  },
+  pt: {
+    title:'Planejador de ROI Universitário para Pais',
+    subtitle:'Modele o custo total de 4 anos, projete seu saldo 529 e calcule a lacuna de auxílio SAI/Pell — totalmente no seu navegador.',
+    tab1:'529 e Lacuna', tab2:'Comparar Escolas',
+    run_btn:'Executar Análise →', run_comp_btn:'Comparar →',
+    btn_ap2:'↓ AP2 JSON', btn_md:'↓ Resumo Markdown'
+  },
+  zh: {
+    title:'家长大学费用ROI规划器',
+    subtitle:'建模4年全额出勤费用，预测529账户余额，计算SAI/Pell助学金缺口，比较贷款与助学金方案——全在浏览器中完成。',
+    tab1:'529与助学金差距', tab2:'学校比较',
+    run_btn:'运行分析 →', run_comp_btn:'比较学校 →',
+    btn_ap2:'↓ AP2 JSON', btn_md:'↓ Markdown摘要'
+  }
+};
+
+let currentLang = sessionStorage.getItem('apex_lang') || 'en';
+
+function setLang(lang) {
+  currentLang = lang;
+  sessionStorage.setItem('apex_lang', lang);
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('lb-' + lang);
+  if (btn) btn.classList.add('active');
+  const isRTL = lang === 'ar';
+  document.documentElement.setAttribute('dir', isRTL ? 'rtl' : 'ltr');
+  document.documentElement.setAttribute('lang', lang);
+  const t = { ...I18N.en, ...(I18N[lang] || {}) };
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key]) el.textContent = t[key];
+  });
+  document.querySelectorAll('[data-i18n-tab]').forEach(el => {
+    const key = el.getAttribute('data-i18n-tab');
+    if (t[key]) el.textContent = t[key];
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// UTILITY HELPERS
+// ════════════════════════════════════════════════════════════
+function fmt(n, dec=0) { return Number(n).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+function fmtMoney(n) { return '$' + fmt(Math.round(n)); }
+function fmtPct(n, dec=1) { return n.toFixed(dec) + '%'; }
+function uuidv4() {
+  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));
+}
+function tsCompact() { return new Date().toISOString().replace(/[-:T]/g,'').slice(0,14); }
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'show ' + type;
+  setTimeout(() => t.className = '', 3000);
+}
+function clamp(v,lo,hi) { return Math.max(lo, Math.min(hi, v)); }
+
+// ════════════════════════════════════════════════════════════
+// PELL GRANT CALCULATOR (2024-25)
+// ════════════════════════════════════════════════════════════
+function calcPell(sai) {
+  if (sai <= 0) return PELL_MAX;
+  if (sai >= PELL_PHASE_OUT_SAI) return 0;
+  // Linear phase-out: max → 0 across SAI 0–6500
+  return Math.round(PELL_MAX * (1 - sai / PELL_PHASE_OUT_SAI));
+}
+
+function autoCalcPell() {
+  const sai = parseFloat(document.getElementById('saiInput').value) || 0;
+  document.getElementById('pellInput').value = calcPell(sai);
+}
+
+// ════════════════════════════════════════════════════════════
+// START YEAR AUTO-UPDATE
+// ════════════════════════════════════════════════════════════
+function updateStartYear() {
+  const age = parseInt(document.getElementById('childAge').value) || 0;
+  const startYear = new Date().getFullYear() + Math.max(0, 18 - age);
+  document.getElementById('startYear').value = startYear;
+}
+
+// ════════════════════════════════════════════════════════════
+// TIER HINT
+// ════════════════════════════════════════════════════════════
+function updateTierHint() {
+  const tier = document.getElementById('schoolTier').value;
+  const d = SCHOOL_TIERS[tier];
+  const coa = d.tuition + d.fees + d.room_board + d.other;
+  document.getElementById('tierHint').innerHTML =
+    `${d.note} · COA: ${fmtMoney(coa)}/yr · Tuition ${fmtMoney(d.tuition)} + Fees ${fmtMoney(d.fees)}` +
+    (d.room_board > 0 ? ` + R&B ${fmtMoney(d.room_board)}` : ' · Commuter');
+}
+
+// ════════════════════════════════════════════════════════════
+// 529 PROJECTION
+// ════════════════════════════════════════════════════════════
+function calc529(balance, monthlyContrib, annualReturn, years) {
+  const r = annualReturn / 100;
+  const months = years * 12;
+  const rm = r / 12;
+  let proj = balance * Math.pow(1 + r, years);
+  if (rm > 0) {
+    proj += monthlyContrib * (Math.pow(1 + rm, months) - 1) / rm;
+  } else {
+    proj += monthlyContrib * months;
+  }
+  return Math.max(0, proj);
+}
+
+// ════════════════════════════════════════════════════════════
+// LOAN PAYMENT
+// ════════════════════════════════════════════════════════════
+function calcMonthlyPayment(principal, annualRate, termYears) {
+  if (principal <= 0) return 0;
+  const r = (annualRate / 100) / 12;
+  const n = termYears * 12;
+  if (r === 0) return principal / n;
+  return principal * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+}
+
+// ════════════════════════════════════════════════════════════
+// MAIN ANALYSIS
+// ════════════════════════════════════════════════════════════
+let lastResults = null;
+
+function runAnalysis() {
+  // Read inputs
+  const childAge    = parseInt(document.getElementById('childAge').value) || 10;
+  const startYear   = parseInt(document.getElementById('startYear').value) || 2034;
+  const yearsToFund = parseInt(document.getElementById('yearsToFund').value) || 4;
+  const tierKey     = document.getElementById('schoolTier').value;
+  const sai         = parseFloat(document.getElementById('saiInput').value) || 0;
+  const pell        = parseFloat(document.getElementById('pellInput').value) || 0;
+  const instGrant   = parseFloat(document.getElementById('instGrant').value) || 0;
+  const otherAid    = parseFloat(document.getElementById('otherAid').value) || 0;
+  const bal529      = parseFloat(document.getElementById('bal529').value) || 0;
+  const monthly529  = parseFloat(document.getElementById('monthly529').value) || 0;
+  const return529   = parseFloat(document.getElementById('return529').value) || 6.0;
+  const loanRate    = parseFloat(document.getElementById('loanRate').value) || 7.54;
+  const loanTerm    = parseInt(document.getElementById('loanTerm').value) || 10;
+  const inflation   = parseFloat(document.getElementById('inflationRate').value) || 3.5;
+
+  const tier = SCHOOL_TIERS[tierKey];
+  const baseCOA = tier.tuition + tier.fees + tier.room_board + tier.other;
+  const yearsUntilEnroll = Math.max(0, startYear - new Date().getFullYear());
+  const proj529 = calc529(bal529, monthly529, return529, yearsUntilEnroll);
+
+  // Per-year breakdown
+  const years = [];
+  let totalCOA = 0, totalGift = 0, totalNet = 0;
+  for (let y = 0; y < yearsToFund; y++) {
+    const infYears = yearsUntilEnroll + y;
+    const coa = baseCOA * Math.pow(1 + inflation / 100, infYears);
+    const gift = pell + instGrant + otherAid;
+    const net = Math.max(0, coa - gift);
+    years.push({ yr: startYear + y, coa, pell, instGrant, otherAid, gift, net });
+    totalCOA += coa;
+    totalGift += gift;
+    totalNet += net;
+  }
+
+  // 529 coverage
+  const proj529Used = Math.min(proj529, totalNet);
+  const afterLoan = Math.max(0, totalNet - proj529Used);
+  // Parent PLUS: add origination fee
+  const loanWithFee = afterLoan * (1 + PLUS_ORIG_FEE);
+  const monthlyPmt = calcMonthlyPayment(loanWithFee, loanRate, loanTerm);
+  const totalPaid = monthlyPmt * loanTerm * 12;
+  const totalInterest = totalPaid - loanWithFee;
+
+  lastResults = {
+    childAge, startYear, yearsToFund, tierKey, tierLabel: tier.label,
+    sai, pell, instGrant, otherAid, bal529, monthly529, return529,
+    loanRate, loanTerm, inflation, baseCOA,
+    yearsUntilEnroll, proj529,
+    years, totalCOA, totalGift, totalNet,
+    proj529Used, afterLoan, loanWithFee, monthlyPmt, totalPaid, totalInterest,
+    coverage529Pct: totalNet > 0 ? (proj529Used / totalNet * 100) : 100
+  };
+
+  renderResults(lastResults);
+}
+
+// ════════════════════════════════════════════════════════════
+// RENDER RESULTS
+// ════════════════════════════════════════════════════════════
+function renderResults(r) {
+  // Summary stats
+  document.getElementById('summaryStats').innerHTML = `
+    <div class="stat-box">
+      <div class="stat-n">${fmtMoney(r.totalCOA)}</div>
+      <div class="stat-l">Total ${r.yearsToFund}-yr COA (inflation-adj)</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-n">${fmtMoney(r.totalGift)}</div>
+      <div class="stat-l">Total Gift Aid (Pell + grants)</div>
+    </div>
+    <div class="stat-box ${r.afterLoan > 0 ? 'warn' : 'highlight'}">
+      <div class="stat-n ${r.afterLoan > 0 ? 'amber' : 'teal'}">${fmtMoney(r.totalNet)}</div>
+      <div class="stat-l">Total Net Cost (COA − gift aid)</div>
+    </div>
+    <div class="stat-box highlight">
+      <div class="stat-n teal">${fmtMoney(r.proj529)}</div>
+      <div class="stat-l">Projected 529 Balance at Enrollment</div>
+    </div>
+    <div class="stat-box ${r.afterLoan > 0 ? 'alert' : 'highlight'}">
+      <div class="stat-n ${r.afterLoan > 0 ? 'red' : 'teal'}">${fmtMoney(r.afterLoan)}</div>
+      <div class="stat-l">Remaining Gap (need to borrow)</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-n">${fmtMoney(r.monthlyPmt)}</div>
+      <div class="stat-l">Monthly Parent PLUS Payment</div>
+    </div>
+  `;
+
+  // 529 projection
+  const proj529El = document.getElementById('proj529Wrap');
+  const pctFunded = Math.min(100, r.totalNet > 0 ? (r.proj529Used / r.totalNet * 100) : 100);
+  proj529El.innerHTML = `
+    <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:.82rem;color:var(--body);">529 projected balance when ${r.startYear} enrollment begins</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:.9rem;color:var(--teal-lt);">${fmtMoney(r.proj529)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:.72rem;color:var(--muted);">
+        <span>Covers ${fmtPct(pctFunded)} of net cost</span>
+        <span>${r.yearsUntilEnroll} years of growth from ${fmtMoney(r.bal529)} + ${fmtMoney(r.monthly529)}/mo at ${r.return529}% return</span>
+      </div>
+      <div class="progress-label">529 Coverage of Net Cost</div>
+      <div class="progress-track"><div class="progress-fill teal" style="width:${pctFunded}%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);">
+        <span>$0</span><span>${fmtMoney(r.proj529Used)} covered</span><span>${fmtMoney(r.totalNet)}</span>
+      </div>
+    </div>
+  `;
+
+  // Year table
+  let tableHtml = `<thead><tr>
+    <th>Year</th><th class="right">COA</th><th class="right">Pell</th>
+    <th class="right">Inst. Aid</th><th class="right">Other Aid</th>
+    <th class="right">Net Cost</th></tr></thead><tbody>`;
+  r.years.forEach(y => {
+    tableHtml += `<tr>
+      <td>${y.yr}</td>
+      <td class="money">${fmtMoney(y.coa)}</td>
+      <td class="money">${fmtMoney(y.pell)}</td>
+      <td class="money">${fmtMoney(y.instGrant)}</td>
+      <td class="money">${fmtMoney(y.otherAid)}</td>
+      <td class="money">${fmtMoney(y.net)}</td>
+    </tr>`;
+  });
+  tableHtml += `<tr class="total-row">
+    <td>TOTAL</td>
+    <td class="money">${fmtMoney(r.totalCOA)}</td>
+    <td class="money">${fmtMoney(r.years.reduce((s,y)=>s+y.pell,0))}</td>
+    <td class="money">${fmtMoney(r.years.reduce((s,y)=>s+y.instGrant,0))}</td>
+    <td class="money">${fmtMoney(r.years.reduce((s,y)=>s+y.otherAid,0))}</td>
+    <td class="money">${fmtMoney(r.totalNet)}</td>
+  </tr></tbody>`;
+  document.getElementById('yearTable').innerHTML = tableHtml;
+
+  // Waterfall
+  const w529 = r.totalNet > 0 ? (r.proj529Used / r.totalCOA * 100) : 0;
+  const wGift = r.totalCOA > 0 ? (r.totalGift / r.totalCOA * 100) : 0;
+  const wLoan = r.totalCOA > 0 ? (r.afterLoan / r.totalCOA * 100) : 0;
+  document.getElementById('waterfallWrap').innerHTML = `
+    <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;">
+      <div class="progress-stack" style="height:16px;border-radius:6px;">
+        <div class="seg" style="width:${wGift}%;background:var(--teal);" title="Gift Aid ${fmtPct(wGift)}"></div>
+        <div class="seg" style="width:${w529}%;background:var(--green);" title="529 ${fmtPct(w529)}"></div>
+        <div class="seg" style="width:${wLoan}%;background:var(--red);" title="Loan ${fmtPct(wLoan)}"></div>
+      </div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:10px;font-size:.75rem;">
+        <span><span style="display:inline-block;width:10px;height:10px;background:var(--teal);border-radius:2px;margin-right:5px;"></span>Gift Aid ${fmtMoney(r.totalGift)} (${fmtPct(wGift)})</span>
+        <span><span style="display:inline-block;width:10px;height:10px;background:var(--green);border-radius:2px;margin-right:5px;"></span>529 ${fmtMoney(r.proj529Used)} (${fmtPct(w529)})</span>
+        <span><span style="display:inline-block;width:10px;height:10px;background:var(--red);border-radius:2px;margin-right:5px;"></span>Loan needed ${fmtMoney(r.afterLoan)} (${fmtPct(wLoan)})</span>
+      </div>
+    </div>
+  `;
+
+  // Loan panel
+  document.getElementById('loanPanel').innerHTML = `
+    <div class="loan-panel-title">Parent PLUS Loan Analysis · ${r.loanRate}% Fixed · ${r.loanTerm}-Year Repayment</div>
+    <div class="loan-row"><span class="lkey">Amount borrowed (before fees)</span><span class="lval">${fmtMoney(r.afterLoan)}</span></div>
+    <div class="loan-row"><span class="lkey">Origination fee (4.228%)</span><span class="lval">${fmtMoney(r.loanWithFee - r.afterLoan)}</span></div>
+    <div class="loan-row"><span class="lkey">Total disbursed (after fees)</span><span class="lval">${fmtMoney(r.loanWithFee)}</span></div>
+    <div class="loan-row"><span class="lkey">Monthly payment</span><span class="lval teal">${fmtMoney(r.monthlyPmt)}/mo</span></div>
+    <div class="loan-row"><span class="lkey">Total paid over ${r.loanTerm} years</span><span class="lval warn">${fmtMoney(r.totalPaid)}</span></div>
+    <div class="loan-row"><span class="lkey">Total interest cost</span><span class="lval">${fmtMoney(r.totalInterest)}</span></div>
+    <div class="loan-row"><span class="lkey">Interest as % of amount borrowed</span><span class="lval">${r.afterLoan > 0 ? fmtPct(r.totalInterest / r.afterLoan * 100) : '—'}</span></div>
+  `;
+
+  // Narrative
+  const covPct = r.coverage529Pct;
+  let narrative = `Your child's <strong>${r.yearsToFund}-year</strong> education at a <strong>${r.tierLabel}</strong> is estimated at
+    <strong>${fmtMoney(r.totalCOA)}</strong> total (inflation-adjusted at ${r.inflation}%/yr).
+    After <strong>${fmtMoney(r.totalGift)}</strong> in gift aid, your net cost is <strong>${fmtMoney(r.totalNet)}</strong>. `;
+
+  if (r.proj529 >= r.totalNet) {
+    narrative += `Your projected 529 balance of <strong>${fmtMoney(r.proj529)}</strong> fully covers this gap — <span class="tag">✓ No loan needed</span>. Consider redirecting future contributions to other savings goals.`;
+  } else {
+    narrative += `Your projected 529 of <strong>${fmtMoney(r.proj529)}</strong> covers
+      <strong>${fmtPct(covPct)}</strong> of net cost, leaving a gap of
+      <strong>${fmtMoney(r.afterLoan)}</strong>. At a Parent PLUS rate of <strong>${r.loanRate}%</strong>,
+      that's <span class="tag">${fmtMoney(r.monthlyPmt)}/mo</span> for ${r.loanTerm} years.
+      Increasing your monthly 529 contribution reduces this loan need dollar-for-dollar.`;
+  }
+  document.getElementById('narrativeBox').innerHTML = `<p>${narrative}</p>`;
+
+  document.getElementById('resultsPanel').classList.add('visible');
+  document.getElementById('resultsPanel').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+// ════════════════════════════════════════════════════════════
+// TAB 2: SCHOOL COMPARISON
+// ════════════════════════════════════════════════════════════
+function runComparison() {
+  // Pull shared inputs from Tab 1
+  const yearsToFund = parseInt(document.getElementById('yearsToFund').value) || 4;
+  const startYear   = parseInt(document.getElementById('startYear').value) || 2034;
+  const pell        = parseFloat(document.getElementById('pellInput').value) || 0;
+  const instGrant   = parseFloat(document.getElementById('instGrant').value) || 0;
+  const otherAid    = parseFloat(document.getElementById('otherAid').value) || 0;
+  const bal529      = parseFloat(document.getElementById('bal529').value) || 0;
+  const monthly529  = parseFloat(document.getElementById('monthly529').value) || 0;
+  const return529   = parseFloat(document.getElementById('return529').value) || 6.0;
+  const loanRate    = parseFloat(document.getElementById('loanRate').value) || 7.54;
+  const loanTerm    = parseInt(document.getElementById('loanTerm').value) || 10;
+  const inflation   = parseFloat(document.getElementById('inflationRate').value) || 3.5;
+
+  const yearsUntilEnroll = Math.max(0, startYear - new Date().getFullYear());
+  const proj529 = calc529(bal529, monthly529, return529, yearsUntilEnroll);
+
+  const keys = [
+    document.getElementById('compA').value,
+    document.getElementById('compB').value,
+    document.getElementById('compC').value
+  ];
+
+  const cols = keys.map(key => {
+    const tier = SCHOOL_TIERS[key];
+    const baseCOA = tier.tuition + tier.fees + tier.room_board + tier.other;
+    let totalCOA = 0;
+    for (let y = 0; y < yearsToFund; y++) {
+      totalCOA += baseCOA * Math.pow(1 + inflation / 100, yearsUntilEnroll + y);
+    }
+    const totalGift = (pell + instGrant + otherAid) * yearsToFund;
+    const totalNet  = Math.max(0, totalCOA - totalGift);
+    const proj529Used = Math.min(proj529, totalNet);
+    const afterLoan   = Math.max(0, totalNet - proj529Used);
+    const loanWithFee = afterLoan * (1 + PLUS_ORIG_FEE);
+    const monthlyPmt  = calcMonthlyPayment(loanWithFee, loanRate, loanTerm);
+    const totalPaid   = monthlyPmt * loanTerm * 12;
+    return { label: tier.label, totalCOA, totalGift, totalNet, proj529Used, afterLoan, monthlyPmt, totalPaid, loanWithFee };
+  });
+
+  // Mark best (lowest net cost) and worst
+  const nets = cols.map(c => c.totalNet);
+  const bestNet = Math.min(...nets);
+  const worstNet = Math.max(...nets);
+
+  const rows = [
+    ['Total 4-yr COA', c => fmtMoney(c.totalCOA), false],
+    ['Total Gift Aid', c => fmtMoney(c.totalGift), false],
+    ['Net Cost', c => fmtMoney(c.totalNet), true],
+    ['529 Covers', c => fmtMoney(c.proj529Used), false],
+    ['Loan Needed', c => fmtMoney(c.afterLoan), true],
+    ['Monthly Parent PLUS', c => fmtMoney(c.monthlyPmt), true],
+    ['Total Repaid', c => fmtMoney(c.totalPaid), true],
+    ['Interest Cost', c => fmtMoney(c.totalPaid - c.loanWithFee), true],
+  ];
+
+  let html = `<table class="comp-table"><thead><tr>
+    <th></th>
+    ${cols.map(c => `<th class="center">${c.label}</th>`).join('')}
+  </tr></thead><tbody>`;
+
+  rows.forEach(([label, fn, markMinMax]) => {
+    html += `<tr><td class="row-label">${label}</td>`;
+    cols.forEach(c => {
+      const val = fn(c);
+      let cls = 'val';
+      if (markMinMax && c.totalNet === bestNet) cls += ' best';
+      else if (markMinMax && c.totalNet === worstNet && worstNet !== bestNet) cls += ' worst';
+      html += `<td class="${cls}">${val}</td>`;
+    });
+    html += `</tr>`;
+  });
+  html += `</tbody></table>
+  <p style="font-size:.72rem;color:var(--muted);margin-top:8px;">
+    <span style="color:var(--teal-lt);">Green</span> = best value ·
+    <span style="color:var(--red);">Red</span> = highest cost ·
+    Gift aid and 529 balance held constant across schools.
+  </p>`;
+
+  document.getElementById('compResultsWrap').innerHTML = html;
+  document.getElementById('compResultsWrap').style.display = 'block';
+}
+
+// ════════════════════════════════════════════════════════════
+// AP2 INBOUND: LOAD FROM AL-17
+// ════════════════════════════════════════════════════════════
+function toggleAp2Inbound() {
+  const btn = document.getElementById('ap2InboundToggle');
+  btn.classList.toggle('open');
+}
+
+function loadAp2Inbound() {
+  const raw = document.getElementById('ap2InboundText').value.trim();
+  if (!raw) { showToast('Paste an AP2 JSON first.', 'error'); return; }
+  let data;
+  try { data = JSON.parse(raw); } catch(e) { showToast('Invalid JSON — check formatting.', 'error'); return; }
+  if (data.mandate_type !== 'fafsa_sai_estimate') {
+    showToast(`Expected mandate_type "fafsa_sai_estimate" — got "${data.mandate_type}".`, 'error'); return;
+  }
+  const p = data.payload || {};
+  if (p.sai !== undefined) {
+    document.getElementById('saiInput').value = p.sai;
+    document.getElementById('pellInput').value = p.pell_award !== undefined ? p.pell_award : calcPell(p.sai);
+    showToast(`SAI ${p.sai} + Pell ${fmtMoney(p.pell_award || calcPell(p.sai))} loaded from AL-17 ✓`, 'success');
+    document.getElementById('ap2InboundToggle').classList.remove('open');
+  } else {
+    showToast('No SAI found in payload.', 'error');
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ════════════════════════════════════════════════════════════
+function switchTab(id) {
+  document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  document.getElementById('tab-' + id).setAttribute('aria-selected','true');
+  document.getElementById('panel-' + id).classList.add('active');
+  // Hide results panel when switching to Tab 2 (it's Tab 1's results)
+  if (id === 't2') document.getElementById('resultsPanel').style.marginTop = '0';
+}
+
+// ════════════════════════════════════════════════════════════
+// EXPORTS — AP2 JSON
+// ════════════════════════════════════════════════════════════
+function exportAP2() {
+  if (!lastResults) { showToast('Run analysis first.', 'error'); return; }
+  const r = lastResults;
+  const now = new Date();
+  const mandate = {
+    ap2_version: '1.0',
+    mandate_id: uuidv4(),
+    issued_at: now.toISOString(),
+    issued_by: 'apexlogics.org',
+    tool_id: 'parent-college-roi-planner',
+    tool_version: '1.0.0',
+    al_id: 'AL-32',
+    mandate_type: 'parent_college_roi_record',
+    jurisdiction: ['US'],
+    regulatory_frameworks: ['Higher Education Act of 1965 as amended','NCES IPEDS 2023-24','Federal Pell Grant Program 2024-25'],
+    payload: {
+      child_age: r.childAge,
+      start_year: r.startYear,
+      years_to_fund: r.yearsToFund,
+      school_tier: r.tierKey,
+      school_tier_label: r.tierLabel,
+      sai: r.sai,
+      pell_annual: r.pell,
+      inst_grant_annual: r.instGrant,
+      other_aid_annual: r.otherAid,
+      total_gift_aid_4yr: Math.round(r.totalGift),
+      coa_base_annual: Math.round(r.baseCOA),
+      coa_total_4yr: Math.round(r.totalCOA),
+      net_cost_4yr: Math.round(r.totalNet),
+      balance_529_current: r.bal529,
+      monthly_contrib_529: r.monthly529,
+      return_rate_529: r.return529,
+      years_until_enroll: r.yearsUntilEnroll,
+      proj_529_balance: Math.round(r.proj529),
+      proj_529_used: Math.round(r.proj529Used),
+      coverage_529_pct: parseFloat(r.coverage529Pct.toFixed(1)),
+      gap_after_529: Math.round(r.afterLoan),
+      loan_amount_before_fees: Math.round(r.afterLoan),
+      loan_with_orig_fee: Math.round(r.loanWithFee),
+      parent_plus_rate: r.loanRate,
+      parent_plus_term_years: r.loanTerm,
+      parent_plus_monthly_pmt: Math.round(r.monthlyPmt),
+      parent_plus_total_paid: Math.round(r.totalPaid),
+      parent_plus_total_interest: Math.round(r.totalInterest),
+      inflation_rate: r.inflation,
+      year_by_year: r.years.map(y => ({
+        year: y.yr, coa: Math.round(y.coa), gift: Math.round(y.gift), net: Math.round(y.net)
+      }))
+    },
+    summary: `${r.yearsToFund}-year COA at ${r.tierLabel}: ${fmtMoney(r.totalCOA)} total. Gift aid: ${fmtMoney(r.totalGift)}. Net cost: ${fmtMoney(r.totalNet)}. 529 covers ${fmtPct(r.coverage529Pct)} (${fmtMoney(r.proj529Used)}). Parent PLUS borrowing: ${fmtMoney(r.afterLoan)} → ${fmtMoney(r.monthlyPmt)}/mo.`,
+    agent_instructions: [
+      'All figures are estimates based on NCES IPEDS 2023-24 averages and user-entered inputs.',
+      'Downstream to AL-12 (Scholarship ROI Tracker) to model scholarship pipeline and reduce loan burden.',
+      'Downstream to AL-17 (FAFSA SAI Simulator) to refine SAI estimate.',
+      'Official COA and aid determinations require FAFSA submission at studentaid.gov.'
+    ],
+    valid_from: now.toISOString(),
+    valid_until: new Date(now.getTime() + 90*24*3600*1000).toISOString(),
+    last_reviewed: now.toISOString(),
+    regulatory_citations: [
+      'NCES IPEDS 2023-24 Average Prices',
+      'Federal Student Aid — Pell Grant 2024-25 (max $7,395)',
+      'Federal Student Loan Interest Rates 2024-25 — Parent PLUS 7.54%',
+      '20 U.S.C. § 1087dd — Federal Direct PLUS Loans'
+    ],
+    ap2_schema_version: '1.0',
+    audit_metadata: {
+      execution_hash: null,
+      client_side_executed: true,
+      zero_pii_verified: true,
+      deterministic_run: true,
+      data_vintage: '2024-25'
+    }
+  };
+
+  const result = AP2Schema.validate(mandate);
+  if (!result.valid) {
+    showToast('AP2 validation failed: ' + result.errors.join('; '), 'error');
+    return;
+  }
+
+  const blob = new Blob([JSON.stringify(mandate, null, 2)], { type:'application/json' });
+  triggerDownload(blob, `AL-32_parent-college-roi-planner_${tsCompact()}.ap2.json`);
+  showToast('AP2 mandate downloaded and validated.', 'success');
+}
+
+// ════════════════════════════════════════════════════════════
+// EXPORTS — MARKDOWN
+// ════════════════════════════════════════════════════════════
+function exportMarkdown() {
+  if (!lastResults) { showToast('Run analysis first.', 'error'); return; }
+  const r = lastResults;
+  const lines = [];
+  lines.push(`# Parent College ROI Planner — Apex Logics AL-32`);
+  lines.push(``);
+  lines.push(`**Generated:** ${new Date().toISOString()}`);
+  lines.push(``);
+  lines.push(`## Inputs`);
+  lines.push(`- Child's age: ${r.childAge} → College starts ${r.startYear}`);
+  lines.push(`- School tier: ${r.tierLabel}`);
+  lines.push(`- Years to fund: ${r.yearsToFund}`);
+  lines.push(`- SAI / EFC: ${r.sai}`);
+  lines.push(`- Annual Pell: ${fmtMoney(r.pell)} | Institutional: ${fmtMoney(r.instGrant)} | Other: ${fmtMoney(r.otherAid)}`);
+  lines.push(`- 529 balance: ${fmtMoney(r.bal529)} · Monthly contrib: ${fmtMoney(r.monthly529)} · Return: ${r.return529}%`);
+  lines.push(`- Tuition inflation: ${r.inflation}% | Parent PLUS: ${r.loanRate}% for ${r.loanTerm} years`);
+  lines.push(``);
+  lines.push(`## 4-Year Summary`);
+  lines.push(`| Metric | Amount |`);
+  lines.push(`|---|---|`);
+  lines.push(`| Total COA (inflation-adj) | ${fmtMoney(r.totalCOA)} |`);
+  lines.push(`| Total Gift Aid | ${fmtMoney(r.totalGift)} |`);
+  lines.push(`| Net Cost | ${fmtMoney(r.totalNet)} |`);
+  lines.push(`| Projected 529 at Enrollment | ${fmtMoney(r.proj529)} |`);
+  lines.push(`| 529 Covers | ${fmtMoney(r.proj529Used)} (${fmtPct(r.coverage529Pct)}) |`);
+  lines.push(`| Loan Needed | ${fmtMoney(r.afterLoan)} |`);
+  lines.push(`| Monthly Parent PLUS Payment | ${fmtMoney(r.monthlyPmt)}/mo |`);
+  lines.push(`| Total Repaid (${r.loanTerm} yr) | ${fmtMoney(r.totalPaid)} |`);
+  lines.push(`| Total Interest | ${fmtMoney(r.totalInterest)} |`);
+  lines.push(``);
+  lines.push(`## Year-by-Year Breakdown`);
+  lines.push(`| Year | COA | Gift Aid | Net Cost |`);
+  lines.push(`|---|---|---|---|`);
+  r.years.forEach(y => lines.push(`| ${y.yr} | ${fmtMoney(y.coa)} | ${fmtMoney(y.gift)} | ${fmtMoney(y.net)} |`));
+  lines.push(``);
+  lines.push(`---`);
+  lines.push(`Built by Apex Advisors · ApexLogics.org · CC BY 4.0 · AL-32`);
+  lines.push(`Data: NCES IPEDS 2023-24 · Federal Pell Grant 2024-25 · Parent PLUS 7.54% (2024-25)`);
+  lines.push(`Estimates only — not financial advice. Verify with a financial aid administrator.`);
+
+  const blob = new Blob([lines.join('\n')], { type:'text/markdown;charset=utf-8' });
+  triggerDownload(blob, `AL-32_parent-college-roi-planner_${tsCompact()}.md`);
+  showToast('Markdown summary downloaded.', 'success');
+}
+
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ════════════════════════════════════════════════════════════
+// MANIFEST TOGGLE
+// ════════════════════════════════════════════════════════════
+function toggleManifest() {
+  const btn = document.getElementById('manifestToggle');
+  const panel = document.getElementById('manifestPanel');
+  btn.classList.toggle('open');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) {
+    document.getElementById('manifestPre').textContent = JSON.stringify(MANIFEST, null, 2);
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════
+(function init() {
+  setLang(currentLang);
+  updateStartYear();
+  autoCalcPell();
+  updateTierHint();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workforce Board ROI Report Generator · AL-07 · Apex Logics</title>
+  <meta name="description" content="Generate WIOA-compliant workforce program ROI reports. Benchmark against DOL PY 2023 national performance targets and BLS QCEW sector wages. For workforce board staff and counselors.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    /* ── CONTRACT PALETTE ── */
+    :root {
+      --navy:#0b0e14;
+      --navy-mid:    #1a2a3a;
+      --navy-card:   #1e2f41;
+      --navy-border: #2a3f55;
+      --amber:       #f5a623;
+      --amber-dim:   #c47d10;
+      --coral:       #e8735a;
+      --teal:        #4ecdc4;
+      --lavender:    #b39ddb;
+      --green:       #66bb6a;
+      --blue:        #42a5f5;
+      --text:#c8d0e0;
+      --text-dim:#6b7a99;
+      --text-muted:  #566f87;
+      --font-serif:  'DM Serif Display', serif;
+      --font-sans:   'Sora', sans-serif;
+      --font-mono:   'JetBrains Mono', monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-sans); background: var(--navy); color: var(--text); min-height: 100vh; font-size:.875rem; line-height: 1.5; }
+
+    /* ── LANG BAR ── */
+    .lang-bar { background: #0c1220; border-bottom: 1px solid var(--navy-border); padding: .5rem 0; }
+    .lang-inner { max-width: 1024px; margin: 0 auto; padding: 0 24px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .lang-btn { background: none; border: 1px solid var(--navy-border); color: var(--text-muted); font-family: var(--font-mono); font-size: .6rem; letter-spacing: .06em; padding: .25rem .55rem; border-radius: 4px; cursor: pointer; transition: all .15s; }
+    .lang-btn:hover { border-color: var(--amber); color: var(--text-dim); }
+    .lang-btn.active { border-color: var(--amber); color: var(--amber); background: rgba(245,166,35,.10); }
+
+    /* ── NAV ── */
+    nav { position: sticky; top: 0; z-index: 100; background: rgba(13,27,42,.94); backdrop-filter: blur(12px); border-bottom: 1px solid var(--navy-border); }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; flex-shrink: 0; text-decoration: none; }
+    .logo-mark { width: 32px; height: 32px; flex-shrink: 0; }
+    .logo-mark svg { width: 100%; height: 100%; }
+    .logo-text { display: flex; flex-direction: column; gap: 2px; }
+    .logo-name { font-family: var(--font-mono); font-size: .95rem; font-weight: 500; color: var(--text); letter-spacing: -.02em; line-height: 1; }
+    .logo-apex { color: var(--amber); }
+    .logo-org { color: var(--text-muted); font-size: .8rem; }
+    .logo-tag { font-size: .5rem; letter-spacing: .22em; text-transform: uppercase; color: var(--text-muted); font-family: var(--font-mono); line-height: 1; }
+    .nav-right { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
+    .nav-pill { background: none; border: 1px solid var(--navy-border); border-radius: 4px; color: var(--text-dim); font-size: .62rem; padding: .3rem .65rem; font-family: var(--font-mono); letter-spacing: .04em; text-decoration: none; transition: border-color .15s, color .15s; }
+    .nav-pill:hover { border-color: var(--amber); color: var(--text); }
+    @media (max-width: 600px) { .logo-tag, .nav-pill { display: none; } }
+
+    /* ── BANNERS ── */
+    .vintage-banner { max-width:1024px; margin: 12px auto 0; background: rgba(245,166,35,.09); border: 1px solid rgba(245,166,35,.28); border-radius: 6px; padding: 8px 16px; font-size: 12px; color: var(--amber); }
+    .vintage-banner strong { font-weight: 700; }
+    .pii-notice { max-width:1024px; margin: 8px auto 0; background: rgba(66,165,245,.08); border: 1px solid rgba(66,165,245,.22); border-radius: 6px; padding: 8px 16px; font-size: 12px; color: var(--blue); }
+
+    /* ── TOOL HEADER ── */
+    .tool-header { max-width:1024px; margin:0 auto; padding:20px 16px 12px; }
+    .tool-id-badge { font-size: 11px; color: var(--amber); font-family: var(--font-mono); font-weight: 600; margin-bottom: 6px; letter-spacing: .04em; }
+    .tool-title { font-family: var(--font-serif); font-size: 28px; color: var(--text); margin-bottom: 6px; }
+    .tool-desc { font-size: 13px; color: var(--text-dim); max-width: 660px; }
+
+    /* ── MAIN GRID ── */
+    .main { display:grid; grid-template-columns:370px 1fr; gap:16px; padding:0 16px 16px; max-width:1024px; margin:0 auto; }
+    @media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+
+    /* ── CARDS ── */
+    .card { background: var(--navy-card); border: 1px solid var(--navy-border); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .card-title { font-size: 11px; font-weight: 700; color: var(--amber); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; }
+
+    /* ── FORM ── */
+    .form-group { margin-bottom: 11px; }
+    .form-label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 5px; font-weight: 600; }
+    .req { color: var(--coral); margin-left: 2px; }
+    .form-input, .form-select { width: 100%; background: var(--navy-mid); border: 1px solid var(--navy-border); color: var(--text); padding: 8px 10px; border-radius: 5px; font-family: var(--font-sans); font-size: 13px; transition: border-color .15s; -webkit-appearance: none; appearance: none; }
+    .form-input:focus, .form-select:focus { outline: none; border-color: var(--amber); }
+    .form-input::placeholder { color: var(--text-muted); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .divider { border: none; border-top: 1px solid var(--navy-border); margin: 13px 0; }
+
+    /* ── BUTTON ── */
+    .btn-calc { width: 100%; padding: 11px; background: var(--amber); color: var(--navy); border: none; border-radius: 6px; font-family: var(--font-sans); font-size: 14px; font-weight: 700; cursor: pointer; transition: background .15s; margin-top: 4px; }
+    .btn-calc:hover { background: var(--amber-dim); }
+
+    /* ── RESULTS PLACEHOLDER ── */
+    .results-placeholder { display: flex; align-items: center; justify-content: center; min-height: 220px; color: var(--text-muted); font-size: 13px; border: 1px dashed var(--navy-border); border-radius: 8px; text-align: center; padding: 24px; }
+
+    /* ── METRIC ROWS ── */
+    .metric-row { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+    .metric-row:last-child { border-bottom: none; }
+    .metric-label { font-size: 12px; color: var(--text-dim); }
+    .metric-value { font-family: var(--font-mono); font-size: 14px; color: var(--text); font-weight: 600; }
+    .metric-value.good { color: var(--green); }
+    .metric-value.warn { color: var(--amber); }
+    .metric-value.bad  { color: var(--coral); }
+
+    /* ── BENCHMARK TABLE ── */
+    .bench-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .bench-table th { text-align: left; color: var(--text-muted); font-weight: 600; padding: 5px 8px; border-bottom: 1px solid var(--navy-border); }
+    .bench-table td { padding: 7px 8px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: middle; }
+    .bench-table td:first-child { color: var(--text-dim); font-size: 11px; }
+    .bench-table td.mono { font-family: var(--font-mono); font-size: 12px; }
+    .bench-table td.tgt  { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+    .chip { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+    .chip.exceeds { background: rgba(102,187,106,.2);  color: var(--green); }
+    .chip.meets   { background: rgba(245,166,35,.18);  color: var(--amber); }
+    .chip.below   { background: rgba(232,115,90,.18);  color: var(--coral); }
+    .chip.na      { background: rgba(139,163,188,.12); color: var(--text-muted); }
+
+    /* ── ROI GRADE BADGE ── */
+    .grade-badge { text-align: center; padding: 18px 16px; border-radius: 8px; margin-bottom: 12px; }
+    .grade-badge .g-label { font-size: 11px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+    .grade-badge .g-value { font-family: var(--font-serif); font-size: 34px; margin: 4px 0 2px; }
+    .grade-badge .g-sub   { font-size: 12px; color: var(--text-dim); }
+    .grade-badge .g-count { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+    .grade-excellent { background: rgba(102,187,106,.13); border: 1px solid rgba(102,187,106,.38); }
+    .grade-excellent .g-value { color: var(--green); }
+    .grade-strong    { background: rgba(78,205,196,.11);  border: 1px solid rgba(78,205,196,.33); }
+    .grade-strong    .g-value { color: var(--teal); }
+    .grade-moderate  { background: rgba(245,166,35,.09);  border: 1px solid rgba(245,166,35,.28); }
+    .grade-moderate  .g-value { color: var(--amber); }
+    .grade-below     { background: rgba(232,115,90,.09);  border: 1px solid rgba(232,115,90,.28); }
+    .grade-below     .g-value { color: var(--coral); }
+
+    /* ── EXPORT ROW ── */
+    .results-export-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+    .btn-export { padding: 8px 14px; border: 1px solid; border-radius: 5px; font-family: var(--font-sans); font-size: 12px; font-weight: 600; cursor: pointer; background: transparent; transition: all .15s; }
+    .btn-export.md  { border-color: var(--teal);  color: var(--teal);  }
+    .btn-export.md:hover:not(:disabled)  { background: var(--teal);  color: var(--navy); }
+    .btn-export.ap2 { border-color: var(--amber); color: var(--amber); }
+    .btn-export.ap2:hover:not(:disabled) { background: var(--amber); color: var(--navy); }
+    .btn-export:disabled { opacity: .28; cursor: not-allowed; }
+    .btn-ap2-help { background: transparent; border: 1px solid var(--navy-border); color: var(--text-muted); padding: 7px 10px; border-radius: 5px; font-size: 13px; cursor: pointer; transition: all .15s; font-family: var(--font-sans); }
+    .btn-ap2-help:hover { border-color: var(--amber); color: var(--amber); }
+
+    /* ── MCP PANEL ── */
+    .mcp-wrap { margin: 0 16px 16px; }
+    .mcp-toggle { background: transparent; border: 1px solid var(--navy-border); color: var(--text-muted); padding: 6px 12px; border-radius: 5px; font-family: var(--font-mono); font-size: 11px; cursor: pointer; transition: all .15s; }
+    .mcp-toggle:hover { border-color: var(--teal); color: var(--teal); }
+    .mcp-panel { display: none; background: var(--navy-mid); border: 1px solid var(--navy-border); border-radius: 8px; padding: 14px; margin-top: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto; }
+    .mcp-panel.open { display: block; }
+
+    /* ── FOOTER ── */
+    footer { background: var(--navy-mid); border-top: 1px solid var(--navy-border); padding: 16px; font-size: 11px; color: var(--text-muted); }
+    footer a { color: var(--text-dim); text-decoration: none; }
+    footer a:hover { color: var(--amber); }
+    .footer-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 5px; }
+
+    /* ── UTIL ── */
+    .hidden { display: none !important; }
+    .hint { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+<!-- ──────────────────────────────────────────────────────────────────────────
+  LANG BAR
+  CONTRACT §2.1: <button> toggles only — <a> toggles deprecated
+  6 languages: EN ES FR AR PT 中文
+────────────────────────────────────────────────────────────────────────────── -->
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')" data-lang="en">EN</button>
+    <button class="lang-btn" onclick="setLang('es')" data-lang="es">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')" data-lang="fr">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')" data-lang="ar">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')" data-lang="pt">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')" data-lang="zh">中文</button>
+  </div>
+</div>
+
+<!-- ── NAV ── -->
+<nav aria-label="Site navigation">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1B2A" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1B2A" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-right">
+      <a href="https://apexadvisory.site" class="nav-pill" target="_blank" rel="noopener">ApexAdvisory.site</a>
+      <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── VINTAGE BANNER ── -->
+<div class="vintage-banner">
+  <strong>Data vintage:</strong>
+  WIOA performance targets — DOL ETA PY 2023 (Program Year Jul 2023 – Jun 2024) ·
+  BLS QCEW Q3 2023 private-sector average annual wages (12 sectors) ·
+  All figures embedded at build time ·
+  <strong>Refresh flag: very low</strong> (WIOA targets negotiated on 2-year cycles; BLS QCEW annual)
+</div>
+
+<!-- ── PII NOTICE — exact CONTRACT §1.3 text ── -->
+<div class="pii-notice">
+  🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+</div>
+
+<!-- ── TOOL HEADER ── -->
+<header class="tool-header">
+  <div class="tool-id-badge" data-i18n="tool_id_badge">AL · 07 · Workforce Development</div>
+  <h1 class="tool-title" data-i18n="tool_title">Workforce Board ROI Report Generator</h1>
+  <p class="tool-desc" data-i18n="tool_desc">Enter your program's cost and outcome data to benchmark against WIOA PY 2023 national performance targets, calculate cost-per-outcome metrics, and model taxpayer ROI. Export a WIOA-formatted AP2 mandate for downstream AI workflows.</p>
+</header>
+
+<!-- ──────────────────────────────────────────────────────────────────────────
+  MAIN CONTENT — 2-column grid: inputs (left) · results (right)
+────────────────────────────────────────────────────────────────────────────── -->
+<div class="main">
+
+  <!-- ── LEFT: INPUTS ── -->
+  <div>
+
+    <!-- Program Information -->
+    <div class="card">
+      <div class="card-title" data-i18n="sect_program">Program Information</div>
+
+      <div class="form-group">
+        <label class="form-label" for="programName">Program Name <span class="req">*</span></label>
+        <input type="text" id="programName" class="form-input" placeholder="e.g. Advanced Manufacturing Cohort 3">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="programType">Program Type <span class="req">*</span></label>
+          <select id="programType" class="form-select" onchange="onProgramTypeChange()">
+            <option value="">— Select —</option>
+            <option value="adult">Adult (Title I-B)</option>
+            <option value="dislocated_worker">Dislocated Worker (Title I-B)</option>
+            <option value="youth">Youth (Title I-B)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="programYear">Program Year</label>
+          <select id="programYear" class="form-select">
+            <option value="PY 2023" selected>PY 2023</option>
+            <option value="PY 2022">PY 2022</option>
+            <option value="PY 2021">PY 2021</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="sector">Target Sector (BLS QCEW) <span class="req">*</span></label>
+        <select id="sector" class="form-select">
+          <option value="">— Select sector —</option>
+          <option value="healthcare">Healthcare &amp; Social Assistance</option>
+          <option value="manufacturing">Manufacturing</option>
+          <option value="construction">Construction</option>
+          <option value="it_tech">Information Technology</option>
+          <option value="retail">Retail Trade</option>
+          <option value="transportation">Transportation &amp; Warehousing</option>
+          <option value="finance">Financial Services &amp; Insurance</option>
+          <option value="education">Educational Services</option>
+          <option value="hospitality">Accommodation &amp; Food Services</option>
+          <option value="professional">Professional &amp; Business Services</option>
+          <option value="public_admin">Public Administration</option>
+          <option value="other">Other / Mixed Sectors</option>
+        </select>
+      </div>
+
+      <hr class="divider">
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="totalBudget">Total Budget ($) <span class="req">*</span></label>
+          <input type="number" id="totalBudget" class="form-input" placeholder="500000" min="0" step="1000">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="avgTrainingWeeks">Avg. Training (weeks)</label>
+          <input type="number" id="avgTrainingWeeks" class="form-input" placeholder="16" min="1" max="104">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="participantsEnrolled">Participants Enrolled <span class="req">*</span></label>
+          <input type="number" id="participantsEnrolled" class="form-input" placeholder="150" min="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="participantsExited">Participants Exited</label>
+          <input type="number" id="participantsExited" class="form-input" placeholder="120" min="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- WIOA Outcome Metrics -->
+    <div class="card">
+      <div class="card-title" data-i18n="sect_outcomes">WIOA Performance Outcomes</div>
+      <p class="hint" data-i18n="outcomes_hint">Enter your program's reported outcomes. Leave blank if not applicable for this program type.</p>
+
+      <div class="form-group">
+        <label class="form-label" for="empRateQ2" id="labelEmpQ2">Employment Rate – Q2 After Exit (%)</label>
+        <input type="number" id="empRateQ2" class="form-input" placeholder="76" min="0" max="100" step="0.1">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="empRateQ4" id="labelEmpQ4">Employment Rate – Q4 After Exit (%)</label>
+        <input type="number" id="empRateQ4" class="form-input" placeholder="74" min="0" max="100" step="0.1">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="medianEarningsQ2">Median Earnings – Q2 After Exit ($)</label>
+        <input type="number" id="medianEarningsQ2" class="form-input" placeholder="6200" min="0" step="100">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="credentialRate">Credential Attainment Rate (%)</label>
+        <input type="number" id="credentialRate" class="form-input" placeholder="53" min="0" max="100" step="0.1">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="skillGainsRate">Measurable Skill Gains Rate (%)</label>
+        <input type="number" id="skillGainsRate" class="form-input" placeholder="56" min="0" max="100" step="0.1">
+      </div>
+
+      <button class="btn-calc" onclick="generateReport()" data-i18n="btn_generate">Generate ROI Report</button>
+    </div>
+
+  </div><!-- /inputs col -->
+
+  <!-- ── RIGHT: RESULTS ── -->
+  <div>
+
+    <!-- Placeholder -->
+    <div id="resultsPlaceholder" class="results-placeholder">
+      <div>
+        <div style="font-size:28px;margin-bottom:10px;">📊</div>
+        <div data-i18n="placeholder_msg">Enter program data and click<br><strong>Generate ROI Report</strong></div>
+      </div>
+    </div>
+
+    <!-- Results content (hidden until generated) -->
+    <div id="resultsContent" class="hidden">
+
+      <!-- ROI Grade -->
+      <div id="gradeWidget" class="grade-badge"></div>
+
+      <!-- Cost Efficiency -->
+      <div class="card">
+        <div class="card-title" data-i18n="sect_cost">Cost Efficiency Metrics</div>
+        <div id="costMetrics"></div>
+      </div>
+
+      <!-- WIOA Benchmark Scorecard -->
+      <div class="card">
+        <div class="card-title" data-i18n="sect_bench">WIOA PY 2023 Benchmark Scorecard</div>
+        <div id="benchScorecard"></div>
+      </div>
+
+      <!-- Wage & Tax Recapture -->
+      <div class="card">
+        <div class="card-title" data-i18n="sect_wage">Wage &amp; Taxpayer ROI Analysis</div>
+        <div id="wageMetrics"></div>
+        <p id="wageNote" style="font-size:10px;color:var(--text-muted);margin-top:8px;"></p>
+      </div>
+
+      <!-- 3-Year ROI Summary -->
+      <div class="card">
+        <div class="card-title" data-i18n="sect_roi">3-Year Program ROI Summary</div>
+        <div id="roiMetrics"></div>
+        <p style="font-size:10px;color:var(--text-muted);margin-top:8px;" data-i18n="roi_method">
+          Tax recapture assumes ~30% combined effective rate (federal income + FICA + state avg.). Annualized from Q2 median earnings (×4). Wage gain vs. BLS QCEW sector baseline. Methodology: DOL ETA workforce ROI framework; IMPAQ International (2013) net impact and benefit-cost model.
+        </p>
+      </div>
+
+      <!-- Export row: Markdown first, AP2 second (CONTRACT §4 Tier 1) -->
+      <div class="results-export-row">
+        <button id="btnMd"  class="btn-export md"  onclick="exportMarkdown()" disabled
+          title="Run the analysis above to generate an export" data-i18n="btn_md">⬇ Markdown Report</button>
+        <button id="btnAP2" class="btn-export ap2" onclick="exportAP2()" disabled
+          title="Run the analysis above to generate an AP2 mandate" data-i18n="btn_ap2">⬇ AP2 JSON Export</button>
+        <button class="btn-ap2-help" onclick="showAP2Help()" title="About AP2 Export" aria-label="About AP2 Export">?</button>
+      </div>
+
+    </div><!-- /resultsContent -->
+
+  </div><!-- /results col -->
+</div><!-- /main -->
+
+<!-- ──────────────────────────────────────────────────────────────────────────
+  MCP PANEL — CONTRACT §4 MCP registry panel
+────────────────────────────────────────────────────────────────────────────── -->
+<div class="mcp-wrap">
+  <button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMcp()" aria-expanded="false">{ } MCP Registry</button>
+  <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP registry data"></div>
+</div>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-row">
+    <span>© 2024–2026 <a href="https://apexadvisory.site" target="_blank" rel="noopener">ApexAdvisory.site</a></span>
+    <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a>
+    <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>
+    <span>AL-07 · Workforce Board ROI Report Generator</span>
+  </div>
+  <div class="footer-row">
+    <span>Data: DOL ETA WIOA PY 2023 National Performance Targets · BLS QCEW Q3 2023 Average Annual Wages (private sector, 12 sectors)</span>
+  </div>
+  <div>Built with Apex Logics · <a href="https://apexlogics.org" target="_blank" rel="noopener">apexlogics.org</a> · Open source · Zero PII</div>
+</footer>
+
+<script>
+'use strict';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AP2SCHEMA — reference implementation per CONTRACT Appendix F
+// ─────────────────────────────────────────────────────────────────────────────
+const AP2Schema = {
+  required: [
+    'ap2_version','mandate_id','issued_at','issued_by',
+    'tool_id','tool_version','al_id','mandate_type',
+    'payload','summary','audit_metadata'
+  ],
+  validMandateTypes: [
+    'credential_roi_evaluation','human_capital_assessment',
+    'automation_exposure_score','career_resilience_score',
+    'workforce_program_roi','career_pivot_assessment',
+    'career_transition_record','scholarship_pipeline_plan',
+    'fafsa_sai_estimate','exam_pathway_plan',
+    'benefits_election_record','severance_decision_record',
+    'offer_negotiation_record','graduate_school_roi_record',
+    'apprenticeship_match_record','cpd_credit_record',
+    'job_search_roi_record','career_break_record',
+    'loan_repayment_record','freelance_total_cost_record',
+    'mba_roi_evaluation','test_prep_roi_record',
+    'international_student_cost_record','parent_college_roi_record',
+    'equity_compensation_record'
+  ],
+  validate(mandate) {
+    const errors = [];
+    if (!mandate || typeof mandate !== 'object') return { valid: false, errors: ['mandate is not an object'] };
+    this.required.forEach(k => {
+      if (mandate[k] === undefined || mandate[k] === null) errors.push(`missing required field: ${k}`);
+    });
+    if (mandate.ap2_version !== '1.0') errors.push('ap2_version must be "1.0"');
+    if (mandate.mandate_type && !this.validMandateTypes.includes(mandate.mandate_type))
+      errors.push(`mandate_type "${mandate.mandate_type}" is not recognized`);
+    if (mandate.al_id && !/^AL-\d{1,2}(\+\d{1,2})?$/.test(mandate.al_id))
+      errors.push(`al_id "${mandate.al_id}" format invalid`);
+    if (mandate.audit_metadata && mandate.audit_metadata.client_side_executed !== true)
+      errors.push('audit_metadata.client_side_executed must be true');
+    if (mandate.audit_metadata && mandate.audit_metadata.zero_pii_verified !== true)
+      errors.push('audit_metadata.zero_pii_verified must be true');
+    if (mandate.audit_metadata && mandate.audit_metadata.deterministic_run !== true)
+      errors.push('audit_metadata.deterministic_run must be true');
+    return { valid: errors.length === 0, errors };
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DATA LAYER — WIOA PY 2023 NATIONAL AVERAGE NEGOTIATED PERFORMANCE TARGETS
+// Source: U.S. Department of Labor, Employment and Training Administration
+// WIOA PY 2023 (Program Year: July 1, 2023 – June 30, 2024)
+// ETA Form 9173 / PIRL national average negotiated levels
+// Note: State-level targets vary; these are national average NPTs
+// ─────────────────────────────────────────────────────────────────────────────
+const WIOA_TARGETS = {
+  adult: {
+    label:            'Adult (Title I-B)',
+    empRateQ2:        76.0,   // Employment Rate – 2nd Quarter After Exit (%)
+    empRateQ4:        74.0,   // Employment Rate – 4th Quarter After Exit (%)
+    medianEarningsQ2: 6200,   // Median Earnings – 2nd Quarter After Exit ($)
+    credentialRate:   53.0,   // Credential Attainment Rate (%)
+    skillGainsRate:   56.0,   // Measurable Skill Gains (%)
+    empQ2Label: 'Employment Rate – Q2 After Exit (%)',
+    empQ4Label: 'Employment Rate – Q4 After Exit (%)',
+  },
+  dislocated_worker: {
+    label:            'Dislocated Worker (Title I-B)',
+    empRateQ2:        76.0,
+    empRateQ4:        73.0,
+    medianEarningsQ2: 8100,
+    credentialRate:   60.0,
+    skillGainsRate:   53.0,
+    empQ2Label: 'Employment Rate – Q2 After Exit (%)',
+    empQ4Label: 'Employment Rate – Q4 After Exit (%)',
+  },
+  youth: {
+    label:            'Youth (Title I-B)',
+    empRateQ2:        67.0,   // Employment, Education, or Training Rate – Q2
+    empRateQ4:        72.0,   // Employment, Education, or Training Rate – Q4
+    medianEarningsQ2: 3400,   // Median Earnings Q2 (lower; many part-time/in-school)
+    credentialRate:   68.0,
+    skillGainsRate:   58.0,
+    empQ2Label: 'Employment/Education/Training Rate – Q2 (%)',
+    empQ4Label: 'Employment/Education/Training Rate – Q4 (%)',
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DATA LAYER — BLS QCEW Q3 2023 AVERAGE ANNUAL WAGES BY SECTOR (private sector)
+// Source: Bureau of Labor Statistics Quarterly Census of Employment and Wages
+// Q3 2023 (July–September 2023); private-sector all-industry averages by NAICS
+// ─────────────────────────────────────────────────────────────────────────────
+const BLS_SECTORS = {
+  healthcare:     { label: 'Healthcare & Social Assistance',   annualWage: 57800 },
+  manufacturing:  { label: 'Manufacturing',                    annualWage: 62400 },
+  construction:   { label: 'Construction',                     annualWage: 65200 },
+  it_tech:        { label: 'Information Technology',           annualWage: 106500 },
+  retail:         { label: 'Retail Trade',                     annualWage: 37200 },
+  transportation: { label: 'Transportation & Warehousing',     annualWage: 53800 },
+  finance:        { label: 'Financial Services & Insurance',   annualWage: 84600 },
+  education:      { label: 'Educational Services',             annualWage: 54900 },
+  hospitality:    { label: 'Accommodation & Food Services',    annualWage: 32400 },
+  professional:   { label: 'Professional & Business Services', annualWage: 77800 },
+  public_admin:   { label: 'Public Administration',           annualWage: 68200 },
+  other:          { label: 'Other / Mixed Sectors',            annualWage: 52000 },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GLOBAL STATE
+// ─────────────────────────────────────────────────────────────────────────────
+let lastReport = null;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROGRAM TYPE CHANGE — update Youth metric labels
+// ─────────────────────────────────────────────────────────────────────────────
+function onProgramTypeChange() {
+  const pt = document.getElementById('programType').value;
+  const isYouth = pt === 'youth';
+  document.getElementById('labelEmpQ2').textContent =
+    isYouth ? 'Employment / Education / Training Rate – Q2 (%)' : 'Employment Rate – Q2 After Exit (%)';
+  document.getElementById('labelEmpQ4').textContent =
+    isYouth ? 'Employment / Education / Training Rate – Q4 (%)' : 'Employment Rate – Q4 After Exit (%)';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UTILITY FORMATTERS
+// ─────────────────────────────────────────────────────────────────────────────
+const fmtUSD = n => n != null ? '$' + Math.round(n).toLocaleString('en-US') : '—';
+const fmtPct = n => (n != null && !isNaN(n)) ? n.toFixed(1) + '%' : '—';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CALCULATION ENGINE
+// ─────────────────────────────────────────────────────────────────────────────
+function generateReport() {
+  // ── Collect inputs ────────────────────────────────────────────────────────
+  const programName   = document.getElementById('programName').value.trim() || 'Unnamed Program';
+  const programType   = document.getElementById('programType').value;
+  const programYear   = document.getElementById('programYear').value;
+  const sectorKey     = document.getElementById('sector').value;
+  const totalBudget   = parseFloat(document.getElementById('totalBudget').value);
+  const avgWeeks      = parseFloat(document.getElementById('avgTrainingWeeks').value) || null;
+  const enrolled      = parseInt(document.getElementById('participantsEnrolled').value, 10);
+  const exitedRaw     = document.getElementById('participantsExited').value;
+  const exited        = exitedRaw ? parseInt(exitedRaw, 10) : enrolled;
+
+  const empRateQ2Raw    = document.getElementById('empRateQ2').value;
+  const empRateQ4Raw    = document.getElementById('empRateQ4').value;
+  const medEarningsRaw  = document.getElementById('medianEarningsQ2').value;
+  const credRateRaw     = document.getElementById('credentialRate').value;
+  const skillGainsRaw   = document.getElementById('skillGainsRate').value;
+
+  const empRateQ2      = empRateQ2Raw    !== '' ? parseFloat(empRateQ2Raw)    : null;
+  const empRateQ4      = empRateQ4Raw    !== '' ? parseFloat(empRateQ4Raw)    : null;
+  const medEarnings    = medEarningsRaw  !== '' ? parseFloat(medEarningsRaw)  : null;
+  const credRate       = credRateRaw     !== '' ? parseFloat(credRateRaw)     : null;
+  const skillGains     = skillGainsRaw   !== '' ? parseFloat(skillGainsRaw)   : null;
+
+  // ── Validate required ────────────────────────────────────────────────────
+  if (!programType) { alert('Please select a Program Type.'); return; }
+  if (!sectorKey)   { alert('Please select a Target Sector.'); return; }
+  if (!(totalBudget > 0)) { alert('Please enter a Total Budget greater than $0.'); return; }
+  if (!(enrolled > 0))    { alert('Please enter Participants Enrolled (≥ 1).'); return; }
+
+  const targets = WIOA_TARGETS[programType];
+  const sector  = BLS_SECTORS[sectorKey];
+
+  // ── Cost efficiency ──────────────────────────────────────────────────────
+  const costPerParticipant = totalBudget / enrolled;
+  const employedQ2   = empRateQ2 !== null ? Math.round(exited * empRateQ2 / 100) : null;
+  const credentialed = credRate  !== null ? Math.round(exited * credRate  / 100) : null;
+  const costPerEmployed   = (employedQ2 && employedQ2 > 0)  ? totalBudget / employedQ2  : null;
+  const costPerCredential = (credentialed && credentialed > 0) ? totalBudget / credentialed : null;
+
+  // ── Benchmark scorecard ───────────────────────────────────────────────────
+  // Logic: exceeds = ≥2pp above target (or ≥5% above for earnings)
+  //        meets   = within 1pp below target
+  //        below   = >1pp under target
+  function benchStatus(userVal, target, isEarnings) {
+    if (userVal === null) return 'na';
+    if (isEarnings) return userVal >= target * 1.05 ? 'exceeds' : userVal >= target ? 'meets' : 'below';
+    return userVal >= target + 2 ? 'exceeds' : userVal >= target - 1 ? 'meets' : 'below';
+  }
+
+  const benchmarks = [
+    { label: targets.empQ2Label,              userVal: empRateQ2, target: targets.empRateQ2,        isEarnings: false },
+    { label: targets.empQ4Label,              userVal: empRateQ4, target: targets.empRateQ4,        isEarnings: false },
+    { label: 'Median Earnings – Q2 ($)',       userVal: medEarnings, target: targets.medianEarningsQ2, isEarnings: true  },
+    { label: 'Credential Attainment (%)',       userVal: credRate,   target: targets.credentialRate,   isEarnings: false },
+    { label: 'Measurable Skill Gains (%)',      userVal: skillGains,  target: targets.skillGainsRate,   isEarnings: false },
+  ].map(b => ({ ...b, status: benchStatus(b.userVal, b.target, b.isEarnings) }));
+
+  const validCount   = benchmarks.filter(b => b.status !== 'na').length;
+  const metCount     = benchmarks.filter(b => b.status === 'exceeds' || b.status === 'meets').length;
+  const exceedsCount = benchmarks.filter(b => b.status === 'exceeds').length;
+
+  // ── Wage & taxpayer ROI ──────────────────────────────────────────────────
+  // Annualize Q2 median earnings (Q2 = one quarter; ×4 = annual proxy)
+  const annualizedEarnings   = medEarnings !== null ? medEarnings * 4 : null;
+  const sectorBaselineAnnual = sector.annualWage;
+  const earningsGainAnnual   = annualizedEarnings !== null
+    ? annualizedEarnings - sectorBaselineAnnual
+    : null;
+
+  // Taxpayer ROI: wage gain above sector baseline × 30% combined tax rate
+  // Applied to employed participants only (DOL ETA methodology)
+  const TAX_RATE = 0.30;
+  const taxRecapturePerPerson = (earningsGainAnnual !== null && earningsGainAnnual > 0)
+    ? earningsGainAnnual * TAX_RATE
+    : 0;
+  const annualTaxRecapture = (employedQ2 !== null)
+    ? employedQ2 * taxRecapturePerPerson
+    : null;
+
+  const breakevenMonths = (annualTaxRecapture && annualTaxRecapture > 0)
+    ? totalBudget / (annualTaxRecapture / 12)
+    : null;
+  const threeYrBenefit  = annualTaxRecapture !== null
+    ? annualTaxRecapture * 3 - totalBudget
+    : null;
+  const returnPerDollar = (annualTaxRecapture !== null && totalBudget > 0)
+    ? (annualTaxRecapture * 3) / totalBudget
+    : null;
+
+  // ── ROI Grade ────────────────────────────────────────────────────────────
+  let grade, gradeClass, gradeSub;
+  const hasROI = returnPerDollar !== null;
+  if (hasROI && validCount > 0) {
+    if      (returnPerDollar >= 2.0 && metCount >= 4) { grade = 'Excellent'; gradeClass = 'grade-excellent'; gradeSub = 'Strong taxpayer return with benchmark-exceeding outcomes'; }
+    else if (returnPerDollar >= 1.5 && metCount >= 3) { grade = 'Strong';    gradeClass = 'grade-strong';    gradeSub = 'Above-average return with solid WIOA benchmark performance'; }
+    else if (returnPerDollar >= 1.0 && metCount >= 2) { grade = 'Moderate';  gradeClass = 'grade-moderate';  gradeSub = 'Positive return; selected benchmarks need improvement'; }
+    else                                               { grade = 'Below Target'; gradeClass = 'grade-below'; gradeSub = 'Program may benefit from a strategic review'; }
+  } else if (validCount > 0) {
+    grade = 'Scored'; gradeClass = 'grade-moderate'; gradeSub = 'Enter median earnings to unlock full ROI grade';
+  } else {
+    grade = 'Pending Data'; gradeClass = 'grade-moderate'; gradeSub = 'Enter outcome metrics to generate benchmark comparison';
+  }
+
+  // ── Store and render ─────────────────────────────────────────────────────
+  lastReport = {
+    programName, programType, programYear, sectorKey,
+    totalBudget, enrolled, exited, avgWeeks,
+    empRateQ2, empRateQ4, medEarnings, credRate, skillGains,
+    targets, sector,
+    costPerParticipant, employedQ2, credentialed, costPerEmployed, costPerCredential,
+    benchmarks, validCount, metCount, exceedsCount,
+    annualizedEarnings, sectorBaselineAnnual, earningsGainAnnual,
+    annualTaxRecapture, breakevenMonths, threeYrBenefit, returnPerDollar,
+    grade, gradeClass, gradeSub, hasROI,
+  };
+
+  renderResults(lastReport);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────────────────────────────────────
+function renderResults(r) {
+  document.getElementById('resultsPlaceholder').classList.add('hidden');
+  document.getElementById('resultsContent').classList.remove('hidden');
+
+  // Enable export buttons (post-run state per CONTRACT §3.3)
+  document.getElementById('btnMd').removeAttribute('disabled');
+  document.getElementById('btnAP2').removeAttribute('disabled');
+  document.getElementById('btnMd').title  = 'Download Markdown ROI report';
+  document.getElementById('btnAP2').title = 'For agent integration · audit trail · scenario handoff';
+
+  // ── Grade badge ──────────────────────────────────────────────────────────
+  const gw = document.getElementById('gradeWidget');
+  gw.className = 'grade-badge ' + r.gradeClass;
+  gw.innerHTML = `
+    <div class="g-label">Overall Program ROI Grade</div>
+    <div class="g-value">${r.grade}</div>
+    <div class="g-sub">${r.gradeSub}</div>
+    <div class="g-count">${r.metCount}/${r.validCount} WIOA benchmarks met · ${r.exceedsCount} exceeded</div>
+  `;
+
+  // ── Cost efficiency ──────────────────────────────────────────────────────
+  document.getElementById('costMetrics').innerHTML = `
+    <div class="metric-row"><span class="metric-label">Cost per Participant</span><span class="metric-value">${fmtUSD(r.costPerParticipant)}</span></div>
+    <div class="metric-row"><span class="metric-label">Cost per Employed Exit (Q2)</span><span class="metric-value">${r.costPerEmployed != null ? fmtUSD(r.costPerEmployed) : '—'}</span></div>
+    <div class="metric-row"><span class="metric-label">Cost per Credential Attained</span><span class="metric-value">${r.costPerCredential != null ? fmtUSD(r.costPerCredential) : '—'}</span></div>
+    <div class="metric-row"><span class="metric-label">Participants Enrolled</span><span class="metric-value">${r.enrolled.toLocaleString()}</span></div>
+    <div class="metric-row"><span class="metric-label">Participants Exited</span><span class="metric-value">${r.exited.toLocaleString()}</span></div>
+    <div class="metric-row"><span class="metric-label">Est. Employed (Q2)</span><span class="metric-value">${r.employedQ2 != null ? r.employedQ2.toLocaleString() : '—'}</span></div>
+    <div class="metric-row"><span class="metric-label">Est. Credentialed</span><span class="metric-value">${r.credentialed != null ? r.credentialed.toLocaleString() : '—'}</span></div>
+    ${r.avgWeeks ? `<div class="metric-row"><span class="metric-label">Avg. Training Duration</span><span class="metric-value">${r.avgWeeks} wks</span></div>` : ''}
+  `;
+
+  // ── Benchmark scorecard ───────────────────────────────────────────────────
+  const chipLabel = { exceeds: '✅ Exceeds', meets: '≈ Meets', below: '✗ Below', na: '— N/A' };
+  const benchRows = r.benchmarks.map(b => {
+    const userFmt = b.userVal !== null
+      ? (b.isEarnings ? fmtUSD(b.userVal) : fmtPct(b.userVal))
+      : '—';
+    const tgtFmt = b.isEarnings ? fmtUSD(b.target) : fmtPct(b.target);
+    return `<tr>
+      <td>${b.label}</td>
+      <td class="mono">${userFmt}</td>
+      <td class="tgt">${tgtFmt}</td>
+      <td><span class="chip ${b.status}">${chipLabel[b.status]}</span></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('benchScorecard').innerHTML = `
+    <table class="bench-table">
+      <thead><tr><th>Indicator</th><th>Your Result</th><th>PY 2023 Target</th><th>Status</th></tr></thead>
+      <tbody>${benchRows}</tbody>
+    </table>
+    <p style="font-size:10px;color:var(--text-muted);margin-top:8px;">
+      Source: DOL ETA WIOA PY 2023 national average negotiated performance targets.
+      Exceeds = ≥2 pp above target (or ≥5% above for earnings); Meets = within 1 pp; Below = &gt;1 pp under target.
+    </p>
+  `;
+
+  // ── Wage & tax recapture ─────────────────────────────────────────────────
+  const gainColor = r.earningsGainAnnual !== null
+    ? (r.earningsGainAnnual >= 0 ? 'good' : 'bad')
+    : '';
+  const gainStr = r.earningsGainAnnual !== null
+    ? (r.earningsGainAnnual >= 0 ? '+' : '') + fmtUSD(r.earningsGainAnnual) + '/yr'
+    : '—';
+  document.getElementById('wageMetrics').innerHTML = `
+    <div class="metric-row"><span class="metric-label">Sector Baseline (BLS QCEW Annual)</span><span class="metric-value">${fmtUSD(r.sectorBaselineAnnual)}</span></div>
+    <div class="metric-row"><span class="metric-label">Program Earnings Annualized (Q2 × 4)</span><span class="metric-value">${r.annualizedEarnings != null ? fmtUSD(r.annualizedEarnings) : '—'}</span></div>
+    <div class="metric-row"><span class="metric-label">Wage Gain vs. Sector Baseline</span><span class="metric-value ${gainColor}">${gainStr}</span></div>
+    <div class="metric-row"><span class="metric-label">Est. Annual Tax Recapture (all employed)</span><span class="metric-value ${r.annualTaxRecapture > 0 ? 'good' : ''}">${r.annualTaxRecapture != null ? fmtUSD(r.annualTaxRecapture) : '—'}</span></div>
+  `;
+  document.getElementById('wageNote').textContent =
+    `Sector: ${r.sector.label} · BLS QCEW Q3 2023 · ${r.earningsGainAnnual !== null && r.earningsGainAnnual < 0 ? 'Note: program median earnings below sector average — participants may be new entrants; pre-program wages would show a larger gain.' : 'Wage gain × 30% effective tax rate × employed participants.'}`;
+
+  // ── 3-Year ROI summary ───────────────────────────────────────────────────
+  const netColor = r.threeYrBenefit !== null ? (r.threeYrBenefit >= 0 ? 'good' : 'bad') : '';
+  const netStr   = r.threeYrBenefit !== null
+    ? (r.threeYrBenefit >= 0 ? '+' : '') + fmtUSD(r.threeYrBenefit)
+    : '—';
+  const bkStr = r.breakevenMonths != null
+    ? (r.breakevenMonths <= 36
+        ? Math.ceil(r.breakevenMonths) + ' months'
+        : (r.breakevenMonths / 12).toFixed(1) + ' years')
+    : '—';
+  const retStr = r.returnPerDollar != null ? '$' + r.returnPerDollar.toFixed(2) + ' per $1' : '—';
+  document.getElementById('roiMetrics').innerHTML = `
+    <div class="metric-row"><span class="metric-label">Total Program Budget</span><span class="metric-value">${fmtUSD(r.totalBudget)}</span></div>
+    <div class="metric-row"><span class="metric-label">Est. Annual Tax Recapture</span><span class="metric-value ${r.annualTaxRecapture > 0 ? 'good' : ''}">${r.annualTaxRecapture != null ? fmtUSD(r.annualTaxRecapture) : '—'}</span></div>
+    <div class="metric-row"><span class="metric-label">Break-even Point</span><span class="metric-value">${bkStr}</span></div>
+    <div class="metric-row"><span class="metric-label">3-Year Net Benefit</span><span class="metric-value ${netColor}">${netStr}</span></div>
+    <div class="metric-row"><span class="metric-label">Return per $1 Invested (3-yr)</span><span class="metric-value ${r.returnPerDollar >= 1 ? 'good' : 'warn'}">${retStr}</span></div>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UUID GENERATOR (with crypto.randomUUID fallback)
+// ─────────────────────────────────────────────────────────────────────────────
+function genUUID() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AP2 FILE NAME HELPER — {al_id}_{tool_id}_{YYYYMMDDHHMMSS}.ap2.json
+// ─────────────────────────────────────────────────────────────────────────────
+function ap2FileName() {
+  const now = new Date();
+  const ts = [
+    now.getFullYear(),
+    String(now.getMonth()+1).padStart(2,'0'),
+    String(now.getDate()).padStart(2,'0'),
+    String(now.getHours()).padStart(2,'0'),
+    String(now.getMinutes()).padStart(2,'0'),
+    String(now.getSeconds()).padStart(2,'0'),
+  ].join('');
+  return `AL-07_workforce-board-roi-report_${ts}.ap2.json`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AP2 EXPORT
+// ─────────────────────────────────────────────────────────────────────────────
+function exportAP2() {
+  if (!lastReport) { alert('Please generate a report first.'); return; }
+  const r = lastReport;
+
+  const benchObj = {};
+  r.benchmarks.forEach(b => {
+    const key = b.label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    benchObj[key] = { your_result: b.userVal, target: b.target, status: b.status };
+  });
+
+  const mandate = {
+    ap2_version: '1.0',
+    mandate_id:  genUUID(),
+    issued_at:   new Date().toISOString(),
+    issued_by:   'https://apexlogics.org/tools/workforce-board-roi-report/',
+    tool_id:     'workforce-board-roi-report',
+    tool_version:'1.0.0',
+    al_id:       'AL-07',
+    mandate_type:'workforce_program_roi',
+    payload: {
+      program: {
+        name:                 r.programName,
+        type:                 r.programType,
+        type_label:           r.targets.label,
+        sector:               r.sectorKey,
+        sector_label:         r.sector.label,
+        program_year:         r.programYear,
+        total_budget:         r.totalBudget,
+        participants_enrolled:r.enrolled,
+        participants_exited:  r.exited,
+        avg_training_weeks:   r.avgWeeks,
+      },
+      outcomes: {
+        employment_rate_q2:    r.empRateQ2,
+        employment_rate_q4:    r.empRateQ4,
+        median_earnings_q2:    r.medEarnings,
+        credential_attainment: r.credRate,
+        measurable_skill_gains:r.skillGains,
+      },
+      benchmark_comparison: {
+        wioa_targets_used:     r.programYear,
+        program_type:          r.programType,
+        indicators:            benchObj,
+        indicators_met:        r.metCount,
+        indicators_exceeded:   r.exceedsCount,
+        indicators_scored:     r.validCount,
+        performance_tier:      r.grade,
+      },
+      cost_efficiency: {
+        cost_per_participant:   r.costPerParticipant ? Math.round(r.costPerParticipant) : null,
+        cost_per_employed_q2:   r.costPerEmployed   ? Math.round(r.costPerEmployed)    : null,
+        cost_per_credential:    r.costPerCredential  ? Math.round(r.costPerCredential)  : null,
+      },
+      wage_roi: {
+        sector_baseline_annual:        r.sectorBaselineAnnual,
+        program_earnings_annualized:   r.annualizedEarnings,
+        wage_gain_vs_baseline_annual:  r.earningsGainAnnual ? Math.round(r.earningsGainAnnual) : null,
+        estimated_annual_tax_recapture:r.annualTaxRecapture ? Math.round(r.annualTaxRecapture): null,
+        effective_tax_rate_assumed:    0.30,
+      },
+      roi_summary: {
+        breakeven_months:       r.breakevenMonths ? Math.ceil(r.breakevenMonths) : null,
+        three_year_net_benefit: r.threeYrBenefit  ? Math.round(r.threeYrBenefit) : null,
+        return_per_dollar_3yr:  r.returnPerDollar ? parseFloat(r.returnPerDollar.toFixed(2)) : null,
+        roi_grade:              r.grade,
+      },
+    },
+    summary: `WIOA ${r.targets.label} program "${r.programName}" (${r.programYear}), sector: ${r.sector.label}. ROI Grade: ${r.grade}. ${r.metCount}/${r.validCount} WIOA PY 2023 benchmarks met (${r.exceedsCount} exceeded). ${r.returnPerDollar ? '3-year return: $' + r.returnPerDollar.toFixed(2) + ' per $1 invested.' : 'Earnings data not entered — taxpayer ROI not computed.'}`,
+    audit_metadata: {
+      rubric_version:       'v1',
+      data_vintage:         'DOL ETA WIOA PY 2023 national average negotiated performance targets · BLS QCEW Q3 2023',
+      client_side_executed: true,
+      zero_pii_verified:    true,
+      deterministic_run:    true,
+    },
+    agent_instructions: `AL-07 workforce ROI mandate. Downstream: consider AL-08+14 (Career Transition Suite) for participants needing pivot planning, AL-11 (Apprenticeship & Earn-and-Learn Matcher) for earn-and-learn pathways. If benchmark gaps exist in credential attainment, downstream credential tools (AL-02, AL-03) may help participants close credential gaps.`,
+    downstream_handoff_candidates: ['AL-08+14', 'AL-11', 'AL-02', 'AL-03'],
+  };
+
+  const result = AP2Schema.validate(mandate);
+  if (!result.valid) {
+    alert('AP2 schema validation failed:\n' + result.errors.join('\n'));
+    return;
+  }
+
+  const blob = new Blob([JSON.stringify(mandate, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = ap2FileName();
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MARKDOWN EXPORT
+// ─────────────────────────────────────────────────────────────────────────────
+function exportMarkdown() {
+  if (!lastReport) { alert('Please generate a report first.'); return; }
+  const r = lastReport;
+
+  const benchRows = r.benchmarks.map(b => {
+    const chipStr = { exceeds: '✅ Exceeds', meets: '≈ Meets', below: '✗ Below', na: '— N/A' };
+    const userFmt = b.userVal !== null ? (b.isEarnings ? fmtUSD(b.userVal) : fmtPct(b.userVal)) : '—';
+    const tgtFmt  = b.isEarnings ? fmtUSD(b.target) : fmtPct(b.target);
+    return `| ${b.label} | ${userFmt} | ${tgtFmt} | ${chipStr[b.status]} |`;
+  }).join('\n');
+
+  const bkStr = r.breakevenMonths != null
+    ? (r.breakevenMonths <= 36 ? Math.ceil(r.breakevenMonths) + ' months' : (r.breakevenMonths/12).toFixed(1) + ' years')
+    : 'N/A';
+  const gainStr = r.earningsGainAnnual != null
+    ? (r.earningsGainAnnual >= 0 ? '+' : '') + fmtUSD(r.earningsGainAnnual) + '/yr'
+    : 'N/A';
+
+  const md = `# Workforce Board ROI Report — AL-07
+**Program:** ${r.programName}
+**Type:** ${r.targets.label} · **Year:** ${r.programYear} · **Sector:** ${r.sector.label}
+**Generated:** ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})} · Tool: Apex Logics AL-07
+
+---
+
+## ROI Grade: ${r.grade}
+${r.gradeSub}
+${r.metCount}/${r.validCount} WIOA PY 2023 benchmarks met · ${r.exceedsCount} exceeded
+
+---
+
+## Cost Efficiency Metrics
+
+| Metric | Value |
+|---|---|
+| Total Budget | ${fmtUSD(r.totalBudget)} |
+| Participants Enrolled | ${r.enrolled.toLocaleString()} |
+| Participants Exited | ${r.exited.toLocaleString()} |
+| Est. Employed (Q2) | ${r.employedQ2 != null ? r.employedQ2.toLocaleString() : '—'} |
+| Est. Credentialed | ${r.credentialed != null ? r.credentialed.toLocaleString() : '—'} |
+| Cost per Participant | ${fmtUSD(r.costPerParticipant)} |
+| Cost per Employed Exit (Q2) | ${r.costPerEmployed ? fmtUSD(r.costPerEmployed) : '—'} |
+| Cost per Credential Attained | ${r.costPerCredential ? fmtUSD(r.costPerCredential) : '—'} |
+${r.avgWeeks ? `| Avg. Training Duration | ${r.avgWeeks} weeks |` : ''}
+
+---
+
+## WIOA PY 2023 Benchmark Scorecard
+
+| Indicator | Your Result | PY 2023 Target | Status |
+|---|---|---|---|
+${benchRows}
+
+*Source: DOL ETA WIOA PY 2023 national average negotiated performance targets.*
+
+---
+
+## Wage & Taxpayer ROI Analysis
+
+| Metric | Value |
+|---|---|
+| Sector Baseline (BLS QCEW Annual) | ${fmtUSD(r.sectorBaselineAnnual)} |
+| Program Earnings Annualized (Q2 × 4) | ${r.annualizedEarnings ? fmtUSD(r.annualizedEarnings) : '—'} |
+| Wage Gain vs. Sector Baseline | ${gainStr} |
+| Est. Annual Tax Recapture | ${r.annualTaxRecapture ? fmtUSD(r.annualTaxRecapture) : '—'} |
+
+---
+
+## 3-Year Program ROI Summary
+
+| Metric | Value |
+|---|---|
+| Total Program Budget | ${fmtUSD(r.totalBudget)} |
+| Est. Annual Tax Recapture | ${r.annualTaxRecapture ? fmtUSD(r.annualTaxRecapture) : '—'} |
+| Break-even Point | ${bkStr} |
+| 3-Year Net Benefit | ${r.threeYrBenefit != null ? (r.threeYrBenefit >= 0 ? '+' : '') + fmtUSD(r.threeYrBenefit) : '—'} |
+| Return per $1 Invested (3-yr) | ${r.returnPerDollar ? '$' + r.returnPerDollar.toFixed(2) : '—'} |
+
+---
+
+*Methodology: Tax recapture assumes 30% combined effective rate (federal income + FICA + state avg.). Annualized from Q2 median earnings (×4). Wage gain vs. BLS QCEW sector baseline. DOL ETA workforce ROI framework; IMPAQ International (2013) net impact model.*
+
+*Data: DOL ETA WIOA PY 2023 · BLS QCEW Q3 2023*
+*Apex Logics · apexlogics.org · AL-07 · CC BY 4.0*`;
+
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `AL-07_workforce_roi_${r.programYear.replace(' ','')}_${Date.now()}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AP2 HELP POPOVER (CONTRACT §3.3 — pull-revelation, never auto-displayed)
+// ─────────────────────────────────────────────────────────────────────────────
+function showAP2Help() {
+  alert(
+    'AP2 Export — Agent Purchase Protocol v1.0\n\n' +
+    'The AP2 JSON file encodes your workforce ROI report as a structured mandate that AI agents ' +
+    'and MCP-enabled tools can consume. The mandate_type "workforce_program_roi" is specific to AL-07.\n\n' +
+    'The export includes:\n' +
+    '• Program information and WIOA PY 2023 outcomes\n' +
+    '• Benchmark comparison vs. DOL national targets (5 indicators)\n' +
+    '• Cost-per-outcome metrics (per participant, per employment, per credential)\n' +
+    '• Wage gain and taxpayer ROI estimate\n' +
+    '• 3-year net benefit and return per $1 invested\n' +
+    '• Downstream handoff candidates (AL-08+14, AL-11, AL-02, AL-03)\n\n' +
+    'No personal data is included. The file is safe to share with AI workflows.\n\n' +
+    'Learn more: https://ap2-protocol.org/'
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MCP PANEL
+// ─────────────────────────────────────────────────────────────────────────────
+function toggleMcp() {
+  const panel = document.getElementById('mcpPanel');
+  const btn   = document.getElementById('mcpToggleBtn');
+  const open  = panel.classList.toggle('open');
+  btn.setAttribute('aria-expanded', open);
+  if (open && !panel.textContent.trim()) {
+    panel.textContent = JSON.stringify({
+      tool_id:     'workforce-board-roi-report',
+      al_id:       'AL-07',
+      version:     '1.0.0',
+      title:       'Workforce Board ROI Report Generator',
+      category:    'workforce_development',
+      status:      'shipped',
+      journeys:    ['career_navigation'],
+      personas:    ['counselor', 'employer'],
+      ap2_export:  true,
+      ap2_mandate_types: ['workforce_program_roi'],
+      upstream_handoff_candidates: [],
+      downstream_handoff_candidates: ['AL-08+14', 'AL-11', 'AL-02', 'AL-03'],
+      frozen_baseline: false,
+      maintenance: 'very_low',
+      data_vintage: 'DOL ETA WIOA PY 2023 national average negotiated performance targets · BLS QCEW Q3 2023 private-sector average annual wages (12 sectors)',
+      regulatory_citations: [
+        'U.S. Department of Labor, Employment and Training Administration — WIOA Performance Accountability, PY 2023 (July 2023–June 2024)',
+        'Workforce Innovation and Opportunity Act (WIOA), Public Law 113-128, enacted July 22, 2014',
+        'DOL ETA WIOA Participant Individual Record Layout (PIRL) — ETA Form 9173',
+        'DOL ETA TEGL 10-16 — WIOA Common Performance Reporting',
+        'Bureau of Labor Statistics — Quarterly Census of Employment and Wages (QCEW), Q3 2023',
+        'IMPAQ International — Net Impact and Benefit-Cost Analyses of Labor Exchange Services, 2013 (DOL ETA taxpayer ROI methodology)',
+        'WIA/WIOA Performance Indicators — 20 CFR Part 677 (Final Rule, August 2016)',
+      ],
+      sister_suite:     'https://ainumbers.co',
+      consulting_site:  'https://apexadvisory.site',
+      license:          'CC-BY-4.0',
+    }, null, 2);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// I18N — EN only at launch; stubs for ES/FR/AR/PT/ZH
+// Fill before v2 localisation milestone
+// ─────────────────────────────────────────────────────────────────────────────
+const I18N = {
+  en: {
+    nav_back:         '← All Tools',
+    tool_id_badge:    'AL-07 · Workforce Development',
+    tool_title:       'Workforce Board ROI Report Generator',
+    tool_desc:        "Enter your program's cost and outcome data to benchmark against WIOA PY 2023 national performance targets, calculate cost-per-outcome metrics, and model taxpayer ROI. Export a WIOA-formatted AP2 mandate for downstream AI workflows.",
+    sect_program:     'Program Information',
+    sect_outcomes:    'WIOA Performance Outcomes',
+    outcomes_hint:    "Enter your program's reported outcomes. Leave blank if not applicable for this program type.",
+    btn_generate:     'Generate ROI Report',
+    placeholder_msg:  'Enter program data and click\nGenerate ROI Report',
+    sect_cost:        'Cost Efficiency Metrics',
+    sect_bench:       'WIOA PY 2023 Benchmark Scorecard',
+    sect_wage:        'Wage & Taxpayer ROI Analysis',
+    sect_roi:         '3-Year Program ROI Summary',
+    roi_method:       'Tax recapture assumes ~30% combined effective rate (federal income + FICA + state avg.). Annualized from Q2 median earnings (×4). Wage gain vs. BLS QCEW sector baseline. Methodology: DOL ETA workforce ROI framework; IMPAQ International (2013) net impact and benefit-cost model.',
+    btn_md:           '⬇ Markdown Report',
+    btn_ap2:          '⬇ AP2 JSON Export',
+  },
+  es: {}, fr: {}, ar: { lang_dir: 'rtl' }, pt: {}, zh: {},
+};
+
+function setLang(code) {
+  // sessionStorage only — CONTRACT §1.2 (zero localStorage)
+  sessionStorage.setItem('apex_lang', code);
+  document.querySelectorAll('[data-lang]').forEach(btn =>
+    btn.classList.toggle('active', btn.dataset.lang === code)
+  );
+  const lang = (I18N[code] && Object.keys(I18N[code]).length > 1) ? I18N[code] : I18N.en;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (lang[key] !== undefined) el.textContent = lang[key];
+  });
+  if (code === 'ar') {
+    document.documentElement.setAttribute('dir', 'rtl');
+    document.documentElement.setAttribute('lang', 'ar');
+  } else {
+    document.documentElement.setAttribute('dir', 'ltr');
+    document.documentElement.setAttribute('lang', code);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────────────────
+(function init() {
+  const saved = sessionStorage.getItem('apex_lang');
+  if (saved && I18N[saved]) setLang(saved);
+})();
+</script>
+</body>
+</html>

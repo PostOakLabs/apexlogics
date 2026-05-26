@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Human Capital Engine — AL-03 · Apex Logics</title>
+<meta name="description" content="Two tools in one: model the NPV of professional certifications, and score your career capital using skill half-life depreciation by industry. Zero PII. Browser-only.">
+<link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* ── Design Tokens (CONTRACT Appendix A) ── */
+:root{
+  --bg:#0b0e14;--bg-2:#0C1220;--bg-3:#111A2E;--bg-4:#162238;
+  --border:#232b3e;--border-2:#2e3a52;--muted:#6b7a99;
+  --body:#c8d0e0;--text:#A8C4DE;--bright:#D4E8F8;--white:#EEF6FD;
+  --amber:#E8A838;--amber-dim:rgba(232,168,56,.10);--amber-glow:rgba(232,168,56,.06);
+  --teal:#14B8A6;--teal-dim:rgba(20,184,166,.10);
+  --coral:#F07167;--coral-dim:rgba(240,113,103,.10);
+  --lavender:#A78BFA;--lavender-dim:rgba(167,139,250,.10);
+  --green:#34D399;--green-dim:rgba(52,211,153,.10);
+  --blue:#60A5FA;--blue-dim:rgba(96,165,250,.10);
+  --red:#F87171;--warn:#FBBF24;--warn-dim:rgba(251,191,36,.10);
+  --accent:var(--amber);--accent-dim:var(--amber-dim);--accent-glow:var(--amber-glow);
+  --radius:6px;--radius-lg:10px;--shadow:0 4px 24px rgba(0,0,0,.45);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;font-size:.875rem;line-height:1.6;min-height:100vh}
+
+/* ── Nav ── */
+nav{display:block;background:rgba(7,11,20,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.nav-inner{max-width:1024px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:0 24px;height:58px}
+.logo{display:flex;align-items:center;gap:10px;flex-shrink:0;text-decoration:none}
+.logo-mark{width:32px;height:32px;flex-shrink:0}
+.logo-mark svg{width:100%;height:100%}
+.logo-text{display:flex;flex-direction:column;gap:2px}
+.logo-name{font-family:'JetBrains Mono',monospace;font-size:.95rem;font-weight:500;color:var(--bright);letter-spacing:-.02em;line-height:1}
+.logo-apex{color:var(--amber)}
+.logo-org{color:var(--muted);font-size:.8rem}
+.logo-tag{font-size:.5rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-family:'JetBrains Mono',monospace;line-height:1}
+.nav-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.nav-pill{display:inline-flex;align-items:center;padding:4px 12px;border:1px solid var(--border-2);border-radius:20px;color:var(--body);font-size:.75rem;text-decoration:none;transition:border-color .2s,color .2s;white-space:nowrap}
+.nav-pill:hover{border-color:var(--amber);color:var(--amber)}
+@media(max-width:600px){.logo-tag,.nav-pill{display:none}}
+
+/* ── Lang Bar ── */
+.lang-bar{background:var(--bg-2);border-bottom:1px solid var(--border);padding:.5rem 0}
+.lang-inner{max-width:1024px;margin:0 auto;padding:0 24px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.lang-btn{background:none;border:1px solid var(--border-2);color:var(--body);border-radius:4px;padding:.25rem .55rem;font-size:.6rem;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .15s letter-spacing:.06em;}
+.lang-btn:hover,.lang-btn.active{background:var(--amber-dim);border-color:var(--amber);color:var(--amber)}
+
+/* ── Tool Header ── */
+.tool-header{padding:28px 24px 20px;border-bottom:1px solid var(--border);max-width:1024px;margin:0 auto}
+.tool-num{font-size:.75rem;font-family:'JetBrains Mono',monospace;color:var(--amber);letter-spacing:.08em;margin-bottom:6px}
+.tool-title{font-family:'DM Serif Display',serif;font-size:1.8rem;color:var(--white);margin-bottom:6px}
+.tool-subtitle{color:var(--body);font-size:.88rem;max-width:700px;margin-bottom:10px}
+.vintage-banner{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;font-family:'JetBrains Mono',monospace;color:var(--muted);background:var(--bg-3);border:1px solid var(--border);border-radius:4px;padding:3px 10px}
+.vintage-banner span{color:var(--amber)}
+
+/* ── Tabs ── */
+.tabs-wrap{padding:0 24px;max-width:1024px;margin:0 auto;border-bottom:1px solid var(--border)}
+.tabs{display:flex;gap:0}
+.tab-btn{background:none;border:none;border-bottom:2px solid transparent;color:var(--body);font-family:'Sora',sans-serif;font-size:.85rem;font-weight:500;padding:12px 20px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.tab-btn.active{color:var(--amber);border-bottom-color:var(--amber)}
+.tab-btn:hover:not(.active){color:var(--text)}
+
+/* ── Main Content ── */
+.main-wrap{padding:24px;max-width:1024px;margin:0 auto}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:720px){.two-col{grid-template-columns:1fr}}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:640px){.three-col{grid-template-columns:1fr 1fr}}
+
+/* ── Panels ── */
+.panel{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:16px}
+.panel-label{font-size:.72rem;font-family:'JetBrains Mono',monospace;letter-spacing:.08em;color:var(--amber);text-transform:uppercase;margin-bottom:12px}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.field label{font-size:.75rem;color:var(--body)}
+.field input,.field select{background:var(--bg-3);border:1px solid var(--border-2);border-radius:var(--radius);color:var(--white);font-family:'Sora',sans-serif;font-size:.85rem;padding:7px 10px;width:100%;transition:border-color .2s}
+.field input:focus,.field select:focus{outline:none;border-color:var(--amber)}
+.hint{font-size:.7rem;color:var(--muted);margin-top:2px}
+.section-head{font-size:.72rem;font-family:'JetBrains Mono',monospace;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin:20px 0 10px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+
+/* ── PII Banner ── */
+.pii-notice{display:flex;align-items:flex-start;gap:10px;background:var(--bg-3);border:1px solid var(--border);border-left:3px solid var(--teal);border-radius:var(--radius);padding:10px 14px;margin-bottom:16px;font-size:.78rem;color:var(--body);line-height:1.5}
+
+/* ── Cert info card ── */
+.cert-info-card{background:var(--bg-3);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:var(--radius-lg);padding:14px;margin-top:8px;display:none}
+.cert-info-card.visible{display:block}
+.cert-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;font-size:.76rem}
+.cert-info-item{display:flex;flex-direction:column;gap:2px}
+.cert-info-key{color:var(--muted);font-size:.68rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase}
+.cert-info-val{color:var(--text);font-weight:500}
+
+/* ── KPI Cards ── */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
+.kpi{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;text-align:center}
+.kpi-label{font-size:.67rem;font-family:'JetBrains Mono',monospace;color:var(--body);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.kpi-val{font-family:'DM Serif Display',serif;font-size:1.35rem;color:var(--amber);line-height:1.1}
+.kpi-sub{font-size:.68rem;color:var(--muted);margin-top:2px}
+.kpi.highlight{border-color:var(--amber);background:var(--amber-glow)}
+.kpi.good .kpi-val{color:var(--green)}
+.kpi.warn .kpi-val{color:var(--warn)}
+.kpi.bad .kpi-val{color:var(--coral)}
+
+/* ── NPV Table ── */
+.npv-table-wrap{overflow-x:auto;margin-bottom:16px}
+.npv-table{width:100%;border-collapse:collapse;font-size:.78rem}
+.npv-table th{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;text-align:left;padding:6px 10px;border-bottom:1px solid var(--border)}
+.npv-table td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text)}
+.npv-table .money{font-family:'JetBrains Mono',monospace;text-align:right}
+.npv-table tr.payback-row td{background:var(--amber-glow);color:var(--amber);font-weight:600}
+.npv-table tr:last-child td{border-bottom:none}
+
+/* ── Verdict / Summary bar ── */
+.verdict-bar{background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;font-size:.84rem;color:var(--text);line-height:1.6}
+.verdict-bar strong{color:var(--amber)}
+
+/* ── Results ── */
+.results-panel{display:none}
+.results-panel.visible{display:block}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:12px 14px;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:16px}
+.btn{display:inline-flex;flex-direction:column;align-items:flex-start;background:var(--amber);color:var(--bg);border:none;border-radius:var(--radius);padding:8px 14px;font-family:'Sora',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;transition:opacity .2s;line-height:1.2}
+.btn:hover:not(:disabled){opacity:.85}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-sub{font-size:.65rem;font-weight:400;opacity:.8;font-family:'JetBrains Mono',monospace;margin-top:1px}
+.btn-help{background:var(--bg-3);color:var(--body);border:1px solid var(--border-2);padding:8px 10px;font-size:.8rem;flex-direction:row}
+.btn-help:hover{border-color:var(--amber);color:var(--amber)}
+
+/* ── Run button ── */
+.run-btn{display:block;width:100%;background:var(--amber);color:var(--bg);font-family:'Sora',sans-serif;font-size:.95rem;font-weight:600;border:none;border-radius:var(--radius-lg);padding:13px;cursor:pointer;transition:opacity .2s;margin:4px 0 20px}
+.run-btn:hover:not(:disabled){opacity:.85}
+.run-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── Skills grid (Tab 2) ── */
+.skills-grid{display:flex;flex-direction:column;gap:10px}
+.skill-row{background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+.skill-row-left{}
+.skill-name{font-size:.84rem;color:var(--white);font-weight:500;margin-bottom:2px}
+.skill-halflife{font-size:.68rem;font-family:'JetBrains Mono',monospace;color:var(--muted)}
+.skill-row-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.skill-row-right label{font-size:.68rem;color:var(--muted);white-space:nowrap}
+.skill-row-right input{width:70px;background:var(--bg-4);border:1px solid var(--border-2);border-radius:var(--radius);color:var(--white);font-family:'JetBrains Mono',monospace;font-size:.85rem;padding:4px 8px;text-align:center;transition:border-color .2s}
+.skill-row-right input:focus{outline:none;border-color:var(--amber)}
+
+/* ── Capital score ring (Tab 2) ── */
+.capital-ring-wrap{display:flex;flex-direction:column;align-items:center;padding:16px}
+.capital-ring-label{font-size:.72rem;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:8px}
+.capital-score-text{font-family:'DM Serif Display',serif;font-size:2.2rem;color:var(--amber);line-height:1}
+.capital-tier{font-size:.8rem;color:var(--body);margin-top:4px}
+
+/* ── Skill decay bars (Tab 2) ── */
+.decay-bars{display:flex;flex-direction:column;gap:8px}
+.decay-row{display:grid;grid-template-columns:160px 1fr 60px;gap:8px;align-items:center}
+.decay-label{font-size:.76rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.decay-track{background:var(--bg-4);border-radius:4px;height:8px;overflow:hidden}
+.decay-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.decay-fill.fresh{background:var(--green)}
+.decay-fill.aging{background:var(--amber)}
+.decay-fill.stale{background:var(--warn)}
+.decay-fill.critical{background:var(--coral)}
+.decay-pct{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted);text-align:right}
+@media(max-width:640px){.decay-row{grid-template-columns:120px 1fr 50px}}
+
+/* ── Recharge cards (Tab 2) ── */
+.recharge-list{display:flex;flex-direction:column;gap:10px}
+.recharge-card{background:var(--bg-3);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:var(--radius);padding:12px 14px}
+.recharge-priority{font-size:.65rem;font-family:'JetBrains Mono',monospace;color:var(--amber);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.recharge-skill{font-size:.84rem;color:var(--white);font-weight:600;margin-bottom:4px}
+.recharge-action{font-size:.76rem;color:var(--body);line-height:1.5}
+.recharge-loss{font-size:.68rem;font-family:'JetBrains Mono',monospace;color:var(--coral);margin-top:4px}
+
+/* ── MCP Panel ── */
+.mcp-wrap{max-width:1024px;margin:0 auto 0;padding:0 24px 24px}
+.mcp-toggle{background:none;border:1px solid var(--border-2);color:var(--muted);font-size:.72rem;font-family:'JetBrains Mono',monospace;padding:5px 12px;border-radius:4px;cursor:pointer;transition:all .2s}
+.mcp-toggle:hover{border-color:var(--amber);color:var(--amber)}
+.mcp-body{background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;font-size:.72rem;font-family:'JetBrains Mono',monospace;color:var(--body);white-space:pre-wrap;word-break:break-all;margin-top:6px;display:none}
+.mcp-body.open{display:block}
+
+/* ── Footer ── */
+.tool-footer{border-top:1px solid var(--border);padding:16px 24px;font-size:.72rem;color:var(--muted);text-align:center;line-height:1.8;max-width:1024px;margin:0 auto}
+.tool-footer a{color:var(--body);text-decoration:none}
+.tool-footer a:hover{color:var(--amber)}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--green);color:var(--bg);padding:10px 16px;border-radius:var(--radius);font-size:.82rem;font-weight:600;display:none;z-index:200;max-width:340px;box-shadow:var(--shadow)}
+#toast.error{background:var(--coral)}
+</style>
+</head>
+<body>
+
+<!-- Lang Bar -->
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-right">
+      <a href="https://apexadvisory.site" class="nav-pill" target="_blank" rel="noopener">ApexAdvisory.site</a>
+      <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Tool Header -->
+<div class="tool-header">
+  <div class="tool-num">AL · 03 · Licensing &amp; Credentials</div>
+  <h1 class="tool-title" data-i18n="tool_title">Human Capital Engine</h1>
+  <p class="tool-subtitle" data-i18n="tool_subtitle">Model the NPV of professional certifications, and score your career capital using skill half-life depreciation by industry.</p>
+  <div class="vintage-banner">📅 <span>Q4 2024</span> · 15 cert fee schedules · Skill half-life: WEF 2025, McKinsey 2021, IBM 2024</div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-btn-1" onclick="switchTab(1)">Tab A · Certification ROI</button>
+    <button class="tab-btn" id="tab-btn-2" onclick="switchTab(2)">Tab B · Career Capital</button>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-wrap">
+  <div class="pii-notice">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <!-- ════ TAB 1: CERTIFICATION ROI ════ -->
+  <div class="tab-panel active" id="tab-1">
+    <div class="two-col">
+      <!-- LEFT: Cert selector -->
+      <div>
+        <div class="panel">
+          <div class="panel-label">🏆 Select a Certification</div>
+          <div class="field">
+            <label for="cert-select">Certification</label>
+            <select id="cert-select" onchange="onCertSelect()">
+              <option value="">— Choose a certification —</option>
+            </select>
+          </div>
+          <div class="cert-info-card" id="cert-info-card">
+            <div id="cert-body-label" style="font-size:.82rem;font-weight:600;color:var(--white);margin-bottom:6px"></div>
+            <div class="cert-info-grid" id="cert-info-grid"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-label">💡 How the Model Works</div>
+          <div style="font-size:.78rem;color:var(--body);line-height:1.7">
+            <strong style="color:var(--text)">Cost</strong> = exam fee + materials + optional prep course (all evening/weekend study — no opportunity cost).<br><br>
+            <strong style="color:var(--text)">Salary premium</strong> = your expected annual salary increase from holding the cert, as a % of current salary. Pre-filled from industry salary surveys; adjust to your market.<br><br>
+            <strong style="color:var(--text)">NPV</strong> = present value of all premium payments over your horizon, minus total cost. Positive = the cert pays off financially. Payback = months until cumulative premium covers cost.<br><br>
+            <strong style="color:var(--text)">Note:</strong> Salary premiums vary widely by employer, geography, and experience level. Treat embedded estimates as order-of-magnitude benchmarks.
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Financial inputs -->
+      <div>
+        <div class="panel">
+          <div class="panel-label">💰 Cost Inputs</div>
+          <div class="field">
+            <label for="exam-fee-1">Exam Fee ($)</label>
+            <input id="exam-fee-1" type="number" min="0" step="10" placeholder="Auto-filled from cert data" value="">
+            <div class="hint">Total for all parts/sections (auto-filled; edit if needed)</div>
+          </div>
+          <div class="field">
+            <label for="materials-1">Study Materials ($)</label>
+            <input id="materials-1" type="number" min="0" step="10" value="150" placeholder="e.g. 150">
+            <div class="hint">Books, official guides, practice exams</div>
+          </div>
+          <div class="field">
+            <label for="prep-course-1">Prep Course / Bootcamp ($, optional)</label>
+            <input id="prep-course-1" type="number" min="0" step="50" value="0" placeholder="0 if self-studying">
+            <div class="hint">Udemy, Becker, Wiley, Bloomberg Prep, etc.</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-label">📈 Return Inputs</div>
+          <div class="three-col">
+            <div class="field">
+              <label for="current-salary">Current Salary ($)</label>
+              <input id="current-salary" type="number" min="0" step="1000" value="75000" placeholder="e.g. 75000">
+            </div>
+            <div class="field">
+              <label for="premium-pct">Salary Premium (%)</label>
+              <input id="premium-pct" type="number" min="0" max="100" step="0.5" value="20" placeholder="e.g. 20">
+              <div class="hint" id="premium-hint">Estimated annual salary lift from this cert</div>
+            </div>
+            <div class="field">
+              <label for="discount-rate">Discount Rate (%)</label>
+              <input id="discount-rate" type="number" min="0" max="20" step="0.5" value="5">
+              <div class="hint">Risk-free rate (default 5%)</div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="horizon">Model Horizon</label>
+            <select id="horizon">
+              <option value="3">3 years</option>
+              <option value="5" selected>5 years</option>
+              <option value="7">7 years</option>
+              <option value="10">10 years</option>
+            </select>
+            <div class="hint">Years over which the premium is modelled</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="run-btn" id="run-btn-1" onclick="runCertROI()" disabled data-i18n="run_cert">Select a certification to model ROI →</button>
+
+    <!-- Tab 1 Results -->
+    <div class="results-panel" id="results-1">
+      <div class="section-head">Certification ROI Summary</div>
+      <div class="kpi-row" id="kpi-1"></div>
+
+      <div class="two-col">
+        <div>
+          <div class="section-head">Year-by-Year Cash Flow</div>
+          <div class="npv-table-wrap">
+            <table class="npv-table">
+              <thead>
+                <tr>
+                  <th>Year</th>
+                  <th>Event</th>
+                  <th class="money" style="text-align:right">Cash Flow</th>
+                  <th class="money" style="text-align:right">Cumulative</th>
+                </tr>
+              </thead>
+              <tbody id="npv-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <div class="section-head">Verdict</div>
+          <div class="verdict-bar" id="verdict-1"></div>
+          <div class="section-head" style="margin-top:16px">Downstream Tools</div>
+          <div style="font-size:.78rem;color:var(--body);background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;line-height:1.6">
+            If this cert leads toward a graduate degree, send these results to <strong style="color:var(--amber)">AL-26 Graduate School ROI Comparator</strong> to model the full degree NPV. For deeper credential-stack modelling, see <strong style="color:var(--amber)">AL-02 Credential ROI Suite</strong>.
+          </div>
+        </div>
+      </div>
+
+      <div class="results-export-row">
+        <button class="btn" id="md-btn-1" disabled onclick="exportMarkdown1()">
+          Export Markdown<span class="btn-sub">Cert ROI plan</span>
+        </button>
+        <button class="btn" id="ap2-btn-1" disabled onclick="exportAP2tab1()">
+          Export AP2 JSON<span class="btn-sub">human_capital_assessment</span>
+        </button>
+        <button class="btn btn-help" onclick="showAP2Help()">?</button>
+      </div>
+    </div>
+  </div><!-- /tab-1 -->
+
+  <!-- ════ TAB 2: CAREER CAPITAL ════ -->
+  <div class="tab-panel" id="tab-2">
+    <div class="two-col">
+      <!-- LEFT: Industry + skill inputs -->
+      <div>
+        <div class="panel">
+          <div class="panel-label">🏭 Your Industry</div>
+          <div class="field">
+            <label for="industry-select">Industry / Field</label>
+            <select id="industry-select" onchange="onIndustrySelect()">
+              <option value="">— Select your industry —</option>
+              <option value="technology">Technology / Software</option>
+              <option value="finance">Finance / Accounting</option>
+              <option value="healthcare">Healthcare / Clinical</option>
+              <option value="legal">Legal</option>
+              <option value="marketing">Marketing / Digital</option>
+              <option value="engineering">Engineering / Manufacturing</option>
+              <option value="hr">Human Resources</option>
+              <option value="project_mgmt">Project Management / Operations</option>
+            </select>
+            <div class="hint">Skill half-lives vary significantly by field</div>
+          </div>
+        </div>
+
+        <div class="panel" id="skills-panel" style="display:none">
+          <div class="panel-label">⏱ Skills — Years Since Last Upskilled</div>
+          <div class="hint" style="margin-bottom:10px">Enter 0 if you're actively using / building this skill; enter how many years ago you last invested in it otherwise.</div>
+          <div class="skills-grid" id="skills-grid"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: About the model -->
+      <div>
+        <div class="panel">
+          <div class="panel-label">📐 Skill Half-Life Model</div>
+          <div style="font-size:.78rem;color:var(--body);line-height:1.7">
+            <strong style="color:var(--text)">Half-life</strong> is the time it takes for a skill's professional value to halve without active investment. A coding skill with a 2.5-year half-life retains 50% of its value after 2.5 years of dormancy — 25% after 5 years.<br><br>
+            <strong style="color:var(--text)">Formula:</strong> retention = e<sup>−ln(2) / halfLife × years</sup><br><br>
+            <strong style="color:var(--text)">Career Capital Score</strong> (0–100) = weighted sum of retained value across all skills in your industry profile.<br><br>
+            <strong style="color:var(--text)">Sources:</strong> WEF Future of Jobs Report 2025 · McKinsey Global Institute Skill Shift 2021 · IBM Institute for Business Value 2024 · Deloitte Insights Human Capital Trends 2024.
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-label">📊 Score Tiers</div>
+          <div style="font-size:.78rem;color:var(--body);line-height:2">
+            <span style="color:var(--green)">●</span> <strong style="color:var(--green)">80–100 — Fresh</strong> — Well-maintained, competitive portfolio<br>
+            <span style="color:var(--amber)">●</span> <strong style="color:var(--amber)">60–79 — Aging</strong> — Active in core areas; some domains need refresh<br>
+            <span style="color:var(--warn)">●</span> <strong style="color:var(--warn)">40–59 — Stale</strong> — Meaningful depreciation; recharge priority high<br>
+            <span style="color:var(--coral)">●</span> <strong style="color:var(--coral)">0–39 — Critical</strong> — Significant capital loss; urgent reskilling recommended
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="run-btn" id="run-btn-2" onclick="runCareerCapital()" disabled data-i18n="run_capital">Select an industry to assess your career capital →</button>
+
+    <!-- Tab 2 Results -->
+    <div class="results-panel" id="results-2">
+      <div class="section-head">Career Capital Assessment</div>
+
+      <div class="two-col">
+        <!-- Score ring -->
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="capital-ring-wrap">
+            <svg id="capital-ring-svg" width="160" height="160" viewBox="0 0 160 160">
+              <circle cx="80" cy="80" r="64" fill="none" stroke="var(--border)" stroke-width="12"/>
+              <circle id="capital-ring-arc" cx="80" cy="80" r="64" fill="none" stroke="var(--amber)" stroke-width="12"
+                stroke-dasharray="402.1" stroke-dashoffset="402.1" stroke-linecap="round"
+                transform="rotate(-90 80 80)" style="transition:stroke-dashoffset .8s cubic-bezier(.4,0,.2,1),stroke .4s"/>
+              <text x="80" y="76" text-anchor="middle" font-family="'DM Serif Display',serif" font-size="32" fill="var(--white)" id="ring-score-text">—</text>
+              <text x="80" y="96" text-anchor="middle" font-family="'Sora',sans-serif" font-size="10" fill="var(--muted)" id="ring-label-text">Career Capital</text>
+            </svg>
+            <div class="capital-tier" id="capital-tier-label"></div>
+          </div>
+          <div class="kpi-row" id="kpi-2" style="width:100%;margin-top:8px"></div>
+        </div>
+
+        <!-- Decay bars -->
+        <div>
+          <div class="section-head">Skill Retention by Domain</div>
+          <div class="decay-bars" id="decay-bars"></div>
+        </div>
+      </div>
+
+      <div class="section-head">Priority Recharge Plan</div>
+      <div class="recharge-list" id="recharge-list"></div>
+
+      <div class="verdict-bar" style="margin-top:16px" id="verdict-2"></div>
+
+      <div class="results-export-row">
+        <button class="btn" id="md-btn-2" disabled onclick="exportMarkdown2()">
+          Export Markdown<span class="btn-sub">Career capital report</span>
+        </button>
+        <button class="btn" id="ap2-btn-2" disabled onclick="exportAP2tab2()">
+          Export AP2 JSON<span class="btn-sub">human_capital_assessment</span>
+        </button>
+        <button class="btn btn-help" onclick="showAP2Help()">?</button>
+      </div>
+    </div>
+  </div><!-- /tab-2 -->
+
+</div><!-- /main-wrap -->
+
+<!-- MCP Panel -->
+<div class="mcp-wrap">
+  <button class="mcp-toggle" onclick="toggleMcp()">⚙ MCP / Agent Discovery ▾</button>
+  <div class="mcp-body" id="mcp-body"></div>
+</div>
+
+<!-- Footer -->
+<footer>
+  <div class="tool-footer">
+    Built by <a href="https://apexadvisory.site" target="_blank" rel="noopener">Apex Advisors</a> ·
+    Sister suite: <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> ·
+    <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC 4.0 BY</a> · AL-03 ·
+    Cert fees: Q4 2024 · Salary premiums: BLS OEWS May 2023 + industry surveys · Skill half-lives: WEF 2025 · McKinsey 2021 · IBM 2024
+  </div>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   AL-03 Human Capital Engine · v1.0.0
+   © 2026 Apex Advisors · CC BY 4.0
+   CONTRACT v1.1: zero localStorage, zero fetch, zero XHR
+   Tab A: Certification ROI — 15 certs, Q4 2024 fees + salary premium data
+   Tab B: Career Capital — 8 industries, skill half-life depreciation engine
+   ════════════════════════════════════════════════════════════ */
+
+/* ── i18n ── */
+const TRANSLATIONS={
+  en:{tool_title:'Human Capital Engine',tool_subtitle:'Model the NPV of professional certifications, and score your career capital using skill half-life depreciation by industry.',run_cert:'Select a certification to model ROI →',run_capital:'Select an industry to assess your career capital →'},
+  es:{},fr:{},ar:{lang_dir:'rtl'},pt:{},zh:{}
+};
+function setLang(lang){
+  const t=TRANSLATIONS[lang];if(!t)return;
+  document.documentElement.dir=(t.lang_dir==='rtl')?'rtl':'ltr';
+  document.documentElement.lang=lang;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.dataset.i18n;if(t[k])el.textContent=t[k];});
+  document.querySelectorAll('.lang-btn').forEach(b=>{b.classList.toggle('active',b.textContent.toLowerCase()===lang||(lang==='zh'&&b.textContent==='中文'));});
+  sessionStorage.setItem('apex_lang',lang);
+}
+(function(){const s=sessionStorage.getItem('apex_lang');const f=(navigator.language||'en').slice(0,2);setLang(s||(TRANSLATIONS[f]?f:'en'));})();
+
+/* ── Tab switching ── */
+let activeTab=1;
+function switchTab(n){
+  activeTab=n;
+  document.querySelectorAll('.tab-panel').forEach((p,i)=>{p.classList.toggle('active',i+1===n);});
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>{b.classList.toggle('active',i+1===n);});
+}
+
+/* ════════════════════════════════════════════════════════════
+   DATA LAYER — TAB A: CERTIFICATION ROI
+   Fees: Q4 2024 (official body sources)
+   Salary premiums: BLS OEWS May 2023 + industry salary surveys
+   premiumLow/Mid/High = annual salary lift (USD) at median US compensation level
+   ════════════════════════════════════════════════════════════ */
+const CERTS=[
+  // ─── TECH ───
+  {id:'aws-saa',name:'AWS Solutions Architect – Associate',body:'Amazon Web Services',category:'tech',examFee:150,studyHours:100,defaultMaterials:100,premiumLow:15000,premiumMid:22000,premiumHigh:32000,premiumPct:22,vintage:'BLS OEWS May 2023 (SOC 15-1252) + Dice 2024 Tech Salary Survey',note:'AWS cert holders command $20–30K premium in cloud engineering roles. Premium vs. non-certified peer.'},
+  {id:'azure-az104',name:'Microsoft Azure Administrator (AZ-104)',body:'Microsoft',category:'tech',examFee:165,studyHours:120,defaultMaterials:100,premiumLow:15000,premiumMid:23000,premiumHigh:33000,premiumPct:22,vintage:'BLS OEWS May 2023 (SOC 15-1244) + Hired.com 2024 State of Software Engineers',note:'Strong premium in hybrid-cloud enterprise environments.'},
+  {id:'cissp',name:'CISSP — Certified Information Systems Security Professional',body:'(ISC)²',category:'tech',examFee:749,studyHours:200,defaultMaterials:200,premiumLow:20000,premiumMid:28000,premiumHigh:42000,premiumPct:25,vintage:'(ISC)² Cybersecurity Workforce Study 2023 + BLS OEWS May 2023 (SOC 15-1212)',note:'Among the highest-premium certifications in security. Requires 5 yrs experience. Exam fee rose in 2025.'},
+  {id:'comptia-secplus',name:'CompTIA Security+',body:'CompTIA',category:'tech',examFee:404,studyHours:100,defaultMaterials:80,premiumLow:8000,premiumMid:15000,premiumHigh:22000,premiumPct:15,vintage:'CyberSeek 2024 + BLS OEWS May 2023 (SOC 15-1212)',note:'Entry/mid-level security cert. DoD 8570 baseline — required for many government/contractor roles.'},
+  {id:'cism',name:'CISM — Certified Information Security Manager',body:'ISACA',category:'tech',examFee:760,studyHours:150,defaultMaterials:200,premiumLow:15000,premiumMid:25000,premiumHigh:38000,premiumPct:22,vintage:'ISACA 2024 State of Cybersecurity Report + BLS OEWS May 2023 (SOC 15-1299)',note:'Management-track security cert. Non-member fee $760; ISACA member fee $575.'},
+  {id:'cisa',name:'CISA — Certified Information Systems Auditor',body:'ISACA',category:'tech',examFee:760,studyHours:130,defaultMaterials:150,premiumLow:10000,premiumMid:18000,premiumHigh:26000,premiumPct:18,vintage:'ISACA 2024 State of Cybersecurity Report + BLS OEWS May 2023 (SOC 15-1299)',note:'Standard for IT audit and risk management. 5-year work experience requirement.'},
+  {id:'salesforce-admin',name:'Salesforce Administrator (ADM-201)',body:'Salesforce',category:'tech',examFee:200,studyHours:80,defaultMaterials:100,premiumLow:14000,premiumMid:22000,premiumHigh:30000,premiumPct:25,vintage:'Mason Frank Salesforce Salary Survey 2024 + BLS OEWS May 2023 (SOC 15-1211)',note:'Retake fee: $100. Annual maintenance via free Trailhead modules.'},
+  // ─── PROFESSIONAL ───
+  {id:'pmp',name:'PMP — Project Management Professional',body:'PMI',category:'professional',examFee:555,studyHours:200,defaultMaterials:200,premiumLow:14000,premiumMid:24000,premiumHigh:34000,premiumPct:25,vintage:'PMI Earning Power: Project Management Salary Survey 2023 + BLS OEWS May 2023 (SOC 11-9199)',note:'PMI member fee: $405. Requires 35 hrs PM education + 36 months experience.'},
+  {id:'shrm-cp',name:'SHRM-CP — Certified Professional',body:'SHRM',category:'professional',examFee:510,studyHours:120,defaultMaterials:150,premiumLow:7000,premiumMid:13000,premiumHigh:20000,premiumPct:17,vintage:'SHRM Compensation & Benefits Survey 2024 + BLS OEWS May 2023 (SOC 13-1071)',note:'SHRM member fee: $410. Exam windows: May–Jul and Dec–Feb.'},
+  {id:'phr',name:'PHR — Professional in Human Resources',body:'HRCI',category:'professional',examFee:395,studyHours:90,defaultMaterials:150,premiumLow:5000,premiumMid:9000,premiumHigh:14000,premiumPct:13,vintage:'PayScale HR Salary 2024 + BLS OEWS May 2023 (SOC 13-1071)',note:'3-year recertification cycle (60 credits or retake). 2+ years experience required.'},
+  {id:'scrum-master',name:'Certified Scrum Master (CSM)',body:'Scrum Alliance',category:'professional',examFee:995,studyHours:30,defaultMaterials:50,premiumLow:5000,premiumMid:10000,premiumHigh:18000,premiumPct:12,vintage:'Scrum Alliance State of Scrum 2023 + BLS OEWS May 2023 (SOC 15-1299)',note:'$995 is the 2-day course + exam bundle fee. Includes 2-year membership. Exam included in course.'},
+  {id:'six-sigma-gb',name:'Six Sigma Green Belt (ASQ)',body:'ASQ',category:'professional',examFee:429,studyHours:120,defaultMaterials:200,premiumLow:7000,premiumMid:13000,premiumHigh:20000,premiumPct:14,vintage:'ASQ Quality Salary Survey 2023 + BLS OEWS May 2023 (SOC 13-1041)',note:'Non-member fee: $529. Widely valued in manufacturing, healthcare, and government.'},
+  // ─── LICENSING ───
+  {id:'cpa',name:'CPA Uniform Exam (all 4 sections)',body:'NASBA / AICPA',category:'license',examFee:1376,studyHours:400,defaultMaterials:600,premiumLow:14000,premiumMid:21000,premiumHigh:30000,premiumPct:26,vintage:'AICPA 2024 Accounting Salary Guide + BLS OEWS May 2023 (SOC 13-2011)',note:'$344/section × 4. State application fees vary. Becker/Wiley prep is standard ($2K–$4K range).'},
+  {id:'cfa-l1',name:'CFA Level I',body:'CFA Institute',category:'license',examFee:1250,studyHours:300,defaultMaterials:300,premiumLow:12000,premiumMid:20000,premiumHigh:30000,premiumPct:22,vintage:'CFA Institute 2023 Investment Professional Compensation Study + BLS OEWS May 2023 (SOC 13-2051)',note:'Pass rate ~44%. Early registration: $940. Charter requires all 3 levels + 4,000 hrs experience.'},
+  {id:'series-65',name:'Series 65 — Investment Adviser Rep',body:'NASAA / FINRA',category:'license',examFee:187,studyHours:120,defaultMaterials:200,premiumLow:9000,premiumMid:18000,premiumHigh:30000,premiumPct:20,vintage:'BLS OEWS May 2023 (SOC 13-2052) + NAPFA 2024 Compensation Study',note:'State-administered; fee may vary. Required to charge advisory fees as an RIA. No experience requirement.'}
+];
+
+const CERT_CATS={tech:'Tech Certification',professional:'Professional Certification',license:'Professional License'};
+
+/* ─ Populate cert select ─ */
+function initCertSelect(){
+  const sel=document.getElementById('cert-select');
+  const groups={tech:'💻 Tech Certifications',professional:'📜 Professional Certifications',license:'⚖️ Professional Licenses'};
+  Object.keys(groups).forEach(cat=>{
+    const og=document.createElement('optgroup');og.label=groups[cat];
+    CERTS.filter(c=>c.category===cat).forEach(c=>{
+      const opt=document.createElement('option');opt.value=c.id;
+      opt.textContent=c.name+' — $'+c.examFee.toLocaleString();og.appendChild(opt);
+    });
+    sel.appendChild(og);
+  });
+}
+
+let selectedCert=null;
+function onCertSelect(){
+  const id=document.getElementById('cert-select').value;
+  selectedCert=CERTS.find(c=>c.id===id)||null;
+  const btn=document.getElementById('run-btn-1');
+  const card=document.getElementById('cert-info-card');
+  if(!selectedCert){btn.disabled=true;btn.textContent='Select a certification to model ROI →';card.classList.remove('visible');return;}
+  btn.disabled=false;btn.textContent='Calculate Certification ROI →';
+  card.classList.add('visible');
+  const c=selectedCert;
+  document.getElementById('cert-body-label').textContent=c.body+' · '+CERT_CATS[c.category];
+  document.getElementById('cert-info-grid').innerHTML=[
+    {k:'Exam Fee',v:'$'+c.examFee.toLocaleString()},{k:'Study Hours',v:'~'+c.studyHours+' hrs'},
+    {k:'Premium (mid)',v:'~$'+c.premiumMid.toLocaleString()+'/yr'},{k:'Premium %',v:'~'+c.premiumPct+'% of salary'}
+  ].map(r=>`<div class="cert-info-item"><div class="cert-info-key">${r.k}</div><div class="cert-info-val">${r.v}</div></div>`).join('');
+  // Pre-fill cost inputs
+  document.getElementById('exam-fee-1').value=c.examFee;
+  document.getElementById('materials-1').value=c.defaultMaterials;
+  document.getElementById('premium-pct').value=c.premiumPct;
+  document.getElementById('premium-hint').textContent=
+    'Survey range: $'+c.premiumLow.toLocaleString()+'–$'+c.premiumHigh.toLocaleString()+'/yr ('+c.vintage+')';
+  if(c.note) showToast(c.note,'success');
+}
+
+/* ─ Cert ROI engine ─ */
+function runCertROI(){
+  if(!selectedCert)return;
+  const c=selectedCert;
+  const examFee=parseFloat(document.getElementById('exam-fee-1').value)||c.examFee;
+  const materials=parseFloat(document.getElementById('materials-1').value)||0;
+  const prepCourse=parseFloat(document.getElementById('prep-course-1').value)||0;
+  const totalCost=examFee+materials+prepCourse;
+  const currentSalary=parseFloat(document.getElementById('current-salary').value)||75000;
+  const premiumPct=parseFloat(document.getElementById('premium-pct').value)||c.premiumPct;
+  const annualPremium=currentSalary*(premiumPct/100);
+  const discountRate=parseFloat(document.getElementById('discount-rate').value)/100||0.05;
+  const horizon=parseInt(document.getElementById('horizon').value)||5;
+
+  /* NPV calculation */
+  let npv=-totalCost;
+  let cumulative=-totalCost;
+  let paybackMonths=null;
+  const tableRows=[];
+  tableRows.push({year:0,event:'Cert cost (upfront)',cf:-totalCost,cum:-totalCost,isPayback:false});
+
+  for(let yr=1;yr<=horizon;yr++){
+    const pv=annualPremium/Math.pow(1+discountRate,yr);
+    npv+=pv;
+    cumulative+=annualPremium;
+    const prevCum=cumulative-annualPremium;
+    if(paybackMonths===null&&cumulative>=0){
+      paybackMonths=Math.ceil((-prevCum/annualPremium)*12+(yr-1)*12);
+    }
+    const isPayback=(paybackMonths!==null&&Math.ceil((-prevCum/annualPremium)*12+(yr-1)*12)===paybackMonths);
+    tableRows.push({year:yr,event:'Salary premium',cf:annualPremium,pv:pv,cum:cumulative,isPayback});
+  }
+  const roi=((annualPremium*horizon-totalCost)/totalCost)*100;
+  const totalDelta=annualPremium*horizon;
+
+  /* KPIs */
+  const npvGood=npv>0;
+  document.getElementById('kpi-1').innerHTML=[
+    {label:'NPV',val:(npv>=0?'+':'')+'$'+Math.abs(npv).toLocaleString(undefined,{maximumFractionDigits:0}),sub:horizon+'-year horizon',cls:npvGood?'highlight good':'highlight bad'},
+    {label:'Payback',val:paybackMonths?paybackMonths+'mo':'>'+(horizon*12)+'mo',sub:'months to break even',cls:paybackMonths&&paybackMonths<=24?'good':paybackMonths&&paybackMonths<=48?'':'warn'},
+    {label:'Total Premium',val:'$'+totalDelta.toLocaleString(undefined,{maximumFractionDigits:0}),sub:'over '+horizon+' yrs',cls:''},
+    {label:'ROI',val:roi.toFixed(0)+'%',sub:'nominal '+horizon+'-yr return',cls:roi>0?'good':'bad'}
+  ].map(k=>`<div class="kpi ${k.cls}"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div></div>`).join('');
+
+  /* Table */
+  document.getElementById('npv-tbody').innerHTML=tableRows.map(r=>`
+    <tr${r.isPayback?' class="payback-row"':''}>
+      <td>Yr ${r.year}</td><td style="color:var(--muted)">${r.event}${r.isPayback?' ← Payback':''}</td>
+      <td class="money" style="color:${r.cf>=0?'var(--green)':'var(--coral)'}">
+        ${r.cf>=0?'+':''}$${Math.abs(r.cf).toLocaleString(undefined,{maximumFractionDigits:0})}
+      </td>
+      <td class="money" style="color:${r.cum>=0?'var(--green)':'var(--coral)'}">
+        ${r.cum>=0?'+':''}$${Math.abs(r.cum).toLocaleString(undefined,{maximumFractionDigits:0})}
+      </td>
+    </tr>`).join('');
+
+  /* Verdict */
+  const payText=paybackMonths?`Payback in approximately <strong>${paybackMonths} months</strong>.`:'Payback beyond the modelled horizon — consider a longer horizon or higher premium estimate.';
+  const npvText=npvGood?`<strong>${c.name}</strong> generates a positive NPV of <strong>$${Math.round(npv).toLocaleString()}</strong> over ${horizon} years at a ${(discountRate*100).toFixed(1)}% discount rate. ${payText}`:`<strong>${c.name}</strong> produces a negative NPV of <strong>−$${Math.round(Math.abs(npv)).toLocaleString()}</strong> over ${horizon} years. The cert cost exceeds discounted premium cash flows. ${payText} Consider a longer horizon or verify the salary premium estimate with your employer.`;
+  document.getElementById('verdict-1').innerHTML=npvText;
+
+  /* Show results */
+  document.getElementById('results-1').classList.add('visible');
+  ['md-btn-1','ap2-btn-1'].forEach(id=>{document.getElementById(id).disabled=false;});
+  window._certResult={c,examFee,materials,prepCourse,totalCost,currentSalary,premiumPct,annualPremium,discountRate,horizon,npv,paybackMonths,totalDelta,roi};
+  document.getElementById('results-1').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ════════════════════════════════════════════════════════════
+   DATA LAYER — TAB B: CAREER CAPITAL / SKILL HALF-LIVES
+   half_life in years; weight = % contribution to career capital score
+   Sources: WEF Future of Jobs Report 2025 (Jan 2025)
+            McKinsey Global Institute Skill Shift 2021
+            IBM Institute for Business Value Skills Study 2024
+            Deloitte Insights Global Human Capital Trends 2024
+   ════════════════════════════════════════════════════════════ */
+const INDUSTRIES={
+  technology:{label:'Technology / Software',skills:[
+    {id:'coding',name:'Programming & Software Development',halfLife:2.5,weight:25,defaultYears:1,recharge:'Build a side project, contribute to open-source, or complete a modern language/framework course (e.g., Python, Rust, TypeScript).'},
+    {id:'cloud',name:'Cloud & Infrastructure (AWS / Azure / GCP)',halfLife:2.0,weight:20,defaultYears:1,recharge:'Renew or upgrade your cloud cert (2025 exam versions are materially different from 2022 versions).'},
+    {id:'data_ml',name:'Data Analytics, ML & AI Tools',halfLife:2.5,weight:20,defaultYears:0,recharge:'Complete a modern GenAI/LLM course (fast-moving) or a Kaggle competition in your domain.'},
+    {id:'security_tech',name:'Cybersecurity',halfLife:2.5,weight:15,defaultYears:2,recharge:'SANS Institute course, CompTIA cert update, or a dedicated threat-modeling workshop.'},
+    {id:'leadership_tech',name:'Technical Leadership & Architecture',halfLife:8.0,weight:10,defaultYears:1,recharge:'Lead a cross-team project, write an architecture RFC, or complete an engineering management course.'},
+    {id:'comms_tech',name:'Communication & Collaboration',halfLife:10.0,weight:10,defaultYears:0,recharge:'Public speaking engagement, documentation drive, or a structured feedback process.'}
+  ]},
+  finance:{label:'Finance / Accounting',skills:[
+    {id:'accounting',name:'Accounting & GAAP / IFRS',halfLife:6.0,weight:25,defaultYears:1,recharge:'AICPA CPE hours, ASC update courses, or IFRS Standards update training.'},
+    {id:'modeling',name:'Financial Modeling & Valuation',halfLife:4.0,weight:20,defaultYears:1,recharge:'Advanced Excel/Python modeling course, WSP/Breaking Into Wall Street update, or CFA prep.'},
+    {id:'regulatory_fin',name:'Regulatory & Compliance (SEC, SOX, PCAOB)',halfLife:3.0,weight:20,defaultYears:1,recharge:'Annual SEC/PCAOB update training or FINRA regulatory notice review course.'},
+    {id:'risk',name:'Risk Management & Quantitative Methods',halfLife:5.0,weight:15,defaultYears:2,recharge:'FRM exam prep, Value-at-Risk update course, or a Monte Carlo simulation workshop.'},
+    {id:'fintech',name:'FinTech & Data Tools (Power BI, Python, SQL)',halfLife:2.5,weight:10,defaultYears:2,recharge:'Power BI certification, Python for Finance course, or Tableau Desktop Specialist cert.'},
+    {id:'leadership_fin',name:'Leadership & Client Communication',halfLife:9.0,weight:10,defaultYears:1,recharge:'Executive presence coaching, MBA-level negotiation course, or cross-functional project lead.'}
+  ]},
+  healthcare:{label:'Healthcare / Clinical',skills:[
+    {id:'clinical',name:'Clinical / Medical Knowledge',halfLife:4.0,weight:30,defaultYears:1,recharge:'CME credits, specialty conference, or evidence-based medicine update (ACC/AHA/USPSTF guidelines).'},
+    {id:'protocols',name:'Clinical Protocols & Practice Guidelines',halfLife:2.5,weight:25,defaultYears:1,recharge:'Annual specialty guideline review — USPSTF, ACOG, ACS, or equivalent per specialty.'},
+    {id:'health_it',name:'Health IT & EHR (Epic, Cerner, etc.)',halfLife:2.5,weight:15,defaultYears:2,recharge:'Epic/Cerner update training, health informatics course, or clinical data analytics certification.'},
+    {id:'regulatory_hc',name:'Regulatory & Compliance (HIPAA, CMS, Joint Commission)',halfLife:3.0,weight:15,defaultYears:1,recharge:'Annual compliance training, CMS rule update review, or Joint Commission standards update.'},
+    {id:'leadership_hc',name:'Clinical Leadership & Team Management',halfLife:8.0,weight:15,defaultYears:2,recharge:'ACHE leadership program, healthcare MBA course, or a quality improvement project leadership role.'}
+  ]},
+  legal:{label:'Legal',skills:[
+    {id:'case_law',name:'Case Law & Precedent (Practice Area)',halfLife:5.0,weight:30,defaultYears:1,recharge:'CLE credits, Westlaw/Lexis update alerts, practice area seminar (state bar or specialty bar assoc).'},
+    {id:'statutory',name:'Regulatory & Statutory Updates',halfLife:2.5,weight:25,defaultYears:1,recharge:'Practice area update CLE — agency rule reviews, legislative tracking service (Bloomberg Law, etc.).'},
+    {id:'drafting',name:'Contract Drafting & Negotiation',halfLife:10.0,weight:20,defaultYears:0,recharge:'Complex deal exposure, negotiation training, or ABA contract drafting CLE.'},
+    {id:'legaltech',name:'LegalTech & eDiscovery Tools',halfLife:2.0,weight:15,defaultYears:3,recharge:'LegalTech conference, CEDS certification, or Relativity/Reveal eDiscovery platform training.'},
+    {id:'leadership_legal',name:'Client Development & Business Leadership',halfLife:9.0,weight:10,defaultYears:1,recharge:'Business development coaching, rainmaker program, or a managed client pitch.'}
+  ]},
+  marketing:{label:'Marketing / Digital',skills:[
+    {id:'digital',name:'Digital Marketing & SEO',halfLife:1.5,weight:25,defaultYears:1,recharge:'Google Ads / GA4 recertification, Moz/Semrush Academy, or a Core Algorithm Update response analysis.'},
+    {id:'ad_platforms',name:'Paid Media & Ad Platforms (Meta, LinkedIn, Google)',halfLife:1.5,weight:25,defaultYears:1,recharge:'Meta Blueprint or LinkedIn Marketing Labs certification update; platform policy and algo changes.'},
+    {id:'mktg_analytics',name:'Marketing Analytics & Attribution',halfLife:2.5,weight:20,defaultYears:1,recharge:'Advanced GA4 course, Northbeam/Triple Whale MMM training, or a Google Looker Studio certification.'},
+    {id:'content',name:'Content & Brand Strategy',halfLife:4.0,weight:15,defaultYears:1,recharge:'Brand strategy workshop, Content Marketing Institute certification, or a 360° campaign debrief.'},
+    {id:'leadership_mktg',name:'Leadership & Cross-Functional Communication',halfLife:9.0,weight:15,defaultYears:1,recharge:'Executive storytelling course, a major cross-functional launch lead, or a public speaking engagement.'}
+  ]},
+  engineering:{label:'Engineering / Manufacturing',skills:[
+    {id:'domain_eng',name:'Core Domain Engineering Knowledge',halfLife:6.0,weight:30,defaultYears:2,recharge:'PE exam study (if unlicensed), technical conference (ASME, IEEE, SAE), or advanced simulation tools course.'},
+    {id:'tools_eng',name:'CAD, ERP & Simulation Tools (SolidWorks, SAP, ANSYS)',halfLife:3.0,weight:20,defaultYears:2,recharge:'Vendor certification update (SolidWorks 2025, ANSYS Workbench, SAP S/4HANA), or a digital twin course.'},
+    {id:'quality',name:'Quality, Lean & Six Sigma',halfLife:5.0,weight:20,defaultYears:2,recharge:'ASQ Green/Black Belt renewal, kaizen event lead, or an ISO 9001 internal audit.'},
+    {id:'regulatory_eng',name:'Regulatory, Safety & Standards (OSHA, ISO, NFPA)',halfLife:3.0,weight:15,defaultYears:2,recharge:'OSHA 30 renewal, ISO 9001/14001 internal auditor re-cert, or NFPA standards update training.'},
+    {id:'leadership_eng',name:'Project Leadership & Engineering Management',halfLife:8.0,weight:15,defaultYears:2,recharge:'PMP renewal PDUs, engineering leadership program (ASCE, IEEE), or a major project PM role.'}
+  ]},
+  hr:{label:'Human Resources',skills:[
+    {id:'employment_law',name:'Employment Law & Compliance',halfLife:2.5,weight:25,defaultYears:1,recharge:'SHRM annual legal update seminar, employment law webinar, or a state-specific update from an employment attorney.'},
+    {id:'ta_tech',name:'Talent Acquisition & TA Technology',halfLife:2.5,weight:20,defaultYears:1,recharge:'LinkedIn Recruiter Certification, ATS (Workday/Greenhouse) update training, or sourcing masterclass.'},
+    {id:'comp_ben',name:'Compensation, Benefits & Total Rewards',halfLife:3.0,weight:20,defaultYears:2,recharge:'WorldatWork CCP coursework, Mercer/WTW benchmarking study, or SHRM benefits seminar.'},
+    {id:'people_analytics',name:'People Analytics & HRIS (Workday, SAP SuccessFactors)',halfLife:2.5,weight:15,defaultYears:2,recharge:'Workday Pro cert, SAP SuccessFactors certification, or people analytics course (AIHR, Coursera).'},
+    {id:'leadership_hr',name:'HR Leadership, OD & Culture',halfLife:9.0,weight:20,defaultYears:1,recharge:'SHRM-SCP renewal, organizational development certificate, or a change management lead role.'}
+  ]},
+  project_mgmt:{label:'Project Management / Operations',skills:[
+    {id:'methodology',name:'PM Methodology (Agile, Scrum, Waterfall, Hybrid)',halfLife:4.0,weight:25,defaultYears:1,recharge:'PMI-ACP renewal PDUs, Certified Scrum Master renewal, or SAFe Program Consultant re-cert.'},
+    {id:'pm_tools',name:'PM Tools (Jira, Monday, MS Project, Smartsheet)',halfLife:2.5,weight:20,defaultYears:1,recharge:'Jira Advanced Roadmaps cert, Monday.com certification, or a Power BI for PM course.'},
+    {id:'risk_pm',name:'Risk, Scope & Stakeholder Management',halfLife:6.0,weight:20,defaultYears:1,recharge:'PMI RMP, advanced PM leadership workshop, or an earned value management (EVM) course.'},
+    {id:'data_pm',name:'Data-Driven PM, Reporting & Dashboards',halfLife:3.0,weight:15,defaultYears:2,recharge:'Power BI for Project Managers, Tableau PM dashboard course, or a Monte Carlo scheduling workshop.'},
+    {id:'leadership_pm',name:'Leadership, Communication & Influence',halfLife:9.0,weight:20,defaultYears:1,recharge:'PMP PDUs in leadership category, executive communication coaching, or a high-stakes sponsor negotiation.'}
+  ]}
+};
+
+/* ─ Populate skills panel on industry select ─ */
+function onIndustrySelect(){
+  const key=document.getElementById('industry-select').value;
+  const panel=document.getElementById('skills-panel');
+  const grid=document.getElementById('skills-grid');
+  const btn=document.getElementById('run-btn-2');
+  if(!key||!INDUSTRIES[key]){panel.style.display='none';btn.disabled=true;btn.textContent='Select an industry to assess your career capital →';return;}
+  const ind=INDUSTRIES[key];
+  panel.style.display='block';
+  grid.innerHTML=ind.skills.map(s=>`
+    <div class="skill-row">
+      <div class="skill-row-left">
+        <div class="skill-name">${s.name}</div>
+        <div class="skill-halflife">Half-life: ${s.halfLife} yrs · Weight: ${s.weight}%</div>
+      </div>
+      <div class="skill-row-right">
+        <label>Years stale</label>
+        <input type="number" min="0" max="15" step="0.5" value="${s.defaultYears}" id="skill-${s.id}">
+      </div>
+    </div>`).join('');
+  btn.disabled=false;btn.textContent='Assess My Career Capital →';
+}
+
+/* ─ Career capital engine ─ */
+function runCareerCapital(){
+  const key=document.getElementById('industry-select').value;
+  if(!key||!INDUSTRIES[key])return;
+  const ind=INDUSTRIES[key];
+
+  const results=ind.skills.map(s=>{
+    const yrs=parseFloat(document.getElementById('skill-'+s.id).value)||0;
+    const k=Math.log(2)/s.halfLife;
+    const retention=Math.exp(-k*yrs);
+    const currentVal=s.weight*retention;
+    const lostVal=s.weight*(1-retention);
+    return{...s,yrs,retention,currentVal,lostVal};
+  });
+
+  const totalMax=results.reduce((a,s)=>a+s.weight,0); // = 100
+  const totalCurrent=results.reduce((a,s)=>a+s.currentVal,0);
+  const score=Math.round((totalCurrent/totalMax)*100);
+
+  /* Tier */
+  const tier=score>=80?{label:'Fresh',cls:'good',color:'var(--green)'}
+    :score>=60?{label:'Aging',cls:'warn',color:'var(--amber)'}
+    :score>=40?{label:'Stale',cls:'bad',color:'var(--warn)'}
+    :{label:'Critical',cls:'bad',color:'var(--coral)'};
+
+  /* Ring animation */
+  const circumference=402.1;
+  const offset=circumference-(score/100)*circumference;
+  const arc=document.getElementById('capital-ring-arc');
+  arc.style.stroke=tier.color;
+  setTimeout(()=>arc.style.strokeDashoffset=offset,50);
+  document.getElementById('ring-score-text').textContent=score;
+  document.getElementById('ring-score-text').setAttribute('fill',tier.color);
+  document.getElementById('ring-label-text').textContent='of 100';
+  document.getElementById('capital-tier-label').innerHTML=`<span style="color:${tier.color};font-weight:600">${tier.label}</span> — Career Capital Score`;
+
+  /* KPIs */
+  const mostStaleSkill=results.slice().sort((a,b)=>b.lostVal-a.lostVal)[0];
+  const freshestSkill=results.slice().sort((a,b)=>b.retention-a.retention)[0];
+  document.getElementById('kpi-2').innerHTML=[
+    {label:'Capital Score',val:score,sub:tier.label,cls:tier.cls+' highlight'},
+    {label:'Capital Retained',val:Math.round(totalCurrent)+'%',sub:'of max portfolio value',cls:''},
+    {label:'Biggest Loss',val:mostStaleSkill.name.split(' ')[0]+'…',sub:'-'+Math.round(mostStaleSkill.lostVal)+'% value lost',cls:'bad'},
+    {label:'Strongest Asset',val:freshestSkill.name.split(' ')[0]+'…',sub:Math.round(freshestSkill.retention*100)+'% retained',cls:'good'}
+  ].map(k=>`<div class="kpi ${k.cls}"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div></div>`).join('');
+
+  /* Decay bars */
+  document.getElementById('decay-bars').innerHTML=results.map(s=>{
+    const pct=Math.round(s.retention*100);
+    const cls=pct>=75?'fresh':pct>=50?'aging':pct>=25?'stale':'critical';
+    return`<div class="decay-row">
+      <div class="decay-label" title="${s.name}">${s.name}</div>
+      <div class="decay-track"><div class="decay-fill ${cls}" style="width:${pct}%"></div></div>
+      <div class="decay-pct">${pct}%</div>
+    </div>`;
+  }).join('');
+
+  /* Recharge priority — top 3 by value lost */
+  const sorted=results.slice().sort((a,b)=>b.lostVal-a.lostVal);
+  const top3=sorted.slice(0,3);
+  document.getElementById('recharge-list').innerHTML=top3.map((s,i)=>`
+    <div class="recharge-card">
+      <div class="recharge-priority">Priority ${i+1} · ${Math.round(s.lostVal)}% value at stake</div>
+      <div class="recharge-skill">${s.name}</div>
+      <div class="recharge-action">${s.recharge}</div>
+      <div class="recharge-loss">Retained: ${Math.round(s.retention*100)}% · Half-life: ${s.halfLife} yrs · Years stale: ${s.yrs}</div>
+    </div>`).join('');
+
+  /* Verdict */
+  const urgency=score>=80?'Your portfolio is well-maintained.'
+    :score>=60?'Your portfolio is aging in some areas — targeted refreshes will maintain competitive positioning.'
+    :score>=40?'Significant depreciation detected. Prioritise the recharge plan above to recover career capital.'
+    :'Critical capital loss. Immediate investment in the top-priority skills is strongly recommended.';
+  document.getElementById('verdict-2').innerHTML=
+    `<strong>${ind.label}</strong> — Career Capital Score <strong style="color:${tier.color}">${score}/100</strong> (${tier.label}). ${urgency} Use Tab A to model the NPV of targeted certification investments.`;
+
+  /* Show results */
+  document.getElementById('results-2').classList.add('visible');
+  ['md-btn-2','ap2-btn-2'].forEach(id=>{document.getElementById(id).disabled=false;});
+  window._capitalResult={key,ind,results,score,tier,totalCurrent,totalMax,top3};
+  document.getElementById('results-2').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ══ AP2 / EXPORT UTILITIES ══ */
+const AP2Schema={
+  required:['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata'],
+  validMandateTypes:['credential_roi_evaluation','human_capital_assessment','automation_exposure_score','career_resilience_score','workforce_program_roi','career_pivot_assessment','career_transition_record','scholarship_pipeline_plan','fafsa_sai_estimate','exam_pathway_plan','benefits_election_record','severance_decision_record','offer_negotiation_record','graduate_school_roi_record','apprenticeship_match_record','cpd_credit_record','job_search_roi_record','career_break_record',
+    'loan_repayment_record','freelance_total_cost_record',
+    'mba_roi_evaluation','test_prep_roi_record',
+    'international_student_cost_record','parent_college_roi_record',
+    'equity_compensation_record'
+  ],
+  validate(m){const e=[];this.required.forEach(k=>{if(m[k]==null)e.push('missing: '+k);});if(m.ap2_version!=='1.0')e.push('ap2_version must be "1.0"');if(m.mandate_type&&!this.validMandateTypes.includes(m.mandate_type))e.push('unknown mandate_type: '+m.mandate_type);if(m.audit_metadata&&m.audit_metadata.client_side_executed!==true)e.push('client_side_executed must be true');if(m.audit_metadata&&m.audit_metadata.zero_pii_verified!==true)e.push('zero_pii_verified must be true');if(m.audit_metadata&&m.audit_metadata.deterministic_run!==true)e.push('deterministic_run must be true');return{valid:e.length===0,errors:e};}
+};
+function genUUID(){if(typeof crypto!=='undefined'&&crypto.randomUUID)return crypto.randomUUID();return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16);});}
+function tsCompact(){const d=new Date();return d.getFullYear()+(d.getMonth()+1).toString().padStart(2,'0')+d.getDate().toString().padStart(2,'0')+d.getHours().toString().padStart(2,'0')+d.getMinutes().toString().padStart(2,'0');}
+
+/* ─ AP2 Tab 1 ─ */
+function buildMandateTab1(){
+  const r=window._certResult;if(!r)return null;
+  const m={
+    ap2_version:'1.0',mandate_id:genUUID(),issued_at:new Date().toISOString(),
+    issued_by:'apexlogics.org',tool_id:'human-capital-engine',tool_version:'1.0.0',al_id:'AL-03',
+    mandate_type:'human_capital_assessment',jurisdiction:['US'],
+    payload:{
+      assessment_tab:'certification_roi',
+      cert_id:r.c.id,cert_name:r.c.name,cert_body:r.c.body,cert_category:r.c.category,
+      total_cost_usd:r.totalCost,exam_fee_usd:r.examFee,materials_usd:r.materials,prep_course_usd:r.prepCourse,
+      current_salary_usd:r.currentSalary,annual_premium_usd:Math.round(r.annualPremium),
+      premium_pct:r.premiumPct,discount_rate_pct:parseFloat((r.discountRate*100).toFixed(1)),
+      horizon_years:r.horizon,npv_usd:Math.round(r.npv),payback_months:r.paybackMonths,
+      nominal_roi_pct:parseFloat(r.roi.toFixed(1)),total_premium_usd:Math.round(r.totalDelta),
+      data_vintage:'Q4 2024 cert fees + '+r.c.vintage
+    },
+    summary:`${r.c.name}: total cost $${r.totalCost.toLocaleString()} · NPV $${Math.round(r.npv).toLocaleString()} over ${r.horizon} yrs · payback ${r.paybackMonths?r.paybackMonths+'mo':'beyond horizon'}.`,
+    agent_instructions:['Use npv_usd to compare cert ROI against graduate program NPV from AL-26.','Use annual_premium_usd as incremental salary for any downstream scenario modelling.'],
+    downstream_handoff_candidates:['AL-26','AL-02'],
+    audit_metadata:{client_side_executed:true,zero_pii_verified:true,deterministic_run:true,data_vintage:'Q4 2024 cert fees; salary premium from BLS OEWS May 2023 + industry surveys'}
+  };
+  const v=AP2Schema.validate(m);
+  if(!v.valid){showToast('AP2 validation failed: '+v.errors.join('; '),'error');return null;}
+  return m;
+}
+
+/* ─ AP2 Tab 2 ─ */
+function buildMandateTab2(){
+  const r=window._capitalResult;if(!r)return null;
+  const m={
+    ap2_version:'1.0',mandate_id:genUUID(),issued_at:new Date().toISOString(),
+    issued_by:'apexlogics.org',tool_id:'human-capital-engine',tool_version:'1.0.0',al_id:'AL-03',
+    mandate_type:'human_capital_assessment',jurisdiction:['US'],
+    payload:{
+      assessment_tab:'career_capital',
+      industry_key:r.key,industry_label:r.ind.label,
+      career_capital_score:r.score,score_tier:r.tier.label,
+      capital_retained_pct:parseFloat((r.totalCurrent/r.totalMax*100).toFixed(1)),
+      skill_assessments:r.results.map(s=>({
+        skill_id:s.id,skill_name:s.name,half_life_yrs:s.halfLife,years_stale:s.yrs,
+        weight_pct:s.weight,retention_pct:Math.round(s.retention*100),current_value:parseFloat(s.currentVal.toFixed(1)),lost_value:parseFloat(s.lostVal.toFixed(1))
+      })),
+      priority_recharge_skills:r.top3.map(s=>s.id),
+      data_vintage:'WEF Future of Jobs Report 2025 · McKinsey Global Institute Skill Shift 2021 · IBM IBV Skills Study 2024'
+    },
+    summary:`${r.ind.label}: Career Capital Score ${r.score}/100 (${r.tier.label}). Top recharge: ${r.top3.map(s=>s.name.split(' ')[0]).join(', ')}.`,
+    agent_instructions:['Use career_capital_score and skill_assessments to identify reskilling priorities.','Cross-reference priority_recharge_skills with AL-08+14 Career Transition Suite for role-change readiness.','skills_depreciation_risk_flag: score < 60 indicates elevated obsolescence risk for AL-28 reentry modelling.'],
+    downstream_handoff_candidates:['AL-08+14','AL-28'],
+    audit_metadata:{client_side_executed:true,zero_pii_verified:true,deterministic_run:true,data_vintage:'Skill half-lives from WEF 2025, McKinsey 2021, IBM 2024; exponential decay formula applied client-side'}
+  };
+  const v=AP2Schema.validate(m);
+  if(!v.valid){showToast('AP2 validation failed: '+v.errors.join('; '),'error');return null;}
+  return m;
+}
+
+function exportAP2tab1(){const m=buildMandateTab1();if(!m)return;downloadJSON(m,'AL-03_cert-roi_'+tsCompact()+'.ap2.json');showToast('AP2 mandate downloaded ✓','success');}
+function exportAP2tab2(){const m=buildMandateTab2();if(!m)return;downloadJSON(m,'AL-03_career-capital_'+tsCompact()+'.ap2.json');showToast('AP2 mandate downloaded ✓','success');}
+function downloadJSON(obj,filename){const b=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=filename;a.click();URL.revokeObjectURL(a.href);}
+
+/* ─ Markdown exports ─ */
+function exportMarkdown1(){
+  const r=window._certResult;if(!r)return;
+  const now=new Date().toISOString().slice(0,10);
+  const md=[
+    '# Certification ROI Plan — AL-03 Human Capital Engine',
+    `**Generated:** ${now}  |  **Cert:** ${r.c.name}`,
+    '',
+    '## Cost Breakdown',
+    '| Item | Amount |',
+    '|---|---|',
+    `| Exam fee | $${r.examFee.toLocaleString()} |`,
+    `| Study materials | $${r.materials.toLocaleString()} |`,
+    r.prepCourse>0?`| Prep course | $${r.prepCourse.toLocaleString()} |`:'',
+    `| **Total cost** | **$${r.totalCost.toLocaleString()}** |`,
+    '',
+    '## ROI Summary',
+    '| Metric | Value |',
+    '|---|---|',
+    `| Current salary | $${r.currentSalary.toLocaleString()} |`,
+    `| Annual salary premium | $${Math.round(r.annualPremium).toLocaleString()} (${r.premiumPct}%) |`,
+    `| Discount rate | ${(r.discountRate*100).toFixed(1)}% |`,
+    `| Horizon | ${r.horizon} years |`,
+    `| NPV | ${r.npv>=0?'+':''}$${Math.round(r.npv).toLocaleString()} |`,
+    `| Payback | ${r.paybackMonths?r.paybackMonths+' months':'Beyond horizon'} |`,
+    `| Nominal ROI | ${r.roi.toFixed(0)}% |`,
+    '',
+    '## Data Source',
+    `${r.c.vintage}. Source: AL-03 Human Capital Engine, Apex Logics.`,
+    '',
+    '---',
+    '*Apex Logics AL-03 · apexlogics.org · CC BY 4.0*'
+  ].filter(l=>l!==null&&l!=='').join('\n');
+  const b=new Blob([md],{type:'text/markdown'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='cert-roi-'+tsCompact()+'.md';a.click();URL.revokeObjectURL(a.href);
+  showToast('Markdown downloaded ✓','success');
+}
+
+function exportMarkdown2(){
+  const r=window._capitalResult;if(!r)return;
+  const now=new Date().toISOString().slice(0,10);
+  const md=[
+    '# Career Capital Assessment — AL-03 Human Capital Engine',
+    `**Generated:** ${now}  |  **Industry:** ${r.ind.label}  |  **Score:** ${r.score}/100 (${r.tier.label})`,
+    '',
+    '## Skill Retention',
+    '| Skill | Half-life | Years Stale | Retention |',
+    '|---|---|---|---|',
+    ...r.results.map(s=>`| ${s.name} | ${s.halfLife} yrs | ${s.yrs} | ${Math.round(s.retention*100)}% |`),
+    '',
+    '## Priority Recharge Plan',
+    ...r.top3.map((s,i)=>[
+      `### Priority ${i+1}: ${s.name}`,
+      `**Value at stake:** ${Math.round(s.lostVal)}%  |  **Retained:** ${Math.round(s.retention*100)}%`,
+      `**Action:** ${s.recharge}`,
+      ''
+    ].join('\n')),
+    '## Data Sources',
+    'WEF Future of Jobs Report 2025 · McKinsey Global Institute Skill Shift 2021 · IBM IBV Skills Study 2024 · Deloitte Insights Human Capital Trends 2024',
+    '',
+    '---',
+    '*Apex Logics AL-03 · apexlogics.org · CC BY 4.0*'
+  ].filter(l=>l!==null).join('\n');
+  const b=new Blob([md],{type:'text/markdown'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='career-capital-'+tsCompact()+'.md';a.click();URL.revokeObjectURL(a.href);
+  showToast('Markdown downloaded ✓','success');
+}
+
+/* ── MCP ── */
+function toggleMcp(){
+  const p=document.getElementById('mcp-body');p.classList.toggle('open');
+  if(p.classList.contains('open')&&!p.textContent.trim()){
+    p.textContent=JSON.stringify({tool_id:'human-capital-engine',al_id:'AL-03',version:'1.0.0',title:'Human Capital Engine',category:'licensing_credentials',journeys:['career_navigation'],personas:['working_professional','career_changer'],status:'shipped',maintenance:'medium',data_vintage:'Tab A: Q4 2024 cert fees + BLS OEWS May 2023 salary premiums (15 certs). Tab B: Skill half-life models from WEF 2025, McKinsey 2021, IBM 2024 (8 industries, 44 skill domains).',frozen_baseline:false,ap2_export:true,ap2_mandate_types:['human_capital_assessment'],assessment_tabs:['certification_roi','career_capital'],downstream_handoff_candidates:['AL-02','AL-08+14','AL-26','AL-28'],upstream_handoff_candidates:[],regulatory_citations:['WEF Future of Jobs Report 2025','McKinsey Global Institute Skill Shift 2021','IBM IBV Skills Study 2024','Deloitte Insights Global Human Capital Trends 2024','BLS OEWS May 2023','AICPA 2024 Accounting Salary Guide','PMI Earning Power Salary Survey 2023','SHRM Compensation Survey 2024','(ISC)² Cybersecurity Workforce Study 2023','ISACA 2024 State of Cybersecurity Report','CFA Institute 2023 Compensation Study','Mason Frank Salesforce Salary Survey 2024','Dice 2024 Tech Salary Survey','ASQ Quality Salary Survey 2023','Scrum Alliance State of Scrum 2023'],sister_suite:'https://ainumbers.co',consulting_site:'https://apexadvisory.site',license:'CC-BY-4.0'},null,2);
+  }
+}
+
+/* ── Toast ── */
+let toastTimer=null;
+function showToast(msg,type='success'){const t=document.getElementById('toast');t.textContent=msg;t.className=type;t.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.style.display='none';},4000);}
+function showAP2Help(){showToast('AP2 (Agent Purchase Protocol) — structured mandate for AI agent workflows. Learn more: ap2-protocol.org','success');}
+
+/* ── Init ── */
+initCertSelect();
+</script>
+</body>
+</html>

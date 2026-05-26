@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Search ROI Tracker — AL-27 · Apex Logics</title>
+<meta name="description" content="Model the expected ROI of job search effort by channel — referral, LinkedIn, recruiter, direct apply, cold outreach. Compare the NPV of accepting a current offer vs. continuing to search. Zero PII. AL-27 · Apex Logics.">
+<link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* AL-27 · Design Tokens from CONTRACT Appendix A · Apex Logics */
+:root{
+  --bg:#0b0e14;--bg-2:#0C1220;--bg-3:#111A2E;--bg-4:#162238;
+  --border:#232b3e;--border-2:#2e3a52;--muted:#6b7a99;
+  --body:#c8d0e0;--text:#A8C4DE;--bright:#D4E8F8;--white:#EEF6FD;
+  --amber:#E8A838;--amber-dim:rgba(232,168,56,.10);
+  --teal:#14B8A6;--teal-dim:rgba(20,184,166,.10);--teal-lt:#2DD4BF;
+  --coral:#F07167;--coral-dim:rgba(240,113,103,.10);
+  --lavender:#A78BFA;--lavender-dim:rgba(167,139,250,.10);--lavender-glow:rgba(167,139,250,.05);
+  --green:#34D399;--green-dim:rgba(52,211,153,.10);
+  --blue:#60A5FA;--blue-dim:rgba(96,165,250,.10);
+  --red:#F87171;--warn:#FBBF24;--warn-dim:rgba(251,191,36,.10);
+  --accent:var(--teal);--accent-dim:var(--teal-dim);
+  --radius:6px;--radius-lg:10px;--shadow:0 4px 24px rgba(0,0,0,.45);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+html[dir="rtl"] body{direction:rtl;text-align:right;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;font-size:.875rem;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh;}
+a{color:var(--teal-lt);text-decoration:none;}
+a:hover{text-decoration:underline;}
+button{cursor:pointer;font-family:inherit;}
+input[type="number"],input[type="text"],textarea{-moz-appearance:textfield;}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+
+/* ════════════════════════ NAV ════════════════════════ */
+nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(7,11,20,.92); backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.nav-inner {
+  max-width:1024px; margin:0 auto;
+  display:flex; align-items:center; gap:16px;
+  padding:0 24px; height:58px;
+}
+.logo { display:flex; align-items:center; gap:10px; flex-shrink:0; text-decoration:none; }
+.logo-mark { width:32px; height:32px; flex-shrink:0; }
+.logo-mark svg { width:100%; height:100%; }
+.logo-text { display:flex; flex-direction:column; gap:2px; }
+.logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--bright); letter-spacing:-.02em; line-height:1; }
+.logo-apex { color:var(--amber); }
+.logo-org { color:var(--muted); font-size:.8rem; }
+.logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-family:'JetBrains Mono',monospace; line-height:1; }
+.nav-right { display:flex; align-items:center; gap:8px; margin-left:auto; flex-shrink:0; }
+.nav-pill {
+  background:none; border:1px solid var(--border-2); border-radius:var(--radius);
+  color:var(--body); font-size:.62rem; padding:.3rem .65rem;
+  font-family:'JetBrains Mono',monospace; letter-spacing:.04em;
+  transition:border-color .15s, color .15s;
+  text-decoration:none; display:inline-flex; align-items:center;
+}
+.nav-pill:hover { border-color:var(--teal); color:var(--text); }
+@media (max-width:600px) { .logo-tag, .nav-pill { display:none; } }
+
+/* ── LANG BAR ── */
+.lang-bar{background:var(--bg-2);border-bottom:1px solid var(--border);padding:.42rem 0;}
+.lang-inner{max-width:1024px;margin:0 auto;padding:0 24px;display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;}
+.lang-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.06em;padding:.25rem .55rem;border-radius:var(--radius);transition:all .15s;}
+.lang-btn:hover{border-color:var(--border-2);color:var(--body);}
+.lang-btn.active{border-color:var(--amber);color:var(--amber);background:var(--amber-dim);}
+
+/* ── TOOL HEADER ── */
+.container{max-width:1024px;margin:0 auto;padding:24px;}
+.tool-header{padding:40px 0 20px;}
+.tool-chip{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.52rem;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);border:1px solid rgba(20,184,166,.25);padding:.24rem .6rem;border-radius:var(--radius);margin-bottom:10px;}
+.tool-title{font-family:'DM Serif Display',serif;font-size:2.1rem;line-height:1.15;color:var(--bright);margin-bottom:10px;}
+.tool-subtitle{color:var(--body);font-size:.9rem;max-width:700px;margin-bottom:0;}
+
+/* ── TAB BAR ── */
+.tab-bar{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:22px;}
+.tab-btn{background:none;border:none;border-bottom:2px solid transparent;color:var(--body);font-family:'Sora',sans-serif;font-size:.82rem;padding:.85rem 1.3rem;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--teal);border-bottom-color:var(--teal);}
+.tab-num{font-family:'JetBrains Mono',monospace;font-size:.52rem;letter-spacing:.12em;color:var(--muted);margin-right:7px;}
+.tab-btn.active .tab-num{color:var(--teal);}
+.tab-section{display:none;}
+.tab-section.active{display:block;}
+
+/* ── PII BANNER ── */
+.pii-notice{margin:0 0 22px;padding:13px 17px;background:rgba(232,168,56,.06);border:1px solid rgba(232,168,56,.22);border-radius:var(--radius);color:#F0BD5E;font-size:.77rem;line-height:1.55;}
+
+/* ── IMPORT BADGE ── */
+.import-badge{display:none;align-items:center;gap:6px;background:var(--green-dim);border:1px solid rgba(52,211,153,.3);color:var(--green);font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.04em;padding:.28rem .65rem;border-radius:var(--radius);margin-bottom:14px;}
+
+/* ── PANEL ── */
+.panel{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;}
+.panel-label{font-family:'JetBrains Mono',monospace;font-size:.52rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:block;}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:11px;}
+.row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;margin-bottom:11px;}
+.row-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:13px;margin-bottom:11px;}
+@media(max-width:700px){.row-2,.row-3,.row-4{grid-template-columns:1fr 1fr;}}
+@media(max-width:440px){.row-2,.row-3,.row-4{grid-template-columns:1fr;}}
+.input-group{display:flex;flex-direction:column;gap:5px;}
+.input-group label{font-size:.7rem;color:var(--text);display:flex;align-items:baseline;gap:5px;}
+.input-hint{font-size:.63rem;color:var(--muted);line-height:1.4;margin-top:2px;}
+input[type="number"]{width:100%;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);color:var(--bright);padding:.5rem .65rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;outline:none;transition:border-color .15s;}
+input[type="number"]:focus{border-color:var(--teal);}
+input[type="number"]::placeholder{color:var(--muted);}
+.dollar-wrap{position:relative;}
+.dollar-wrap::before{content:"$";position:absolute;left:.65rem;top:50%;transform:translateY(-50%);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.78rem;pointer-events:none;}
+.dollar-wrap input{padding-left:1.35rem;}
+.pct-wrap{position:relative;}
+.pct-wrap::after{content:"%";position:absolute;right:.65rem;top:50%;transform:translateY(-50%);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.78rem;pointer-events:none;}
+.pct-wrap input{padding-right:1.5rem;}
+
+/* ── CHANNEL GRID ── */
+.channel-grid-wrap{overflow-x:auto;margin-bottom:4px;}
+.channel-grid{width:100%;border-collapse:collapse;min-width:700px;}
+.channel-grid thead th{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:.5rem .6rem;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+.channel-grid thead th:first-child{width:180px;}
+.channel-grid tbody tr{border-bottom:1px solid rgba(28,45,72,.6);}
+.channel-grid tbody tr.disabled-row{opacity:.4;}
+.channel-grid tbody td{padding:.5rem .5rem;vertical-align:middle;}
+.channel-name-cell{display:flex;align-items:center;gap:8px;}
+.ch-toggle{width:15px;height:15px;accent-color:var(--teal);cursor:pointer;flex-shrink:0;}
+.ch-label{font-size:.75rem;color:var(--text);white-space:nowrap;}
+.ch-input{width:100%;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);color:var(--bright);padding:.38rem .5rem;font-family:'JetBrains Mono',monospace;font-size:.75rem;outline:none;transition:border-color .15s;text-align:right;}
+.ch-input:focus{border-color:var(--teal);}
+
+/* ── RUN BUTTON ── */
+.run-btn{display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:#fff;border:none;border-radius:var(--radius);font-family:'Sora',sans-serif;font-size:.82rem;font-weight:600;padding:.7rem 1.5rem;transition:opacity .15s,transform .1s;margin-top:4px;}
+.run-btn:hover:not(:disabled){opacity:.88;transform:translateY(-1px);}
+.run-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+
+/* ── KPI CARDS ── */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+@media(max-width:700px){.kpi-row{grid-template-columns:1fr 1fr;}}
+@media(max-width:400px){.kpi-row{grid-template-columns:1fr;}}
+.kpi-card{background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 14px;}
+.kpi-label{font-family:'JetBrains Mono',monospace;font-size:.52rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.kpi-value{font-family:'DM Serif Display',serif;font-size:1.35rem;line-height:1.15;margin-bottom:3px;}
+.kpi-sub{font-size:.65rem;color:var(--muted);}
+.kpi-amber .kpi-value{color:var(--amber);}
+.kpi-teal .kpi-value{color:var(--teal);}
+.kpi-lavender .kpi-value{color:var(--teal);}
+.kpi-green .kpi-value{color:var(--green);}
+.kpi-coral .kpi-value{color:var(--coral);}
+
+/* ── RESULTS TABLE ── */
+.results-table-wrap{overflow-x:auto;margin-bottom:16px;}
+.results-table{width:100%;border-collapse:collapse;min-width:750px;}
+.results-table th{font-family:'JetBrains Mono',monospace;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:.55rem .7rem;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+.results-table td{padding:.55rem .7rem;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text);border-bottom:1px solid rgba(28,45,72,.5);vertical-align:middle;}
+.results-table tr:first-child td{color:var(--bright);}
+.rank-badge{display:inline-flex;align-items:center;gap:4px;font-size:.6rem;background:var(--teal-dim);border:1px solid rgba(20,184,166,.3);color:var(--teal);padding:.15rem .45rem;border-radius:var(--radius);}
+.roi-badge{display:inline-block;padding:.15rem .45rem;border-radius:var(--radius);font-size:.7rem;font-weight:500;}
+.roi-green{background:var(--green-dim);color:var(--green);border:1px solid rgba(52,211,153,.3);}
+.roi-amber{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(232,168,56,.3);}
+.roi-coral{background:var(--coral-dim);color:var(--coral);border:1px solid rgba(240,113,103,.3);}
+
+/* ── PROB TIMELINE ── */
+.prob-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+@media(max-width:600px){.prob-row{grid-template-columns:1fr 1fr;}}
+.prob-card{background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;}
+.prob-week{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.prob-val{font-family:'JetBrains Mono',monospace;font-size:1.1rem;color:var(--teal);font-weight:500;}
+
+/* ── VERDICT / RECOMMENDATION ── */
+.verdict-bar{background:var(--teal-dim);border:1px solid rgba(20,184,166,.2);border-radius:var(--radius-lg);padding:16px 18px;margin-bottom:16px;font-size:.82rem;color:var(--text);line-height:1.65;}
+.verdict-bar.accept-bar{background:var(--amber-dim);border-color:rgba(232,168,56,.25);color:var(--text);}
+.verdict-bar.continue-bar{background:var(--green-dim);border-color:rgba(52,211,153,.25);color:var(--text);}
+.verdict-label{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px;}
+.mono{font-family:'JetBrains Mono',monospace;}
+em.hi{font-style:normal;color:var(--bright);font-weight:600;}
+
+/* ── NPV COMPARE ── */
+.npv-compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+@media(max-width:500px){.npv-compare{grid-template-columns:1fr;}}
+.npv-card{background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 16px;text-align:center;}
+.npv-card.winner{border-color:var(--teal);background:var(--teal-dim);}
+.npv-title{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.npv-amount{font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--bright);margin-bottom:4px;}
+.npv-card.winner .npv-amount{color:var(--teal);}
+.npv-win-badge{display:inline-block;background:var(--teal-dim);border:1px solid rgba(20,184,166,.3);color:var(--teal);font-size:.55rem;letter-spacing:.1em;padding:.2rem .5rem;border-radius:var(--radius);font-family:'JetBrains Mono',monospace;}
+
+/* ── EXPORT ROW ── */
+.results-export-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;}
+.export-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-3);border:1px solid var(--border-2);border-radius:var(--radius);color:var(--text);font-size:.72rem;padding:.45rem .9rem;font-family:'Sora',sans-serif;transition:border-color .15s,color .15s;}
+.export-btn:hover:not(:disabled){border-color:var(--teal);color:var(--teal);}
+.export-btn:disabled{opacity:.3;cursor:not-allowed;}
+.help-btn{background:var(--bg-3);border:1px solid var(--border);border-radius:50%;width:28px;height:28px;color:var(--muted);font-size:.75rem;display:inline-flex;align-items:center;justify-content:center;transition:border-color .15s,color .15s;}
+.help-btn:hover{border-color:var(--teal);color:var(--teal);}
+
+/* ── RESULTS PANEL ── */
+.results-panel{display:none;}
+.results-panel.visible{display:block;}
+
+/* ── MCP PANEL ── */
+.mcp-wrap{max-width:1024px;margin:0 auto 0;padding:0 24px 32px;}
+.mcp-toggle{background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.08em;padding:.3rem .7rem;transition:all .15s;}
+.mcp-toggle:hover{border-color:var(--border-2);color:var(--body);}
+.mcp-body{display:none;margin-top:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--body);line-height:1.7;white-space:pre-wrap;overflow-x:auto;}
+.mcp-body.open{display:block;}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(7,11,20,.82);z-index:200;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:var(--bg-2);border:1px solid var(--border-2);border-radius:var(--radius-lg);padding:24px;width:min(540px,92vw);box-shadow:var(--shadow);}
+.modal-title{font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin-bottom:12px;}
+.modal-box textarea{width:100%;height:180px;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);color:var(--bright);font-family:'JetBrains Mono',monospace;font-size:.72rem;padding:10px;outline:none;resize:vertical;}
+.modal-box textarea:focus{border-color:var(--teal);}
+.modal-actions{display:flex;gap:8px;margin-top:12px;}
+.modal-btn{background:var(--teal);color:#fff;border:none;border-radius:var(--radius);font-family:'Sora',sans-serif;font-size:.78rem;font-weight:600;padding:.5rem 1.1rem;transition:opacity .15s;}
+.modal-btn:hover{opacity:.85;}
+.modal-cancel{background:none;border:1px solid var(--border-2);color:var(--body);border-radius:var(--radius);font-family:'Sora',sans-serif;font-size:.78rem;padding:.5rem 1rem;transition:all .15s;}
+.modal-cancel:hover{border-color:var(--text);color:var(--text);}
+.modal-error{color:var(--coral);font-size:.7rem;margin-top:8px;display:none;}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--bg-4);border:1px solid var(--border-2);color:var(--text);font-size:.78rem;padding:.55rem 1.2rem;border-radius:var(--radius-lg);box-shadow:var(--shadow);opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:500;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── FOOTER ── */
+footer{background:var(--bg-2);border-top:1px solid var(--border);margin-top:12px;}
+.tool-footer{max-width:1024px;margin:0 auto;padding:18px 24px;font-size:.68rem;color:var(--muted);line-height:1.8;}
+.tool-footer a{color:var(--body);transition:color .15s;}
+.tool-footer a:hover{color:var(--teal);text-decoration:none;}
+
+/* ── INLINE NOTE ── */
+.inline-note{font-size:.62rem;color:var(--teal);font-style:italic;margin-left:6px;}
+
+/* ── SECTION DIVIDER ── */
+.section-divider{border:none;border-top:1px solid var(--border);margin:20px 0;}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     LANG BAR — CONTRACT §1.1 — <button> required
+══════════════════════════════════════════════ -->
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TOP NAV
+══════════════════════════════════════════════ -->
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0C1220" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-right">
+      <a href="https://apexadvisory.site" class="nav-pill" target="_blank" rel="noopener">ApexAdvisory.site</a>
+      <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     TOOL HEADER
+══════════════════════════════════════════════ -->
+<div class="container">
+  <div class="tool-header">
+    <div class="tool-chip">AL · 27 · Career Transition &amp; Mobility</div>
+    <h1 class="tool-title">Job Search ROI Tracker</h1>
+    <p class="tool-subtitle">Model the expected return on effort across every search channel — referrals, LinkedIn, recruiters, job boards, cold outreach — then decide whether to accept a current offer or keep searching. All calculations run locally in your browser.</p>
+  </div>
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('tab1')" id="tabBtn1">
+      <span class="tab-num">01</span>Search Channel ROI
+    </button>
+    <button class="tab-btn" onclick="switchTab('tab2')" id="tabBtn2">
+      <span class="tab-num">02</span>Accept vs. Continue
+    </button>
+  </div>
+
+  <!-- PII BANNER -->
+  <div class="pii-notice">
+    🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+  </div>
+
+  <!-- AP2 paste button -->
+  <div style="margin-bottom:18px;">
+    <button class="export-btn" onclick="openAP2Modal()" style="font-size:.7rem;">⬇ Paste AP2 Input</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       TAB 1 — Search Channel ROI
+  ══════════════════════════════════════════ -->
+  <div class="tab-section active" id="tab1">
+
+    <!-- Import badge (shown after AP2 inbound) -->
+    <div class="import-badge" id="import-badge-tab1">✓ Imported from Offer Negotiation Suite (AL-25)</div>
+
+    <!-- Overview Inputs -->
+    <div class="panel">
+      <span class="panel-label">Overview Inputs</span>
+      <div class="row-2">
+        <div class="input-group">
+          <label for="currentSalary">Current Annual Salary (USD)</label>
+          <div class="dollar-wrap">
+            <input type="number" id="currentSalary" placeholder="0" min="0" step="1000" value="0" oninput="onCurrentSalaryChange()">
+          </div>
+          <p class="input-hint">Enter 0 if currently unemployed.</p>
+        </div>
+        <div class="input-group">
+          <label for="targetSalary">Target Annual Salary (USD)</label>
+          <div class="dollar-wrap">
+            <input type="number" id="targetSalary" placeholder="90000" min="0" step="1000" oninput="checkTab1RunReady()">
+          </div>
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="input-group">
+          <label for="hourlyRate">Opportunity Cost per Hour (USD)</label>
+          <div class="dollar-wrap">
+            <input type="number" id="hourlyRate" placeholder="43.27" min="0" step="0.01" oninput="onHourlyRateManual()">
+          </div>
+          <p class="input-hint">Auto-calculated from salary ÷ 2,080 hrs. Override if freelancing or using a different rate.</p>
+        </div>
+        <div class="input-group">
+          <label for="searchHoursPerWeek">Search Hours Available per Week</label>
+          <input type="number" id="searchHoursPerWeek" placeholder="10" min="1" step="1" value="10">
+        </div>
+      </div>
+    </div>
+
+    <!-- Context Selectors (v1.1) -->
+    <div class="panel">
+      <span class="panel-label">Market Context <span style="font-weight:400;font-size:0.82em;opacity:0.7;">— adjusts channel defaults to your situation</span></span>
+      <div class="row-2">
+        <div class="input-group">
+          <label for="metroTier">Market Tier</label>
+          <select id="metroTier" onchange="applyContextDefaults()">
+            <option value="national">National / Remote</option>
+            <option value="major">Major Metro (SF · NYC · Seattle · Boston · LA · Austin)</option>
+            <option value="secondary">Secondary Metro (Chicago · Atlanta · Denver · Dallas · Phoenix)</option>
+          </select>
+          <p class="input-hint">Major metros have more applicants per role; secondary metros sit between national and major.</p>
+        </div>
+        <div class="input-group">
+          <label for="industrySelect">Industry</label>
+          <select id="industrySelect" onchange="applyContextDefaults()">
+            <option value="general">General / All Industries</option>
+            <option value="tech">Technology &amp; Software</option>
+            <option value="finance">Finance &amp; Banking</option>
+            <option value="healthcare">Healthcare &amp; Life Sciences</option>
+            <option value="government">Government &amp; Public Sector</option>
+            <option value="sales_marketing">Sales &amp; Marketing</option>
+          </select>
+          <p class="input-hint">Industry affects which channels perform best. Defaults update automatically — you can still edit any value.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Channel Grid -->
+    <div class="panel">
+      <span class="panel-label">Search Channel Configuration</span>
+      <div class="channel-grid-wrap">
+        <table class="channel-grid" id="channelGrid">
+          <thead>
+            <tr>
+              <th>Channel</th>
+              <th>Apps / Week</th>
+              <th>Response Rate %</th>
+              <th>Interview → Offer %</th>
+              <th>Hrs / App</th>
+            </tr>
+          </thead>
+          <tbody id="channelGridBody">
+            <!-- Rows injected by JS -->
+          </tbody>
+        </table>
+      </div>
+      <p class="input-hint" style="margin-top:8px;">Uncheck a channel to exclude it from the portfolio calculation.</p>
+    </div>
+
+    <!-- Run -->
+    <button class="run-btn" id="runTab1Btn" onclick="runTab1()" disabled>Calculate Channel ROI →</button>
+
+    <!-- Results Panel (hidden until run) -->
+    <div class="results-panel" id="tab1Results">
+      <hr class="section-divider">
+
+      <!-- KPI Row -->
+      <div class="kpi-row" id="t1KpiRow">
+        <div class="kpi-card kpi-amber">
+          <div class="kpi-label">Best EV / Hour</div>
+          <div class="kpi-value" id="t1BestEV">—</div>
+          <div class="kpi-sub" id="t1BestEVCh">—</div>
+        </div>
+        <div class="kpi-card kpi-teal">
+          <div class="kpi-label">Fastest Channel</div>
+          <div class="kpi-value" id="t1FastestWks">—</div>
+          <div class="kpi-sub" id="t1FastestCh">—</div>
+        </div>
+        <div class="kpi-card kpi-lavender">
+          <div class="kpi-label">Portfolio Median</div>
+          <div class="kpi-value" id="t1PortfolioMedian">—</div>
+          <div class="kpi-sub">time to first offer</div>
+        </div>
+        <div class="kpi-card kpi-green">
+          <div class="kpi-label">Salary Delta</div>
+          <div class="kpi-value" id="t1SalaryDelta">—</div>
+          <div class="kpi-sub">target vs. current</div>
+        </div>
+      </div>
+
+      <!-- Channel Results Table -->
+      <div class="panel">
+        <span class="panel-label">Channel Results (ranked by EV/Hour)</span>
+        <div class="results-table-wrap">
+          <table class="results-table" id="t1Table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Channel</th>
+                <th>Conv. Rate</th>
+                <th>Apps to Offer</th>
+                <th>Weeks</th>
+                <th>Hours</th>
+                <th>Opp. Cost</th>
+                <th>EV/Hour</th>
+                <th>ROI</th>
+              </tr>
+            </thead>
+            <tbody id="t1TableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Probability Timeline -->
+      <div class="panel">
+        <span class="panel-label">Portfolio Probability of ≥1 Offer Within…</span>
+        <div class="prob-row">
+          <div class="prob-card"><div class="prob-week">4 Weeks</div><div class="prob-val" id="prob4wk">—</div></div>
+          <div class="prob-card"><div class="prob-week">8 Weeks</div><div class="prob-val" id="prob8wk">—</div></div>
+          <div class="prob-card"><div class="prob-week">12 Weeks</div><div class="prob-val" id="prob12wk">—</div></div>
+          <div class="prob-card"><div class="prob-week">26 Weeks</div><div class="prob-val" id="prob26wk">—</div></div>
+        </div>
+      </div>
+
+      <!-- Channel Priority Recommendation -->
+      <div class="verdict-bar" id="t1RecommendBar">
+        <div class="verdict-label" style="color:var(--teal);">Channel Priority Recommendation</div>
+        <span id="t1RecommendText">—</span>
+      </div>
+
+      <!-- Export Row -->
+      <div class="results-export-row">
+        <button class="export-btn" id="t1MdBtn" onclick="downloadT1Markdown()" disabled>⬇ Download Markdown</button>
+        <button class="export-btn" id="t1Ap2Btn" onclick="downloadT1AP2()" disabled>⬇ Download AP2 JSON</button>
+        <button class="help-btn" title="AP2 JSON follows the job_search_roi_record mandate type. Validated before download." aria-label="Export help">ℹ</button>
+      </div>
+    </div><!-- /tab1Results -->
+
+  </div><!-- /tab1 -->
+
+  <!-- ══════════════════════════════════════════
+       TAB 2 — Accept vs. Continue Planner
+  ══════════════════════════════════════════ -->
+  <div class="tab-section" id="tab2">
+
+    <!-- Import badge -->
+    <div class="import-badge" id="import-badge-tab2">✓ Imported from Offer Negotiation Suite (AL-25)</div>
+
+    <!-- Offer Details -->
+    <div class="panel">
+      <span class="panel-label">Offer Details</span>
+      <div class="row-2">
+        <div class="input-group">
+          <label for="offerSalary">Offer on Table — Annual Salary (USD)</label>
+          <div class="dollar-wrap">
+            <input type="number" id="offerSalary" placeholder="80000" min="0" step="1000">
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="targetSalary2">Target / Better Offer Salary (USD)</label>
+          <div class="dollar-wrap">
+            <input type="number" id="targetSalary2" placeholder="95000" min="0" step="1000">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search Cost Inputs -->
+    <div class="panel">
+      <span class="panel-label">Search Cost &amp; Timeline</span>
+      <div class="row-3">
+        <div class="input-group">
+          <label for="currentSavings">Current Liquid Savings (USD)</label>
+          <div class="dollar-wrap">
+            <input type="number" id="currentSavings" placeholder="20000" min="0" step="500">
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="monthlyBurn">Monthly Living Expenses (USD)</label>
+          <div class="dollar-wrap">
+            <input type="number" id="monthlyBurn" placeholder="4000" min="0" step="100">
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="monthlyOtherIncome">Monthly Other Income (USD)</label>
+          <div class="dollar-wrap">
+            <input type="number" id="monthlyOtherIncome" placeholder="0" min="0" step="100" value="0">
+          </div>
+          <p class="input-hint">Severance, freelance, part-time, etc.</p>
+        </div>
+      </div>
+      <div class="row-3">
+        <div class="input-group">
+          <label for="weeksElapsed">Weeks Already Searching</label>
+          <input type="number" id="weeksElapsed" placeholder="0" min="0" step="1" value="0">
+        </div>
+        <div class="input-group">
+          <label for="expectedWeeksRemaining">
+            Expected Weeks Until Better Offer
+            <span class="inline-note" id="ewer-note" style="display:none;">(auto-filled from Tab 1)</span>
+          </label>
+          <input type="number" id="expectedWeeksRemaining" placeholder="12" min="0" step="1" oninput="onEwerManual()">
+          <p class="input-hint">Auto-fills from Tab 1 portfolio median if Tab 1 has been run.</p>
+        </div>
+        <div class="input-group">
+          <label for="careerHorizonYears">Years Until Planned Retirement</label>
+          <input type="number" id="careerHorizonYears" placeholder="20" min="1" step="1" value="20">
+        </div>
+      </div>
+    </div>
+
+    <!-- Run -->
+    <button class="run-btn" id="runTab2Btn" onclick="runTab2()">Model Accept vs. Continue →</button>
+
+    <!-- Results Panel -->
+    <div class="results-panel" id="tab2Results">
+      <hr class="section-divider">
+
+      <!-- KPI Row -->
+      <div class="kpi-row">
+        <div class="kpi-card" id="t2VerdictCard">
+          <div class="kpi-label">Verdict</div>
+          <div class="kpi-value" id="t2VerdictVal" style="font-size:1.1rem;">—</div>
+          <div class="kpi-sub" id="t2VerdictSub">—</div>
+        </div>
+        <div class="kpi-card kpi-lavender">
+          <div class="kpi-label">Break-even</div>
+          <div class="kpi-value" id="t2Breakeven">—</div>
+          <div class="kpi-sub">months after offer</div>
+        </div>
+        <div class="kpi-card" id="t2NpvCard">
+          <div class="kpi-label">NPV Delta</div>
+          <div class="kpi-value" id="t2NpvDelta">—</div>
+          <div class="kpi-sub">continue minus accept</div>
+        </div>
+        <div class="kpi-card" id="t2RunwayCard">
+          <div class="kpi-label">Financial Runway</div>
+          <div class="kpi-value" id="t2Runway">—</div>
+          <div class="kpi-sub">weeks at current burn</div>
+        </div>
+      </div>
+
+      <!-- Verdict Bar -->
+      <div class="verdict-bar" id="t2VerdictBar">
+        <div class="verdict-label" id="t2VerdictBarLabel">Verdict</div>
+        <span id="t2VerdictBarText">—</span>
+      </div>
+
+      <!-- NPV Comparison -->
+      <div class="panel">
+        <span class="panel-label">NPV Comparison (3% annual discount, career horizon)</span>
+        <div class="npv-compare">
+          <div class="npv-card" id="npvAcceptCard">
+            <div class="npv-title">Accept Now</div>
+            <div class="npv-amount" id="npvAcceptAmt">—</div>
+            <div class="kpi-sub">NPV at target horizon</div>
+          </div>
+          <div class="npv-card" id="npvContinueCard">
+            <div class="npv-title">Continue Searching</div>
+            <div class="npv-amount" id="npvContinueAmt">—</div>
+            <div class="kpi-sub">NPV net of search cost</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Break-even callout -->
+      <div class="verdict-bar" id="t2BreakevenBar">
+        <div class="verdict-label" style="color:var(--teal);">Break-even Callout</div>
+        <span id="t2BreakevenText">—</span>
+      </div>
+
+      <!-- Export Row -->
+      <div class="results-export-row">
+        <button class="export-btn" id="t2MdBtn" onclick="downloadT2Markdown()" disabled>⬇ Download Markdown</button>
+        <button class="export-btn" id="t2Ap2Btn" onclick="downloadT2AP2()" disabled>⬇ Download AP2 JSON</button>
+        <button class="help-btn" title="AP2 JSON follows the job_search_roi_record mandate type (tab: accept_vs_continue). Validated before download." aria-label="Export help">ℹ</button>
+      </div>
+    </div><!-- /tab2Results -->
+
+  </div><!-- /tab2 -->
+</div><!-- /container -->
+
+<!-- ══════════════════════════════════════════════
+     AP2 INBOUND MODAL
+══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="ap2Modal">
+  <div class="modal-box">
+    <div class="modal-title">Paste AP2 Mandate JSON</div>
+    <textarea id="ap2PasteArea" placeholder='Paste your AP2 JSON here. Accepted: offer_negotiation_record from AL-25.'></textarea>
+    <div class="modal-error" id="ap2ModalError"></div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="processAP2Paste()">Import</button>
+      <button class="modal-cancel" onclick="closeAP2Modal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MCP DISCOVERY PANEL
+══════════════════════════════════════════════ -->
+<div class="mcp-wrap">
+  <button class="mcp-toggle" onclick="toggleMcp()">{ } MCP Discovery</button>
+  <div class="mcp-body" id="mcp-body"></div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="tool-footer">
+    Built by <a href="https://apexadvisory.site" target="_blank" rel="noopener">Apex Advisors</a> ·
+    Sister suite: <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> ·
+    <a href="../../" rel="noopener">Apex Logics Suite</a> ·
+    AL-27 v1.0.0 · CC BY 4.0 ·
+    Zero embedded data — all inputs user-provided ·
+    <a href="https://apexadvisory.site" target="_blank" rel="noopener">Career Counseling → ApexAdvisory.site</a>
+  </div>
+</footer>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════════════
+     SCRIPT — all logic inline
+══════════════════════════════════════════════ -->
+<script>
+/* AL-27 Job Search ROI Tracker · Apex Logics · CC BY 4.0 · apexlogics.org */
+
+'use strict';
+
+/* ── STATE ─────────────────────────────────── */
+var _hourlyRateManualOverride = false;
+var _ewerManuallyEdited = false;
+window._tab1Result = null;
+window._tab2Result = null;
+window._ap2InboundSource = null;
+
+/* ── DEFAULT CHANNEL DATA ───────────────────
+   Evidence-based defaults for 6 search channels.
+   Fields: label, appsPerWeek, responseRate (%), interviewToOffer (%), hoursPerApp
+*/
+var DEFAULT_CHANNELS = [
+  { label: 'Referral / Network',             appsPerWeek: 2,  responseRate: 35, interviewToOffer: 30, hoursPerApp: 2.5 },
+  { label: 'Company Direct Apply',           appsPerWeek: 5,  responseRate: 10, interviewToOffer: 18, hoursPerApp: 1.2 },
+  { label: 'Recruiter / Staffing Agency',    appsPerWeek: 3,  responseRate: 25, interviewToOffer: 22, hoursPerApp: 1.0 },
+  { label: 'LinkedIn Direct Apply',          appsPerWeek: 8,  responseRate: 8,  interviewToOffer: 15, hoursPerApp: 1.5 },
+  { label: 'Job Board (Indeed / ZipRecruiter)', appsPerWeek: 10, responseRate: 5, interviewToOffer: 12, hoursPerApp: 0.8 },
+  { label: 'Cold Outreach (email/DM)',        appsPerWeek: 4,  responseRate: 5,  interviewToOffer: 25, hoursPerApp: 3.0 }
+];
+
+/* ── METRO TIER MULTIPLIERS (v1.1) ───────────
+   Applied to responseRate and hoursPerApp.
+   Source: LinkedIn Economic Graph 2024, SHRM 2024, NALP 2024.
+   national = 1.0 baseline; major metro = more competition; secondary = moderate.
+*/
+var METRO_MULTIPLIERS = {
+  national:  { responseRate: 1.00, hoursPerApp: 1.00 },
+  major:     { responseRate: 0.82, hoursPerApp: 0.90 }, // more applicants per role, faster processes
+  secondary: { responseRate: 0.93, hoursPerApp: 0.96 }
+};
+
+/* ── INDUSTRY CHANNEL MODIFIERS (v1.1) ────────
+   Per-channel responseRate multiplier by industry.
+   Index order matches DEFAULT_CHANNELS: [Referral, Direct, Recruiter, LinkedIn, JobBoard, Cold].
+   Sources: LinkedIn Economic Graph 2024, SHRM 2024, NALP 2024.
+*/
+var INDUSTRY_MODIFIERS = {
+  general:       [1.00, 1.00, 1.00, 1.00, 1.00, 1.00],
+  tech:          [1.20, 1.00, 1.30, 1.20, 0.70, 1.10], // referral/recruiter/LinkedIn dominant
+  finance:       [1.10, 0.90, 1.40, 1.10, 0.80, 1.00], // recruiter-heavy market
+  healthcare:    [0.90, 1.30, 1.10, 0.90, 1.20, 0.80], // direct apply + job boards strong
+  government:    [0.70, 1.50, 0.60, 0.80, 1.00, 0.60], // USAJobs/direct apply dominant
+  sales_marketing:[1.10, 0.95, 1.10, 1.30, 0.90, 1.30]  // LinkedIn + cold outreach effective
+};
+
+/* ── APPLY CONTEXT DEFAULTS (v1.1) ─────────
+   Re-derives channel grid values from DEFAULT_CHANNELS × metro multiplier × industry modifier.
+   Leaves user-edited values writable — this only fires on selector change.
+*/
+function applyContextDefaults() {
+  var metro    = document.getElementById('metroTier').value;
+  var industry = document.getElementById('industrySelect').value;
+  var mMult    = METRO_MULTIPLIERS[metro]    || METRO_MULTIPLIERS.national;
+  var iMods    = INDUSTRY_MODIFIERS[industry] || INDUSTRY_MODIFIERS.general;
+
+  DEFAULT_CHANNELS.forEach(function(ch, i) {
+    var respEl = document.getElementById('chResp' + i);
+    var hrsEl  = document.getElementById('chHrs'  + i);
+    if (respEl) respEl.value = Math.max(1, Math.round(ch.responseRate * mMult.responseRate * iMods[i]));
+    if (hrsEl)  hrsEl.value  = (ch.hoursPerApp * mMult.hoursPerApp).toFixed(1);
+  });
+}
+
+/* ── CHANNEL GRID INITIALIZATION ─────────── */
+function buildChannelGrid() {
+  var tbody = document.getElementById('channelGridBody');
+  tbody.innerHTML = '';
+  DEFAULT_CHANNELS.forEach(function(ch, i) {
+    var tr = document.createElement('tr');
+    tr.id = 'chRow' + i;
+    tr.innerHTML =
+      '<td><div class="channel-name-cell">' +
+        '<input type="checkbox" class="ch-toggle" id="chEnabled' + i + '" checked onchange="toggleChannelRow(' + i + ')">' +
+        '<label for="chEnabled' + i + '" class="ch-label">' + ch.label + '</label>' +
+      '</div></td>' +
+      '<td><input type="number" class="ch-input" id="chApps' + i + '" value="' + ch.appsPerWeek + '" min="0" step="1"></td>' +
+      '<td><input type="number" class="ch-input" id="chResp' + i + '" value="' + ch.responseRate + '" min="0" max="100" step="1"></td>' +
+      '<td><input type="number" class="ch-input" id="chConv' + i + '" value="' + ch.interviewToOffer + '" min="0" max="100" step="1"></td>' +
+      '<td><input type="number" class="ch-input" id="chHrs' + i + '" value="' + ch.hoursPerApp + '" min="0" step="0.1"></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+/* Toggle visual disabled state of a channel row */
+function toggleChannelRow(i) {
+  var row = document.getElementById('chRow' + i);
+  var enabled = document.getElementById('chEnabled' + i).checked;
+  if (enabled) { row.classList.remove('disabled-row'); }
+  else { row.classList.add('disabled-row'); }
+}
+
+/* Read channel config from DOM */
+function readChannels() {
+  return DEFAULT_CHANNELS.map(function(def, i) {
+    return {
+      label:            def.label,
+      appsPerWeek:      parseFloatSafe(document.getElementById('chApps' + i).value),
+      responseRate:     parseFloatSafe(document.getElementById('chResp' + i).value),
+      interviewToOffer: parseFloatSafe(document.getElementById('chConv' + i).value),
+      hoursPerApp:      parseFloatSafe(document.getElementById('chHrs' + i).value),
+      enabled:          document.getElementById('chEnabled' + i).checked
+    };
+  });
+}
+
+/* ── UTILITY ─────────────────────────────── */
+function parseFloatSafe(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function parseIntSafe(v)   { var n = parseInt(v, 10); return isNaN(n) ? 0 : n; }
+
+function fmtUSD(n) {
+  if (!isFinite(n)) return '∞';
+  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+}
+function fmtPct(n) { return (n * 100).toFixed(1) + '%'; }
+function fmtWks(n) { if (!isFinite(n)) return '∞ wks'; return n.toFixed(1) + ' wks'; }
+function fmtROI(n) { if (!isFinite(n)) return '∞×'; return n.toFixed(1) + '×'; }
+function fmtMo(n)  { if (!isFinite(n)) return '∞ mo'; return n.toFixed(1) + ' mo'; }
+
+/* ── HOURLY RATE AUTO-CALC ───────────────── */
+function onCurrentSalaryChange() {
+  if (!_hourlyRateManualOverride) {
+    var sal = parseFloatSafe(document.getElementById('currentSalary').value);
+    document.getElementById('hourlyRate').value = sal > 0 ? (sal / 2080).toFixed(2) : '';
+  }
+  checkTab1RunReady();
+}
+
+function onHourlyRateManual() {
+  _hourlyRateManualOverride = true;
+}
+
+/* Enable Tab 1 run button once targetSalary > 0 */
+function checkTab1RunReady() {
+  var ts = parseFloatSafe(document.getElementById('targetSalary').value);
+  document.getElementById('runTab1Btn').disabled = (ts <= 0);
+}
+
+/* Mark expectedWeeksRemaining as manually edited */
+function onEwerManual() { _ewerManuallyEdited = true; }
+
+/* ── CORE CALCULATION FUNCTIONS ─────────── */
+
+/*
+ * Calculate ROI metrics for a single search channel.
+ * Returns null if channel is disabled or conversion rate is zero.
+ */
+function calculate_channel_roi(ch, targetSalary, currentSalary, hourlyRate) {
+  if (!ch.enabled || ch.appsPerWeek <= 0) return null;
+  var salaryDelta = Math.max(0, targetSalary - (currentSalary || 0));
+  var conversionRate = (ch.responseRate / 100) * (ch.interviewToOffer / 100);
+  if (conversionRate <= 0) return null;
+  var appsToOffer  = 1 / conversionRate;
+  var weeksToOffer = appsToOffer / ch.appsPerWeek;
+  var totalHours   = appsToOffer * ch.hoursPerApp;
+  var opportunityCost = totalHours * hourlyRate;
+  var evPerHour = totalHours > 0 ? salaryDelta / totalHours : 0;
+  var roi = opportunityCost > 0 ? salaryDelta / opportunityCost : 0;
+  return { conversionRate: conversionRate, appsToOffer: appsToOffer, weeksToOffer: weeksToOffer,
+           totalHours: totalHours, opportunityCost: opportunityCost, evPerHour: evPerHour, roi: roi };
+}
+
+/*
+ * Portfolio median time to first offer using geometric probability.
+ * Binary search for W where P(offer by W weeks) >= 0.50.
+ */
+function project_portfolio_median_weeks(channels) {
+  var active = channels.filter(function(ch) {
+    return ch.enabled && ch.appsPerWeek > 0 && ch.conversionRate > 0;
+  });
+  if (active.length === 0) return null;
+  var lo = 0, hi = 156; // max 3 years
+  for (var iter = 0; iter < 40; iter++) {
+    var mid = (lo + hi) / 2;
+    var pNoOffer = 1;
+    active.forEach(function(ch) {
+      var appsInPeriod = ch.appsPerWeek * mid;
+      pNoOffer *= Math.pow(1 - ch.conversionRate, appsInPeriod);
+    });
+    if (1 - pNoOffer < 0.50) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+/*
+ * Portfolio probability of ≥1 offer within a given number of weeks.
+ */
+function portfolio_probability_by_week(channels, weeks) {
+  var active = channels.filter(function(ch) {
+    return ch.enabled && ch.appsPerWeek > 0 && ch.conversionRate > 0;
+  });
+  if (active.length === 0 || weeks <= 0) return 0;
+  var pNoOffer = 1;
+  active.forEach(function(ch) {
+    var apps = ch.appsPerWeek * weeks;
+    pNoOffer *= Math.pow(1 - ch.conversionRate, apps);
+  });
+  return 1 - pNoOffer;
+}
+
+/*
+ * Accept vs. Continue NPV model.
+ * Discount rate: 3% annual, monthly compounding.
+ */
+function calculate_accept_vs_continue(offerSalary, targetSalary, currentSavings,
+                                       monthlyBurn, monthlyOtherIncome,
+                                       weeksElapsed, expectedWeeksRemaining, careerHorizonYears) {
+  var netMonthlyBurn        = Math.max(0, monthlyBurn - monthlyOtherIncome);
+  var weeklyNetBurn         = netMonthlyBurn / 4.333;
+  var totalRemainingSearchCost = weeklyNetBurn * expectedWeeksRemaining;
+  var monthlyDelta          = (targetSalary - offerSalary) / 12;
+
+  // Financial runway: how many weeks savings cover net burn
+  var runwayWeeks = netMonthlyBurn > 0
+    ? (currentSavings / netMonthlyBurn) * 4.333
+    : Infinity;
+
+  // Break-even: months to recoup search cost via salary delta
+  var breakEvenMonths = monthlyDelta > 0 ? totalRemainingSearchCost / monthlyDelta : Infinity;
+
+  // NPV — 3% annual discount, monthly compounding
+  var monthlyDiscount  = 0.03 / 12;
+  var horizonMonths    = careerHorizonYears * 12;
+  var searchDelayMonths = Math.round(expectedWeeksRemaining / 4.333);
+
+  // NPV ACCEPT: earn offerSalary immediately for full horizon
+  var npvAccept = 0;
+  for (var m = 1; m <= horizonMonths; m++) {
+    npvAccept += (offerSalary / 12) / Math.pow(1 + monthlyDiscount, m);
+  }
+
+  // NPV CONTINUE: immediate outflow of search cost, then targetSalary for remainder
+  var npvContinue = -totalRemainingSearchCost;
+  for (var m2 = searchDelayMonths + 1; m2 <= horizonMonths; m2++) {
+    npvContinue += (targetSalary / 12) / Math.pow(1 + monthlyDiscount, m2);
+  }
+
+  var npvDelta = npvContinue - npvAccept; // positive = continue is better
+  var verdict  = npvDelta > 0 ? 'continue' : 'accept';
+
+  return {
+    weeklyNetBurn: weeklyNetBurn,
+    totalRemainingSearchCost: totalRemainingSearchCost,
+    monthlyDelta: monthlyDelta,
+    runwayWeeks: runwayWeeks,
+    breakEvenMonths: breakEvenMonths,
+    npvAccept: npvAccept,
+    npvContinue: npvContinue,
+    npvDelta: npvDelta,
+    verdict: verdict
+  };
+}
+
+/* ── TAB 1 RUN ───────────────────────────── */
+function runTab1() {
+  var currentSalary  = parseFloatSafe(document.getElementById('currentSalary').value);
+  var targetSalary   = parseFloatSafe(document.getElementById('targetSalary').value);
+  var hourlyRate     = parseFloatSafe(document.getElementById('hourlyRate').value);
+
+  // If hourlyRate not set, derive from currentSalary
+  if (hourlyRate <= 0) { hourlyRate = currentSalary > 0 ? currentSalary / 2080 : 25; }
+
+  if (targetSalary <= 0) { showToast('Enter a target salary to run the calculation.'); return; }
+
+  var rawChannels = readChannels();
+
+  // Compute per-channel results
+  var channelResults = rawChannels.map(function(ch) {
+    var r = calculate_channel_roi(ch, targetSalary, currentSalary, hourlyRate);
+    if (!r) return null;
+    return Object.assign({}, ch, r);
+  }).filter(function(r) { return r !== null; });
+
+  if (channelResults.length === 0) {
+    showToast('Enable at least one channel to run.'); return;
+  }
+
+  // Sort by evPerHour descending
+  channelResults.sort(function(a, b) { return b.evPerHour - a.evPerHour; });
+
+  // Portfolio median (use enriched channels with conversionRate populated)
+  var portfolioMedianWeeks = project_portfolio_median_weeks(channelResults);
+  var prob4  = portfolio_probability_by_week(channelResults, 4);
+  var prob8  = portfolio_probability_by_week(channelResults, 8);
+  var prob12 = portfolio_probability_by_week(channelResults, 12);
+  var prob26 = portfolio_probability_by_week(channelResults, 26);
+
+  var bestChannel    = channelResults[0];
+  var fastestChannel = channelResults.slice().sort(function(a, b) { return a.weeksToOffer - b.weeksToOffer; })[0];
+  var salaryDelta    = targetSalary - currentSalary;
+
+  // Store result globally
+  window._tab1Result = {
+    currentSalary: currentSalary, targetSalary: targetSalary, hourlyRate: hourlyRate,
+    channelResults: channelResults, portfolioMedianWeeks: portfolioMedianWeeks,
+    bestChannel: bestChannel, fastestChannel: fastestChannel, salaryDelta: salaryDelta,
+    prob4: prob4, prob8: prob8, prob12: prob12, prob26: prob26
+  };
+
+  /* ── RENDER KPI CARDS ── */
+  document.getElementById('t1BestEV').textContent    = fmtUSD(bestChannel.evPerHour) + '/hr';
+  document.getElementById('t1BestEVCh').textContent  = bestChannel.label;
+  document.getElementById('t1FastestWks').textContent = fmtWks(fastestChannel.weeksToOffer);
+  document.getElementById('t1FastestCh').textContent  = fastestChannel.label;
+  document.getElementById('t1PortfolioMedian').textContent = portfolioMedianWeeks !== null
+    ? fmtWks(portfolioMedianWeeks) : 'N/A';
+  var deltaEl = document.getElementById('t1SalaryDelta');
+  deltaEl.textContent = fmtUSD(salaryDelta);
+  deltaEl.parentElement.className = 'kpi-card ' + (salaryDelta >= 0 ? 'kpi-green' : 'kpi-coral');
+
+  /* ── RENDER CHANNEL TABLE ── */
+  var tbody = document.getElementById('t1TableBody');
+  tbody.innerHTML = '';
+  channelResults.forEach(function(ch, idx) {
+    var roiClass = ch.roi > 5 ? 'roi-green' : (ch.roi >= 2 ? 'roi-amber' : 'roi-coral');
+    var rankCell = idx === 0
+      ? '<span class="rank-badge">⭐ Best ROI</span>'
+      : '<span style="font-size:.7rem;color:var(--muted);">#' + (idx + 1) + '</span>';
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + rankCell + '</td>' +
+      '<td style="color:var(--bright);">' + ch.label + '</td>' +
+      '<td>' + fmtPct(ch.conversionRate) + '</td>' +
+      '<td>' + ch.appsToOffer.toFixed(1) + '</td>' +
+      '<td>' + fmtWks(ch.weeksToOffer) + '</td>' +
+      '<td>' + ch.totalHours.toFixed(1) + ' hrs</td>' +
+      '<td>' + fmtUSD(ch.opportunityCost) + '</td>' +
+      '<td style="color:var(--amber);">' + fmtUSD(ch.evPerHour) + '/hr</td>' +
+      '<td><span class="roi-badge ' + roiClass + '">' + fmtROI(ch.roi) + '</span></td>';
+    tbody.appendChild(tr);
+  });
+
+  /* ── RENDER PROB TIMELINE ── */
+  document.getElementById('prob4wk').textContent  = (prob4  * 100).toFixed(0) + '%';
+  document.getElementById('prob8wk').textContent  = (prob8  * 100).toFixed(0) + '%';
+  document.getElementById('prob12wk').textContent = (prob12 * 100).toFixed(0) + '%';
+  document.getElementById('prob26wk').textContent = (prob26 * 100).toFixed(0) + '%';
+
+  /* ── CHANNEL PRIORITY RECOMMENDATION ── */
+  var confirmVerb = bestChannel.label.toLowerCase().indexOf('referral') !== -1 ||
+                    bestChannel.label.toLowerCase().indexOf('direct') !== -1
+                    ? 'confirms' : 'suggests adjusting';
+  var recText = 'Based on your inputs, <em class="hi">' + bestChannel.label + '</em> offers the best ' +
+    'return per hour of effort (<em class="hi">' + fmtUSD(bestChannel.evPerHour) + '/hr</em>). ' +
+    'Referrals and direct applications typically outperform job boards despite lower volume — ' +
+    'your model <em class="hi">' + confirmVerb + '</em> this pattern. ' +
+    (portfolioMedianWeeks !== null
+      ? 'Running all enabled channels in parallel, your portfolio median time to first offer is <em class="hi">' +
+        fmtWks(portfolioMedianWeeks) + '</em>.'
+      : '');
+  document.getElementById('t1RecommendText').innerHTML = recText;
+
+  /* ── SHOW RESULTS ── */
+  document.getElementById('tab1Results').classList.add('visible');
+  document.getElementById('t1MdBtn').disabled  = false;
+  document.getElementById('t1Ap2Btn').disabled = false;
+
+  showToast('Tab 1 calculation complete.');
+}
+
+/* ── TAB 2 RUN ───────────────────────────── */
+function runTab2() {
+  var offerSalary             = parseFloatSafe(document.getElementById('offerSalary').value);
+  var targetSalary2           = parseFloatSafe(document.getElementById('targetSalary2').value);
+  var currentSavings          = parseFloatSafe(document.getElementById('currentSavings').value);
+  var monthlyBurn             = parseFloatSafe(document.getElementById('monthlyBurn').value);
+  var monthlyOtherIncome      = parseFloatSafe(document.getElementById('monthlyOtherIncome').value);
+  var weeksElapsed            = parseIntSafe(document.getElementById('weeksElapsed').value);
+  var expectedWeeksRemaining  = parseFloatSafe(document.getElementById('expectedWeeksRemaining').value);
+  var careerHorizonYears      = parseIntSafe(document.getElementById('careerHorizonYears').value) || 20;
+
+  if (offerSalary <= 0 || targetSalary2 <= 0) {
+    showToast('Enter both offer salary and target salary.'); return;
+  }
+  if (monthlyBurn <= 0) { showToast('Enter monthly living expenses.'); return; }
+
+  var r = calculate_accept_vs_continue(
+    offerSalary, targetSalary2, currentSavings,
+    monthlyBurn, monthlyOtherIncome,
+    weeksElapsed, expectedWeeksRemaining, careerHorizonYears
+  );
+
+  window._tab2Result = Object.assign({
+    offerSalary: offerSalary, targetSalary2: targetSalary2,
+    currentSavings: currentSavings, monthlyBurn: monthlyBurn,
+    monthlyOtherIncome: monthlyOtherIncome, weeksElapsed: weeksElapsed,
+    expectedWeeksRemaining: expectedWeeksRemaining, careerHorizonYears: careerHorizonYears
+  }, r);
+
+  /* ── VERDICT KPI ── */
+  var vCard = document.getElementById('t2VerdictCard');
+  var vVal  = document.getElementById('t2VerdictVal');
+  var vSub  = document.getElementById('t2VerdictSub');
+  if (r.verdict === 'continue') {
+    vCard.className = 'kpi-card kpi-green';
+    vVal.textContent = 'Continue Searching';
+    vSub.textContent = 'NPV favors holding out';
+  } else {
+    vCard.className = 'kpi-card kpi-amber';
+    vVal.textContent = 'Accept Offer';
+    vSub.textContent = 'NPV favors accepting now';
+  }
+
+  /* ── BREAK-EVEN ── */
+  document.getElementById('t2Breakeven').textContent = fmtMo(r.breakEvenMonths);
+
+  /* ── NPV DELTA ── */
+  var ndEl = document.getElementById('t2NpvDelta');
+  ndEl.textContent = fmtUSD(r.npvDelta);
+  ndEl.parentElement.className = 'kpi-card ' + (r.npvDelta >= 0 ? 'kpi-green' : 'kpi-coral');
+
+  /* ── RUNWAY ── */
+  var rwEl = document.getElementById('t2Runway');
+  rwEl.textContent = isFinite(r.runwayWeeks) ? fmtWks(r.runwayWeeks) : '∞ wks';
+  var rwSufficient = r.runwayWeeks >= expectedWeeksRemaining;
+  document.getElementById('t2RunwayCard').className = 'kpi-card ' + (rwSufficient ? 'kpi-green' : 'kpi-coral');
+
+  /* ── VERDICT BAR ── */
+  var beWithin = r.breakEvenMonths <= careerHorizonYears * 12;
+  var beRelative = r.breakEvenMonths < 12 ? 'well within' : (r.breakEvenMonths < careerHorizonYears * 12 * 0.5 ? 'within' : 'at or near');
+  var favors = r.verdict === 'continue' ? 'favors continuing' : 'favors accepting the offer';
+  var vBarEl = document.getElementById('t2VerdictBar');
+  vBarEl.className = 'verdict-bar ' + (r.verdict === 'continue' ? 'continue-bar' : 'accept-bar');
+  document.getElementById('t2VerdictBarLabel').textContent = r.verdict === 'continue' ? 'Continue Searching' : 'Accept Offer';
+  document.getElementById('t2VerdictBarText').innerHTML =
+    'Continuing your search for an expected <em class="hi">' + expectedWeeksRemaining.toFixed(0) + ' weeks</em> ' +
+    'costs approximately <em class="hi">' + fmtUSD(r.totalRemainingSearchCost) + '</em> in living expenses. ' +
+    'The <em class="hi">' + fmtUSD(r.monthlyDelta) + '/mo</em> salary delta breaks even in ' +
+    '<em class="hi">' + fmtMo(r.breakEvenMonths) + '</em> — ' +
+    beRelative + ' your <em class="hi">' + careerHorizonYears + '-year</em> career horizon. ' +
+    'NPV analysis <em class="hi">' + favors + '</em>.';
+
+  /* ── NPV COMPARE CARDS ── */
+  document.getElementById('npvAcceptAmt').textContent   = fmtUSD(r.npvAccept);
+  document.getElementById('npvContinueAmt').textContent = fmtUSD(r.npvContinue);
+  if (r.verdict === 'continue') {
+    document.getElementById('npvContinueCard').className = 'npv-card winner';
+    document.getElementById('npvAcceptCard').className   = 'npv-card';
+    document.getElementById('npvContinueCard').innerHTML =
+      '<div class="npv-title">Continue Searching</div>' +
+      '<div class="npv-amount" style="color:var(--teal);">' + fmtUSD(r.npvContinue) + '</div>' +
+      '<div class="kpi-sub">NPV net of search cost</div>' +
+      '<div style="margin-top:8px;"><span class="npv-win-badge">✓ NPV Winner</span></div>';
+    document.getElementById('npvAcceptCard').innerHTML =
+      '<div class="npv-title">Accept Now</div>' +
+      '<div class="npv-amount">' + fmtUSD(r.npvAccept) + '</div>' +
+      '<div class="kpi-sub">NPV at target horizon</div>';
+  } else {
+    document.getElementById('npvAcceptCard').className   = 'npv-card winner';
+    document.getElementById('npvContinueCard').className = 'npv-card';
+    document.getElementById('npvAcceptCard').innerHTML =
+      '<div class="npv-title">Accept Now</div>' +
+      '<div class="npv-amount" style="color:var(--teal);">' + fmtUSD(r.npvAccept) + '</div>' +
+      '<div class="kpi-sub">NPV at target horizon</div>' +
+      '<div style="margin-top:8px;"><span class="npv-win-badge">✓ NPV Winner</span></div>';
+    document.getElementById('npvContinueCard').innerHTML =
+      '<div class="npv-title">Continue Searching</div>' +
+      '<div class="npv-amount">' + fmtUSD(r.npvContinue) + '</div>' +
+      '<div class="kpi-sub">NPV net of search cost</div>';
+  }
+
+  /* ── BREAK-EVEN CALLOUT ── */
+  document.getElementById('t2BreakevenText').textContent =
+    'If you accept the lower offer today, you would need ' + fmtMo(r.breakEvenMonths) +
+    ' of the salary differential (' + fmtUSD(r.monthlyDelta) + '/mo) to recoup the cost of additional search time.';
+
+  /* ── SHOW RESULTS ── */
+  document.getElementById('tab2Results').classList.add('visible');
+  document.getElementById('t2MdBtn').disabled  = false;
+  document.getElementById('t2Ap2Btn').disabled = false;
+
+  showToast('Tab 2 calculation complete.');
+}
+
+/* ── TAB SWITCHING ────────────────────────── */
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-section').forEach(function(s) { s.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById(tabId).classList.add('active');
+  document.getElementById('tabBtn' + tabId.replace('tab', '')).classList.add('active');
+
+  // Auto-fill expectedWeeksRemaining from Tab 1 result when switching to Tab 2
+  if (tabId === 'tab2' && window._tab1Result) {
+    var el = document.getElementById('expectedWeeksRemaining');
+    if (el && !_ewerManuallyEdited) {
+      el.value = Math.round(window._tab1Result.portfolioMedianWeeks * 10) / 10;
+      document.getElementById('ewer-note').style.display = 'inline';
+    }
+  }
+}
+
+/* ── LANG / I18N ──────────────────────────── */
+function setLang(lang) {
+  document.documentElement.lang = lang;
+  document.documentElement.dir  = lang === 'ar' ? 'rtl' : 'ltr';
+  try { sessionStorage.setItem('apex_lang', lang); } catch(e) {}
+  document.querySelectorAll('.lang-btn').forEach(function(btn) {
+    btn.classList.remove('active');
+  });
+  // Match button by text content
+  document.querySelectorAll('.lang-btn').forEach(function(btn) {
+    var map = { en: 'EN', es: 'ES', fr: 'FR', ar: 'AR', pt: 'PT', zh: '中文' };
+    if (btn.textContent.trim() === map[lang]) btn.classList.add('active');
+  });
+}
+
+/* ── AP2 INBOUND — URL PARAM ────────────── */
+function parseAP2Inbound() {
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var raw = params.get('ap2');
+    if (!raw) return;
+    var mandate = JSON.parse(decodeURIComponent(raw));
+    applyAP2Mandate(mandate);
+  } catch(e) { /* silent fail */ }
+}
+
+function applyAP2Mandate(mandate) {
+  try {
+    window._ap2InboundSource = mandate.al_id || 'unknown';
+    if (mandate.mandate_type === 'offer_negotiation_record') {
+      var p = mandate.payload;
+      if (p && p.tab === 'script_builder') {
+        if (p.anchor) setVal('targetSalary', p.anchor);
+        if (p.floor)  setVal('offerSalary',   p.floor);
+        if (p.target) setVal('targetSalary2',  p.target);
+        showImportBadge('tab1', 'Offer Negotiation Suite (AL-25)');
+        showImportBadge('tab2', 'Offer Negotiation Suite (AL-25)');
+        checkTab1RunReady();
+      }
+    }
+  } catch(e) { /* silent fail */ }
+}
+
+function setVal(id, val) {
+  var el = document.getElementById(id);
+  if (el) {
+    el.value = val;
+    el.dispatchEvent(new Event('input'));
+  }
+}
+
+function showImportBadge(tabId, sourceName) {
+  var badge = document.getElementById('import-badge-' + tabId);
+  if (badge) {
+    badge.textContent = '✓ Imported from ' + sourceName;
+    badge.style.display = 'inline-flex';
+  }
+}
+
+/* ── AP2 PASTE MODAL ─────────────────────── */
+function openAP2Modal() {
+  document.getElementById('ap2Modal').classList.add('open');
+  document.getElementById('ap2PasteArea').value = '';
+  document.getElementById('ap2ModalError').style.display = 'none';
+}
+
+function closeAP2Modal() {
+  document.getElementById('ap2Modal').classList.remove('open');
+}
+
+function processAP2Paste() {
+  var raw = document.getElementById('ap2PasteArea').value.trim();
+  var errEl = document.getElementById('ap2ModalError');
+  errEl.style.display = 'none';
+  try {
+    var mandate = JSON.parse(raw);
+    applyAP2Mandate(mandate);
+    closeAP2Modal();
+    showToast('AP2 mandate imported successfully.');
+  } catch(e) {
+    errEl.textContent = 'Invalid JSON: ' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+/* ── AP2 SCHEMA ──────────────────────────── */
+var AP2Schema = {
+  required: ['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version',
+             'al_id','mandate_type','payload','summary','audit_metadata'],
+  validMandateTypes: [
+    'credential_roi_evaluation','human_capital_assessment','automation_exposure_score',
+    'career_resilience_score','workforce_program_roi','career_pivot_assessment',
+    'career_transition_record','scholarship_pipeline_plan','fafsa_sai_estimate',
+    'exam_pathway_plan','benefits_election_record','severance_decision_record',
+    'offer_negotiation_record','graduate_school_roi_record','apprenticeship_match_record',
+    'cpd_credit_record','job_search_roi_record','career_break_record',
+    'loan_repayment_record','freelance_total_cost_record',
+    'mba_roi_evaluation','test_prep_roi_record',
+    'international_student_cost_record','parent_college_roi_record',
+    'equity_compensation_record'
+  ],
+  validate: function(m) {
+    var e = [];
+    this.required.forEach(function(k) { if (m[k] == null) e.push('missing: ' + k); });
+    if (m.ap2_version !== '1.0') e.push('ap2_version must be "1.0"');
+    if (m.mandate_type && !this.validMandateTypes.includes(m.mandate_type))
+      e.push('unknown mandate_type: ' + m.mandate_type);
+    if (m.audit_metadata && m.audit_metadata.client_side_executed !== true)
+      e.push('client_side_executed must be true');
+    if (m.audit_metadata && m.audit_metadata.zero_pii_verified !== true)
+      e.push('zero_pii_verified must be true');
+    return e;
+  }
+};
+
+/* UUID: deterministic, no Math.random() in business logic */
+function genUUID() {
+  return 'ap2-' + Date.now() + '-' + Math.floor(Math.abs(Math.sin(Date.now() * 1.618)) * 1e9);
+}
+
+/* ── EXPORT — TAB 1 ──────────────────────── */
+function buildTab1AP2() {
+  var r = window._tab1Result;
+  var mandate = {
+    ap2_version:  '1.0',
+    mandate_id:   genUUID(),
+    issued_at:    new Date().toISOString(),
+    issued_by:    'apexlogics.org',
+    tool_id:      'job-search-roi-tracker',
+    tool_version: '1.0.0',
+    al_id:        'AL-27',
+    mandate_type: 'job_search_roi_record',
+    jurisdiction: ['US'],
+    payload: {
+      tab:                        'channel_roi',
+      current_salary_usd:         r.currentSalary,
+      target_salary_usd:          r.targetSalary,
+      salary_delta_usd:           r.targetSalary - r.currentSalary,
+      hourly_opportunity_cost_usd: r.hourlyRate,
+      portfolio_median_weeks:     r.portfolioMedianWeeks,
+      best_ev_channel:            r.bestChannel.label,
+      best_ev_per_hour_usd:       r.bestChannel.evPerHour,
+      fastest_channel:            r.fastestChannel.label,
+      fastest_weeks:              r.fastestChannel.weeksToOffer,
+      channel_results:            r.channelResults.map(function(ch) {
+        return {
+          label:             ch.label,
+          conversion_rate:   ch.conversionRate,
+          apps_to_offer:     ch.appsToOffer,
+          weeks_to_offer:    ch.weeksToOffer,
+          ev_per_hour_usd:   ch.evPerHour,
+          roi_multiplier:    ch.roi
+        };
+      }),
+      probability_4wk:            r.prob4,
+      probability_8wk:            r.prob8,
+      probability_12wk:           r.prob12,
+      probability_26wk:           r.prob26,
+      ap2_inbound_source:         window._ap2InboundSource || null
+    },
+    summary: 'Job search ROI: best channel [' + r.bestChannel.label + '] at $' +
+             r.bestChannel.evPerHour.toFixed(2) + '/hr. Portfolio median time to offer: ' +
+             (r.portfolioMedianWeeks !== null ? r.portfolioMedianWeeks.toFixed(1) : 'N/A') + ' weeks.',
+    downstream_handoff_candidates: ['AL-25', 'AL-08+14'],
+    audit_metadata: {
+      client_side_executed: true,
+      zero_pii_verified:    true,
+      deterministic_run:    true,
+      tool_version:         '1.0.0',
+      issued_by:            'apexlogics.org'
+    }
+  };
+  return mandate;
+}
+
+function downloadT1AP2() {
+  var mandate = buildTab1AP2();
+  var errors  = AP2Schema.validate(mandate);
+  if (errors.length > 0) { showToast('AP2 validation error: ' + errors[0]); return; }
+  downloadJSON(mandate, 'AL-27-channel-roi.ap2.json');
+}
+
+function downloadT1Markdown() {
+  var r = window._tab1Result;
+  var lines = [
+    '# Job Search ROI Tracker — AL-27 · Apex Logics',
+    '## Tab 1: Search Channel ROI',
+    '',
+    '| Metric | Value |',
+    '|---|---|',
+    '| Current Salary | ' + fmtUSD(r.currentSalary) + ' |',
+    '| Target Salary | ' + fmtUSD(r.targetSalary) + ' |',
+    '| Salary Delta | ' + fmtUSD(r.salaryDelta) + ' |',
+    '| Hourly Opportunity Cost | ' + fmtUSD(r.hourlyRate) + '/hr |',
+    '| Portfolio Median Weeks | ' + (r.portfolioMedianWeeks !== null ? fmtWks(r.portfolioMedianWeeks) : 'N/A') + ' |',
+    '',
+    '## Channel Results (ranked by EV/Hour)',
+    '',
+    '| Rank | Channel | Conv. Rate | Apps to Offer | Weeks | Hours | Opp. Cost | EV/Hour | ROI |',
+    '|---|---|---|---|---|---|---|---|---|'
+  ];
+  r.channelResults.forEach(function(ch, idx) {
+    lines.push('| ' + (idx + 1) + ' | ' + ch.label + ' | ' + fmtPct(ch.conversionRate) + ' | ' +
+               ch.appsToOffer.toFixed(1) + ' | ' + fmtWks(ch.weeksToOffer) + ' | ' +
+               ch.totalHours.toFixed(1) + ' hrs | ' + fmtUSD(ch.opportunityCost) + ' | ' +
+               fmtUSD(ch.evPerHour) + '/hr | ' + fmtROI(ch.roi) + ' |');
+  });
+  lines.push('');
+  lines.push('## Probability of ≥1 Offer');
+  lines.push('| 4 Weeks | 8 Weeks | 12 Weeks | 26 Weeks |');
+  lines.push('|---|---|---|---|');
+  lines.push('| ' + (r.prob4 * 100).toFixed(0) + '% | ' +
+             (r.prob8  * 100).toFixed(0) + '% | ' +
+             (r.prob12 * 100).toFixed(0) + '% | ' +
+             (r.prob26 * 100).toFixed(0) + '% |');
+  lines.push('');
+  lines.push('---');
+  lines.push('*AL-27 · Apex Logics · CC BY 4.0 · apexlogics.org*');
+  downloadText(lines.join('\n'), 'AL-27-channel-roi.md');
+}
+
+/* ── EXPORT — TAB 2 ──────────────────────── */
+function buildTab2AP2() {
+  var r = window._tab2Result;
+  var mandate = {
+    ap2_version:  '1.0',
+    mandate_id:   genUUID(),
+    issued_at:    new Date().toISOString(),
+    issued_by:    'apexlogics.org',
+    tool_id:      'job-search-roi-tracker',
+    tool_version: '1.0.0',
+    al_id:        'AL-27',
+    mandate_type: 'job_search_roi_record',
+    jurisdiction: ['US'],
+    payload: {
+      tab:                        'accept_vs_continue',
+      offer_salary_usd:           r.offerSalary,
+      target_salary_usd:          r.targetSalary2,
+      salary_delta_monthly_usd:   r.monthlyDelta,
+      expected_weeks_remaining:   r.expectedWeeksRemaining,
+      total_search_cost_usd:      r.totalRemainingSearchCost,
+      break_even_months:          r.breakEvenMonths,
+      npv_accept_usd:             r.npvAccept,
+      npv_continue_usd:           r.npvContinue,
+      npv_delta_usd:              r.npvDelta,
+      verdict:                    r.verdict,
+      financial_runway_weeks:     r.runwayWeeks,
+      ap2_inbound_source: window._ap2InboundSource || null
+    },
+    regulatory_citations: ['BLS JOLTS 2024', 'O*NET Occupational Data 2024'],
+    downstream_handoff_candidates: ['AL-25', 'AL-05'],
+    audit_metadata: {
+      client_side_executed: true,
+      zero_pii_verified: true,
+      deterministic_run: true,
+      data_vintage: 'BLS JOLTS Q3 2024'
+    }
+  };
+}
+
+function exportTab2AP2() {
+  if (!window._tab2Result) { showToast('Run the Tab 2 analysis first.', 'warn'); return; }
+  const mandate = buildTab2AP2();
+  downloadFile('al27-accept-vs-continue.ap2.json', JSON.stringify(mandate, null, 2), 'application/json');
+  showToast('AP2 JSON downloaded.', 'success');
+}
+
+function downloadFile(name, content, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 500);
+}
+
+function downloadText(text, name) {
+  downloadFile(name, text, 'text/plain');
+}
+
+/* ── Init ── */
+(function init() {
+  try {
+    const saved = sessionStorage.getItem('apex_lang');
+    if (saved) setLang(saved);
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>

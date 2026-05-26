@@ -1,0 +1,96 @@
+{
+  "tool_id": "cpd-credit-tracker",
+  "al_id": "AL-18",
+  "version": "1.1.0",
+  "title": "CPD / CPE Credit Tracker",
+  "description": "Tracks continuing professional development (CPD) and continuing professional education (CPE) credits for CPA, CLE, HR (SHRM/HRCI), and CME/CEU credentials. User logs completed activities; tool computes credits earned, gap to renewal, ethics minimum status, pace required per week/month, and on-track vs. at-risk status. Zero embedded data — fully user-driven.",
+  "category": "licensing_credentials",
+  "journeys": ["career_navigation", "education_path"],
+  "personas": ["working_professional", "counselor"],
+  "tags": ["CPE", "CPD", "CPA", "CLE", "SHRM", "HRCI", "CME", "CEU", "continuing education", "license renewal", "recertification", "gap calculator"],
+  "status": "shipped",
+  "maintenance": "zero",
+  "data_vintage": "User-driven — no embedded reference data. Requirement figures per published 2024 standards (NASBA, ABA, SHRM, HRCI, ACCME, ANCC).",
+  "frozen_baseline": false,
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "profession_key": {
+        "type": "string",
+        "enum": ["cpa_annual", "cpa_triennial", "cle_12", "cle_15", "shrm", "hrci", "cme_25", "cme_50", "ceu_nursing"],
+        "description": "Profession/credential type key"
+      },
+      "total_required": { "type": "number", "description": "Total credits required for renewal (auto-filled from profession, user-overridable)" },
+      "deadline": { "type": "string", "format": "date", "description": "Renewal/recertification deadline date" },
+      "ethics_required": { "type": "number", "description": "Mandatory ethics/topic credit minimum" },
+      "activities": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string" },
+            "provider": { "type": "string" },
+            "date": { "type": "string", "format": "date" },
+            "credits": { "type": "number" },
+            "category": { "type": "string" }
+          }
+        }
+      }
+    },
+    "required": ["profession_key", "deadline"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "total_credits_required": { "type": "number" },
+      "total_credits_earned": { "type": "number" },
+      "total_credits_remaining": { "type": "number" },
+      "ethics_credits_required": { "type": "number" },
+      "ethics_credits_earned": { "type": "number" },
+      "ethics_credits_remaining": { "type": "number" },
+      "completion_pct": { "type": "number" },
+      "days_remaining": { "type": "number" },
+      "pace_credits_per_week": { "type": "number" },
+      "pace_credits_per_month": { "type": "number" },
+      "pace_ratio": { "type": "number" },
+      "status": { "type": "string", "enum": ["complete", "on_track", "at_risk", "behind"] }
+    }
+  },
+  "mcp_tool_definition": {
+    "name": "track_cpd_cpe_credits",
+    "tool_number": "AL-18",
+    "description": "Tracks CPD/CPE credits for CPA, CLE, HR (SHRM/HRCI), and CME/CEU credentials. Computes gap to renewal deadline, ethics minimum status, and pace model. Returns AP2 cpd_credit_record mandate with downstream handoff candidates to AL-03 (Human Capital Engine) and AL-20 (Exam Cost Planner).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "profession_key": { "type": "string", "description": "One of: cpa_annual, cpa_triennial, cle_12, cle_15, shrm, hrci, cme_25, cme_50, ceu_nursing" },
+        "total_required": { "type": "number", "description": "Override total credits required (optional; auto-filled from profession)" },
+        "deadline": { "type": "string", "description": "Renewal deadline in YYYY-MM-DD format" },
+        "ethics_required": { "type": "number", "description": "Mandatory ethics credit minimum (auto-filled, user-overridable)" },
+        "total_earned": { "type": "number", "description": "Total credits already earned (optional; can be computed from activities list)" }
+      },
+      "required": ["profession_key", "deadline"]
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 1000
+  },
+  "ap2_export": true,
+  "ap2_mandate_types": ["cpd_credit_record"],
+  "ap2_inbound_mandate_types": [],
+  "downstream_handoff_candidates": ["AL-03", "AL-20"],
+  "regulatory_citations": [
+    "NASBA Model Rule on CPE (2024)",
+    "American Bar Association CLE requirements by state (2024)",
+    "SHRM Recertification Guide (2024)",
+    "HRCI Recertification Handbook (2024)",
+    "ACCME / specialty board CME guidelines (2024)",
+    "ANCC / state board of nursing CEU requirements (2024)"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+}
