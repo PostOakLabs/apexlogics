@@ -76,17 +76,19 @@
 
 ## Key Files — What to Read and When
 
+Paths starting with `../` are **internal-only working docs** that live in the parent project folder (`C:\dev\Claude\Projects\Apex Logics\`) — outside the repo and intentionally not pushed to public GitHub. They contain roadmap state, internal change-management notes, and strategy references that don't belong in a public repo. Paths without a prefix are repo-resident and version-controlled.
+
 | File | Purpose | Size | When to read |
 |---|---|---|---|
-| `apexlogics_CONTRACT.md` | **SSOT build rules** — hard constraints, UI contract, AP2 schema, export tiers, hub architecture, cross-suite integration | 52KB / 977 lines | Before any tool build or audit. Use section index at top. |
-| `ApexLogics_v8_MasterSpec.md` | Tool catalog — what tools exist, display numbering, category distribution, AP2 handoff map | 33KB / 430 lines | For registry context. Use section index at top. |
-| `suite-registry.json` | Machine-readable tool index (v3.1.0) | 40KB / 1197 lines | Grep for specific tool; do NOT read whole. |
-| `ApexLogics_Audit_Rubric_v1.md` | 76-check QA rubric for tool builds | 23KB | Read whole when auditing a new tool build. |
-| `llms.txt` | Agent-readable suite index (334 lines, all 28 tools, full AP2 handoff map) | 17KB | Reference for agent integration work. |
-| `HANDOFF_PROMPT_NEXT_SESSION.md` | Last session recap (2026-05-21) — what was built, post-build update log | 4KB | Quick orientation for a new session. |
-| `ARCHIVE/ApexLogics_AL-NN_Audit_Scorecard.md` | Per-tool QA records (16 files in ARCHIVE/, all SHIPPED ✅) | 8–18KB each | Only when revisiting a specific tool's audit. |
-| `.well-known/mcp.json` | MCP server endpoint definition | 3KB | MCP integration work only. |
-| `assets/logo.svg`, `assets/logo-favicon.svg` | Brand assets | <1KB | Visual/deployment work. |
+| `../apexlogics_CONTRACT.md` | **SSOT build rules** — hard constraints, UI contract, AP2 schema, export tiers, hub architecture, cross-suite integration (v1.3, internal-only) | 53KB / ~1000 lines | Before any tool build or audit. Use section index at top. |
+| `../ApexLogics_v8_MasterSpec.md` | Tool catalog — what tools exist, display numbering, category distribution, AP2 handoff map (internal-only) | 33KB / 430 lines | For registry context. Use section index at top. |
+| `suite-registry.json` | Machine-readable tool index (v3.1.0) — **public; consumed by external agents** | 40KB / 1197 lines | Grep for specific tool; do NOT read whole. |
+| `../ApexLogics_Audit_Rubric_v1.md` | 76-check QA rubric for tool builds (internal-only) | 23KB | Read whole when auditing a new tool build. |
+| `llms.txt` | Agent-readable suite index (334 lines, all 28 tools, full AP2 handoff map) — **public** | 17KB | Reference for agent integration work. |
+| `../HANDOFF_PROMPT_NEXT_SESSION.md` | Last session recap (2026-05-21) — what was built, post-build update log (internal-only) | 4KB | Quick orientation for a new session. |
+| `../ARCHIVE/ApexLogics_AL-NN_Audit_Scorecard.md` | Per-tool QA records (16 files in ../ARCHIVE/, all SHIPPED ✅, internal-only) | 8–18KB each | Only when revisiting a specific tool's audit. |
+| `.well-known/mcp.json` | MCP server endpoint definition — **public** | 3KB | MCP integration work only. |
+| `assets/logo.svg`, `assets/logo-favicon.svg` | Brand assets — **public** | <1KB | Visual/deployment work. |
 
 **Derivative / historical files (lower priority):**
 | File | Status |
