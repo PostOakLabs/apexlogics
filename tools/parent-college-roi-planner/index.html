@@ -228,6 +228,8 @@ select option { background:var(--bg-3); }
 .comp-table th.center { text-align:center; }
 .comp-table thead tr th:first-child { text-align:left; }
 
+.import-badge { background: var(--green-dim, rgba(52,211,153,.1)); border:1px solid var(--green, #34D399); color: var(--green, #34D399); border-radius: var(--radius, 6px); font-family: 'JetBrains Mono', monospace; font-size:.65rem; padding:.25rem .6rem; display:inline-block; margin-bottom:.75rem; }
+
 /* ════════════════════════ LOAN PANEL ════════════════════════ */
 .loan-panel {
   background:var(--bg-2); border:1px solid var(--border);
@@ -571,7 +573,7 @@ select option { background:var(--bg-3); }
 
   <!-- ════ FOOTER ════ -->
   <footer class="tool-footer">
-    AL-32 · Parent College ROI Planner · <a href="https://apexlogics.org" target="_blank" rel="noopener">ApexLogics.org</a> · <a href="https://apexadvisory.site" target="_blank" rel="noopener">Apex Advisors</a> · CC BY 4.0<br>
+    AL-32 · Parent College ROI Planner · <a href="https://apexlogics.org" target="_blank" rel="noopener">ApexLogics.org</a> · Built by <a href="https://apexadvisory.site" target="_blank" rel="noopener">Apex Advisors</a> · Sister suite: <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> · CC BY 4.0<br>
     Data: NCES IPEDS 2023-24 · Federal Pell Grant 2024-25 · Parent PLUS 7.54% (2024-25) · Estimates only — not financial advice. Consult a financial aid administrator for official determinations.
   </footer>
 
@@ -1317,6 +1319,58 @@ function toggleManifest() {
   autoCalcPell();
   updateTierHint();
 })();
+
+// ════════════════════════════════════════════════════════════
+// AP2 INBOUND DISPATCH — CONTRACT §6.4 / Appendix G
+// Accepts: fafsa_sai_estimate  (from AL-17)
+// ════════════════════════════════════════════════════════════
+function parseAP2Inbound() {
+  try {
+    const param = new URLSearchParams(window.location.search).get('ap2');
+    if (!param) return;
+    const m = JSON.parse(decodeURIComponent(param));
+    if (!m || !m.mandate_type) return;
+    const handlers = { 'fafsa_sai_estimate': prefillFromFAFSA };
+    const h = handlers[m.mandate_type];
+    if (!h) return;
+    h(m.payload || {}, m.al_id || 'External');
+    showImportBadge(m.al_id || 'External Tool');
+  } catch (e) { /* silent no-op */ }
+}
+function prefillFromFAFSA(p, src) {
+  // AL-17 fafsa_sai_estimate payload typically has: sai, pell_eligibility, expected_pell
+  setIfEmpty('saiInput', p.sai || p.student_aid_index);
+  setIfEmpty('pellInput', p.expected_pell || p.pell_amount || p.pell_grant);
+}
+function setIfEmpty(id, v) {
+  if (v === undefined || v === null || v === '') return;
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (el.dataset.userEdited === 'true') return;
+  el.value = v;
+  // Trigger downstream auto-calcs that listen to oninput
+  if (typeof autoCalcPell === 'function' && id === 'saiInput') autoCalcPell();
+}
+function showImportBadge(src) {
+  const b = document.createElement('div');
+  b.className = 'import-badge';
+  b.textContent = '✓ Imported from ' + src;
+  const host = document.querySelector('.panel, .loan-panel, .results-panel');
+  if (host) host.parentNode.insertBefore(b, host);
+}
+function openPasteModal() {
+  const json = prompt('Paste AP2 JSON mandate:');
+  if (!json) return;
+  try {
+    const m = JSON.parse(json);
+    const handlers = { 'fafsa_sai_estimate': prefillFromFAFSA };
+    const h = handlers[m.mandate_type];
+    if (!h) { alert('Unsupported mandate_type: ' + m.mandate_type); return; }
+    h(m.payload || {}, m.al_id || 'Pasted');
+    showImportBadge(m.al_id || 'Pasted');
+  } catch (e) { alert('Invalid AP2 JSON.'); }
+}
+document.addEventListener('DOMContentLoaded', parseAP2Inbound);
 </script>
 </body>
 </html>

@@ -1715,6 +1715,23 @@ function applyInboundMandate(mandate) {
     if (saved) setLang(saved);
   } catch (e) {}
 })();
+
+// ════════════════════════════════════════════════════════════
+// AP2 INBOUND URL-PARAM DISPATCH — CONTRACT §6.4 / Appendix G
+// Reuses applyInboundMandate() — the same dispatcher backing the paste modal.
+// ════════════════════════════════════════════════════════════
+function parseAP2Inbound() {
+  try {
+    const param = new URLSearchParams(window.location.search).get('ap2');
+    if (!param) return;
+    const mandate = JSON.parse(decodeURIComponent(param));
+    if (!mandate || !mandate.mandate_type) return;
+    // Default modal context to tab1 (handler decides which tab to fill based on mandate_type)
+    if (typeof _modalContext === 'undefined' || !_modalContext) _modalContext = 'tab1';
+    applyInboundMandate(mandate);
+  } catch (e) { /* silent no-op per §6.4 */ }
+}
+document.addEventListener('DOMContentLoaded', parseAP2Inbound);
 </script>
 </body>
 </html>
