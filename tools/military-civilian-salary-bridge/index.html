@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Military-to-Civilian Salary Bridge · ApexLogics #35</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070B14;
+      --surface: #0D1117;
+      --surface2: #111827;
+      --accent: #A78BFA;
+      --accent-dim: rgba(167,139,250,0.18);
+      --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18);
+      --border-focus: #A78BFA;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --green: #34d399;
+      --amber: #fbbf24;
+      --red: #f87171;
+    }
+
+    html { font-size: 16px; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Sora', sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    .tool-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 28px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+    .nav-right a {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-right a:hover { color: var(--accent); }
+
+    /* LAYOUT */
+    .tool-wrapper {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* PII BANNER */
+    .pii-banner {
+      background: rgba(167,139,250,0.07);
+      border: 1px solid rgba(167,139,250,0.25);
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* HERO */
+    .tool-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .tool-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(1.9rem, 4vw, 2.6rem);
+      line-height: 1.15;
+      color: #f8f8ff;
+      margin-bottom: 12px;
+    }
+    .tool-desc {
+      font-size: 0.93rem;
+      color: var(--text-muted);
+      max-width: 620px;
+      margin-bottom: 36px;
+    }
+
+    /* CARDS */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.15rem;
+      color: #f0eeff;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-title .badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.67rem;
+      background: var(--accent-dim);
+      color: var(--accent);
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    /* FORM GRID */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 580px) { .form-grid { grid-template-columns: 1fr; } }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    @media (max-width: 680px) { .form-grid.three { grid-template-columns: 1fr 1fr; } }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field.full { grid-column: 1 / -1; }
+    label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    select, input[type="number"] {
+      background: #0a0f1a;
+      border: 1px solid rgba(167,139,250,0.3);
+      color: #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-family: 'Sora', sans-serif;
+      font-size: 0.88rem;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    select:focus, input[type="number"]:focus {
+      outline: 2px solid #A78BFA;
+      outline-offset: 1px;
+      border-color: var(--accent);
+    }
+    select option { background: #0D1117; }
+
+    /* RADIO GROUPS */
+    .radio-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .radio-opt {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: #0a0f1a;
+      border: 1px solid rgba(167,139,250,0.25);
+      border-radius: 6px;
+      padding: 9px 14px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      font-size: 0.85rem;
+    }
+    .radio-opt:has(input:checked) {
+      border-color: var(--accent);
+      background: rgba(167,139,250,0.1);
+    }
+    .radio-opt input[type="radio"] { accent-color: var(--accent); }
+
+    /* TOGGLE */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 4px;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: #1e2533;
+      border: 1px solid rgba(167,139,250,0.3);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.25s;
+    }
+    .toggle-thumb {
+      position: absolute;
+      left: 3px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      background: var(--text-dim);
+      border-radius: 50%;
+      transition: left 0.25s, background 0.25s;
+      pointer-events: none;
+    }
+    .toggle-switch input:checked ~ .toggle-track { background: rgba(167,139,250,0.3); border-color: var(--accent); }
+    .toggle-switch input:checked ~ .toggle-track .toggle-thumb { left: 23px; background: var(--accent); }
+    .toggle-label { font-size: 0.87rem; color: var(--text-muted); cursor: pointer; }
+
+    /* CTA BUTTON */
+    .calc-btn {
+      width: 100%;
+      margin-top: 24px;
+      padding: 14px 24px;
+      background: linear-gradient(135deg, #A78BFA 0%, #7c5cdc 100%);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-family: 'Sora', sans-serif;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .calc-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .calc-btn:active { transform: translateY(0); }
+
+    /* RESULTS */
+    #results-section { display: none; }
+    #results-section.visible { display: block; }
+
+    .results-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 32px 0;
+    }
+
+    .results-heading {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.5rem;
+      color: #f0eeff;
+      margin-bottom: 24px;
+    }
+
+    /* BREAKDOWN TABLE */
+    .breakdown-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .breakdown-table td {
+      padding: 8px 4px;
+      font-size: 0.88rem;
+      border-bottom: 1px solid rgba(167,139,250,0.07);
+    }
+    .breakdown-table td:last-child {
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+    }
+    .breakdown-table tr.total td {
+      border-top: 1px solid rgba(167,139,250,0.3);
+      border-bottom: none;
+      padding-top: 14px;
+      font-weight: 600;
+      color: var(--accent);
+      font-size: 0.95rem;
+    }
+
+    /* BAR CHART */
+    .bar-group { margin: 4px 0; }
+    .bar-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .bar-track {
+      background: rgba(167,139,250,0.1);
+      border-radius: 4px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #A78BFA, #7c5cdc);
+      transition: width 0.6s cubic-bezier(0.22,1,0.36,1);
+    }
+
+    /* BIG NUMBER */
+    .big-number {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2.2rem, 5vw, 3rem);
+      color: var(--accent);
+      line-height: 1;
+    }
+    .big-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 6px;
+    }
+
+    /* CALLOUT CARDS */
+    .callout-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 4px;
+    }
+    @media (max-width: 680px) { .callout-grid { grid-template-columns: 1fr; } }
+    .callout {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+    }
+    .callout-icon {
+      font-size: 1.4rem;
+      margin-bottom: 8px;
+    }
+    .callout-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+    .callout-val {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.25rem;
+      color: var(--green);
+      margin-bottom: 4px;
+    }
+    .callout-note { font-size: 0.78rem; color: var(--text-muted); }
+
+    /* AMBER CARD */
+    .card.amber-card {
+      border-color: rgba(251,191,36,0.3);
+      background: rgba(251,191,36,0.04);
+    }
+    .amber-card .card-title { color: var(--amber); }
+
+    /* GI BILL CARD */
+    .card.gi-card {
+      border-color: rgba(52,211,153,0.3);
+      background: rgba(52,211,153,0.04);
+    }
+    .gi-card .card-title { color: var(--green); }
+
+    /* SECTOR NOTE */
+    .sector-note {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 10px;
+      padding: 10px 14px;
+      background: var(--accent-low);
+      border-radius: 6px;
+      border-left: 3px solid var(--accent);
+    }
+
+    /* FOOTNOTES */
+    .footnote-list {
+      margin-top: 4px;
+      padding-left: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .footnote-list li {
+      font-size: 0.77rem;
+      color: var(--text-dim);
+      padding-left: 16px;
+      position: relative;
+    }
+    .footnote-list li::before {
+      content: '·';
+      position: absolute;
+      left: 4px;
+      color: var(--accent);
+    }
+
+    /* EXPORT */
+    .results-export-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .export-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 11px 20px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      cursor: pointer;
+      border: 1px solid;
+      transition: background 0.2s, color 0.2s;
+      text-decoration: none;
+    }
+    .export-btn.md {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-low);
+    }
+    .export-btn.md:hover { background: rgba(167,139,250,0.15); }
+    .export-btn.ap2 {
+      border-color: rgba(167,139,250,0.35);
+      color: var(--text-muted);
+      background: transparent;
+    }
+    .export-btn.ap2:hover { background: var(--accent-low); color: var(--accent); }
+
+    /* FOOTER */
+    .tool-footer {
+      margin-top: 64px;
+      padding: 28px 0 20px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-dim);
+    }
+    .tool-footer a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .tool-footer a:hover { color: var(--accent); }
+
+    /* MISC */
+    .sep { margin: 6px 0; }
+    .mt8 { margin-top: 8px; }
+    .mt12 { margin-top: 12px; }
+    .mt16 { margin-top: 16px; }
+    .mt20 { margin-top: 20px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 580px) { .two-col { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<nav class="tool-nav">
+  <span class="nav-logo"><a href="/" style="color:inherit;text-decoration:none">⬡ ApexLogics</a></span>
+  <span class="nav-right"><a href="https://apexadvisory.site" target="_blank" rel="noopener">ApexAdvisory ↗</a></span>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+  </div>
+
+  <p class="tool-eyebrow">#35 · AL · 40 · Career Transition &amp; Mobility</p>
+  <h1 class="tool-title">Military-to-Civilian<br>Salary Bridge</h1>
+  <p class="tool-desc">Calculate your true total military compensation — base pay, BAH, BAS, TRICARE, TSP, and leave value — then find the civilian salary floor that matches your full package.</p>
+
+  <!-- ─── MILITARY PROFILE ─── -->
+  <div class="card">
+    <div class="card-title">Military Profile <span class="badge">STEP 1</span></div>
+
+    <div class="form-grid three">
+      <div class="field">
+        <label for="pay-grade">Pay Grade</label>
+        <select id="pay-grade">
+          <optgroup label="Enlisted">
+            <option value="E-1">E-1</option>
+            <option value="E-2">E-2</option>
+            <option value="E-3">E-3</option>
+            <option value="E-4">E-4</option>
+            <option value="E-5" selected>E-5</option>
+            <option value="E-6">E-6</option>
+            <option value="E-7">E-7</option>
+            <option value="E-8">E-8</option>
+            <option value="E-9">E-9</option>
+          </optgroup>
+          <optgroup label="Warrant Officers">
+            <option value="W-1">W-1</option>
+            <option value="W-2">W-2</option>
+            <option value="W-3">W-3</option>
+            <option value="W-4">W-4</option>
+            <option value="W-5">W-5</option>
+          </optgroup>
+          <optgroup label="Officers">
+            <option value="O-1">O-1</option>
+            <option value="O-2">O-2</option>
+            <option value="O-3">O-3</option>
+            <option value="O-4">O-4</option>
+            <option value="O-5">O-5</option>
+            <option value="O-6">O-6</option>
+            <option value="O-7">O-7</option>
+            <option value="O-8">O-8</option>
+            <option value="O-9">O-9</option>
+            <option value="O-10">O-10</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="years-service">Years of Service</label>
+        <input type="number" id="years-service" value="6" min="1" max="40" />
+      </div>
+
+      <div class="field full">
+        <label>Dependents</label>
+        <div class="radio-group">
+          <label class="radio-opt">
+            <input type="radio" name="dependents" value="without_dep" checked /> Single (no dependents)
+          </label>
+          <label class="radio-opt">
+            <input type="radio" name="dependents" value="with_dep" /> With dependents
+          </label>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label for="duty-location">Duty Station / Target Location</label>
+        <select id="duty-location">
+          <option value="San Francisco, CA">San Francisco, CA</option>
+          <option value="New York, NY">New York, NY</option>
+          <option value="Washington, DC" selected>Washington, DC</option>
+          <option value="Los Angeles, CA">Los Angeles, CA</option>
+          <option value="San Diego, CA">San Diego, CA</option>
+          <option value="Seattle, WA">Seattle, WA</option>
+          <option value="Boston, MA">Boston, MA</option>
+          <option value="Denver, CO">Denver, CO</option>
+          <option value="Chicago, IL">Chicago, IL</option>
+          <option value="Austin, TX">Austin, TX</option>
+          <option value="Dallas, TX">Dallas, TX</option>
+          <option value="Atlanta, GA">Atlanta, GA</option>
+          <option value="Phoenix, AZ">Phoenix, AZ</option>
+          <option value="Charlotte, NC">Charlotte, NC</option>
+          <option value="Columbus, OH">Columbus, OH</option>
+          <option value="Jacksonville, FL">Jacksonville, FL</option>
+          <option value="San Antonio, TX">San Antonio, TX</option>
+          <option value="Norfolk, VA">Norfolk, VA</option>
+          <option value="Fayetteville, NC">Fayetteville, NC</option>
+          <option value="Killeen, TX">Killeen, TX</option>
+        </select>
+      </div>
+
+      <div class="field full">
+        <label>Separation Type</label>
+        <div class="radio-group">
+          <label class="radio-opt">
+            <input type="radio" name="separation" value="ets" checked /> ETS / End of contract
+          </label>
+          <label class="radio-opt">
+            <input type="radio" name="separation" value="medical" /> Medical separation
+          </label>
+          <label class="radio-opt">
+            <input type="radio" name="separation" value="retirement" /> Retirement (20+ years)
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── CIVILIAN TARGET ─── -->
+  <div class="card">
+    <div class="card-title">Civilian Target <span class="badge">STEP 2</span></div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="civ-sector">Target Civilian Sector</label>
+        <select id="civ-sector">
+          <option value="Private sector">Private sector</option>
+          <option value="Federal civilian (GS)">Federal civilian (GS)</option>
+          <option value="State/local government">State/local government</option>
+          <option value="Nonprofit">Nonprofit</option>
+          <option value="Defense contractor">Defense contractor</option>
+        </select>
+      </div>
+
+      <div class="field" id="gi-bill-field">
+        <label>Will you use your GI Bill?</label>
+        <div class="toggle-row" style="margin-top:8px">
+          <label class="toggle-switch">
+            <input type="checkbox" id="use-gi-bill" />
+            <div class="toggle-track"><div class="toggle-thumb"></div></div>
+          </label>
+          <span class="toggle-label" id="gi-bill-label">No — skip GI Bill estimate</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="runCalc()">Calculate My Civilian Salary Floor →</button>
+
+  <!-- ─── RESULTS ─── -->
+  <div id="results-section">
+    <hr class="results-divider" />
+    <h2 class="results-heading">Your Compensation Bridge</h2>
+
+    <!-- Military breakdown -->
+    <div class="card" id="breakdown-card">
+      <div class="card-title">Military Compensation Breakdown</div>
+      <div id="bar-chart-area"></div>
+      <div class="mt20">
+        <table class="breakdown-table" id="breakdown-table"></table>
+      </div>
+    </div>
+
+    <!-- Civilian floor -->
+    <div class="card" id="floor-card">
+      <div class="card-title">Civilian Salary Equivalency</div>
+      <p style="font-size:0.83rem;color:var(--text-muted);margin-bottom:16px">To match your military package, target a civilian offer of at least:</p>
+      <div class="big-number" id="floor-number"></div>
+      <div class="big-label" id="floor-label"></div>
+      <div class="sector-note mt12" id="sector-note"></div>
+      <p class="mt12" style="font-size:0.77rem;color:var(--text-dim)">BAH/BAS are tax-free. This floor grosses them up at a 22% effective marginal rate.</p>
+    </div>
+
+    <!-- Benefits gap callouts -->
+    <div class="card">
+      <div class="card-title">Benefits Gap Analysis</div>
+      <div class="callout-grid" id="callout-grid"></div>
+    </div>
+
+    <!-- GI Bill (conditional) -->
+    <div class="card gi-card" id="gi-bill-results" style="display:none">
+      <div class="card-title">GI Bill Estimated Value</div>
+      <div class="two-col" id="gi-bill-content"></div>
+    </div>
+
+    <!-- Pension (conditional) -->
+    <div class="card amber-card" id="pension-card" style="display:none">
+      <div class="card-title">Retirement Pension</div>
+      <div id="pension-content"></div>
+    </div>
+
+    <!-- Notes -->
+    <div class="card">
+      <div class="card-title">Notes &amp; Assumptions</div>
+      <ul class="footnote-list">
+        <li>BAH/BAS rates are approximate 2025 values; actual rates vary by grade and exact location.</li>
+        <li>BRS (post-2018 enlistees) assumed for TSP calculations. Legacy system has no government match.</li>
+        <li>TRICARE value represents estimated civilian premium-equivalent savings, not actual plan costs.</li>
+        <li>GI Bill housing stipend estimated at E-5 with-dependents BAH for the selected location (Chapter 33, full-time enrollment).</li>
+        <li>Gross-up of tax-free allowances uses a 22% assumed marginal federal tax rate. Adjust for your bracket.</li>
+        <li>Pension calculation uses BRS formula: 2% × years of service × monthly base pay × 12.</li>
+        <li>All figures are estimates for planning purposes. Consult official military pay charts and a financial advisor for authoritative figures.</li>
+      </ul>
+    </div>
+
+    <!-- Export -->
+    <div class="card">
+      <div class="card-title">Export Results</div>
+      <div class="results-export-row">
+        <button class="export-btn md" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()">⬇ Download AP2 JSON</button>
+      </div>
+    </div>
+
+  </div><!-- end #results-section -->
+
+  <footer class="tool-footer">
+    <p>Part of the <a href="https://apexlogics.org">ApexLogics</a> career intelligence suite by <a href="https://apexadvisory.site">ApexAdvisory</a>. Sister suite: <a href="https://ainumbers.co">AINumbers.co</a> ↗</p>
+    <p style="font-size:0.75rem;margin-top:8px;opacity:0.6">© 2025 ApexAdvisory. CC BY 4.0.</p>
+  </footer>
+
+</div><!-- end .tool-wrapper -->
+
+<script>
+// ─── PAY DATA ───────────────────────────────────────────────────────────────
+const MILITARY_BASE_PAY = {
+  'E-1': [1833], 'E-2': [2057], 'E-3': [2165,2333,2416],
+  'E-4': [2393,2586,2714,2839], 'E-5': [2610,2773,2909,3049,3162],
+  'E-6': [2849,3137,3270,3402,3551,3651],
+  'E-7': [3294,3604,3731,3937,4113,4291,4551],
+  'E-8': [4739,4931,5108,5266,5513], 'E-9': [5789,5925,6104,6392,6682,6964],
+  'W-1': [3399,3739,3880,4018,4172], 'W-2': [3877,4331,4471,4614,4746],
+  'W-3': [4376,4710,4911,5095,5278], 'W-4': [4809,5242,5494,5689,5879],
+  'W-5': [5974,6171,6403,6632,6844],
+  'O-1': [3637,3809,3978], 'O-2': [4187,4778,5398],
+  'O-3': [4850,5478,5908,6195,6433], 'O-4': [5514,6384,6812,7261,7500],
+  'O-5': [6390,7196,7671,8093,8332], 'O-6': [7658,8413,8873,9243,9524],
+  'O-7': [9664,10131,10469,10745], 'O-8': [11608,12009,12405,12657],
+  'O-9': [14354,14558,14766], 'O-10': [17675]
+};
+
+const BAH_RATES = {
+  'San Francisco, CA':  { with_dep: 4734, without_dep: 3681 },
+  'New York, NY':       { with_dep: 4305, without_dep: 3396 },
+  'Washington, DC':     { with_dep: 3645, without_dep: 2913 },
+  'Los Angeles, CA':    { with_dep: 3735, without_dep: 2937 },
+  'San Diego, CA':      { with_dep: 3264, without_dep: 2568 },
+  'Seattle, WA':        { with_dep: 3054, without_dep: 2448 },
+  'Boston, MA':         { with_dep: 3321, without_dep: 2637 },
+  'Denver, CO':         { with_dep: 2655, without_dep: 2058 },
+  'Chicago, IL':        { with_dep: 2628, without_dep: 2070 },
+  'Austin, TX':         { with_dep: 2196, without_dep: 1734 },
+  'Dallas, TX':         { with_dep: 2112, without_dep: 1662 },
+  'Atlanta, GA':        { with_dep: 1953, without_dep: 1539 },
+  'Phoenix, AZ':        { with_dep: 1944, without_dep: 1524 },
+  'Charlotte, NC':      { with_dep: 1764, without_dep: 1389 },
+  'Columbus, OH':       { with_dep: 1548, without_dep: 1218 },
+  'Jacksonville, FL':   { with_dep: 1728, without_dep: 1353 },
+  'San Antonio, TX':    { with_dep: 1623, without_dep: 1278 },
+  'Norfolk, VA':        { with_dep: 2028, without_dep: 1596 },
+  'Fayetteville, NC':   { with_dep: 1530, without_dep: 1200 },
+  'Killeen, TX':        { with_dep: 1470, without_dep: 1152 }
+};
+
+const SECTOR_ADJ = {
+  'Private sector': 1.0,
+  'Federal civilian (GS)': 0.92,
+  'State/local government': 0.88,
+  'Nonprofit': 0.82,
+  'Defense contractor': 1.08
+};
+
+const SECTOR_NOTES = {
+  'Private sector': 'Private-sector employers rarely offer the same benefits depth as the military. Negotiate health plan contributions and 401(k) match separately.',
+  'Federal civilian (GS)': 'Federal GS positions offer FEHB healthcare and FERS pension, which partially offset the salary gap. GS-equivalent grade mapping is recommended.',
+  'State/local government': 'State/local roles often include pension plans but lower salaries. Factor in defined-benefit pension value when evaluating total compensation.',
+  'Nonprofit': 'Nonprofits typically lag on base pay. Look for 403(b) matching and mission-driven benefits. Public Service Loan Forgiveness (PSLF) may also apply.',
+  'Defense contractor': 'Defense contractors often pay an 8% premium for clearance holders. Secret/TS clearances carry significant market value in this sector.'
+};
+
+// ─── REACTIVE UI ────────────────────────────────────────────────────────────
+document.querySelectorAll('input[name="separation"]').forEach(r => {
+  r.addEventListener('change', () => {
+    const isRetirement = document.querySelector('input[name="separation"]:checked').value === 'retirement';
+    document.getElementById('gi-bill-field').style.display = isRetirement ? 'none' : '';
+  });
+});
+
+document.getElementById('use-gi-bill').addEventListener('change', function() {
+  document.getElementById('gi-bill-label').textContent = this.checked
+    ? 'Yes — include GI Bill estimate'
+    : 'No — skip GI Bill estimate';
+});
+
+// ─── CORE CALCULATION ───────────────────────────────────────────────────────
+function getInputs() {
+  const grade      = document.getElementById('pay-grade').value;
+  const years      = Math.max(1, Math.min(40, parseInt(document.getElementById('years-service').value, 10) || 1));
+  const dependents = document.querySelector('input[name="dependents"]:checked').value;
+  const location   = document.getElementById('duty-location').value;
+  const separation = document.querySelector('input[name="separation"]:checked').value;
+  const sector     = document.getElementById('civ-sector').value;
+  const use_gi_bill = separation !== 'retirement' && document.getElementById('use-gi-bill').checked;
+  return { grade, years, dependents, location, separation, sector, use_gi_bill };
+}
+
+function calculate(inputs) {
+  const { grade, years, dependents, location, separation, sector, use_gi_bill } = inputs;
+
+  // Base pay
+  const gradeArr    = MILITARY_BASE_PAY[grade];
+  const stepIdx     = Math.min(Math.floor(years / 2), gradeArr.length - 1);
+  const base_monthly = gradeArr[stepIdx];
+  const base_annual  = base_monthly * 12;
+
+  // BAH
+  const bahKey     = dependents === 'with_dep' ? 'with_dep' : 'without_dep';
+  const bah_monthly = BAH_RATES[location][bahKey];
+  const bah_annual  = bah_monthly * 12;
+
+  // BAS
+  const is_officer = grade.startsWith('O') || grade.startsWith('W');
+  const bas_annual  = (is_officer ? 311.68 : 460.24) * 12;
+
+  // TRICARE
+  const tricare_annual = dependents === 'with_dep' ? 6000 : 2400;
+
+  // TSP (BRS: 5% of base)
+  const tsp_annual = base_annual * 0.05;
+
+  // Leave value
+  const leave_annual = (base_annual / 261) * 30;
+
+  // Totals
+  const total_mil = base_annual + bah_annual + bas_annual + tricare_annual + tsp_annual + leave_annual;
+
+  // Pension (retirement only — BRS 2%)
+  const pension_annual = separation === 'retirement' ? 0.02 * years * base_annual : 0;
+
+  // Civilian floor — gross up tax-free allowances at 22%
+  const grossup = 1 / (1 - 0.22);
+  const civilian_floor = base_annual + (bah_annual + bas_annual) * grossup + tricare_annual + tsp_annual + leave_annual;
+
+  // Sector adjustment
+  const sector_adj   = SECTOR_ADJ[sector] || 1.0;
+  const adjusted_floor = civilian_floor * sector_adj;
+
+  // GI Bill
+  let gi_bill_annual = 0;
+  let gi_bah_annual  = 0;
+  let gi_tuition     = 0;
+  if (use_gi_bill && separation !== 'retirement') {
+    const e5_bah    = BAH_RATES[location].with_dep;
+    gi_bah_annual   = e5_bah * 9;
+    gi_tuition      = Math.min(28937, 20000);
+    gi_bill_annual  = gi_bah_annual + gi_tuition;
+  }
+
+  return {
+    base_annual, bah_annual, bas_annual, tricare_annual, tsp_annual, leave_annual,
+    total_mil, civilian_floor, adjusted_floor, sector_adj,
+    pension_annual, gi_bill_annual, gi_bah_annual, gi_tuition,
+    base_monthly, bah_monthly, is_officer
+  };
+}
+
+// ─── RENDER ─────────────────────────────────────────────────────────────────
+let _lastInputs = null;
+let _lastResults = null;
+
+function runCalc() {
+  const inputs  = getInputs();
+  const results = calculate(inputs);
+  _lastInputs   = inputs;
+  _lastResults  = results;
+
+  renderBreakdown(results);
+  renderFloor(inputs, results);
+  renderCallouts(inputs, results);
+  renderGiBill(inputs, results);
+  renderPension(inputs, results);
+
+  const sec = document.getElementById('results-section');
+  sec.classList.add('visible');
+  setTimeout(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+}
+
+function fmt(n) {
+  return '$' + Math.round(n).toLocaleString('en-US');
+}
+
+function renderBreakdown(r) {
+  const components = [
+    { label: 'Base Pay',       value: r.base_annual },
+    { label: 'BAH',            value: r.bah_annual  },
+    { label: 'BAS',            value: r.bas_annual  },
+    { label: 'TRICARE Value',  value: r.tricare_annual },
+    { label: 'TSP Match (5%)', value: r.tsp_annual  },
+    { label: 'Leave Value',    value: r.leave_annual },
+  ];
+  const max = Math.max(...components.map(c => c.value));
+
+  // Bar chart
+  const barArea = document.getElementById('bar-chart-area');
+  barArea.innerHTML = components.map(c => {
+    const pct = ((c.value / max) * 100).toFixed(1);
+    return `
+      <div class="bar-group">
+        <div class="bar-label-row">
+          <span>${c.label}</span>
+          <span>${fmt(c.value)}</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%"></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Table
+  const tbl = document.getElementById('breakdown-table');
+  tbl.innerHTML = components.map(c => `
+    <tr>
+      <td style="color:var(--text-muted)">${c.label}</td>
+      <td>${fmt(c.value)}</td>
+    </tr>`).join('') + `
+    <tr class="total">
+      <td>Total Military Compensation</td>
+      <td>${fmt(r.total_mil)}</td>
+    </tr>`;
+}
+
+function renderFloor(inputs, r) {
+  const adjLabel = r.sector_adj !== 1.0
+    ? `${inputs.sector} sector-adjusted (×${r.sector_adj.toFixed(2)})`
+    : `Unadjusted civilian equivalent`;
+
+  document.getElementById('floor-number').textContent = fmt(r.adjusted_floor);
+  document.getElementById('floor-label').textContent  = adjLabel;
+  document.getElementById('sector-note').textContent  = SECTOR_NOTES[inputs.sector] || '';
+}
+
+function renderCallouts(inputs, r) {
+  const civMedianPTO  = 15;
+  const militaryPTO   = 30;
+  const ptoDiff       = ((r.base_annual / 261) * (militaryPTO - civMedianPTO));
+  const civHealthcost = inputs.dependents === 'with_dep' ? 8400 : 3900;
+  const healthGap     = civHealthcost - r.tricare_annual;
+  const civTSP        = r.base_annual * 0.03;
+  const tspGap        = r.tsp_annual - civTSP;
+
+  const grid = document.getElementById('callout-grid');
+  grid.innerHTML = `
+    <div class="callout">
+      <div class="callout-icon">🏥</div>
+      <div class="callout-name">Healthcare</div>
+      <div class="callout-val">${fmt(r.tricare_annual)}/yr</div>
+      <div class="callout-note">Your TRICARE value vs. typical civilian employer contribution of ~${fmt(civHealthcost)}/yr. Civilian gap: <strong style="color:var(--red)">${healthGap > 0 ? fmt(healthGap) + ' more' : 'Even'}</strong>.</div>
+    </div>
+    <div class="callout">
+      <div class="callout-icon">💰</div>
+      <div class="callout-name">Retirement / TSP</div>
+      <div class="callout-val">${fmt(r.tsp_annual)}/yr</div>
+      <div class="callout-note">BRS 5% match vs. civilian 401(k) market median of ~3% (${fmt(civTSP)}/yr). Military advantage: <strong style="color:var(--green)">${fmt(tspGap)}/yr</strong>.</div>
+    </div>
+    <div class="callout">
+      <div class="callout-icon">🏖</div>
+      <div class="callout-name">Paid Leave</div>
+      <div class="callout-val">30 days/yr</div>
+      <div class="callout-note">Military 30-day leave vs. civilian median ~${civMedianPTO} days PTO. Salary-equivalent advantage: <strong style="color:var(--green)">${fmt(ptoDiff)}/yr</strong>.</div>
+    </div>`;
+}
+
+function renderGiBill(inputs, r) {
+  const panel = document.getElementById('gi-bill-results');
+  if (!inputs.use_gi_bill || r.gi_bill_annual === 0) {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = '';
+  document.getElementById('gi-bill-content').innerHTML = `
+    <div>
+      <div class="callout-name" style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Housing Stipend (9 mo.)</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--green)">${fmt(r.gi_bah_annual)}</div>
+      <div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px">E-5 BAH (with dep) × 9 academic months</div>
+    </div>
+    <div>
+      <div class="callout-name" style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Tuition Coverage</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--green)">${fmt(r.gi_tuition)}</div>
+      <div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px">Estimated annual tuition coverage (cap ${fmt(28937)}/yr)</div>
+    </div>
+    <div style="grid-column:1/-1;margin-top:12px;padding:14px 18px;background:rgba(52,211,153,0.08);border-radius:8px;border:1px solid rgba(52,211,153,0.2)">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em">Estimated GI Bill Annual Value</span>
+      <div style="font-family:'DM Serif Display',serif;font-size:2rem;color:var(--green);margin-top:4px">${fmt(r.gi_bill_annual)}</div>
+    </div>`;
+}
+
+function renderPension(inputs, r) {
+  const panel = document.getElementById('pension-card');
+  if (inputs.separation !== 'retirement' || r.pension_annual === 0) {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = '';
+  document.getElementById('pension-content').innerHTML = `
+    <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:12px">Estimated annual pension based on BRS formula: 2% × years of service × base pay.</p>
+    <div style="font-family:'DM Serif Display',serif;font-size:2.2rem;color:var(--amber)">${fmt(r.pension_annual)}/yr</div>
+    <p style="font-size:0.78rem;color:var(--text-dim);margin-top:8px">${inputs.years} years × 2% × ${fmt(r.base_annual)} base = ${fmt(r.pension_annual)} annual pension. Taxable income.</p>`;
+}
+
+// ─── EXPORT ─────────────────────────────────────────────────────────────────
+function exportMarkdown() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+  const now = new Date().toISOString();
+
+  const md = [
+    `# Military-to-Civilian Salary Bridge — ApexLogics #35`,
+    `\nGenerated: ${now}`,
+    `\n## Inputs`,
+    `| Field | Value |`,
+    `|---|---|`,
+    `| Pay Grade | ${i.grade} |`,
+    `| Years of Service | ${i.years} |`,
+    `| Dependents | ${i.dependents === 'with_dep' ? 'With dependents' : 'Single (no dependents)'} |`,
+    `| Duty Station | ${i.location} |`,
+    `| Separation Type | ${i.separation} |`,
+    `| Target Sector | ${i.sector} |`,
+    `| Use GI Bill | ${i.use_gi_bill ? 'Yes' : 'No'} |`,
+    `\n## Military Compensation Breakdown`,
+    `| Component | Annual Value |`,
+    `|---|---|`,
+    `| Base Pay | ${fmt(r.base_annual)} |`,
+    `| BAH | ${fmt(r.bah_annual)} |`,
+    `| BAS | ${fmt(r.bas_annual)} |`,
+    `| TRICARE Value | ${fmt(r.tricare_annual)} |`,
+    `| TSP Match (5%) | ${fmt(r.tsp_annual)} |`,
+    `| Leave Value | ${fmt(r.leave_annual)} |`,
+    `| **Total Military Compensation** | **${fmt(r.total_mil)}** |`,
+    `\n## Civilian Equivalency`,
+    `| Metric | Value |`,
+    `|---|---|`,
+    `| Base Civilian Floor (gross-up) | ${fmt(r.civilian_floor)} |`,
+    `| Sector Adjustment | ×${r.sector_adj.toFixed(2)} (${i.sector}) |`,
+    `| **Adjusted Civilian Floor** | **${fmt(r.adjusted_floor)}** |`,
+  ];
+
+  if (i.use_gi_bill && r.gi_bill_annual > 0) {
+    md.push(`\n## GI Bill Estimate`);
+    md.push(`| Component | Value |`);
+    md.push(`|---|---|`);
+    md.push(`| Housing Stipend (9 months) | ${fmt(r.gi_bah_annual)} |`);
+    md.push(`| Tuition Coverage | ${fmt(r.gi_tuition)} |`);
+    md.push(`| **Total Annual GI Bill Value** | **${fmt(r.gi_bill_annual)}** |`);
+  }
+
+  if (i.separation === 'retirement' && r.pension_annual > 0) {
+    md.push(`\n## Retirement Pension`);
+    md.push(`Estimated annual pension (BRS 2% × ${i.years} years × base pay): **${fmt(r.pension_annual)}/yr**`);
+  }
+
+  md.push(`\n---`);
+  md.push(`_Generated by [ApexLogics](https://apexlogics.org) Military-to-Civilian Salary Bridge. Estimates for planning purposes only._`);
+
+  downloadFile('military-civilian-bridge.md', md.join('\n'), 'text/markdown');
+}
+
+function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+  const payload = {
+    ap2_version: "1.0",
+    mandate_type: "military_civilian_record",
+    generated_at: new Date().toISOString(),
+    inputs: {
+      pay_grade: i.grade,
+      years_of_service: i.years,
+      dependents: i.dependents,
+      duty_station: i.location,
+      separation_type: i.separation,
+      target_sector: i.sector,
+      use_gi_bill: i.use_gi_bill
+    },
+    outputs: {
+      military_total_comp: Math.round(r.total_mil),
+      civilian_floor_base: Math.round(r.civilian_floor),
+      civilian_floor_sector_adjusted: Math.round(r.adjusted_floor),
+      gi_bill_annual_value: Math.round(r.gi_bill_annual),
+      pension_annual: Math.round(r.pension_annual),
+      component_breakdown: {
+        base:    Math.round(r.base_annual),
+        bah:     Math.round(r.bah_annual),
+        bas:     Math.round(r.bas_annual),
+        tricare: Math.round(r.tricare_annual),
+        tsp:     Math.round(r.tsp_annual),
+        leave:   Math.round(r.leave_annual)
+      }
+    },
+    downstream_handoff_candidates: ["AL-01"],
+    consulting_cta: {
+      site: "https://apexadvisory.site",
+      message: "Connect with a career advisor to navigate your military-to-civilian transition."
+    }
+  };
+  downloadFile('military-civilian-bridge-ap2.json', JSON.stringify(payload, null, 2), 'application/json');
+}
+
+function downloadFile(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>#32 · Remote Work Multi-State Tax Mapper · Apex Logics</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+:root {
+  --bg:#070B14;--bg-2:#0C1220;--bg-3:#111A2E;--bg-4:#162238;
+  --border:#1C2D48;--border-2:#253754;--muted:#3E5675;
+  --body:#6A8BAE;--text:#A8C4DE;--bright:#D4E8F8;--white:#EEF6FD;
+  --amber:#E8A838;--amber-dim:rgba(232,168,56,.10);
+  --teal:#14B8A6;--teal-dim:rgba(20,184,166,.10);--teal-lt:#2DD4BF;
+  --coral:#F07167;--coral-dim:rgba(240,113,103,.10);
+  --lavender:#A78BFA;--lavender-dim:rgba(167,139,250,.10);
+  --green:#34D399;--green-dim:rgba(52,211,153,.10);
+  --blue:#60A5FA;--blue-dim:rgba(96,165,250,.10);
+  --warn:#FBBF24;
+  --accent:var(--amber);--accent-dim:var(--amber-dim);
+  --radius:6px;--radius-lg:10px;
+  --shadow:0 4px 24px rgba(0,0,0,.45);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;font-size:.95rem;line-height:1.6}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+input,select,button{font-family:inherit}
+h1,h2,h3{font-family:'DM Serif Display',serif;color:var(--bright)}
+code,pre,.mono{font-family:'JetBrains Mono',monospace}
+
+nav{position:sticky;top:0;z-index:100;background:rgba(7,11,20,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{display:flex;align-items:center;gap:.6rem;text-decoration:none}
+.nav-wordmark{font-family:'DM Serif Display',serif;font-size:1rem;color:var(--amber);letter-spacing:.04em}
+.nav-right{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.nav-pill{background:none;border:1px solid var(--border-2);border-radius:20px;color:var(--body);font-size:.7rem;padding:.2rem .65rem;text-decoration:none;transition:color .15s,border-color .15s}
+.nav-pill:hover{color:var(--bright);border-color:var(--text);text-decoration:none}
+
+.sub-nav{background:var(--bg-3);border-bottom:1px solid var(--border);padding:.4rem 1.5rem;display:flex;align-items:center;justify-content:space-between;font-size:.7rem;color:var(--body);flex-wrap:wrap;gap:.5rem}
+.sub-nav-breadcrumb{display:flex;align-items:center;gap:.4rem}
+.sub-nav-breadcrumb a{color:var(--body)} .sub-nav-breadcrumb a:hover{color:var(--accent)}
+.sub-nav-links{display:flex;gap:.75rem}
+.sub-nav-links a{color:var(--body)} .sub-nav-links a:hover{color:var(--accent)}
+
+.container{max-width:960px;margin:0 auto;padding:2rem 1.25rem 4rem}
+
+.tool-eyebrow{font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.5rem}
+.tool-title{font-size:2rem;color:var(--white);margin-bottom:.4rem;line-height:1.2}
+.tool-subtitle{color:var(--body);font-size:.9rem;margin-bottom:.75rem}
+.tool-header{margin-bottom:1.5rem}
+
+.vintage-banner{display:inline-flex;align-items:center;gap:.4rem;background:var(--amber-dim);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:.25rem .65rem;font-size:.7rem;color:var(--amber);font-family:'JetBrains Mono',monospace}
+
+.pii-notice{background:var(--bg-3);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:.6rem 1rem;font-size:.78rem;color:var(--body);margin-bottom:.75rem;display:flex;align-items:flex-start;gap:.5rem}
+
+.legal-notice{background:var(--bg-3);border:1px solid var(--border);border-left:3px solid var(--coral);border-radius:var(--radius);padding:.6rem 1rem;font-size:.78rem;color:var(--body);margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:.5rem}
+
+.panel{background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem}
+.panel-title{font-size:.75rem;font-family:'JetBrains Mono',monospace;color:var(--accent);text-transform:uppercase;letter-spacing:.08em;margin-bottom:1rem}
+.panel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.85rem}
+.panel-grid-3{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.85rem}
+.panel-row{display:flex;flex-direction:column;gap:.3rem}
+label{font-size:.78rem;color:var(--body)}
+
+input[type="number"],input[type="text"],select{background:var(--bg-4);border:1px solid var(--border-2);border-radius:var(--radius);color:var(--bright);font-size:.85rem;padding:.5rem .75rem;width:100%;transition:border-color .15s}
+input:focus,select:focus{outline:none;border-color:var(--accent)}
+.input-note{font-size:.7rem;color:var(--muted);margin-top:.2rem}
+
+.radio-group{display:flex;gap:.75rem;flex-wrap:wrap}
+.radio-label{display:flex;align-items:center;gap:.35rem;font-size:.8rem;cursor:pointer;color:var(--text)}
+.radio-label input[type="radio"]{accent-color:var(--accent)}
+
+.run-btn{background:var(--accent);border:none;border-radius:var(--radius);color:#000;cursor:pointer;font-size:.9rem;font-weight:600;padding:.7rem 2rem;transition:opacity .15s;width:100%;margin-top:1rem}
+.run-btn:hover{opacity:.88}
+
+.results-panel{display:none;margin-top:1.5rem}
+.results-panel.visible{display:block}
+
+.stat-row{display:flex;flex-wrap:wrap;gap:.75rem;margin-bottom:1.25rem}
+.stat-box{background:var(--bg-4);border:1px solid var(--border);border-radius:var(--radius);padding:.7rem 1rem;flex:1;min-width:130px}
+.stat-box.accent{border-color:var(--accent)}
+.stat-box.green{border-color:var(--green)}
+.stat-box.coral{border-color:var(--coral)}
+.stat-label{font-size:.68rem;color:var(--body);margin-bottom:.25rem;text-transform:uppercase;letter-spacing:.05em}
+.stat-value{font-size:1.05rem;font-weight:600;color:var(--bright);font-family:'JetBrains Mono',monospace}
+.stat-note{font-size:.67rem;color:var(--muted);margin-top:.15rem}
+
+.flag-box{border-radius:var(--radius);padding:.75rem 1rem;margin-bottom:.75rem;font-size:.82rem;line-height:1.5}
+.flag-box.coral{background:var(--coral-dim);border:1px solid var(--coral);color:var(--coral)}
+.flag-box.green{background:var(--green-dim);border:1px solid var(--green);color:var(--green)}
+.flag-box.amber{background:var(--amber-dim);border:1px solid var(--amber);color:var(--amber)}
+.flag-box.teal{background:var(--teal-dim);border:1px solid var(--teal);color:var(--teal)}
+.flag-box.lavender{background:var(--lavender-dim);border:1px solid var(--lavender);color:var(--lavender)}
+.flag-title{font-weight:600;margin-bottom:.3rem;font-size:.85rem}
+.flag-body{color:var(--text);font-size:.8rem}
+
+.compare-table{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:.75rem}
+.compare-table th{background:var(--bg-4);border:1px solid var(--border);padding:.5rem .75rem;text-align:left;color:var(--body);font-weight:500;font-size:.75rem}
+.compare-table td{border:1px solid var(--border);padding:.5rem .75rem;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.8rem}
+.compare-table tr:hover td{background:var(--bg-4)}
+.compare-table .row-label{font-family:'Sora',sans-serif;font-size:.78rem;color:var(--body)}
+.compare-table .total-row td{color:var(--bright);font-weight:600;background:var(--bg-3)}
+.compare-table .highlight-col{color:var(--accent)}
+
+.results-export-row{display:flex;gap:.75rem;margin-top:1.25rem;flex-wrap:wrap;align-items:flex-start}
+.btn{background:none;border:1px solid var(--border-2);border-radius:var(--radius);color:var(--text);cursor:pointer;font-size:.78rem;padding:.45rem .9rem;transition:all .15s;display:flex;align-items:center;gap:.4rem;flex-direction:column}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-subtitle{font-size:.65rem;color:var(--muted)}
+.btn:hover .btn-subtitle{color:var(--accent);opacity:.7}
+
+.mcp-toggle{background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-top:1.5rem}
+.mcp-toggle-btn{background:none;border:none;width:100%;padding:.85rem 1.25rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;color:var(--body);font-size:.8rem;font-family:'JetBrains Mono',monospace}
+.mcp-toggle-btn:hover{color:var(--bright)}
+.mcp-panel{display:none;padding:1rem 1.25rem;border-top:1px solid var(--border)}
+.mcp-panel.open{display:block}
+.mcp-json{background:var(--bg-4);border:1px solid var(--border);border-radius:var(--radius);padding:.85rem 1rem;font-size:.72rem;color:var(--text);white-space:pre-wrap;overflow-x:auto;max-height:340px;overflow-y:auto;line-height:1.5}
+
+.bar-wrap{margin:.5rem 0 1rem}
+.bar-track{height:12px;border-radius:6px;background:var(--bg-4);overflow:hidden;margin-bottom:.3rem}
+.bar-fill{height:100%;border-radius:6px;transition:width .4s ease}
+.bar-labels{display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted)}
+
+.divider{border:none;border-top:1px solid var(--border);margin:1.25rem 0}
+
+.results-title{font-size:1.1rem;color:var(--white);margin-bottom:.75rem;font-family:'DM Serif Display',serif}
+
+.badge{display:inline-flex;align-items:center;gap:.3rem;border-radius:20px;padding:.2rem .65rem;font-size:.7rem;font-family:'JetBrains Mono',monospace;font-weight:500}
+.badge.green{background:var(--green-dim);color:var(--green);border:1px solid rgba(52,211,153,.3)}
+.badge.coral{background:var(--coral-dim);color:var(--coral);border:1px solid rgba(240,113,103,.3)}
+.badge.amber{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(232,168,56,.3)}
+
+.scenario-row{display:flex;flex-wrap:wrap;gap:.75rem;margin-bottom:1rem}
+.scenario-card{background:var(--bg-4);border:1px solid var(--border);border-radius:var(--radius);padding:.85rem 1rem;flex:1;min-width:180px}
+.scenario-card.winner{border-color:var(--green)}
+.scenario-card.loser{border-color:var(--coral)}
+.scenario-name{font-size:.75rem;color:var(--body);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.04em}
+.scenario-value{font-size:1.15rem;font-family:'JetBrains Mono',monospace;color:var(--bright);font-weight:600}
+.scenario-sub{font-size:.7rem;color:var(--muted);margin-top:.2rem}
+
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:.75rem 1.25rem;font-size:.82rem;color:var(--bright);box-shadow:var(--shadow);z-index:999;display:none;max-width:340px}
+.toast.show{display:block}
+.toast.success{border-color:var(--green);color:var(--green)}
+.toast.error{border-color:var(--coral);color:var(--coral)}
+
+.tool-footer{background:var(--bg-2);border-top:1px solid var(--border);padding:1rem 1.5rem;text-align:center;font-size:.72rem;color:var(--muted);margin-top:3rem}
+.tool-footer a{color:var(--body)} .tool-footer a:hover{color:var(--accent)}
+
+@media(max-width:640px){.tool-title{font-size:1.5rem} .panel-grid{grid-template-columns:1fr} .panel-grid-3{grid-template-columns:1fr 1fr} nav{padding:.6rem 1rem}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../../index.html" class="nav-brand">
+    <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="13,2 24,20 2,20" fill="none" stroke="#E8A838" stroke-width="2.2" stroke-linejoin="round"/>
+      <line x1="13" y1="8" x2="13" y2="15" stroke="#E8A838" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="13" cy="18" r="1.3" fill="#E8A838"/>
+    </svg>
+    <span class="nav-wordmark">APEX LOGICS</span>
+  </a>
+  <div class="nav-right">
+    <a class="nav-pill" href="https://apexadvisory.site" target="_blank" rel="noopener">ApexAdvisory.site</a>
+    <a class="nav-pill" href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a>
+  </div>
+</nav>
+
+<div class="sub-nav">
+  <div class="sub-nav-breadcrumb">
+    <a href="../../index.html">← Apex Logics</a>
+    <span>/</span>
+    <span>Compensation &amp; Offers</span>
+    <span>/</span>
+    <span style="color:var(--accent)">#32 · AL · 37</span>
+  </div>
+  <div class="sub-nav-links">
+    <a href="https://apexadvisory.site" target="_blank" rel="noopener">ApexAdvisory.site</a>
+    <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="tool-header">
+    <div class="tool-eyebrow">#32 · AL · 37 · Compensation &amp; Offers</div>
+    <h1 class="tool-title">Remote Work Multi-State Tax Mapper</h1>
+    <p class="tool-subtitle">Map your actual tax obligations when you live in one state and work for an employer in another. Understand reciprocity, nexus flags, and your true take-home pay.</p>
+    <span class="vintage-banner">⚡ Data: State Revenue Depts. 2025-26 · IRS 2025 Brackets · Tax Foundation</span>
+  </div>
+
+  <div class="pii-notice">
+    <span>🔒</span>
+    <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+  </div>
+
+  <div class="legal-notice">
+    <span>⚠️</span>
+    <span><strong>Educational tool only.</strong> State tax law is complex and changes frequently. Consult a CPA or tax attorney for your specific situation.</span>
+  </div>
+
+  <!-- ===== INPUTS ===== -->
+  <div class="panel">
+    <div class="panel-title">Your Situation</div>
+    <div class="panel-grid">
+      <div class="panel-row">
+        <label for="employerState">Employer / Company State</label>
+        <select id="employerState"></select>
+        <span class="input-note">State where your employer is based / where your office is</span>
+      </div>
+      <div class="panel-row">
+        <label for="residenceState">Your Home / Residence State</label>
+        <select id="residenceState"></select>
+        <span class="input-note">State where you actually live and pay residential taxes</span>
+      </div>
+      <div class="panel-row">
+        <label for="salary">Annual Gross Salary ($)</label>
+        <input type="number" id="salary" value="120000" min="1000" max="5000000" step="1000">
+      </div>
+    </div>
+    <div class="panel-grid-3" style="margin-top:.85rem">
+      <div class="panel-row">
+        <label for="wfhDays">WFH Days Per Year (0–260)</label>
+        <input type="number" id="wfhDays" value="130" min="0" max="260" step="5">
+        <span class="input-note">~260 workdays/yr. Days you work from home count as residence-state days.</span>
+      </div>
+      <div class="panel-row">
+        <label>Filing Status</label>
+        <div class="radio-group" style="margin-top:.45rem">
+          <label class="radio-label"><input type="radio" name="filing" value="single" checked> Single</label>
+          <label class="radio-label"><input type="radio" name="filing" value="mfj"> Married Filing Jointly</label>
+        </div>
+      </div>
+    </div>
+    <button class="run-btn" onclick="calculate()">Calculate My Tax Obligations →</button>
+  </div>
+
+  <!-- ===== RESULTS ===== -->
+  <div class="results-panel" id="results">
+
+    <div id="flagsWrap"></div>
+
+    <div class="panel">
+      <div class="results-title">Tax Obligation Summary</div>
+      <div class="stat-row" id="summaryStats"></div>
+      <div id="reciprocityBadge" style="margin-bottom:.75rem"></div>
+
+      <div class="divider"></div>
+
+      <div class="results-title" style="font-size:.9rem;margin-bottom:.5rem">Full Tax Breakdown</div>
+      <table class="compare-table" id="breakdownTable">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th id="thCurrent">Your Situation (Remote)</th>
+            <th id="thEmployer">If You Lived in Employer State</th>
+            <th id="thResidence">If Fully WFH (Residence-Only)</th>
+          </tr>
+        </thead>
+        <tbody id="breakdownBody"></tbody>
+      </table>
+    </div>
+
+    <div class="panel" id="scenarioPanel">
+      <div class="panel-title">Scenario Comparison — After-Tax Take-Home</div>
+      <div class="scenario-row" id="scenarioRow"></div>
+      <p style="font-size:.74rem;color:var(--muted);margin-top:.25rem">Scenario comparisons use the same federal and FICA assumptions, varying only state tax.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Tax Burden Visualization</div>
+      <div id="barViz"></div>
+    </div>
+
+    <div class="results-export-row">
+      <button class="btn" onclick="exportMarkdown()">
+        <span>📄 Export Markdown</span>
+        <span class="btn-subtitle">Copy to clipboard</span>
+      </button>
+      <button class="btn" onclick="exportAP2()">
+        <span>⚙️ Export AP2 JSON</span>
+        <span class="btn-subtitle">Downstream handoff</span>
+      </button>
+    </div>
+
+    <div class="mcp-toggle" id="ap2Wrap" style="display:none">
+      <button class="mcp-toggle-btn" onclick="toggleAP2()">
+        <span>AP2 JSON — remote_tax_record</span>
+        <span id="ap2Arrow">▼</span>
+      </button>
+      <div class="mcp-panel" id="ap2Panel">
+        <pre class="mcp-json" id="ap2Output"></pre>
+      </div>
+    </div>
+
+    <div class="mcp-toggle" id="mdWrap" style="display:none">
+      <button class="mcp-toggle-btn" onclick="toggleMD()">
+        <span>Markdown Export</span>
+        <span id="mdArrow">▼</span>
+      </button>
+      <div class="mcp-panel" id="mdPanel">
+        <pre class="mcp-json" id="mdOutput"></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer class="tool-footer">
+  Built by <a href="https://apexadvisory.site">Apex Advisors</a> · Sister suite: <a href="https://ainumbers.co">AINumbers.co</a> · CC BY 4.0 · AL-37 · Data as of State Revenue Dept. 2025-26, IRS 2025. Educational purposes only — not tax advice.
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STATE DATA ────────────────────────────────────────────────────────────
+const STATE_NAMES = {
+  AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",
+  CO:"Colorado",CT:"Connecticut",DE:"Delaware",FL:"Florida",GA:"Georgia",
+  HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",
+  KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",
+  MI:"Michigan",MN:"Minnesota",MS:"Mississippi",MO:"Missouri",MT:"Montana",
+  NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",NM:"New Mexico",
+  NY:"New York",NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",
+  OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",SC:"South Carolina",
+  SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",
+  VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming",
+  DC:"Washington D.C."
+};
+
+// Top marginal / flat rates (2025-26 approximate)
+const STATE_TAX = {
+  AL:5.0, AK:0.0, AZ:2.5, AR:4.4, CA:13.3, CO:4.4, CT:6.99, DE:6.6,
+  FL:0.0, GA:5.49, HI:11.0, ID:5.8, IL:4.95, IN:3.15, IA:5.7, KS:5.7,
+  KY:4.0, LA:4.25, ME:7.15, MD:5.75, MA:5.0, MI:4.25, MN:9.85, MS:4.7,
+  MO:4.8, MT:6.75, NE:6.64, NV:0.0, NH:0.0, NJ:10.75, NM:5.9, NY:10.9,
+  NC:4.75, ND:2.5, OH:3.99, OK:4.75, OR:9.9, PA:3.07, RI:5.99, SC:6.5,
+  SD:0.0, TN:0.0, TX:0.0, UT:4.65, VT:8.75, VA:5.75, WA:0.0, WV:6.5,
+  WI:7.65, WY:0.0, DC:10.75
+};
+
+// Reciprocity pairs: "RESIDENCE:EMPLOYER" → employee only pays residence state
+const RECIPROCITY = new Set([
+  "IL:IA","IA:IL","IL:WI","WI:IL","IL:KY","KY:IL","IL:MI","MI:IL",
+  "DC:MD","MD:DC","DC:VA","VA:DC","MD:VA","VA:MD","MD:PA","PA:MD",
+  "MD:WV","WV:MD","NJ:PA","PA:NJ","DE:PA","PA:DE",
+  "OH:KY","KY:OH","OH:MI","MI:OH","OH:WV","WV:OH","OH:IN","IN:OH",
+  "IN:KY","KY:IN","IN:MI","MI:IN","VA:KY","KY:VA","VA:WV","WV:VA",
+  "MN:ND","ND:MN","MN:WI","WI:MN","MT:ND","ND:MT"
+]);
+
+// 2025 Federal Income Tax Brackets
+const FED_BRACKETS = {
+  single: [
+    {limit:11925, rate:0.10},
+    {limit:48475, rate:0.12},
+    {limit:103350, rate:0.22},
+    {limit:197300, rate:0.24},
+    {limit:250525, rate:0.32},
+    {limit:626350, rate:0.35},
+    {limit:Infinity, rate:0.37}
+  ],
+  mfj: [
+    {limit:23850, rate:0.10},
+    {limit:96950, rate:0.12},
+    {limit:206700, rate:0.22},
+    {limit:394600, rate:0.24},
+    {limit:501050, rate:0.32},
+    {limit:751600, rate:0.35},
+    {limit:Infinity, rate:0.37}
+  ]
+};
+
+const FICA_SS_WAGE_BASE = 176100;
+const FICA_SS_RATE = 0.062;
+const FICA_MEDICARE_RATE = 0.0145;
+const FICA_ADDITIONAL_MEDICARE = 0.009; // above $200k single / $250k MFJ
+const WORK_DAYS = 260;
+
+// ─── POPULATE SELECTS ───────────────────────────────────────────────────────
+function populateSelects() {
+  const states = Object.keys(STATE_NAMES).sort((a,b) => STATE_NAMES[a].localeCompare(STATE_NAMES[b]));
+  ['employerState','residenceState'].forEach((id, idx) => {
+    const sel = document.getElementById(id);
+    states.forEach(code => {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = `${STATE_NAMES[code]} (${code})`;
+      if (idx === 0 && code === 'NY') opt.selected = true;
+      if (idx === 1 && code === 'NJ') opt.selected = true;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+// ─── FEDERAL TAX ────────────────────────────────────────────────────────────
+function calcFederal(income, filing) {
+  const brackets = FED_BRACKETS[filing];
+  // Standard deduction 2025
+  const stdDed = filing === 'mfj' ? 30000 : 15000;
+  const taxable = Math.max(0, income - stdDed);
+  let tax = 0;
+  let prev = 0;
+  for (const b of brackets) {
+    if (taxable <= prev) break;
+    const slice = Math.min(taxable, b.limit) - prev;
+    tax += slice * b.rate;
+    prev = b.limit;
+  }
+  return tax;
+}
+
+// ─── FICA ───────────────────────────────────────────────────────────────────
+function calcFICA(income, filing) {
+  const ss = Math.min(income, FICA_SS_WAGE_BASE) * FICA_SS_RATE;
+  const med = income * FICA_MEDICARE_RATE;
+  const additionalThreshold = filing === 'mfj' ? 250000 : 200000;
+  const addMed = Math.max(0, income - additionalThreshold) * FICA_ADDITIONAL_MEDICARE;
+  return ss + med + addMed;
+}
+
+// ─── STATE TAX (apportioned) ─────────────────────────────────────────────────
+function calcStateTax(income, stateCode, fractionOfYear) {
+  if (!stateCode || !STATE_TAX[stateCode]) return 0;
+  const rate = STATE_TAX[stateCode] / 100;
+  return income * fractionOfYear * rate;
+}
+
+// ─── MAIN CALCULATE ──────────────────────────────────────────────────────────
+function calculate() {
+  const empState = document.getElementById('employerState').value;
+  const resState = document.getElementById('residenceState').value;
+  const salary = parseFloat(document.getElementById('salary').value) || 0;
+  const wfhDays = Math.min(WORK_DAYS, Math.max(0, parseInt(document.getElementById('wfhDays').value) || 0));
+  const filing = document.querySelector('input[name="filing"]:checked').value;
+
+  if (!salary || salary < 1000) { showToast('Please enter a valid salary.', 'error'); return; }
+
+  const empDays = WORK_DAYS - wfhDays;   // days physically in employer state
+  const resDays = wfhDays;               // days working from home (residence state)
+  const empFrac = empDays / WORK_DAYS;
+  const resFrac = resDays / WORK_DAYS;
+
+  const sameState = empState === resState;
+  const pairKey = `${resState}:${empState}`;
+  const hasReciprocity = RECIPROCITY.has(pairKey);
+
+  // Special doctrine flags
+  const nyConvenienceFlag = empState === 'NY' && resState !== 'NY';
+  const paConvenienceFlag = empState === 'PA' && resState !== 'PA';
+  const deNonResFlag = empState === 'DE' && resState !== 'DE';
+
+  let empStateTax, resStateTax, netStateTax;
+
+  if (sameState) {
+    // Simple: one state
+    empStateTax = salary * (STATE_TAX[empState] / 100);
+    resStateTax = 0;
+    netStateTax = empStateTax;
+  } else if (hasReciprocity) {
+    // Only pay residence state tax
+    empStateTax = 0;
+    resStateTax = salary * (STATE_TAX[resState] / 100);
+    netStateTax = resStateTax;
+  } else {
+    // No reciprocity: apportion
+    empStateTax = calcStateTax(salary, empState, empFrac);
+    resStateTax = calcStateTax(salary, resState, resFrac);
+
+    // Most states provide credit for taxes paid to other state (avoid double tax)
+    // Net = max of the two (conservative estimate — actual credit varies)
+    netStateTax = Math.max(empStateTax, resStateTax);
+
+    // NY convenience: if employer is NY and no required WFH, ALL days may be NY taxable
+    if (nyConvenienceFlag) {
+      // Conservative: treat as if all days NY-taxable (worst case)
+      empStateTax = salary * (STATE_TAX['NY'] / 100);
+      resStateTax = salary * (resFrac * STATE_TAX[resState] / 100);
+      netStateTax = empStateTax + resStateTax * 0.5; // partial double-tax risk
+    }
+  }
+
+  const fedTax = calcFederal(salary, filing);
+  const ficaTax = calcFICA(salary, filing);
+  const totalTax = fedTax + ficaTax + netStateTax;
+  const takeHome = salary - totalTax;
+  const effectiveRate = (totalTax / salary) * 100;
+  const effectiveStateRate = (netStateTax / salary) * 100;
+
+  // Scenario: if moved to employer state
+  const empFullTax = salary * (STATE_TAX[empState] / 100);
+  const empTakeHome = salary - fedTax - ficaTax - empFullTax;
+
+  // Scenario: fully WFH (residence only)
+  const resFullTax = salary * (STATE_TAX[resState] / 100);
+  const resTakeHome = salary - fedTax - ficaTax - resFullTax;
+
+  // ─── RENDER ────────────────────────────────────────────────────────────────
+
+  // Flags
+  renderFlags({ nyConvenienceFlag, paConvenienceFlag, deNonResFlag, sameState, hasReciprocity, empState, resState, wfhDays, empDays, resDays });
+
+  // Summary stats
+  const summaryEl = document.getElementById('summaryStats');
+  summaryEl.innerHTML = '';
+  const stats = [
+    { label: 'Annual Gross Salary', value: fmt(salary), note: null, cls: '' },
+    { label: 'Net State Tax (Combined)', value: fmt(netStateTax), note: `${effectiveStateRate.toFixed(2)}% effective`, cls: netStateTax < 1 ? 'green' : '' },
+    { label: 'Federal Income Tax', value: fmt(fedTax), note: `Based on 2025 ${filing.toUpperCase()} brackets`, cls: '' },
+    { label: 'FICA (Employee)', value: fmt(ficaTax), note: 'SS + Medicare', cls: '' },
+    { label: 'Total Tax Burden', value: fmt(totalTax), note: `${effectiveRate.toFixed(1)}% effective rate`, cls: 'coral' },
+    { label: 'After-Tax Take-Home', value: fmt(takeHome), note: 'Annual net pay', cls: 'accent' },
+  ];
+  stats.forEach(s => {
+    summaryEl.innerHTML += `<div class="stat-box ${s.cls}">
+      <div class="stat-label">${s.label}</div>
+      <div class="stat-value">${s.value}</div>
+      ${s.note ? `<div class="stat-note">${s.note}</div>` : ''}
+    </div>`;
+  });
+
+  // Reciprocity badge
+  const recBadge = document.getElementById('reciprocityBadge');
+  if (sameState) {
+    recBadge.innerHTML = `<span class="badge green">✓ Same State — Single Jurisdiction</span>`;
+  } else if (hasReciprocity) {
+    recBadge.innerHTML = `<span class="badge green">✓ Reciprocity Agreement Active — ${STATE_NAMES[resState]} &amp; ${STATE_NAMES[empState]}</span>`;
+  } else {
+    recBadge.innerHTML = `<span class="badge coral">✗ No Reciprocity — Multi-State Apportionment Required</span>`;
+  }
+
+  // Breakdown table
+  const thCurrent = document.getElementById('thCurrent');
+  const thEmployer = document.getElementById('thEmployer');
+  const thResidence = document.getElementById('thResidence');
+  thCurrent.textContent = `Current Remote (${resState} → ${empState})`;
+  thEmployer.textContent = `Move to ${empState}`;
+  thResidence.textContent = `100% WFH in ${resState}`;
+
+  const body = document.getElementById('breakdownBody');
+  const rows = [
+    ['Gross Salary', salary, salary, salary],
+    [`${sameState ? empState : empState} State Tax`, netStateTax, empFullTax, 0],
+    [sameState ? '' : `${resState} State Tax (Residence)`, sameState ? '—' : (hasReciprocity ? resFullTax : resStateTax), sameState ? '—' : 0, resFullTax],
+    ['Federal Income Tax', fedTax, fedTax, fedTax],
+    ['FICA', ficaTax, ficaTax, ficaTax],
+    ['Total Tax', totalTax, fedTax + ficaTax + empFullTax, fedTax + ficaTax + resFullTax],
+    ['After-Tax Take-Home', takeHome, empTakeHome, resTakeHome],
+  ];
+
+  body.innerHTML = rows.map((row, i) => {
+    const isTotal = i === rows.length - 2;
+    const isTakeHome = i === rows.length - 1;
+    const cls = (isTotal || isTakeHome) ? 'total-row' : '';
+    const cells = row.slice(1).map((v, ci) => {
+      const highlight = ci === 0 ? 'highlight-col' : '';
+      const val = v === '—' ? '—' : (typeof v === 'number' ? fmt(v) : v);
+      return `<td class="${highlight}">${val}</td>`;
+    }).join('');
+    return `<tr class="${cls}"><td class="row-label">${row[0]}</td>${cells}</tr>`;
+  }).join('');
+
+  // Scenario cards
+  const scenarios = [
+    { name: `Current Remote (${resState}→${empState})`, value: takeHome, sub: `${effectiveRate.toFixed(1)}% effective total rate` },
+    { name: `Move to Employer State (${empState})`, value: empTakeHome, sub: `${(((fedTax+ficaTax+empFullTax)/salary)*100).toFixed(1)}% effective total rate` },
+    { name: `100% WFH in ${resState}`, value: resTakeHome, sub: `${(((fedTax+ficaTax+resFullTax)/salary)*100).toFixed(1)}% effective total rate` },
+  ];
+  const maxTH = Math.max(...scenarios.map(s=>s.value));
+  const minTH = Math.min(...scenarios.map(s=>s.value));
+  const scenRow = document.getElementById('scenarioRow');
+  scenRow.innerHTML = scenarios.map(s => {
+    const cls = s.value === maxTH ? 'winner' : (s.value === minTH ? 'loser' : '');
+    const tag = s.value === maxTH ? ' 🏆 Best' : (s.value === minTH ? ' ⚠ Lowest' : '');
+    return `<div class="scenario-card ${cls}">
+      <div class="scenario-name">${s.name}${tag}</div>
+      <div class="scenario-value">${fmt(s.value)}/yr</div>
+      <div class="scenario-sub">${s.sub}</div>
+    </div>`;
+  }).join('');
+
+  // Bar viz
+  const barWrap = document.getElementById('barViz');
+  const items = [
+    { label: 'Federal Tax', value: fedTax, color: 'var(--lavender)' },
+    { label: 'FICA', value: ficaTax, color: 'var(--teal)' },
+    { label: 'State Tax', value: netStateTax, color: 'var(--amber)' },
+    { label: 'Take-Home', value: takeHome, color: 'var(--green)' },
+  ];
+  barWrap.innerHTML = items.map(item => {
+    const pct = Math.max(0, Math.min(100, (item.value / salary) * 100));
+    return `<div style="margin-bottom:.65rem">
+      <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--body);margin-bottom:.25rem">
+        <span>${item.label}</span>
+        <span style="font-family:'JetBrains Mono',monospace">${fmt(item.value)} (${pct.toFixed(1)}%)</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${item.color}"></div></div>
+    </div>`;
+  }).join('');
+
+  // Store for export
+  window._lastCalc = { empState, resState, salary, wfhDays, filing, empDays, resDays, empStateTax, resStateTax, netStateTax, fedTax, ficaTax, totalTax, takeHome, effectiveRate, effectiveStateRate, hasReciprocity, sameState, nyConvenienceFlag, paConvenienceFlag, deNonResFlag, scenarios, empFullTax, empTakeHome, resFullTax, resTakeHome };
+
+  document.getElementById('results').classList.add('visible');
+  document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+// ─── FLAGS ────────────────────────────────────────────────────────────────
+function renderFlags({ nyConvenienceFlag, paConvenienceFlag, deNonResFlag, sameState, hasReciprocity, empState, resState, wfhDays, empDays, resDays }) {
+  const wrap = document.getElementById('flagsWrap');
+  wrap.innerHTML = '';
+
+  if (sameState) {
+    wrap.innerHTML += flag('green', '✓ Same State — Simple Calculation',
+      `Your employer and residence are both in <strong>${STATE_NAMES[empState]}</strong>. You only owe tax to one state. No multi-state complications.`);
+    return;
+  }
+
+  if (hasReciprocity) {
+    wrap.innerHTML += flag('teal', `✓ Reciprocity Agreement: ${STATE_NAMES[resState]} ↔ ${STATE_NAMES[empState]}`,
+      `These two states have a reciprocity agreement. You file and pay income tax <strong>only in your residence state (${STATE_NAMES[resState]})</strong>. Submit a withholding exemption certificate to your employer (e.g., WH-4, Form REV-419, or equivalent) so they withhold ${STATE_NAMES[resState]} tax, not ${STATE_NAMES[empState]} tax.`);
+  }
+
+  if (nyConvenienceFlag) {
+    wrap.innerHTML += flag('coral', '⚠ NEW YORK "CONVENIENCE OF THE EMPLOYER" DOCTRINE — HIGH RISK',
+      `<strong>This is a significant nexus flag.</strong> New York taxes remote workers on ALL days of income — including WFH days — unless your employer <em>required</em> you to work outside New York for the employer's convenience (not your own convenience). If your employer simply allows WFH but does not require it, New York may treat all ${WORK_DAYS} workdays as NY-taxable. This can result in <strong>double taxation</strong> if your residence state also taxes your WFH income. Work with a tax professional before filing. NY has actively audited remote workers on this doctrine.`);
+  }
+
+  if (paConvenienceFlag) {
+    wrap.innerHTML += flag('amber', '⚠ Pennsylvania Convenience Rule — Moderate Risk',
+      `Pennsylvania has a similar (but weaker) "convenience of the employer" rule. If your employer is in PA and you work remotely, PA may assert tax on your WFH days unless the remote work is required by the employer. Review your employer's documentation. The PA rule is less aggressively enforced than NY's but remains a potential liability.`);
+  }
+
+  if (deNonResFlag) {
+    wrap.innerHTML += flag('amber', `⚠ Delaware Taxes Non-Residents on DE-Source Income`,
+      `Delaware taxes non-residents on income earned from Delaware sources. If your employer is in Delaware and you work there (even part-time), Delaware may assert tax on those days. File a DE non-resident return for DE-source income. The days you work from home in <strong>${STATE_NAMES[resState]}</strong> generally do not create DE liability.`);
+  }
+
+  if (!hasReciprocity && !nyConvenienceFlag) {
+    const empTaxRate = STATE_TAX[empState];
+    const resTaxRate = STATE_TAX[resState];
+    if (empTaxRate === 0 && resTaxRate === 0) {
+      wrap.innerHTML += flag('green', '✓ Both States Have No Income Tax — Maximum Take-Home',
+        `Neither ${STATE_NAMES[empState]} nor ${STATE_NAMES[resState]} levies a state income tax. Your state tax obligation is $0. You keep more of every dollar.`);
+    } else if (empTaxRate === 0) {
+      wrap.innerHTML += flag('green', `✓ ${STATE_NAMES[empState]} Has No Income Tax`,
+        `Your employer state has no income tax. Your ${empDays} days physically in ${STATE_NAMES[empState]} create no state income tax liability there. You only owe ${STATE_NAMES[resState]} tax on your ${resDays} WFH days.`);
+    } else if (resTaxRate === 0) {
+      wrap.innerHTML += flag('green', `✓ ${STATE_NAMES[resState]} Has No Income Tax`,
+        `Your residence state has no income tax. Your ${resDays} WFH days in ${STATE_NAMES[resState]} create no state income tax liability there. You only owe ${STATE_NAMES[empState]} tax on your ${empDays} office days.`);
+    } else {
+      wrap.innerHTML += flag('amber', `📋 Multi-State Apportionment — No Reciprocity`,
+        `${STATE_NAMES[resState]} and ${STATE_NAMES[empState]} have no reciprocity agreement. You may need to file <strong>two state returns</strong>: a non-resident return in ${STATE_NAMES[empState]} for your ${empDays} office days (${((empDays/WORK_DAYS)*100).toFixed(0)}% of income), and a resident return in ${STATE_NAMES[resState]}. Most states give a credit for taxes paid to other states to avoid double taxation, but the credit mechanism varies. Apportionment is based on the day-count method in most states.`);
+    }
+  }
+
+  if (wfhDays === 0) {
+    wrap.innerHTML += flag('lavender', '📍 0 WFH Days — Full Physical Presence in Employer State',
+      `You reported zero WFH days, meaning all income is earned in ${STATE_NAMES[empState]}. Your residence state may still assert tax on your worldwide income as a resident, potentially offset by credit for taxes paid to ${STATE_NAMES[empState]}.`);
+  } else if (wfhDays === WORK_DAYS) {
+    wrap.innerHTML += flag('teal', '🏠 100% Remote — All Days in Residence State',
+      `You reported working all ${WORK_DAYS} days from home. If your employer is in ${STATE_NAMES[empState]} but you never physically work there, ${STATE_NAMES[empState]} generally cannot assert income tax on your wages (with exceptions for NY and PA convenience rules). Confirm no physical presence in ${STATE_NAMES[empState]}.`);
+  }
+}
+
+function flag(type, title, body) {
+  return `<div class="flag-box ${type}">
+    <div class="flag-title">${title}</div>
+    <div class="flag-body">${body}</div>
+  </div>`;
+}
+
+// ─── FORMAT ──────────────────────────────────────────────────────────────────
+function fmt(n) {
+  return '$' + Math.round(n).toLocaleString('en-US');
+}
+
+// ─── EXPORTS ─────────────────────────────────────────────────────────────────
+function exportMarkdown() {
+  const d = window._lastCalc;
+  if (!d) return;
+  const lines = [
+    `# Remote Work Multi-State Tax Analysis`,
+    `**Tool:** AL-37 · Remote Work Multi-State Tax Mapper`,
+    `**Generated:** ${new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'})}`,
+    ``,
+    `## Inputs`,
+    `| Field | Value |`,
+    `|---|---|`,
+    `| Employer State | ${STATE_NAMES[d.empState]} (${d.empState}) |`,
+    `| Residence State | ${STATE_NAMES[d.resState]} (${d.resState}) |`,
+    `| Annual Salary | ${fmt(d.salary)} |`,
+    `| WFH Days/Year | ${d.wfhDays} of ${WORK_DAYS} (${((d.wfhDays/WORK_DAYS)*100).toFixed(0)}%) |`,
+    `| Filing Status | ${d.filing === 'mfj' ? 'Married Filing Jointly' : 'Single'} |`,
+    ``,
+    `## Reciprocity Status`,
+    d.sameState ? `✓ Same state — single jurisdiction.` :
+    d.hasReciprocity ? `✓ Reciprocity agreement exists. File only in ${STATE_NAMES[d.resState]}.` :
+    `✗ No reciprocity. Multi-state apportionment required.`,
+    ``,
+    `## Tax Breakdown`,
+    `| Item | Amount |`,
+    `|---|---|`,
+    `| Net State Tax | ${fmt(d.netStateTax)} (${d.effectiveStateRate.toFixed(2)}%) |`,
+    `| Federal Income Tax | ${fmt(d.fedTax)} |`,
+    `| FICA | ${fmt(d.ficaTax)} |`,
+    `| **Total Tax Burden** | **${fmt(d.totalTax)}** (${d.effectiveRate.toFixed(1)}% effective) |`,
+    `| **After-Tax Take-Home** | **${fmt(d.takeHome)}/yr** |`,
+    ``,
+    `## Scenario Comparison`,
+    `| Scenario | After-Tax Take-Home |`,
+    `|---|---|`,
+    ...d.scenarios.map(s => `| ${s.name} | ${fmt(s.value)} |`),
+    ``,
+    `## Nexus Flags`,
+    d.nyConvenienceFlag ? `⚠️ **NY Convenience of Employer Doctrine applies.** NY may tax ALL days including WFH.` : '',
+    d.paConvenienceFlag ? `⚠️ **PA Convenience Rule may apply.** Review employer documentation.` : '',
+    d.deNonResFlag ? `⚠️ **Delaware non-resident sourcing** — DE taxes DE-source income for non-residents.` : '',
+    ``,
+    `---`,
+    `*Educational purposes only. Not tax advice. Consult a CPA or tax attorney.*`,
+    `*Built by Apex Advisors · AL-37 · Data as of State Revenue Dept. 2025-26, IRS 2025*`
+  ].filter(l => l !== null).join('\n');
+
+  const mdEl = document.getElementById('mdOutput');
+  mdEl.textContent = lines;
+  document.getElementById('mdWrap').style.display = '';
+  document.getElementById('mdPanel').classList.add('open');
+  document.getElementById('mdArrow').textContent = '▲';
+
+  copyToClipboard(lines, 'Markdown copied to clipboard');
+}
+
+function exportAP2() {
+  const d = window._lastCalc;
+  if (!d) return;
+  const ap2 = {
+    ap2_version: "2.0",
+    tool_id: "AL-37",
+    tool_name: "Remote Work Multi-State Tax Mapper",
+    display_number: 32,
+    category: "compensation_offers",
+    mandate_type: "remote_tax_record",
+    generated_at: new Date().toISOString(),
+    downstream_handoff_candidates: ["AL-04"],
+    inputs: {
+      employer_state: d.empState,
+      employer_state_name: STATE_NAMES[d.empState],
+      residence_state: d.resState,
+      residence_state_name: STATE_NAMES[d.resState],
+      annual_salary: d.salary,
+      wfh_days: d.wfhDays,
+      office_days: d.empDays,
+      filing_status: d.filing
+    },
+    state_analysis: {
+      same_state: d.sameState,
+      reciprocity_applies: d.hasReciprocity,
+      reciprocity_pair: d.hasReciprocity ? `${d.resState}:${d.empState}` : null,
+      employer_state_rate_pct: STATE_TAX[d.empState],
+      residence_state_rate_pct: STATE_TAX[d.resState]
+    },
+    nexus_flags: {
+      ny_convenience_doctrine: d.nyConvenienceFlag,
+      pa_convenience_rule: d.paConvenienceFlag,
+      delaware_nonresident_sourcing: d.deNonResFlag
+    },
+    tax_results: {
+      net_state_tax: Math.round(d.netStateTax),
+      employer_state_tax_apportioned: Math.round(d.empStateTax),
+      residence_state_tax_apportioned: Math.round(d.resStateTax),
+      federal_income_tax: Math.round(d.fedTax),
+      fica: Math.round(d.ficaTax),
+      total_tax_burden: Math.round(d.totalTax),
+      effective_total_rate_pct: parseFloat(d.effectiveRate.toFixed(2)),
+      effective_state_rate_pct: parseFloat(d.effectiveStateRate.toFixed(2)),
+      after_tax_take_home: Math.round(d.takeHome)
+    },
+    scenarios: d.scenarios.map(s => ({
+      name: s.name,
+      after_tax_take_home: Math.round(s.value)
+    })),
+    disclaimer: "Educational purposes only. Not tax advice. Consult a CPA or tax attorney for your specific situation."
+  };
+
+  const json = JSON.stringify(ap2, null, 2);
+  const ap2El = document.getElementById('ap2Output');
+  ap2El.textContent = json;
+  document.getElementById('ap2Wrap').style.display = '';
+  document.getElementById('ap2Panel').classList.add('open');
+  document.getElementById('ap2Arrow').textContent = '▲';
+
+  copyToClipboard(json, 'AP2 JSON copied to clipboard');
+}
+
+function toggleAP2() {
+  const panel = document.getElementById('ap2Panel');
+  const arrow = document.getElementById('ap2Arrow');
+  const open = panel.classList.toggle('open');
+  arrow.textContent = open ? '▲' : '▼';
+}
+
+function toggleMD() {
+  const panel = document.getElementById('mdPanel');
+  const arrow = document.getElementById('mdArrow');
+  const open = panel.classList.toggle('open');
+  arrow.textContent = open ? '▲' : '▼';
+}
+
+function copyToClipboard(text, message) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => showToast(message, 'success'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast(message, 'success');
+  }
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  setTimeout(() => t.className = 'toast', 2800);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+populateSelects();
+</script>
+</body>
+</html>

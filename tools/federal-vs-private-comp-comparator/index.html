@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Federal vs. Private Sector Total Comp Comparator — Apex Logics AL-35</title>
+<meta name="description" content="Side-by-side federal GS vs. private sector total compensation analysis. Includes FERS pension NPV, TSP match, FEHB value, locality pay, leave value. Free, browser-only, zero PII. AP2-compliant.">
+<link rel="canonical" href="https://apexlogics.org/tools/federal-vs-private-comp-comparator/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════ DESIGN TOKENS ════════════════════════ */
+:root {
+  --bg:#070B14; --bg-2:#0C1220; --bg-3:#111A2E; --bg-4:#162238;
+  --border:#1C2D48; --border-2:#253754;
+  --muted:#3E5675; --body:#6A8BAE; --text:#A8C4DE; --bright:#D4E8F8; --white:#EEF6FD;
+  --amber:#E8A838; --amber-lt:#F0BD5E; --amber-dim:rgba(232,168,56,.10);
+  --teal:#14B8A6; --teal-dim:rgba(20,184,166,.10); --teal-lt:#2DD4BF;
+  --coral:#F07167; --coral-lt:#F5928B; --coral-dim:rgba(240,113,103,.10);
+  --lavender:#A78BFA; --lavender-dim:rgba(167,139,250,.10);
+  --green:#34D399; --green-dim:rgba(52,211,153,.10);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,.10);
+  --accent:var(--amber); --accent-lt:var(--amber-lt); --accent-dim:var(--amber-dim);
+  --radius:6px; --radius-lg:10px; --shadow:0 4px 24px rgba(0,0,0,.45);
+}
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html { font-size:16px; scroll-behavior:smooth; }
+body { background:var(--bg); color:var(--text); font-family:'Sora',sans-serif; font-weight:400; line-height:1.6; min-height:100vh; }
+a { color:var(--amber-lt); text-decoration:none; }
+a:hover { text-decoration:underline; }
+
+/* ════════════════════════ NAV ════════════════════════ */
+nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(7,11,20,.92); backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.nav-inner {
+  max-width:960px; margin:0 auto;
+  display:flex; align-items:center; gap:12px;
+  padding:0 20px; height:56px;
+}
+.logo { display:flex; align-items:center; gap:10px; flex-shrink:0; text-decoration:none; }
+.logo-mark { width:30px; height:30px; flex-shrink:0; }
+.logo-mark svg { width:100%; height:100%; }
+.logo-text { display:flex; flex-direction:column; gap:2px; }
+.logo-name { font-family:'JetBrains Mono',monospace; font-size:.9rem; font-weight:500; color:var(--bright); letter-spacing:-.02em; line-height:1; }
+.logo-apex { color:var(--amber); }
+.logo-tag { font-size:.48rem; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-family:'JetBrains Mono',monospace; line-height:1; }
+.nav-right { display:flex; align-items:center; gap:6px; margin-left:auto; flex-shrink:0; flex-wrap:wrap; }
+.nav-pill {
+  background:none; border:1px solid var(--border); border-radius:var(--radius);
+  color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.58rem;
+  letter-spacing:.06em; padding:4px 10px; cursor:pointer; transition:all .2s;
+  text-decoration:none; display:inline-flex; align-items:center;
+}
+.nav-pill:hover { border-color:var(--amber); color:var(--amber-lt); text-decoration:none; }
+.nav-pill.amber { border-color:rgba(232,168,56,.35); color:var(--amber); }
+.nav-pill.amber:hover { border-color:var(--amber); background:var(--amber-dim); }
+@media(max-width:600px){ .logo-tag { display:none; } }
+
+/* ════════════════════════ LAYOUT ════════════════════════ */
+.container { max-width:960px; margin:0 auto; padding:0 20px 80px; }
+
+/* ════════════════════════ TOOL HEADER ════════════════════════ */
+.tool-header { padding:36px 0 20px; }
+.tool-eyebrow {
+  font-family:'JetBrains Mono',monospace; font-size:.55rem;
+  letter-spacing:.18em; text-transform:uppercase; color:var(--amber);
+  margin-bottom:8px;
+}
+.tool-title { font-family:'DM Serif Display',serif; font-size:clamp(1.8rem,4vw,2.6rem); color:var(--white); line-height:1.15; margin-bottom:10px; }
+.tool-subtitle { font-size:.9rem; color:var(--body); max-width:680px; line-height:1.65; }
+.vintage-badge {
+  display:inline-flex; align-items:center; gap:8px;
+  background:var(--amber-dim); border:1px solid rgba(232,168,56,.3);
+  color:var(--amber-lt); padding:.4rem .8rem; border-radius:var(--radius);
+  font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.04em;
+  margin-top:14px;
+}
+.vintage-dot { width:6px; height:6px; border-radius:50%; background:var(--amber); }
+
+/* ════════════════════════ PII BANNER ════════════════════════ */
+.pii-banner {
+  background:rgba(52,211,153,.06); border:1px solid rgba(52,211,153,.2);
+  border-radius:var(--radius); padding:12px 16px; margin:16px 0;
+  font-size:.78rem; color:var(--teal-lt); display:flex; gap:10px; align-items:flex-start;
+}
+.pii-banner-icon { flex-shrink:0; font-size:1rem; margin-top:.1rem; }
+
+/* ════════════════════════ LEGAL NOTICE ════════════════════════ */
+.legal-notice {
+  background:rgba(232,168,56,.06); border:1px solid rgba(232,168,56,.25);
+  border-left:3px solid var(--amber); border-radius:var(--radius);
+  padding:14px 16px; margin:18px 0;
+}
+.legal-notice-title {
+  font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--amber); margin-bottom:6px;
+}
+.legal-notice p { font-size:.78rem; color:var(--text); line-height:1.65; }
+.legal-notice .cite { font-family:'JetBrains Mono',monospace; font-size:.65rem; color:var(--muted); margin-top:6px; display:block; }
+
+/* ════════════════════════ TABS ════════════════════════ */
+.tab-bar { display:flex; gap:4px; border-bottom:2px solid var(--border); margin-bottom:24px; }
+.tab-btn {
+  background:none; border:none; padding:10px 18px; cursor:pointer;
+  font-family:'Sora',sans-serif; font-size:.82rem; color:var(--muted);
+  border-bottom:2px solid transparent; margin-bottom:-2px; transition:color .2s, border-color .2s;
+}
+.tab-btn:hover { color:var(--text); }
+.tab-btn.active { color:var(--amber-lt); border-bottom-color:var(--amber); }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+
+/* ════════════════════════ SECTION LABELS ════════════════════════ */
+.section-label {
+  font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted); margin:24px 0 12px;
+  border-bottom:1px solid var(--border); padding-bottom:6px;
+}
+
+/* ════════════════════════ INPUTS ════════════════════════ */
+.input-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 20px; }
+.input-grid.triple { grid-template-columns:1fr 1fr 1fr; }
+.input-group { display:flex; flex-direction:column; gap:5px; }
+.input-group.span2 { grid-column:span 2; }
+label { font-size:.75rem; color:var(--body); }
+input[type="number"], input[type="text"], select {
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius); color:var(--white); font-family:'Sora',sans-serif;
+  font-size:.85rem; padding:9px 12px; outline:none; width:100%;
+  transition:border-color .2s;
+}
+input[type="number"]:focus, input[type="text"]:focus, select:focus { border-color:var(--amber); }
+select option { background:var(--bg-3); }
+.input-hint { font-size:.68rem; color:var(--muted); margin-top:2px; }
+
+/* Coverage pills */
+.pill-row { display:flex; gap:8px; }
+.cov-pill {
+  flex:1; padding:9px 6px; text-align:center; cursor:pointer;
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius); color:var(--body); font-size:.78rem;
+  transition:all .2s; user-select:none;
+}
+.cov-pill:hover { border-color:var(--amber); color:var(--text); }
+.cov-pill.active { border-color:var(--amber); color:var(--amber-lt); background:var(--amber-dim); }
+
+/* ════════════════════════ RUN BUTTON ════════════════════════ */
+.run-row { margin-top:28px; }
+.run-btn {
+  width:100%; padding:14px 24px;
+  background:var(--amber); color:var(--bg); border:none;
+  border-radius:var(--radius);
+  font-family:'Sora',sans-serif; font-size:.9rem; font-weight:600;
+  cursor:pointer; letter-spacing:.02em; transition:background .2s, transform .1s;
+}
+.run-btn:hover { background:var(--amber-lt); }
+.run-btn:active { transform:scale(.99); }
+
+/* ════════════════════════ RESULTS SECTION ════════════════════════ */
+#results { display:none; margin-top:40px; }
+#results.show { display:block; }
+
+/* ════════════════════════ HEADLINE METRIC ════════════════════════ */
+.headline-card {
+  background:var(--bg-3); border:1px solid var(--border-2);
+  border-radius:var(--radius-lg); padding:28px 28px 24px;
+  margin-bottom:24px;
+}
+.headline-label {
+  font-family:'JetBrains Mono',monospace; font-size:.58rem; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--amber); margin-bottom:14px;
+}
+.headline-row { display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
+.headline-col { flex:1; min-width:160px; }
+.headline-col-label { font-size:.72rem; color:var(--body); margin-bottom:4px; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; }
+.headline-val { font-family:'DM Serif Display',serif; font-size:clamp(1.6rem,3.5vw,2.2rem); line-height:1.1; }
+.headline-val.federal { color:var(--teal-lt); }
+.headline-val.private { color:var(--lavender); }
+.headline-val.gap-pos { color:var(--green); }
+.headline-val.gap-neg { color:var(--coral-lt); }
+.headline-divider { width:1px; background:var(--border); flex-shrink:0; align-self:stretch; margin:4px 0; }
+@media(max-width:600px){ .headline-divider { display:none; } }
+
+/* ════════════════════════ INSIGHT BAR ════════════════════════ */
+.insight-bar {
+  background:var(--amber-dim); border:1px solid rgba(232,168,56,.25);
+  border-left:3px solid var(--amber); border-radius:var(--radius);
+  padding:14px 18px; margin-bottom:24px;
+  font-size:.82rem; color:var(--text); line-height:1.65;
+}
+.insight-bar strong { color:var(--amber-lt); }
+
+/* ════════════════════════ PENSION CALLOUT ════════════════════════ */
+.pension-callout {
+  background:var(--teal-dim); border:1px solid rgba(20,184,166,.25);
+  border-radius:var(--radius-lg); padding:20px 22px; margin-bottom:24px;
+}
+.pension-callout-title {
+  font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--teal-lt); margin-bottom:10px;
+}
+.pension-val { font-family:'DM Serif Display',serif; font-size:1.9rem; color:var(--teal-lt); line-height:1.1; margin-bottom:6px; }
+.pension-sub { font-size:.78rem; color:var(--body); }
+
+/* ════════════════════════ COMPARISON TABLE ════════════════════════ */
+.comp-table-wrap { overflow-x:auto; margin-bottom:28px; }
+table.comp-table {
+  width:100%; border-collapse:collapse; font-size:.82rem;
+}
+.comp-table th {
+  font-family:'JetBrains Mono',monospace; font-size:.58rem; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muted);
+  padding:10px 14px; text-align:left; border-bottom:2px solid var(--border);
+}
+.comp-table th.right { text-align:right; }
+.comp-table td { padding:10px 14px; border-bottom:1px solid var(--border); vertical-align:top; }
+.comp-table td.right { text-align:right; font-family:'JetBrains Mono',monospace; }
+.comp-table tr:last-child td { border-bottom:none; }
+.comp-table tr:hover td { background:rgba(255,255,255,.02); }
+.comp-table .row-label { color:var(--text); }
+.comp-table .row-sub { font-size:.68rem; color:var(--muted); margin-top:2px; }
+.comp-table .val-fed { color:var(--teal-lt); font-family:'JetBrains Mono',monospace; }
+.comp-table .val-priv { color:var(--lavender); font-family:'JetBrains Mono',monospace; }
+.comp-table .val-delta.pos { color:var(--green); font-family:'JetBrains Mono',monospace; }
+.comp-table .val-delta.neg { color:var(--coral-lt); font-family:'JetBrains Mono',monospace; }
+.comp-table .row-total td { background:var(--bg-3); border-top:2px solid var(--border-2); font-weight:600; }
+.comp-table .row-total .row-label { color:var(--bright); font-size:.85rem; }
+.comp-table .row-total .val-fed,
+.comp-table .row-total .val-priv { font-size:.95rem; }
+
+/* ════════════════════════ EXPORT ROW ════════════════════════ */
+.export-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:28px; }
+.export-btn {
+  flex:1; min-width:160px; padding:11px 16px;
+  background:var(--bg-3); border:1px solid var(--border-2);
+  border-radius:var(--radius); color:var(--text);
+  font-family:'Sora',sans-serif; font-size:.78rem; cursor:pointer;
+  transition:background .2s, border-color .2s;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.export-btn:hover { background:var(--bg-4); border-color:var(--amber); color:var(--amber-lt); }
+.export-icon { font-size:.9rem; }
+
+/* ════════════════════════ FOOTER ════════════════════════ */
+.tool-footer {
+  border-top:1px solid var(--border); margin-top:60px; padding:22px 0 10px;
+  font-size:.7rem; color:var(--muted); line-height:1.8;
+  font-family:'JetBrains Mono',monospace; letter-spacing:.02em;
+}
+.tool-footer a { color:var(--muted); }
+.tool-footer a:hover { color:var(--amber-lt); }
+
+/* ════════════════════════ RESPONSIVE ════════════════════════ */
+@media(max-width:640px){
+  .input-grid, .input-grid.triple { grid-template-columns:1fr; }
+  .input-group.span2 { grid-column:span 1; }
+  .headline-row { gap:16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav>
+  <div class="nav-inner">
+    <a class="logo" href="../../index.html">
+      <div class="logo-mark">
+        <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="30" height="30" rx="6" fill="#0C1220"/>
+          <path d="M7 23L15 7L23 23" stroke="#E8A838" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M10 18H20" stroke="#E8A838" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-name"><span class="logo-apex">Apex</span>Logics.org</span>
+        <span class="logo-tag">CareerTech Suite</span>
+      </div>
+    </a>
+    <div class="nav-right">
+      <a class="nav-pill amber" href="https://apexadvisory.site" target="_blank" rel="noopener">ApexAdvisory.site</a>
+      <a class="nav-pill" href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<main class="container">
+
+  <!-- TOOL HEADER -->
+  <header class="tool-header">
+    <div class="tool-eyebrow">#30 · AL · 35 · Compensation &amp; Offers</div>
+    <h1 class="tool-title">Federal vs. Private Sector<br>Total Comp Comparator</h1>
+    <p class="tool-subtitle">Compare apples-to-apples: GS locality salary, FERS pension NPV, FEHB, TSP match, and leave value against private cash, equity, 401k, and benefits. The pension calculation alone often reverses the headline gap.</p>
+    <div class="vintage-badge"><span class="vintage-dot"></span>OPM 2026 GS Pay Tables · FEHB 2025 Premiums · BLS OEWS 2024</div>
+  </header>
+
+  <!-- PII BANNER -->
+  <div class="pii-banner">
+    <span class="pii-banner-icon">🔒</span>
+    <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+  </div>
+
+  <!-- LEGAL NOTICE -->
+  <div class="legal-notice">
+    <div class="legal-notice-title">Educational Tool — Not Financial or Legal Advice</div>
+    <p>This comparator uses embedded approximations of federal pay scales and benefits. Individual results depend on your specific agency, leave category, TSP contribution level, health plan choice, FERS retirement tier (FERS, FERS-RAE, FERS-FRAE), and other factors. Pension NPV uses simplified assumptions. Consult your HR office, OPM guidance, and a fee-only financial planner before making employment decisions.</p>
+    <span class="cite">Sources: OPM 2026 GS Pay Tables · OPM FEHB 2025 · BLS OEWS 2024 · IRS Publication 575</span>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-bar" role="tablist">
+    <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('federal', this)">Federal Side</button>
+    <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('private', this)">Private Sector Side</button>
+  </div>
+
+  <!-- TAB: FEDERAL -->
+  <div class="tab-panel active" id="tab-federal">
+
+    <div class="section-label">GS Grade &amp; Locality</div>
+    <div class="input-grid triple">
+      <div class="input-group">
+        <label for="gs-grade">GS Grade</label>
+        <select id="gs-grade">
+          <option value="5">GS-5</option>
+          <option value="7">GS-7</option>
+          <option value="9">GS-9</option>
+          <option value="11">GS-11</option>
+          <option value="12" selected>GS-12</option>
+          <option value="13">GS-13</option>
+          <option value="14">GS-14</option>
+          <option value="15">GS-15</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label for="gs-step">Step</label>
+        <select id="gs-step">
+          <option value="1" selected>Step 1</option>
+          <option value="2">Step 2</option>
+          <option value="3">Step 3</option>
+          <option value="4">Step 4</option>
+          <option value="5">Step 5</option>
+          <option value="6">Step 6</option>
+          <option value="7">Step 7</option>
+          <option value="8">Step 8</option>
+          <option value="9">Step 9</option>
+          <option value="10">Step 10</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label for="locality">Locality</label>
+        <select id="locality">
+          <option value="0.1706">Rest of US (17.06%)</option>
+          <option value="0.3326" selected>Washington DC (33.26%)</option>
+          <option value="0.4634">San Francisco (46.34%)</option>
+          <option value="0.3616">New York (36.16%)</option>
+          <option value="0.3197">Boston (31.97%)</option>
+          <option value="0.3092">Seattle (30.92%)</option>
+          <option value="0.3415">Los Angeles (34.15%)</option>
+          <option value="0.2935">Chicago (29.35%)</option>
+          <option value="0.2565">Dallas (25.65%)</option>
+          <option value="0.2565">Houston (25.65%)</option>
+          <option value="0.2341">Atlanta (23.41%)</option>
+          <option value="0.2986">Denver (29.86%)</option>
+          <option value="0.2495">Miami (24.95%)</option>
+          <option value="0.2089">Phoenix (20.89%)</option>
+          <option value="0.2642">Minneapolis (26.42%)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section-label">Service &amp; Retirement</div>
+    <div class="input-grid">
+      <div class="input-group">
+        <label for="years-service">Years of Federal Service</label>
+        <input type="number" id="years-service" value="10" min="0" max="35" step="1">
+        <span class="input-hint">Used for FERS pension accrual rate (1% × years × high-3)</span>
+      </div>
+      <div class="input-group">
+        <label for="retire-age">Planned Retirement Age</label>
+        <input type="number" id="retire-age" value="62" min="55" max="70" step="1">
+        <span class="input-hint">Age 62+ with 5 yrs = 1% multiplier; some exceptions at 60/62</span>
+      </div>
+    </div>
+
+    <div class="section-label">FEHB Coverage</div>
+    <div class="pill-row" id="fehb-pills">
+      <div class="cov-pill active" data-val="9200" onclick="setCoverage(this)">Self Only<br><small style="font-size:.65rem;color:var(--muted);">Govt pays ~$9,200/yr</small></div>
+      <div class="cov-pill" data-val="18500" onclick="setCoverage(this)">Self + Family<br><small style="font-size:.65rem;color:var(--muted);">Govt pays ~$18,500/yr</small></div>
+    </div>
+    <input type="hidden" id="fehb-val" value="9200">
+
+    <div class="run-row">
+      <button class="run-btn" onclick="runComparison()">Run Federal vs. Private Comparison ▶</button>
+    </div>
+  </div>
+
+  <!-- TAB: PRIVATE -->
+  <div class="tab-panel" id="tab-private">
+
+    <div class="section-label">Compensation</div>
+    <div class="input-grid">
+      <div class="input-group">
+        <label for="priv-salary">Annual Base Salary ($)</label>
+        <input type="number" id="priv-salary" value="120000" min="0" step="1000">
+      </div>
+      <div class="input-group">
+        <label for="priv-bonus-pct">Target Bonus (%)</label>
+        <input type="number" id="priv-bonus-pct" value="10" min="0" max="200" step="1">
+        <span class="input-hint">As % of base; enter 0 if none</span>
+      </div>
+      <div class="input-group">
+        <label for="priv-equity">Annual Equity Grant ($)</label>
+        <input type="number" id="priv-equity" value="10000" min="0" step="500">
+        <span class="input-hint">RSU/option grant annualized; enter 0 if none</span>
+      </div>
+    </div>
+
+    <div class="section-label">Benefits</div>
+    <div class="input-grid triple">
+      <div class="input-group">
+        <label for="priv-health">Employer Health Contribution ($/yr)</label>
+        <input type="number" id="priv-health" value="7000" min="0" step="100">
+        <span class="input-hint">Annual employer-paid premium</span>
+      </div>
+      <div class="input-group">
+        <label for="priv-401k-pct">401k Match (%)</label>
+        <input type="number" id="priv-401k-pct" value="4" min="0" max="100" step=".5">
+        <span class="input-hint">e.g., 4 = employer matches 4% of salary</span>
+      </div>
+      <div class="input-group">
+        <label for="priv-401k-cap">Match Cap (% of salary)</label>
+        <input type="number" id="priv-401k-cap" value="4" min="0" max="100" step=".5">
+        <span class="input-hint">Salary % up to which match applies</span>
+      </div>
+    </div>
+
+    <div class="section-label">Leave</div>
+    <div class="input-grid">
+      <div class="input-group">
+        <label for="priv-leave">Annual Leave Days Offered</label>
+        <input type="number" id="priv-leave" value="15" min="0" max="50" step="1">
+        <span class="input-hint">PTO only; does not include federal holidays</span>
+      </div>
+    </div>
+
+    <div class="run-row">
+      <button class="run-btn" onclick="runComparison()">Run Federal vs. Private Comparison ▶</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ RESULTS ═══════════ -->
+  <section id="results">
+
+    <!-- Headline metric -->
+    <div class="headline-card">
+      <div class="headline-label">Total Annual Compensation Snapshot</div>
+      <div class="headline-row">
+        <div class="headline-col">
+          <div class="headline-col-label">Federal Total Annual</div>
+          <div class="headline-val federal" id="hl-federal">—</div>
+          <div style="font-size:.7rem;color:var(--body);margin-top:4px;">Base + FEHB + TSP + Leave</div>
+        </div>
+        <div class="headline-divider"></div>
+        <div class="headline-col">
+          <div class="headline-col-label">Private Total Annual</div>
+          <div class="headline-val private" id="hl-private">—</div>
+          <div style="font-size:.7rem;color:var(--body);margin-top:4px;">Cash + Equity + Benefits + Leave</div>
+        </div>
+        <div class="headline-divider"></div>
+        <div class="headline-col">
+          <div class="headline-col-label">Annual Gap (Fed − Priv)</div>
+          <div class="headline-val" id="hl-gap">—</div>
+          <div style="font-size:.7rem;color:var(--body);margin-top:4px;" id="hl-gap-sub">Excluding pension NPV</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Insight bar -->
+    <div class="insight-bar" id="insight-bar">—</div>
+
+    <!-- Pension NPV callout -->
+    <div class="pension-callout">
+      <div class="pension-callout-title">FERS Pension — Net Present Value (20-yr payout @ 3% discount)</div>
+      <div class="pension-val" id="pension-npv">—</div>
+      <div class="pension-sub" id="pension-sub">—</div>
+    </div>
+
+    <!-- Comparison table -->
+    <div class="section-label">Component-by-Component Breakdown</div>
+    <div class="comp-table-wrap">
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th class="right">Federal</th>
+            <th class="right">Private</th>
+            <th class="right">Delta (Fed − Priv)</th>
+          </tr>
+        </thead>
+        <tbody id="comp-tbody">
+          <!-- injected by JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pension with NPV table -->
+    <div class="section-label">Lifetime Value Including Pension NPV</div>
+    <div class="comp-table-wrap">
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th class="right">Federal</th>
+            <th class="right">Private Equivalent</th>
+            <th class="right">Delta</th>
+          </tr>
+        </thead>
+        <tbody id="pension-tbody">
+          <!-- injected by JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Export -->
+    <div class="export-row">
+      <button class="export-btn" onclick="exportMarkdown()"><span class="export-icon">⬇</span> Download Markdown</button>
+      <button class="export-btn" onclick="exportAP2()"><span class="export-icon">⬇</span> Download AP2 JSON</button>
+    </div>
+
+  </section>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="tool-footer">
+  <div class="container">
+    Built by <a href="https://apexadvisory.site">Apex Advisors</a> · Sister suite: <a href="https://ainumbers.co">AINumbers.co</a> · CC BY 4.0 · AL-35 · Data as of OPM 2026 GS Pay Tables, FEHB 2025 premiums, BLS OEWS 2024
+  </div>
+</footer>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   DATA — 2026 GS BASE PAY TABLE (steps 1–10)
+   ════════════════════════════════════════════════════════════ */
+const GS_TABLE = {
+  5:  [33878,35007,36136,37265,38394,39523,40652,41781,42910,44039],
+  7:  [42022,43423,44824,46225,47626,49027,50428,51829,53230,54631],
+  9:  [51440,53155,54870,56585,58300,60015,61730,63445,65160,66875],
+  11: [62107,64177,66247,68317,70387,72457,74527,76597,78667,80737],
+  12: [74441,76922,79403,81884,84365,86846,89327,91808,94289,96770],
+  13: [88520,91471,94422,97373,100324,103275,106226,109177,112128,115079],
+  14: [104604,108091,111578,115065,118552,122039,125526,129013,132500,135987],
+  15: [123041,127142,131243,135344,139445,143546,147647,151748,155849,159950]
+};
+
+/* ════════════════════════════════════════════════════════════
+   STATE
+   ════════════════════════════════════════════════════════════ */
+let lastResult = null;
+
+/* ════════════════════════════════════════════════════════════
+   UI HELPERS
+   ════════════════════════════════════════════════════════════ */
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  btn.setAttribute('aria-selected','true');
+  document.getElementById('tab-' + id).classList.add('active');
+}
+
+function setCoverage(el) {
+  document.querySelectorAll('#fehb-pills .cov-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('fehb-val').value = el.dataset.val;
+}
+
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : (n > 0 ? '+' : '');
+  // Only show sign for deltas — caller passes true for that
+  return '$' + Math.round(abs).toLocaleString();
+}
+
+function fmtDelta(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '−' : '+';
+  return sign + '$' + Math.round(abs).toLocaleString();
+}
+
+function pct(n) { return (n * 100).toFixed(1) + '%'; }
+
+function deltaClass(n) { return n >= 0 ? 'pos' : 'neg'; }
+
+/* ════════════════════════════════════════════════════════════
+   CORE CALCULATION
+   ════════════════════════════════════════════════════════════ */
+function runComparison() {
+  // ── Federal inputs ──
+  const grade    = parseInt(document.getElementById('gs-grade').value);
+  const step     = parseInt(document.getElementById('gs-step').value);
+  const localPct = parseFloat(document.getElementById('locality').value);
+  const yos      = parseFloat(document.getElementById('years-service').value) || 0;
+  const retAge   = parseFloat(document.getElementById('retire-age').value) || 62;
+  const fehbVal  = parseFloat(document.getElementById('fehb-val').value);
+
+  // ── Private inputs ──
+  const privSalary   = parseFloat(document.getElementById('priv-salary').value)   || 0;
+  const privBonusPct = parseFloat(document.getElementById('priv-bonus-pct').value) || 0;
+  const privEquity   = parseFloat(document.getElementById('priv-equity').value)    || 0;
+  const privHealth   = parseFloat(document.getElementById('priv-health').value)    || 0;
+  const priv401kPct  = parseFloat(document.getElementById('priv-401k-pct').value)  || 0;
+  const priv401kCap  = parseFloat(document.getElementById('priv-401k-cap').value)  || 0;
+  const privLeave    = parseFloat(document.getElementById('priv-leave').value)      || 0;
+
+  // ── GS salary with locality ──
+  const gsBase   = GS_TABLE[grade][step - 1];
+  const gsSalary = Math.round(gsBase * (1 + localPct));
+
+  // ── Federal benefit calculations ──
+  // TSP: government automatically contributes 1% + matches up to 4% employee contribution
+  // For total comp purposes we use the full 5% employer potential match
+  const tspMatch = Math.round(gsSalary * 0.05);
+
+  // FEHB value = amount government pays
+  const fedHealth = fehbVal;
+
+  // Annual leave: 26 days after 15yrs; use 26 as stated, plus 13 sick + 11 federal holidays
+  // Note: sick leave not truly "annual value" since it's a benefit in kind; using contract spec
+  const fedLeaveDays = 26 + 13 + 11; // 50 days total as per spec
+  const fedLeaveVal  = Math.round((gsSalary / 261) * fedLeaveDays);
+
+  // FERS Pension annual benefit: 1% × yos × high-3 (approximated as current salary)
+  const pensionAnnual = gsSalary * 0.01 * yos;
+  // NPV at 3% over 20-year life expectancy (standard annuity PV formula)
+  const discount = 0.03;
+  const periods  = 20;
+  const pvFactor = (1 - Math.pow(1 + discount, -periods)) / discount;
+  const pensionNPV = Math.round(pensionAnnual * pvFactor);
+
+  // Federal total annual (no pension — that's lifetime)
+  const fedTotalAnnual = gsSalary + fedHealth + tspMatch + fedLeaveVal;
+
+  // ── Private calculations ──
+  const privBonus  = Math.round(privSalary * privBonusPct / 100);
+  const privCash   = privSalary + privBonus;
+  // 401k match: employer matches match_pct% of salary, up to cap% of salary
+  // Simplified: match = salary * min(match_pct, cap_pct) / 100
+  const effectivePct = Math.min(priv401kPct, priv401kCap);
+  const priv401kMatch = Math.round(privSalary * effectivePct / 100);
+  // Private leave value
+  const privLeaveVal  = Math.round((privSalary / 261) * privLeave);
+  // Private total annual
+  const privTotalAnnual = privCash + privEquity + privHealth + priv401kMatch + privLeaveVal;
+
+  // ── Gaps ──
+  const annualGap = fedTotalAnnual - privTotalAnnual;
+  // With pension NPV amortized over remaining career (yos as baseline, or minimum 1)
+  // Show NPV as lump-sum callout (most meaningful framing)
+  const fedBaseVsPrivBase = gsSalary - privSalary;
+  const fedTotalVsPrivTotal = annualGap;
+
+  // ── Insight text ──
+  const baseGapPct = ((gsSalary - privSalary) / privSalary * 100).toFixed(1);
+  const baseGapDir = gsSalary >= privSalary ? 'above' : 'below';
+  const totalGapDir = fedTotalAnnual >= privTotalAnnual ? 'exceeds' : 'trails';
+  const pensionFlip = (pensionNPV > 0 && annualGap < 0 && pensionNPV > Math.abs(annualGap) * 5);
+
+  // Build result object
+  lastResult = {
+    grade, step, localPct, yos, retAge, fehbVal,
+    gsBase, gsSalary, tspMatch, fedHealth, fedLeaveVal, fedLeaveDays, fedTotalAnnual,
+    pensionAnnual, pensionNPV,
+    privSalary, privBonus, privBonusPct, privCash, privEquity, privHealth,
+    priv401kMatch, privLeaveVal, privTotalAnnual,
+    annualGap, baseGapPct, baseGapDir, totalGapDir, pensionFlip
+  };
+
+  // ── Render ──
+  renderResults(lastResult);
+  document.getElementById('results').classList.add('show');
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderResults(r) {
+  // Headline
+  document.getElementById('hl-federal').textContent = fmt(r.fedTotalAnnual);
+  document.getElementById('hl-private').textContent = fmt(r.privTotalAnnual);
+  const gapEl = document.getElementById('hl-gap');
+  gapEl.textContent = fmtDelta(r.annualGap);
+  gapEl.className = 'headline-val ' + (r.annualGap >= 0 ? 'gap-pos' : 'gap-neg');
+
+  // Insight
+  const insightEl = document.getElementById('insight-bar');
+  let insightText = `Federal base pay (${fmt(r.gsSalary)}) is <strong>${Math.abs(r.baseGapPct)}% ${r.baseGapDir} private market base</strong>. `;
+  insightText += `Total annual compensation including FEHB, TSP match, and leave ${r.totalGapDir} private by <strong>${fmt(Math.abs(r.annualGap))}</strong>. `;
+  if (r.yos > 0) {
+    insightText += `Adding the FERS pension NPV of <strong>${fmt(r.pensionNPV)}</strong> for ${r.yos} years of service`;
+    if (r.pensionFlip) {
+      insightText += ` <strong>reverses the comparison in favor of the federal role</strong> when lifetime value is considered.`;
+    } else if (r.pensionNPV > 0) {
+      insightText += ` is a substantial deferred benefit not reflected in annual totals.`;
+    } else {
+      insightText += `.`;
+    }
+  }
+  insightEl.innerHTML = insightText;
+
+  // Pension callout
+  document.getElementById('pension-npv').textContent = fmt(r.pensionNPV);
+  const pensionSubText = r.yos > 0
+    ? `${r.yos} years × 1% × ~${fmt(r.gsSalary)} high-3 = ${fmt(r.pensionAnnual)}/yr annuity · PV(3%, 20yr) shown above · Starts at retirement, not today`
+    : `Enter years of service to calculate pension NPV`;
+  document.getElementById('pension-sub').textContent = pensionSubText;
+
+  // Main comparison table
+  const tbody = document.getElementById('comp-tbody');
+  const rows = [
+    { label: 'Base / Salary', sub: 'Pre-tax base compensation', fed: r.gsSalary, priv: r.privSalary },
+    { label: 'Bonus / Variable Pay', sub: `Federal: none assumed · Private: ${r.privBonusPct}% of base`, fed: 0, priv: r.privBonus },
+    { label: 'Equity (Annualized)', sub: 'Federal: none · Private: RSU/option grant', fed: 0, priv: r.privEquity },
+    { label: 'Employer Health (FEHB / Health)', sub: 'Employer-paid health insurance premium', fed: r.fedHealth, priv: r.privHealth },
+    { label: 'Retirement Match (TSP / 401k)', sub: `Federal: 5% match · Private: ${fmt(r.priv401kMatch)} match`, fed: r.tspMatch, priv: r.priv401kMatch },
+    { label: 'Leave Value', sub: `Federal: ${r.fedLeaveDays} days (26 AL + 13 sick + 11 holiday) · Private: ${r.privLeave} days`, fed: r.fedLeaveVal, priv: r.privLeaveVal },
+  ];
+
+  const totalFed  = rows.reduce((s, row) => s + row.fed,  0);
+  const totalPriv = rows.reduce((s, row) => s + row.priv, 0);
+
+  tbody.innerHTML = rows.map(row => {
+    const delta = row.fed - row.priv;
+    return `<tr>
+      <td class="row-label">${row.label}<div class="row-sub">${row.sub}</div></td>
+      <td class="right val-fed">${fmt(row.fed)}</td>
+      <td class="right val-priv">${fmt(row.priv)}</td>
+      <td class="right val-delta ${deltaClass(delta)}">${fmtDelta(delta)}</td>
+    </tr>`;
+  }).join('') + `<tr class="row-total">
+    <td class="row-label">Total Annual Comp</td>
+    <td class="right val-fed">${fmt(r.fedTotalAnnual)}</td>
+    <td class="right val-priv">${fmt(r.privTotalAnnual)}</td>
+    <td class="right val-delta ${deltaClass(r.annualGap)}">${fmtDelta(r.annualGap)}</td>
+  </tr>`;
+
+  // Pension NPV table
+  const pensionTbody = document.getElementById('pension-tbody');
+  // "Private equivalent" of pension would need equivalent 401k/IRA balance to generate same income
+  const privPensionEquiv = 0; // private sector rarely has DB pension
+  const annualDeltaWithPension = r.annualGap; // pension is lump sum, shown separately
+  const ltDelta = r.annualGap * 20 + r.pensionNPV; // rough 20-yr lifetime delta
+
+  pensionTbody.innerHTML = `
+    <tr>
+      <td class="row-label">Annual Total Comp (excl. pension)<div class="row-sub">Recurring annual value</div></td>
+      <td class="right val-fed">${fmt(r.fedTotalAnnual)}</td>
+      <td class="right val-priv">${fmt(r.privTotalAnnual)}</td>
+      <td class="right val-delta ${deltaClass(r.annualGap)}">${fmtDelta(r.annualGap)}</td>
+    </tr>
+    <tr>
+      <td class="row-label">FERS Pension NPV (lump-sum equivalent)<div class="row-sub">20-yr payout discounted @ 3%; private sector assumes $0 DB pension</div></td>
+      <td class="right val-fed">${fmt(r.pensionNPV)}</td>
+      <td class="right val-priv">$0</td>
+      <td class="right val-delta pos">+${fmt(r.pensionNPV)}</td>
+    </tr>
+    <tr class="row-total">
+      <td class="row-label">20-Year Lifetime Value<div class="row-sub">Annual × 20 + Pension NPV (simplified; no time-value on annual)</div></td>
+      <td class="right val-fed">${fmt(r.fedTotalAnnual * 20 + r.pensionNPV)}</td>
+      <td class="right val-priv">${fmt(r.privTotalAnnual * 20)}</td>
+      <td class="right val-delta ${deltaClass(ltDelta)}">${fmtDelta(ltDelta)}</td>
+    </tr>
+  `;
+}
+
+/* ════════════════════════════════════════════════════════════
+   EXPORT — MARKDOWN
+   ════════════════════════════════════════════════════════════ */
+function exportMarkdown() {
+  if (!lastResult) { alert('Run the comparison first.'); return; }
+  const r = lastResult;
+  const ts = new Date().toISOString().slice(0,10);
+
+  const md = `# Federal vs. Private Sector Total Comp Comparison
+*Generated: ${ts} · AL-35 · ApexLogics.org · OPM 2026 GS Pay Tables*
+
+## Federal Position
+| Field | Value |
+|---|---|
+| GS Grade / Step | GS-${r.grade} Step ${r.step} |
+| GS Base Pay (2026) | ${fmt(r.gsBase)} |
+| Locality Adjustment | ${pct(r.localPct)} |
+| GS Salary w/ Locality | ${fmt(r.gsSalary)} |
+| FEHB Govt Contribution | ${fmt(r.fedHealth)} |
+| TSP Employer Match (5%) | ${fmt(r.tspMatch)} |
+| Leave Value (${r.fedLeaveDays} days) | ${fmt(r.fedLeaveVal)} |
+| **Federal Total Annual** | **${fmt(r.fedTotalAnnual)}** |
+| Years of Service | ${r.yos} |
+| FERS Annual Pension Benefit | ${fmt(r.pensionAnnual)} |
+| FERS Pension NPV (20yr @ 3%) | **${fmt(r.pensionNPV)}** |
+
+## Private Sector Position
+| Field | Value |
+|---|---|
+| Base Salary | ${fmt(r.privSalary)} |
+| Bonus (${r.privBonusPct}%) | ${fmt(r.privBonus)} |
+| Equity (Annualized) | ${fmt(r.privEquity)} |
+| Employer Health Contribution | ${fmt(r.privHealth)} |
+| 401k Employer Match | ${fmt(r.priv401kMatch)} |
+| Leave Value | ${fmt(r.privLeaveVal)} |
+| **Private Total Annual** | **${fmt(r.privTotalAnnual)}** |
+
+## Comparison Summary
+| Metric | Federal | Private | Delta |
+|---|---|---|---|
+| Total Annual Comp | ${fmt(r.fedTotalAnnual)} | ${fmt(r.privTotalAnnual)} | ${fmtDelta(r.annualGap)} |
+| + Pension NPV | ${fmt(r.pensionNPV)} | $0 | +${fmt(r.pensionNPV)} |
+| 20-Year Lifetime Value | ${fmt(r.fedTotalAnnual*20+r.pensionNPV)} | ${fmt(r.privTotalAnnual*20)} | ${fmtDelta(r.annualGap*20+r.pensionNPV)} |
+
+**Federal base pay is ${Math.abs(r.baseGapPct)}% ${r.baseGapDir} private market base.**
+
+---
+*Educational only. Not financial or legal advice. Sources: OPM 2026 GS Pay Tables, FEHB 2025, BLS OEWS 2024.*
+`;
+
+  download('federal-vs-private-comp.md', md, 'text/markdown');
+}
+
+/* ════════════════════════════════════════════════════════════
+   EXPORT — AP2 JSON
+   ════════════════════════════════════════════════════════════ */
+function exportAP2() {
+  if (!lastResult) { alert('Run the comparison first.'); return; }
+  const r = lastResult;
+
+  const ap2 = {
+    ap2_version: "2.0",
+    tool_id: "AL-35",
+    tool_name: "Federal vs. Private Sector Total Comp Comparator",
+    mandate_type: "federal_comp_record",
+    generated_at: new Date().toISOString(),
+    downstream_handoff_candidates: ["AL-01", "AL-04"],
+    inputs: {
+      federal: {
+        gs_grade: r.grade,
+        gs_step: r.step,
+        locality_pct: r.localPct,
+        years_of_service: r.yos,
+        planned_retirement_age: r.retAge,
+        fehb_govt_contribution: r.fehbVal
+      },
+      private: {
+        base_salary: r.privSalary,
+        bonus_pct: r.privBonusPct,
+        equity_annual: r.privEquity,
+        employer_health_contribution: r.privHealth,
+        match_401k_pct: parseFloat(document.getElementById('priv-401k-pct').value) || 0,
+        match_401k_cap_pct: parseFloat(document.getElementById('priv-401k-cap').value) || 0,
+        leave_days: parseFloat(document.getElementById('priv-leave').value) || 0
+      }
+    },
+    results: {
+      federal: {
+        gs_base_pay: r.gsBase,
+        gs_salary_with_locality: r.gsSalary,
+        fehb_value: r.fedHealth,
+        tsp_match: r.tspMatch,
+        leave_value: r.fedLeaveVal,
+        total_annual: r.fedTotalAnnual,
+        pension_annual_benefit: r.pensionAnnual,
+        pension_npv_20yr_3pct: r.pensionNPV
+      },
+      private: {
+        base_salary: r.privSalary,
+        bonus: r.privBonus,
+        equity_annual: r.privEquity,
+        employer_health: r.privHealth,
+        match_401k: r.priv401kMatch,
+        leave_value: r.privLeaveVal,
+        total_annual: r.privTotalAnnual
+      },
+      comparison: {
+        annual_gap_fed_minus_priv: r.annualGap,
+        base_gap_pct: parseFloat(r.baseGapPct),
+        base_gap_direction: r.baseGapDir,
+        lifetime_20yr_fed: r.fedTotalAnnual * 20 + r.pensionNPV,
+        lifetime_20yr_priv: r.privTotalAnnual * 20,
+        lifetime_20yr_delta: r.annualGap * 20 + r.pensionNPV,
+        pension_flips_comparison: r.pensionFlip
+      }
+    },
+    metadata: {
+      data_sources: ["OPM 2026 GS Pay Tables", "FEHB 2025 Premiums", "BLS OEWS 2024"],
+      disclaimer: "Educational only. Not financial or legal advice.",
+      license: "CC BY 4.0"
+    }
+  };
+
+  download('federal-vs-private-comp.ap2.json', JSON.stringify(ap2, null, 2), 'application/json');
+}
+
+/* ════════════════════════════════════════════════════════════
+   DOWNLOAD HELPER
+   ════════════════════════════════════════════════════════════ */
+function download(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
