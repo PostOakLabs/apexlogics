@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Education Path Decision Engine — Apex Logics Demos</title>
+<meta name="description" content="4-tool workflow: trade vs. degree NPV → professional degree ROI ranking → graduate school analysis → loan repayment. The financially optimal education path end-to-end.">
+<link rel="canonical" href="https://apexlogics.org/demos/education-path-decision-engine.html">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#070B14; --bg-2:#0C1220; --bg-3:#111A2E; --bg-4:#162238;
+  --border:#1C2D48; --border-2:#253754;
+  --muted:#3E5675; --body:#6A8BAE; --text:#A8C4DE; --bright:#D4E8F8; --white:#EEF6FD;
+  --accent:#14B8A6; --accent-lt:#2DD4BF; --accent-dim:rgba(20,184,166,.10); --accent-glow:rgba(20,184,166,.05);
+  --amber:#E8A838; --amber-lt:#F0BD5E; --amber-dim:rgba(232,168,56,.10); --amber-glow:rgba(232,168,56,.05);
+  --teal:#14B8A6; --teal-dim:rgba(20,184,166,.10); --teal-lt:#2DD4BF;
+  --coral:#F07167; --coral-dim:rgba(240,113,103,.10);
+  --lavender:#A78BFA; --lavender-dim:rgba(167,139,250,.10);
+  --green:#34D399; --green-dim:rgba(52,211,153,.10);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,.10);
+  --red:#F87171; --red-dim:rgba(248,113,113,.10);
+  --radius:6px; --radius-lg:10px; --shadow:0 4px 24px rgba(0,0,0,.45);
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+body {
+  background:var(--bg); color:var(--text);
+  font-family:'Sora',sans-serif; font-size:.85rem; line-height:1.6;
+  -webkit-font-smoothing:antialiased; min-height:100vh;
+}
+a { color:inherit; text-decoration:none; }
+button { cursor:pointer; font-family:inherit; }
+
+/* NAV */
+nav.tool-nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(7,11,20,.92); backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 24px; height:58px;
+  max-width:100%;
+}
+.nav-logo {
+  font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500;
+  color:var(--accent); letter-spacing:-.02em;
+}
+.nav-right {
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+  color:var(--body); transition:color .15s;
+}
+.nav-right a:hover { color:var(--text); }
+
+/* TOOL HERO */
+.tool-hero {
+  max-width:960px; margin:0 auto; padding:40px 24px 32px;
+  border-bottom:1px solid var(--border);
+}
+.tool-eyebrow {
+  font-family:'JetBrains Mono',monospace; font-size:.52rem; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--accent); margin-bottom:10px;
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+}
+.eyebrow-sep { color:var(--border-2); }
+.tool-h1 {
+  font-family:'DM Serif Display',serif; font-size:2rem; line-height:1.15;
+  color:var(--bright); margin-bottom:12px;
+}
+.tool-sub { color:var(--body); font-size:.88rem; max-width:700px; margin-bottom:20px; line-height:1.65; }
+.pii-notice {
+  display:inline-flex; align-items:center; gap:7px;
+  background:var(--teal-dim); border:1px solid rgba(20,184,166,.3);
+  color:var(--teal-lt); font-size:.65rem; font-family:'JetBrains Mono',monospace;
+  padding:.4rem .9rem; border-radius:999px; margin-bottom:20px;
+}
+.pii-dot { width:6px; height:6px; border-radius:50%; background:var(--teal); animation:pulse 2.4s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* WORKFLOW RIBBON */
+.workflow-ribbon {
+  display:flex; align-items:center; gap:0; flex-wrap:nowrap; overflow-x:auto;
+  padding-bottom:2px;
+}
+.workflow-ribbon::-webkit-scrollbar { height:3px; }
+.workflow-ribbon::-webkit-scrollbar-thumb { background:var(--border-2); border-radius:2px; }
+.wf-step {
+  display:flex; align-items:center; gap:8px;
+  font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.06em;
+  padding:.4rem .85rem; border-radius:999px; border:1px solid var(--border-2);
+  color:var(--body); background:var(--bg-2); white-space:nowrap;
+  transition:all .2s; cursor:pointer;
+}
+.wf-step:hover { border-color:var(--text); color:var(--text); }
+.wf-step.active { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+.wf-step.done { border-color:var(--green); color:var(--green); background:var(--green-dim); }
+.wf-step.locked { opacity:.45; cursor:default; }
+.wf-step-n { opacity:.6; font-size:.5rem; }
+.wf-arrow { color:var(--muted); font-size:.8rem; margin:0 4px; flex-shrink:0; }
+
+/* MAIN CONTENT */
+.tool-body { max-width:960px; margin:0 auto; padding:32px 24px 48px; }
+
+/* STEP BLOCKS */
+.step-block {
+  margin-bottom:32px;
+  border:1px solid var(--border); border-radius:var(--radius-lg);
+  overflow:hidden; transition:border-color .2s;
+}
+.step-block.active { border-color:var(--accent); }
+.step-block.done { border-color:var(--green); }
+.step-block.locked { opacity:.5; pointer-events:none; }
+
+.step-header {
+  background:var(--bg-2); padding:16px 22px;
+  display:flex; align-items:center; gap:14px;
+  border-bottom:1px solid var(--border); cursor:pointer;
+}
+.step-num {
+  width:28px; height:28px; border-radius:50%; border:1px solid var(--border-2);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.6rem; color:var(--muted);
+  flex-shrink:0; transition:all .2s;
+}
+.step-block.active .step-num { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+.step-block.done .step-num { border-color:var(--green); color:var(--green); background:var(--green-dim); }
+.step-num-check { display:none; }
+.step-block.done .step-num-check { display:inline; }
+.step-block.done .step-num-digit { display:none; }
+.step-meta { flex:1; }
+.step-label {
+  font-family:'JetBrains Mono',monospace; font-size:.5rem; letter-spacing:.15em;
+  text-transform:uppercase; color:var(--muted); margin-bottom:2px;
+}
+.step-block.active .step-label { color:var(--accent); }
+.step-block.done .step-label { color:var(--green); }
+.step-title { font-family:'DM Serif Display',serif; font-size:1.1rem; color:var(--bright); line-height:1.2; }
+.step-tool-ref {
+  font-family:'JetBrains Mono',monospace; font-size:.55rem; letter-spacing:.04em;
+  color:var(--muted); display:flex; align-items:center; gap:5px;
+}
+.step-tool-ref a { color:var(--accent); transition:opacity .15s; }
+.step-tool-ref a:hover { opacity:.7; }
+.step-chevron { color:var(--muted); font-size:.8rem; transition:transform .2s; margin-left:auto; }
+.step-block.open .step-chevron { transform:rotate(90deg); }
+
+.step-body { padding:22px; display:none; }
+.step-block.open .step-body { display:block; }
+
+/* FORM ELEMENTS */
+.form-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; margin-bottom:20px; }
+.form-grid-3 { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:14px; margin-bottom:20px; }
+.form-group { display:flex; flex-direction:column; gap:5px; }
+.form-group.full { grid-column:1/-1; }
+.form-label {
+  font-family:'JetBrains Mono',monospace; font-size:.55rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted);
+}
+.form-label .form-hint { text-transform:none; letter-spacing:0; color:var(--border-2); font-size:.5rem; }
+.form-input, .form-select {
+  background:var(--bg-3); border:1px solid var(--border-2); border-radius:var(--radius);
+  color:var(--bright); padding:.5rem .7rem;
+  font-family:'JetBrains Mono',monospace; font-size:.78rem; outline:none;
+  transition:border-color .2s; width:100%;
+}
+.form-input:focus, .form-select:focus { border-color:var(--accent); }
+.form-input::placeholder { color:var(--muted); }
+.form-select option { background:var(--bg-3); }
+.form-input-prefix {
+  position:relative; display:flex; align-items:center;
+}
+.form-input-prefix .prefix {
+  position:absolute; left:.7rem; color:var(--muted);
+  font-family:'JetBrains Mono',monospace; font-size:.78rem; pointer-events:none;
+}
+.form-input-prefix .form-input { padding-left:1.5rem; }
+.form-input-suffix {
+  position:relative; display:flex; align-items:center;
+}
+.form-input-suffix .suffix {
+  position:absolute; right:.7rem; color:var(--muted);
+  font-family:'JetBrains Mono',monospace; font-size:.7rem; pointer-events:none;
+}
+.form-input-suffix .form-input { padding-right:2.8rem; }
+
+/* RADIO TOGGLE */
+.radio-group { display:flex; gap:8px; flex-wrap:wrap; }
+.radio-btn {
+  padding:.4rem .9rem; border-radius:var(--radius); border:1px solid var(--border-2);
+  color:var(--body); font-family:'JetBrains Mono',monospace; font-size:.65rem;
+  background:var(--bg-3); cursor:pointer; transition:all .15s; user-select:none;
+}
+.radio-btn.selected { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+
+/* RUN BUTTON */
+.run-btn {
+  display:inline-flex; align-items:center; gap:8px;
+  background:var(--accent); color:#070B14;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500; letter-spacing:.05em;
+  padding:.55rem 1.3rem; border-radius:var(--radius); border:none;
+  transition:opacity .15s; margin-top:4px;
+}
+.run-btn:hover { opacity:.88; }
+.run-btn:disabled { opacity:.4; cursor:not-allowed; }
+.run-btn-icon { font-size:.9rem; }
+
+/* RESULTS PANEL */
+.results-panel {
+  display:none; margin-top:20px;
+  background:var(--bg-3); border:1px solid var(--border-2); border-radius:var(--radius-lg);
+  padding:20px;
+}
+.results-panel.visible { display:block; }
+.results-label {
+  font-family:'JetBrains Mono',monospace; font-size:.5rem; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--muted); margin-bottom:14px;
+  display:flex; align-items:center; gap:10px;
+}
+.results-label::after { content:""; flex:1; height:1px; background:var(--border); }
+
+.metrics-row { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
+.metric-card {
+  flex:1; min-width:120px; background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius); padding:14px;
+}
+.metric-n {
+  font-family:'DM Serif Display',serif; font-size:1.5rem; color:var(--bright);
+  line-height:1; margin-bottom:3px;
+}
+.metric-n.accent { color:var(--accent-lt); }
+.metric-n.amber { color:var(--amber); }
+.metric-n.green { color:var(--green); }
+.metric-n.coral { color:var(--coral); }
+.metric-n.teal { color:var(--teal-lt); }
+.metric-l {
+  font-family:'JetBrains Mono',monospace; font-size:.5rem; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muted);
+}
+.metric-sub { font-size:.65rem; color:var(--body); margin-top:4px; }
+
+/* INSIGHT BOXES */
+.insight-box {
+  background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius);
+  padding:14px 16px; margin-bottom:10px;
+  display:flex; gap:10px; align-items:flex-start;
+}
+.insight-icon { font-size:1rem; flex-shrink:0; margin-top:1px; }
+.insight-text { font-size:.76rem; color:var(--body); line-height:1.55; }
+.insight-text strong { color:var(--bright); }
+.insight-box.accent { border-color:rgba(20,184,166,.3); background:var(--accent-glow); }
+.insight-box.amber { border-color:rgba(232,168,56,.3); background:var(--amber-glow); }
+.insight-box.green { border-color:rgba(52,211,153,.2); background:var(--green-dim); }
+.insight-box.coral { border-color:rgba(240,113,103,.2); background:var(--coral-dim); }
+
+/* WARNING TAGS */
+.warning-tag {
+  display:inline-flex; align-items:center; gap:5px;
+  background:var(--coral-dim); border:1px solid rgba(240,113,103,.3);
+  color:var(--coral); font-family:'JetBrains Mono',monospace; font-size:.6rem;
+  padding:.25rem .6rem; border-radius:999px; margin-right:6px; margin-bottom:6px;
+}
+
+/* HANDOFF STRIP */
+.handoff-strip {
+  display:flex; align-items:center; gap:10px; margin-top:18px;
+  padding:12px 14px; background:var(--accent-dim); border:1px solid rgba(20,184,166,.25);
+  border-radius:var(--radius);
+}
+.handoff-icon { font-size:.9rem; }
+.handoff-text { flex:1; font-size:.72rem; color:var(--body); }
+.handoff-text strong { color:var(--accent-lt); }
+.handoff-btn {
+  background:var(--accent); color:#070B14;
+  font-family:'JetBrains Mono',monospace; font-size:.6rem; font-weight:500;
+  padding:.35rem .8rem; border-radius:var(--radius); border:none;
+  transition:opacity .15s; white-space:nowrap;
+}
+.handoff-btn:hover { opacity:.85; }
+
+/* BAR CHART */
+.bar-chart { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+.bar-row { display:flex; align-items:center; gap:10px; }
+.bar-lbl { font-family:'JetBrains Mono',monospace; font-size:.6rem; color:var(--body); width:140px; flex-shrink:0; text-align:right; }
+.bar-track { flex:1; height:16px; background:var(--bg); border-radius:3px; overflow:hidden; position:relative; }
+.bar-fill { height:100%; border-radius:3px; transition:width .6s ease; }
+.bar-fill-accent { background:var(--accent); }
+.bar-fill-amber { background:var(--amber); }
+.bar-fill-green { background:var(--green); }
+.bar-fill-coral { background:var(--coral); }
+.bar-fill-lavender { background:var(--lavender); }
+.bar-val { font-family:'JetBrains Mono',monospace; font-size:.62rem; color:var(--bright); width:80px; flex-shrink:0; }
+
+/* COMPARISON TABLE */
+.comp-table { width:100%; border-collapse:collapse; margin-bottom:16px; font-size:.75rem; }
+.comp-table th {
+  font-family:'JetBrains Mono',monospace; font-size:.52rem; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); padding:8px 10px; text-align:left;
+  border-bottom:1px solid var(--border);
+}
+.comp-table td { padding:8px 10px; border-bottom:1px solid var(--border); color:var(--body); }
+.comp-table td:first-child { color:var(--text); }
+.comp-table td.num { font-family:'JetBrains Mono',monospace; color:var(--bright); text-align:right; }
+.comp-table td.num.green { color:var(--green); }
+.comp-table td.num.amber { color:var(--amber); }
+.comp-table td.num.coral { color:var(--coral); }
+.comp-table td.num.accent { color:var(--accent-lt); }
+.comp-table .best-row td { background:var(--accent-dim); }
+.comp-table tr:last-child td { border-bottom:none; }
+
+/* EXPORT ROW */
+.results-export-row {
+  display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; padding-top:16px;
+  border-top:1px solid var(--border);
+}
+.export-btn {
+  background:none; border:1px solid var(--border-2); color:var(--body);
+  font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.04em;
+  padding:.35rem .75rem; border-radius:var(--radius);
+  transition:all .15s; display:inline-flex; align-items:center; gap:5px;
+}
+.export-btn:hover { border-color:var(--text); color:var(--text); }
+
+/* FINAL AP2 BLOCK */
+.ap2-block {
+  background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg);
+  padding:24px; margin-top:32px;
+}
+.ap2-eyebrow {
+  font-family:'JetBrains Mono',monospace; font-size:.5rem; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--accent); margin-bottom:10px;
+}
+.ap2-h { font-family:'DM Serif Display',serif; font-size:1.1rem; color:var(--bright); margin-bottom:8px; }
+.ap2-sub { font-size:.75rem; color:var(--body); margin-bottom:16px; }
+.ap2-code {
+  background:var(--bg); border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px; font-family:'JetBrains Mono',monospace; font-size:.65rem; color:var(--text);
+  white-space:pre; overflow-x:auto; line-height:1.6; margin-bottom:14px;
+}
+.ap2-key { color:var(--lavender); }
+.ap2-str { color:var(--teal-lt); }
+.ap2-num { color:var(--amber); }
+.ap2-bool { color:var(--coral); }
+
+/* TOOL LINKS STRIP */
+.tool-links-strip {
+  margin-top:40px; padding-top:24px; border-top:1px dashed var(--border);
+}
+.tls-label {
+  font-family:'JetBrains Mono',monospace; font-size:.5rem; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--muted); margin-bottom:12px;
+}
+.tls-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
+.tls-card {
+  background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius);
+  padding:12px 14px; display:flex; align-items:center; gap:10px;
+  transition:all .15s; color:inherit;
+}
+.tls-card:hover { border-color:var(--accent); }
+.tls-num { font-family:'JetBrains Mono',monospace; font-size:.55rem; color:var(--accent); flex-shrink:0; }
+.tls-name { font-size:.75rem; color:var(--text); flex:1; line-height:1.3; }
+.tls-arrow { color:var(--muted); font-size:.8rem; }
+
+/* FOOTER */
+.tool-footer {
+  border-top:1px solid var(--border); padding:24px;
+  max-width:960px; margin:0 auto;
+  font-size:.75rem; color:var(--body); line-height:1.8;
+}
+.tool-footer a { color:var(--accent); transition:opacity .15s; }
+.tool-footer a:hover { opacity:.7; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="tool-nav">
+  <span class="nav-logo"><a href="/" style="color:inherit;text-decoration:none">&#11041; ApexLogics</a></span>
+  <span class="nav-right"><a href="/demos/" style="color:inherit;text-decoration:none">&larr; Demos</a></span>
+</nav>
+
+<!-- HERO -->
+<div class="tool-hero">
+  <div class="tool-eyebrow">
+    #11 <span class="eyebrow-sep">&middot;</span>
+    Demo <span class="eyebrow-sep">&middot;</span>
+    AL-36 &middot; AL-39 &middot; AL-26 &middot; AL-13 <span class="eyebrow-sep">&middot;</span>
+    Education &amp; Career Finance
+  </div>
+  <h1 class="tool-h1">Education Path Decision Engine</h1>
+  <p class="tool-sub">
+    Trade vs. degree NPV &rarr; professional degree ROI ranking &rarr; graduate school analysis &rarr; loan repayment &mdash; the financially optimal education path end-to-end.
+    Each step pre-fills the next. Complete the full workflow for a composite lifetime decision.
+  </p>
+  <div class="pii-notice"><span class="pii-dot"></span>&#128274; All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <!-- WORKFLOW RIBBON -->
+  <div class="workflow-ribbon">
+    <button class="wf-step active" onclick="jumpStep(1)" id="wfStep1">
+      <span class="wf-step-n">01</span> Trade vs. Degree ROI
+    </button>
+    <span class="wf-arrow">&rarr;</span>
+    <button class="wf-step locked" onclick="jumpStep(2)" id="wfStep2">
+      <span class="wf-step-n">02</span> Pro Degree Ranker
+    </button>
+    <span class="wf-arrow">&rarr;</span>
+    <button class="wf-step locked" onclick="jumpStep(3)" id="wfStep3">
+      <span class="wf-step-n">03</span> Grad School ROI
+    </button>
+    <span class="wf-arrow">&rarr;</span>
+    <button class="wf-step locked" onclick="jumpStep(4)" id="wfStep4">
+      <span class="wf-step-n">04</span> Loan Repayment
+    </button>
+  </div>
+</div>
+
+<!-- TOOL BODY -->
+<div class="tool-body">
+
+<!-- ═══════════ STEP 1: AL-36 TRADE VS. DEGREE ROI ═══════════ -->
+<div class="step-block open active" id="block1">
+  <div class="step-header" onclick="toggleStep(1)">
+    <div class="step-num">
+      <span class="step-num-digit">1</span>
+      <span class="step-num-check">&#10003;</span>
+    </div>
+    <div class="step-meta">
+      <div class="step-label">Step 1 &middot; AL-36 &middot; Trade vs. Degree ROI Engine</div>
+      <div class="step-title">20-Year NPV: Trade / Cert vs. College Degree</div>
+    </div>
+    <div class="step-tool-ref">Full tool: <a href="#" target="_blank">AL-36 &#8599;</a></div>
+    <span class="step-chevron">&#8250;</span>
+  </div>
+  <div class="step-body">
+
+    <!-- PATH CATEGORY -->
+    <div class="form-group" style="margin-bottom:18px">
+      <label class="form-label">Path Category</label>
+      <div class="radio-group" id="s1_cat_group">
+        <button class="radio-btn selected" onclick="selectCat('trade')">Trade / Certification</button>
+        <button class="radio-btn" onclick="selectCat('degree')">College Degree (4-yr)</button>
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <!-- Trade path -->
+      <div class="form-group" id="s1_trade_group">
+        <label class="form-label">Specific Trade / Cert</label>
+        <select class="form-select" id="s1_trade_select" onchange="updateS1TradePreview()">
+          <option value="Electrician">Electrician</option>
+          <option value="HVAC Technician">HVAC Technician</option>
+          <option value="Plumber">Plumber</option>
+          <option value="Welder">Welder</option>
+          <option value="IT/Cybersecurity Cert">IT / Cybersecurity Cert</option>
+          <option value="Medical Assistant">Medical Assistant</option>
+          <option value="Truck Driver (CDL)">Truck Driver (CDL)</option>
+          <option value="Dental Hygienist">Dental Hygienist</option>
+        </select>
+      </div>
+
+      <!-- Degree path (hidden initially) -->
+      <div class="form-group" id="s1_degree_group" style="display:none">
+        <label class="form-label">Degree Program</label>
+        <select class="form-select" id="s1_degree_select" onchange="updateS1DegreePreview()">
+          <option value="Computer Science">Computer Science</option>
+          <option value="Nursing (BSN)">Nursing (BSN)</option>
+          <option value="Business Admin">Business Admin</option>
+          <option value="Education">Education</option>
+          <option value="Accounting">Accounting</option>
+          <option value="Engineering (general)">Engineering (general)</option>
+          <option value="Psychology">Psychology</option>
+          <option value="Liberal Arts">Liberal Arts</option>
+        </select>
+      </div>
+
+      <!-- School type (degrees only) -->
+      <div class="form-group" id="s1_school_group" style="display:none">
+        <label class="form-label">School Type</label>
+        <div class="radio-group" id="s1_school_type_group">
+          <button class="radio-btn selected" onclick="selectSchoolType('public')">Public</button>
+          <button class="radio-btn" onclick="selectSchoolType('private')">Private</button>
+        </div>
+      </div>
+
+      <!-- State (degrees only) -->
+      <div class="form-group" id="s1_state_group" style="display:none">
+        <label class="form-label">State <span class="form-hint">/ wage multiplier</span></label>
+        <select class="form-select" id="s1_state_select">
+          <option value="1.15">California (CA) +15%</option>
+          <option value="1.12">New York (NY) +12%</option>
+          <option value="1.10">Washington (WA) +10%</option>
+          <option value="1.10">Massachusetts (MA) +10%</option>
+          <option value="0.95">Texas (TX) -5%</option>
+          <option value="0.95">Florida (FL) -5%</option>
+          <option value="0.93">Georgia (GA) -7%</option>
+          <option value="1.00" selected>Other / National Avg</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Preview stats row -->
+    <div id="s1_preview" style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--body);display:flex;gap:24px;flex-wrap:wrap"></div>
+
+    <button class="run-btn" onclick="runStep1()"><span class="run-btn-icon">&#9889;</span> Calculate 20-Year NPV</button>
+
+    <!-- STEP 1 RESULTS -->
+    <div class="results-panel" id="s1Results">
+      <div class="results-label">ROI Analysis</div>
+      <div class="metrics-row">
+        <div class="metric-card">
+          <div class="metric-n accent" id="s1_npv_display">$0</div>
+          <div class="metric-l">20-Year NPV</div>
+          <div class="metric-sub">vs. HS diploma baseline</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-n amber" id="s1_net_invest_display">$0</div>
+          <div class="metric-l">Net Investment</div>
+          <div class="metric-sub">Cost + opp cost</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-n green" id="s1_annual_lift_display">$0</div>
+          <div class="metric-l">Annual Wage Lift</div>
+          <div class="metric-sub">vs. HS diploma $35K baseline</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-n" id="s1_growth_display">0%</div>
+          <div class="metric-l">BLS 10-Yr Growth</div>
+          <div class="metric-sub">Occupational outlook</div>
+        </div>
+      </div>
+
+      <div id="s1_insights"></div>
+
+      <div class="handoff-strip">
+        <span class="handoff-icon">&rarr;</span>
+        <span class="handoff-text">Baseline peak wage of <strong id="s1_handoff_val">$0</strong> will anchor professional degree upgrade comparisons in Step 2.</span>
+        <button class="handoff-btn" onclick="activateStep(2)">Continue to Step 2 &rarr;</button>
+      </div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="downloadS1MD()">&#8595; Markdown</button>
+        <button class="export-btn" onclick="downloadS1AP2()">&#8595; AP2 Mandate</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ STEP 2: AL-39 PROFESSIONAL DEGREE ROI RANKER ═══════════ -->
+<div class="step-block locked" id="block2">
+  <div class="step-header" onclick="toggleStep(2)">
+    <div class="step-num">
+      <span class="step-num-digit">2</span>
+      <span class="step-num-check">&#10003;</span>
+    </div>
+    <div class="step-meta">
+      <div class="step-label">Step 2 &middot; AL-39 &middot; Professional Degree ROI Ranker</div>
+      <div class="step-title">MD / JD / MBA / PharmD — Break-Even &amp; Career NPV</div>
+    </div>
+    <div class="step-tool-ref">Full tool: <a href="#" target="_blank">AL-39 &#8599;</a></div>
+    <span class="step-chevron">&#8250;</span>
+  </div>
+  <div class="step-body">
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Professional Degree</label>
+        <select class="form-select" id="s2_degree_type" onchange="updateS2Specialties()">
+          <option value="MD/DO">MD / DO</option>
+          <option value="JD">JD</option>
+          <option value="MBA">MBA</option>
+          <option value="PharmD">PharmD</option>
+          <option value="DVM">DVM</option>
+          <option value="Master's (STEM)">Master's (STEM)</option>
+          <option value="Master's (Business)">Master's (Business)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Specialty / Track</label>
+        <select class="form-select" id="s2_specialty"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Current Age</label>
+        <div class="form-input-suffix">
+          <input type="number" class="form-input" id="s2_age" value="24" min="18" max="55">
+          <span class="suffix">yrs</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Annual School Cost <span class="form-hint">/ editable</span></label>
+        <div class="form-input-prefix">
+          <span class="prefix">$</span>
+          <input type="number" class="form-input" id="s2_school_cost" value="0" min="0" step="1000">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Annual Scholarship / Aid</label>
+        <div class="form-input-prefix">
+          <span class="prefix">$</span>
+          <input type="number" class="form-input" id="s2_scholarship" value="0" min="0" step="1000">
+        </div>
+      </div>
+    </div>
+    <!-- Pre-fill context banner -->
+    <div id="s2_context_banner" style="display:none;background:var(--accent-dim);border:1px solid rgba(20,184,166,.2);border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;font-size:.72rem;color:var(--body)"></div>
+
+    <button class="run-btn" onclick="runStep2()"><span class="run-btn-icon">&#9889;</span> Rank Professional Degree ROI</button>
+
+    <div class="results-panel" id="s2Results">
+      <div class="results-label">Professional Degree Analysis</div>
+      <div class="metrics-row">
+        <div class="metric-card">
+          <div class="metric-n accent" id="s2_career_npv_display">$0</div>
+          <div class="metric-l">Career NPV Upgrade</div>
+          <div class="metric-sub">vs. skipping degree (20yr @ 5%)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-n amber" id="s2_break_even_display">Age 0</div>
+          <div class="metric-l">Break-Even Age</div>
+          <div class="metric-sub">When you recoup total investment</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-n" id="s2_net_cost_display">$0</div>
+          <div class="metric-l">Net Degree Cost</div>
+          <div class="metric-sub">After aid, before financing</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-n" id="s2_dti_display">0.0x</div>
+          <div class="metric-l">Debt-to-Income Ratio</div>
+          <div class="metric-sub">Net cost ÷ starting salary</div>
+        </div>
+      </div>
+
+      <div id="s2_warnings"></div>
+      <div id="s2_insights"></div>
+
+      <div class="handoff-strip">
+        <span class="handoff-icon">&rarr;</span>
+        <span class="handoff-text">Degree type <strong id="s2_handoff_deg">—</strong>, specialty <strong id="s2_handoff_spec">—</strong> will pre-fill graduate school analysis in Step 3.</span>
+        <button class="handoff-btn" onclick="activateStep(3)">Continue to Step 3 &rarr;</button>
+      </div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="downloadS2MD()">&#8595; Markdown</button>
+        <button class="export-btn" onclick="downloadS2AP2()">&#8595; AP2 Mandate</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ STEP 3: AL-26 GRADUATE SCHOOL ROI ═══════════ -->
+<div class="step-block locked" id="block3">
+  <div class="step-header" onclick="toggleStep(3)">
+    <div class="step-num">
+      <span class="step-num-digit">3</span>
+      <span class="step-num-check">&#10003;</span>
+    </div>
+    <div class="step-meta">
+      <div class="step-label">Step 3 &middot; AL-26 &middot; Graduate School ROI</div>
+      <div class="step-title">True Total Investment (with Opportunity Cost) &amp; 20-Yr NPV</div>
+    </div>
+    <div class="step-tool-ref">Full tool: <a href="#" target="_blank">AL-26 &#8599;</a></div>
+    <span class="step-chevron">&#8250;</span>
+  </div>
+  <div class="step-body">
+
+    <div class="form-grid">
+      <div class="form-group full">
+        <label class="form-label">Target Program Name</label>
+        <input type="text" class="form-input" id="s3_program_name" placeholder="e.g. Harvard Law JD, Stanford GSB MBA, UCLA Anderson MBA">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Annual Tuition <span class="form-hint">/ pre-filled from Step 2</span></label>
+        <div class="form-input-prefix">
+          <span class="prefix">$</span>
+          <input type="number" class="form-input" id="s3_tuition" value="0" min="0" step="1000">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Program Years <span class="form-hint">/ from Step 2</span></label>
+        <div class="form-input-suffix">
+          <input type="number" class="form-input" id="s3_years" value="2" min="1" max="12">
+          <span class="suffix">yrs</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Expected Post-Grad Salary</label>
+        <div class="form-input-prefix">
+          <span class="prefix">$</span>
+          <input type="number" class="form-input" id="s3_expected_sal" value="0" min="0" step="5000">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Annual Scholarship / Aid</label>
+        <div class="form-input-prefix">
+          <span class="prefix">$</span>
+          <input type="number" class="form-input" id="s3_scholarship" value="0" min="0" step="1000">
+        </div>
+      </div>
+    </div>
+    <!-- Context banner -->
+    <div id="s3_context_banner" style="display:none;background:var(--accent-dim);border:1px solid rgba(20,184,166,.2);border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;font-size:.72rem;color:var(--body)"></div>
+
+    <button class="run-btn" onclick="runStep3()"><span class="run-btn-icon">&#9889;</span> Calculate Grad School ROI</button>
+
+    <div class="results-panel" id="s3Results">
+      <div class="results-label">Graduate School Analysis</div>
+      <div class="metrics-row">
+        <div class="metric-card">
+          <div class="metric-n accent" id="s3_npv_display">$0</div>
+          <div class="metric-l">20-Yr Program NPV</div>
+          <div class="metric-sub">Lift over undergrad baseline</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-n amber" id="s3_total_invest_display">$0</div>
+          <div class="metric-l">True Total Investment</div>
+          <div class="metric-sub">Tuition + opportunity cost</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-n" id="s3_break_even_display">0 yrs</div>
+          <div class="metric-l">Break-Even Years</div>
+          <div class="metric-sub">After graduation</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-n coral" id="s3_total_debt_display">$0</div>
+          <div class="metric-l">Est. Financed Debt</div>
+          <div class="metric-sub">65% of net tuition financed</div>
+        </div>
+      </div>
+
+      <div class="results-label" style="margin-top:8px">Investment Breakdown</div>
+      <div class="bar-chart" id="s3_chart"></div>
+
+      <div id="s3_insights"></div>
+
+      <div class="handoff-strip">
+        <span class="handoff-icon">&rarr;</span>
+        <span class="handoff-text">Estimated financed debt of <strong id="s3_handoff_val">$0</strong> will pre-fill loan repayment modeling in Step 4.</span>
+        <button class="handoff-btn" onclick="activateStep(4)">Continue to Step 4 &rarr;</button>
+      </div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="downloadS3MD()">&#8595; Markdown</button>
+        <button class="export-btn" onclick="downloadS3AP2()">&#8595; AP2 Mandate</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ STEP 4: AL-13 STUDENT LOAN REPAYMENT ═══════════ -->
+<div class="step-block locked" id="block4">
+  <div class="step-header" onclick="toggleStep(4)">
+    <div class="step-num">
+      <span class="step-num-digit">4</span>
+      <span class="step-num-check">&#10003;</span>
+    </div>
+    <div class="step-meta">
+      <div class="step-label">Step 4 &middot; AL-13 &middot; Student Loan Repayment Optimizer</div>
+      <div class="step-title">Plan Comparison: Standard &rarr; IBR &rarr; PAYE &rarr; SAVE &rarr; Extended</div>
+    </div>
+    <div class="step-tool-ref">Full tool: <a href="#" target="_blank">AL-13 &#8599;</a></div>
+    <span class="step-chevron">&#8250;</span>
+  </div>
+  <div class="step-body">
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Total Loan Balance <span class="form-hint">/ pre-filled from Step 3</span></label>
+        <div class="form-input-prefix">
+          <span class="prefix">$</span>
+          <input type="number" class="form-input" id="s4_total_loans" value="0" min="0" step="1000">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Interest Rate</label>
+        <div class="form-input-suffix">
+          <input type="number" class="form-input" id="s4_rate" value="7.05" min="0" max="20" step="0.01">
+          <span class="suffix">%</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Starting Salary <span class="form-hint">/ pre-filled</span></label>
+        <div class="form-input-prefix">
+          <span class="prefix">$</span>
+          <input type="number" class="form-input" id="s4_salary" value="0" min="0" step="1000">
+        </div>
+      </div>
+    </div>
+    <!-- Context banner -->
+    <div id="s4_context_banner" style="display:none;background:var(--accent-dim);border:1px solid rgba(20,184,166,.2);border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;font-size:.72rem;color:var(--body)"></div>
+
+    <button class="run-btn" onclick="runStep4()"><span class="run-btn-icon">&#9889;</span> Compare Repayment Plans</button>
+
+    <div class="results-panel" id="s4Results">
+      <div class="results-label">Repayment Plan Comparison</div>
+
+      <table class="comp-table" id="s4_table">
+        <thead>
+          <tr>
+            <th>Plan</th>
+            <th style="text-align:right">Monthly Pmt</th>
+            <th style="text-align:right">Total Paid</th>
+            <th style="text-align:right">Total Interest</th>
+            <th style="text-align:right">Term</th>
+          </tr>
+        </thead>
+        <tbody id="s4_tbody"></tbody>
+      </table>
+
+      <div class="metrics-row">
+        <div class="metric-card">
+          <div class="metric-n accent" id="s4_best_monthly">$0</div>
+          <div class="metric-l">Best Plan Monthly</div>
+          <div class="metric-sub" id="s4_best_plan_name">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-n amber" id="s4_standard_monthly">$0</div>
+          <div class="metric-l">Standard 10-yr Monthly</div>
+          <div class="metric-sub">Baseline comparison</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-n green" id="s4_monthly_savings">$0</div>
+          <div class="metric-l">Monthly Savings vs. Standard</div>
+          <div class="metric-sub">Best income-driven plan</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-n" id="s4_dti_ratio">0%</div>
+          <div class="metric-l">Payment-to-Income Ratio</div>
+          <div class="metric-sub">Best plan / monthly gross</div>
+        </div>
+      </div>
+
+      <div id="s4_insights"></div>
+
+      <!-- FINAL COMPOSITE SUMMARY -->
+      <div id="s4_composite" style="display:none;margin-top:20px;">
+        <div class="results-label">Full Workflow — Lifetime Education Decision</div>
+        <div class="insight-box accent">
+          <span class="insight-icon">&#127891;</span>
+          <div class="insight-text" id="s4_summary_text"></div>
+        </div>
+      </div>
+
+      <!-- FINAL AP2 EXPORT -->
+      <div class="ap2-block" id="s4_ap2_block" style="display:none;margin-top:20px;">
+        <div class="ap2-eyebrow">AP2 v1.0 &middot; Composite Mandate Export</div>
+        <div class="ap2-h">Education Path Decision Record</div>
+        <div class="ap2-sub">Structured output spanning all four workflow steps — ready for agent handoff, agentic pipelines, or advisor review at <a href="https://apexadvisory.site" target="_blank" rel="noopener">ApexAdvisory</a>.</div>
+        <div class="ap2-code" id="s4_ap2_code"></div>
+        <div class="results-export-row">
+          <button class="export-btn" onclick="downloadFinalMD()">&#8595; Full Workflow Markdown</button>
+          <button class="export-btn" onclick="downloadFinalAP2()">&#8595; AP2 Composite Mandate</button>
+          <button class="export-btn" onclick="downloadFinalJSON()">&#8595; JSON Summary</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOOL LINKS STRIP -->
+<div class="tool-links-strip">
+  <div class="tls-label">Explore the full tools used in this demo</div>
+  <div class="tls-grid">
+    <a href="#" class="tls-card">
+      <span class="tls-num">AL-36</span>
+      <span class="tls-name">Trade vs. Degree ROI Engine</span>
+      <span class="tls-arrow">&#8594;</span>
+    </a>
+    <a href="#" class="tls-card">
+      <span class="tls-num">AL-39</span>
+      <span class="tls-name">Professional Degree ROI Ranker</span>
+      <span class="tls-arrow">&#8594;</span>
+    </a>
+    <a href="#" class="tls-card">
+      <span class="tls-num">AL-26</span>
+      <span class="tls-name">Graduate School ROI</span>
+      <span class="tls-arrow">&#8594;</span>
+    </a>
+    <a href="#" class="tls-card">
+      <span class="tls-num">AL-13</span>
+      <span class="tls-name">Student Loan Repayment Optimizer</span>
+      <span class="tls-arrow">&#8594;</span>
+    </a>
+  </div>
+</div>
+
+</div><!-- /tool-body -->
+
+<!-- FOOTER -->
+<footer class="tool-footer">
+  <p>Part of the <a href="https://apexlogics.org/demos/">ApexLogics Career Intelligence Showcase</a> by <a href="https://apexadvisory.site">ApexAdvisory</a>. Sister suite: <a href="https://ainumbers.co">AINumbers.co</a> &#8599;</p>
+  <p style="font-size:0.75rem;margin-top:8px;opacity:0.6">&copy; 2025 ApexAdvisory. CC BY 4.0.</p>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════
+   DATA TABLES
+═══════════════════════════════════════════════ */
+
+const TRADES = {
+  'Electrician':          { cost: 8000,  months: 48, start_wage: 42000, peak_wage: 82000,  growth: 11 },
+  'HVAC Technician':      { cost: 6000,  months: 36, start_wage: 40000, peak_wage: 75000,  growth: 9  },
+  'Plumber':              { cost: 7500,  months: 48, start_wage: 44000, peak_wage: 85000,  growth: 5  },
+  'Welder':               { cost: 5000,  months: 24, start_wage: 38000, peak_wage: 65000,  growth: 3  },
+  'IT/Cybersecurity Cert':{ cost: 5000,  months: 12, start_wage: 58000, peak_wage: 115000, growth: 32 },
+  'Medical Assistant':    { cost: 4000,  months: 18, start_wage: 36000, peak_wage: 50000,  growth: 16 },
+  'Truck Driver (CDL)':   { cost: 3000,  months: 4,  start_wage: 48000, peak_wage: 72000,  growth: 4  },
+  'Dental Hygienist':     { cost: 12000, months: 24, start_wage: 62000, peak_wage: 88000,  growth: 9  }
+};
+
+const DEGREES = {
+  'Computer Science':      { public_cost: 44000,  private_cost: 180000, start_wage: 85000,  peak_wage: 145000, growth: 25 },
+  'Nursing (BSN)':         { public_cost: 40000,  private_cost: 140000, start_wage: 68000,  peak_wage: 95000,  growth: 6  },
+  'Business Admin':        { public_cost: 42000,  private_cost: 165000, start_wage: 52000,  peak_wage: 90000,  growth: 8  },
+  'Education':             { public_cost: 36000,  private_cost: 120000, start_wage: 40000,  peak_wage: 62000,  growth: 3  },
+  'Accounting':            { public_cost: 40000,  private_cost: 145000, start_wage: 55000,  peak_wage: 90000,  growth: 6  },
+  'Engineering (general)': { public_cost: 46000,  private_cost: 185000, start_wage: 75000,  peak_wage: 130000, growth: 5  },
+  'Psychology':            { public_cost: 36000,  private_cost: 130000, start_wage: 38000,  peak_wage: 58000,  growth: 4  },
+  'Liberal Arts':          { public_cost: 34000,  private_cost: 125000, start_wage: 36000,  peak_wage: 55000,  growth: 4  }
+};
+
+const PRO_DEGREES = {
+  'MD/DO': {
+    specialties: { 'Primary Care': 265000, 'Surgery': 400000, 'Psychiatry': 280000, 'Radiology': 420000 },
+    train_yrs: 11, avg_cost: 250000
+  },
+  'JD': {
+    specialties: { 'BigLaw': 215000, 'Corporate Counsel': 145000, 'Public Interest': 60000, 'Solo Practice': 85000 },
+    train_yrs: 3, avg_cost: 180000
+  },
+  'MBA': {
+    specialties: { 'Top-10 Program': 135000, 'Regional Program': 90000, 'Part-time Program': 80000 },
+    train_yrs: 2, avg_cost: 120000
+  },
+  'PharmD': {
+    specialties: { 'Retail Pharmacy': 128000, 'Hospital Pharmacy': 135000, 'Clinical Specialist': 145000 },
+    train_yrs: 4, avg_cost: 150000
+  },
+  'DVM': {
+    specialties: { 'Companion Animal': 110000, 'Equine': 100000, 'Large Animal': 95000 },
+    train_yrs: 4, avg_cost: 200000
+  },
+  "Master's (STEM)": {
+    specialties: { 'Data Science': 115000, 'Electrical Engineering': 102000, 'Computer Science': 130000 },
+    train_yrs: 2, avg_cost: 60000
+  },
+  "Master's (Business)": {
+    specialties: { 'Finance': 88000, 'Marketing': 75000, 'Supply Chain': 82000 },
+    train_yrs: 2, avg_cost: 55000
+  }
+};
+
+/* ═══════════════════════════════════════════════
+   SHARED STATE
+═══════════════════════════════════════════════ */
+const state = {
+  s1_path_type: '',
+  s1_path_name: '',
+  s1_npv: 0,
+  s1_peak_wage: 0,
+  s1_investment: 0,
+  s2_degree_type: '',
+  s2_specialty: '',
+  s2_break_even_age: 0,
+  s2_career_npv: 0,
+  s3_program_npv: 0,
+  s3_total_debt: 0,
+  s4_monthly_payment: 0
+};
+
+// Internal category tracker
+let s1_cat = 'trade';
+let s1_school_type = 'public';
+
+/* ═══════════════════════════════════════════════
+   FORMATTERS
+═══════════════════════════════════════════════ */
+const fmt  = n => '$' + Math.round(n).toLocaleString();
+const fmtK = n => '$' + Math.round(n / 1000) + 'K';
+
+/* ═══════════════════════════════════════════════
+   UI HELPERS
+═══════════════════════════════════════════════ */
+function toggleStep(n) {
+  const block = document.getElementById('block' + n);
+  if (block.classList.contains('locked')) return;
+  block.classList.toggle('open');
+}
+
+function jumpStep(n) {
+  const block = document.getElementById('block' + n);
+  if (block.classList.contains('locked')) return;
+  block.classList.add('open');
+  block.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function activateStep(n) {
+  const block = document.getElementById('block' + n);
+  block.classList.remove('locked');
+  block.classList.add('active', 'open');
+  const wfBtn = document.getElementById('wfStep' + n);
+  wfBtn.classList.remove('locked');
+  wfBtn.classList.add('active');
+  block.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function markDone(n) {
+  const block = document.getElementById('block' + n);
+  block.classList.remove('active');
+  block.classList.add('done');
+  const wfBtn = document.getElementById('wfStep' + n);
+  wfBtn.classList.remove('active', 'locked');
+  wfBtn.classList.add('done');
+}
+
+function npv20(annualLift, rate) {
+  let sum = 0;
+  for (let i = 1; i <= 20; i++) sum += annualLift / Math.pow(1 + rate, i);
+  return sum;
+}
+
+/* ═══════════════════════════════════════════════
+   STEP 1 — CATEGORY / SCHOOL TYPE TOGGLES
+═══════════════════════════════════════════════ */
+function selectCat(cat) {
+  s1_cat = cat;
+  document.querySelectorAll('#s1_cat_group .radio-btn').forEach(b => b.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+
+  const tradeG  = document.getElementById('s1_trade_group');
+  const degreeG = document.getElementById('s1_degree_group');
+  const schoolG = document.getElementById('s1_school_group');
+  const stateG  = document.getElementById('s1_state_group');
+
+  if (cat === 'trade') {
+    tradeG.style.display  = '';
+    degreeG.style.display = 'none';
+    schoolG.style.display = 'none';
+    stateG.style.display  = 'none';
+    updateS1TradePreview();
+  } else {
+    tradeG.style.display  = 'none';
+    degreeG.style.display = '';
+    schoolG.style.display = '';
+    stateG.style.display  = '';
+    updateS1DegreePreview();
+  }
+}
+
+function selectSchoolType(type) {
+  s1_school_type = type;
+  document.querySelectorAll('#s1_school_type_group .radio-btn').forEach(b => b.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  updateS1DegreePreview();
+}
+
+function updateS1TradePreview() {
+  const name = document.getElementById('s1_trade_select').value;
+  const d = TRADES[name];
+  if (!d) return;
+  document.getElementById('s1_preview').innerHTML =
+    `<span style="color:var(--accent-lt)">Training Cost:</span>&nbsp;<span style="color:var(--bright)">${fmt(d.cost)}</span>` +
+    `&emsp;<span style="color:var(--accent-lt)">Training Length:</span>&nbsp;<span style="color:var(--bright)">${d.months} mo</span>` +
+    `&emsp;<span style="color:var(--accent-lt)">Starting Wage:</span>&nbsp;<span style="color:var(--bright)">${fmt(d.start_wage)}</span>` +
+    `&emsp;<span style="color:var(--accent-lt)">Peak Wage:</span>&nbsp;<span style="color:var(--bright)">${fmt(d.peak_wage)}</span>` +
+    `&emsp;<span style="color:var(--accent-lt)">BLS Growth:</span>&nbsp;<span style="color:var(--bright)">${d.growth}%</span>`;
+}
+
+function updateS1DegreePreview() {
+  const name = document.getElementById('s1_degree_select').value;
+  const d = DEGREES[name];
+  if (!d) return;
+  const cost = s1_school_type === 'public' ? d.public_cost : d.private_cost;
+  document.getElementById('s1_preview').innerHTML =
+    `<span style="color:var(--accent-lt)">${s1_school_type === 'public' ? 'Public' : 'Private'} Cost:</span>&nbsp;<span style="color:var(--bright)">${fmt(cost)}</span>` +
+    `&emsp;<span style="color:var(--accent-lt)">Starting Wage:</span>&nbsp;<span style="color:var(--bright)">${fmt(d.start_wage)}</span>` +
+    `&emsp;<span style="color:var(--accent-lt)">Peak Wage:</span>&nbsp;<span style="color:var(--bright)">${fmt(d.peak_wage)}</span>` +
+    `&emsp;<span style="color:var(--accent-lt)">BLS Growth:</span>&nbsp;<span style="color:var(--bright)">${d.growth}%</span>`;
+}
+
+// Init preview on load
+updateS1TradePreview();
+
+/* ═══════════════════════════════════════════════
+   STEP 1 — RUN
+═══════════════════════════════════════════════ */
+function runStep1() {
+  const BASELINE = 35000; // HS diploma baseline
+  const DISCOUNT  = 0.03;
+
+  let pathName, peak_wage, start_wage, growth, net_invest, annual_lift;
+
+  if (s1_cat === 'trade') {
+    pathName = document.getElementById('s1_trade_select').value;
+    const d = TRADES[pathName];
+    const opp_cost = BASELINE * (d.months / 12);
+    const apprentice_credit = 20000 * (d.months / 12);
+    net_invest = d.cost + opp_cost - apprentice_credit;
+    peak_wage  = d.peak_wage;
+    start_wage = d.start_wage;
+    growth     = d.growth;
+  } else {
+    pathName = document.getElementById('s1_degree_select').value;
+    const d = DEGREES[pathName];
+    const cost = s1_school_type === 'public' ? d.public_cost : d.private_cost;
+    const state_mult = parseFloat(document.getElementById('s1_state_select').value) || 1.0;
+    net_invest  = cost + BASELINE * 4;
+    peak_wage   = d.peak_wage * state_mult;
+    start_wage  = d.start_wage * state_mult;
+    growth      = d.growth;
+  }
+
+  annual_lift = (peak_wage + start_wage) / 2 - BASELINE;
+  const s1_npv_val = npv20(annual_lift, DISCOUNT) - net_invest;
+
+  // Store to state
+  state.s1_path_type  = s1_cat;
+  state.s1_path_name  = pathName;
+  state.s1_npv        = s1_npv_val;
+  state.s1_peak_wage  = peak_wage;
+  state.s1_investment = net_invest;
+
+  // Display
+  const npvEl = document.getElementById('s1_npv_display');
+  npvEl.textContent = fmt(s1_npv_val);
+  npvEl.className   = 'metric-n ' + (s1_npv_val >= 0 ? 'accent' : 'coral');
+
+  document.getElementById('s1_net_invest_display').textContent  = fmt(net_invest);
+  document.getElementById('s1_annual_lift_display').textContent = fmt(annual_lift);
+  document.getElementById('s1_growth_display').textContent      = growth + '%';
+  document.getElementById('s1_growth_display').className        = 'metric-n ' + (growth >= 10 ? 'green' : growth >= 5 ? 'amber' : 'coral');
+  document.getElementById('s1_handoff_val').textContent         = fmt(peak_wage);
+
+  // Insights
+  const insights = [];
+  if (s1_npv_val > 200000)
+    insights.push({ icon: '&#9989;', cls: 'green',  text: `<strong>${pathName}</strong> has a strong 20-year NPV of <strong>${fmt(s1_npv_val)}</strong> vs. a HS diploma baseline — a compelling investment in lifetime earnings.` });
+  else if (s1_npv_val > 0)
+    insights.push({ icon: '&#128200;', cls: 'amber', text: `<strong>${pathName}</strong> NPV of <strong>${fmt(s1_npv_val)}</strong> is positive. The path pays off, but the margin is moderate — weigh personal fit and job market trajectory.` });
+  else
+    insights.push({ icon: '&#9888;&#65039;', cls: 'coral', text: `<strong>${pathName}</strong> shows a negative 20-year NPV (${fmt(s1_npv_val)}) under these assumptions. High opportunity cost may outweigh income gains. Consider specializations or higher-earning tracks.` });
+
+  if (growth >= 15)
+    insights.push({ icon: '&#128640;', cls: 'accent', text: `BLS projects <strong>${growth}% occupational growth</strong> over 10 years — well above the national average. Strong demand outlook insulates against wage stagnation.` });
+  else if (growth <= 3)
+    insights.push({ icon: '&#128308;', cls: 'coral', text: `BLS projects only <strong>${growth}% occupational growth</strong> over 10 years. This path faces automation or outsourcing headwinds. Plan for continuing education or lateral pivots.` });
+
+  document.getElementById('s1_insights').innerHTML = insights.map(i =>
+    `<div class="insight-box ${i.cls}"><span class="insight-icon">${i.icon}</span><div class="insight-text">${i.text}</div></div>`
+  ).join('');
+
+  document.getElementById('s1Results').classList.add('visible');
+  markDone(1);
+}
+
+/* ═══════════════════════════════════════════════
+   STEP 2 — SPECIALTY DROPDOWN INIT
+═══════════════════════════════════════════════ */
+function updateS2Specialties() {
+  const degType = document.getElementById('s2_degree_type').value;
+  const deg = PRO_DEGREES[degType];
+  const sel = document.getElementById('s2_specialty');
+  sel.innerHTML = Object.keys(deg.specialties).map(k =>
+    `<option value="${k}">${k}</option>`
+  ).join('');
+  // Pre-fill school cost from avg_cost / train_yrs
+  document.getElementById('s2_school_cost').value = Math.round(deg.avg_cost / deg.train_yrs);
+}
+
+// Init on load
+updateS2Specialties();
+
+/* ═══════════════════════════════════════════════
+   STEP 2 — RUN
+═══════════════════════════════════════════════ */
+function runStep2() {
+  const degType     = document.getElementById('s2_degree_type').value;
+  const specialty   = document.getElementById('s2_specialty').value;
+  const age         = parseInt(document.getElementById('s2_age').value) || 24;
+  const schoolCostYr= parseFloat(document.getElementById('s2_school_cost').value) || 0;
+  const scholarship = parseFloat(document.getElementById('s2_scholarship').value) || 0;
+
+  const deg          = PRO_DEGREES[degType];
+  const specialty_sal= deg.specialties[specialty];
+  const net_annual   = Math.max(0, schoolCostYr - scholarship);
+  const net_cost     = net_annual * deg.train_yrs;
+  const sal_lift     = Math.max(1, specialty_sal - state.s1_peak_wage);
+
+  const break_even_age = age + deg.train_yrs + Math.ceil(net_cost / sal_lift);
+  const career_npv = npv20(sal_lift, 0.05) - net_cost;
+  const dti = net_cost / Math.max(1, specialty_sal);
+
+  // Store
+  state.s2_degree_type    = degType;
+  state.s2_specialty      = specialty;
+  state.s2_break_even_age = break_even_age;
+  state.s2_career_npv     = career_npv;
+
+  // Display
+  const npvEl = document.getElementById('s2_career_npv_display');
+  npvEl.textContent = fmt(career_npv);
+  npvEl.className   = 'metric-n ' + (career_npv >= 0 ? 'accent' : 'coral');
+
+  document.getElementById('s2_break_even_display').textContent = 'Age ' + break_even_age;
+  document.getElementById('s2_break_even_display').className   = 'metric-n ' + (break_even_age > 50 ? 'coral' : 'amber');
+  document.getElementById('s2_net_cost_display').textContent   = fmt(net_cost);
+  document.getElementById('s2_dti_display').textContent        = dti.toFixed(1) + 'x';
+  document.getElementById('s2_dti_display').className          = 'metric-n ' + (dti > 2 ? 'coral' : dti > 1 ? 'amber' : 'green');
+  document.getElementById('s2_handoff_deg').textContent  = degType;
+  document.getElementById('s2_handoff_spec').textContent = specialty;
+
+  // Warnings
+  const warnings = [];
+  if (break_even_age > 50) warnings.push('Late-entry risk');
+  if (dti > 2.0)           warnings.push('High debt load');
+  document.getElementById('s2_warnings').innerHTML = warnings.length
+    ? '<div style="margin-bottom:12px">' + warnings.map(w => `<span class="warning-tag">&#9888;&#65039; ${w}</span>`).join('') + '</div>'
+    : '';
+
+  // Insights
+  const insights = [];
+  if (career_npv > 500000)
+    insights.push({ icon: '&#9989;', cls: 'green',  text: `<strong>${specialty}</strong> (${degType}) delivers a <strong>${fmt(career_npv)} career NPV upgrade</strong> over skipping the degree. The premium salary of ${fmt(specialty_sal)}/yr justifies the ${deg.train_yrs}-year training commitment.` });
+  else if (career_npv > 0)
+    insights.push({ icon: '&#128200;', cls: 'amber', text: `<strong>${specialty}</strong> (${degType}) generates a positive career NPV of <strong>${fmt(career_npv)}</strong>. The return is real but not outsized — factor in lifestyle and job satisfaction.` });
+  else
+    insights.push({ icon: '&#9888;&#65039;', cls: 'coral', text: `<strong>${specialty}</strong> (${degType}) shows a <strong>negative career NPV of ${fmt(career_npv)}</strong> under these assumptions. The degree cost may not be recoverable at this specialty's salary level.` });
+
+  if (break_even_age <= 45)
+    insights.push({ icon: '&#128336;', cls: 'accent', text: `Break-even at age ${break_even_age} gives you <strong>${65 - break_even_age}+ peak earning years</strong> to compound your advantage. Earlier is better for lifetime wealth accumulation.` });
+
+  document.getElementById('s2_insights').innerHTML = insights.map(i =>
+    `<div class="insight-box ${i.cls}"><span class="insight-icon">${i.icon}</span><div class="insight-text">${i.text}</div></div>`
+  ).join('');
+
+  // Pre-fill Step 3
+  document.getElementById('s3_tuition').value      = Math.round(net_annual || (deg.avg_cost / deg.train_yrs));
+  document.getElementById('s3_years').value        = deg.train_yrs;
+  document.getElementById('s3_expected_sal').value = specialty_sal;
+  document.getElementById('s3_program_name').placeholder = `${degType} — ${specialty}`;
+  const s3banner = document.getElementById('s3_context_banner');
+  s3banner.style.display = '';
+  s3banner.innerHTML = `Pre-filled from Step 2: <strong>${degType} — ${specialty}</strong> &middot; ${deg.train_yrs} yrs &middot; Specialty salary: <strong>${fmt(specialty_sal)}/yr</strong>`;
+
+  document.getElementById('s2Results').classList.add('visible');
+  markDone(2);
+}
+
+/* ═══════════════════════════════════════════════
+   STEP 3 — RUN
+═══════════════════════════════════════════════ */
+function runStep3() {
+  const program_name  = document.getElementById('s3_program_name').value || 'Graduate Program';
+  const tuition       = parseFloat(document.getElementById('s3_tuition').value) || 0;
+  const years         = parseInt(document.getElementById('s3_years').value) || 2;
+  const expected_sal  = parseFloat(document.getElementById('s3_expected_sal').value) || 0;
+  const scholarship   = parseFloat(document.getElementById('s3_scholarship').value) || 0;
+
+  if (!expected_sal) { alert('Please enter an expected post-graduate salary.'); return; }
+
+  const net_annual  = Math.max(0, tuition - scholarship);
+  const total_cost  = net_annual * years + state.s1_peak_wage * years; // includes opp cost
+  const annual_lift = Math.max(0, expected_sal - state.s1_peak_wage);
+  const npv_20yr    = npv20(annual_lift, 0.05) - total_cost;
+  const break_even_yrs = annual_lift > 0 ? Math.round(total_cost / annual_lift) : 99;
+  const total_debt_est = net_annual * years * 0.65;
+
+  // Store
+  state.s3_program_npv = npv_20yr;
+  state.s3_total_debt  = total_debt_est;
+
+  // Display
+  const npvEl = document.getElementById('s3_npv_display');
+  npvEl.textContent = fmt(npv_20yr);
+  npvEl.className   = 'metric-n ' + (npv_20yr >= 0 ? 'accent' : 'coral');
+
+  document.getElementById('s3_total_invest_display').textContent = fmt(total_cost);
+  document.getElementById('s3_break_even_display').textContent   = (break_even_yrs >= 99 ? '99+' : break_even_yrs) + ' yrs';
+  document.getElementById('s3_break_even_display').className     = 'metric-n ' + (break_even_yrs > 15 ? 'coral' : break_even_yrs > 8 ? 'amber' : 'green');
+  document.getElementById('s3_total_debt_display').textContent   = fmt(total_debt_est);
+  document.getElementById('s3_handoff_val').textContent          = fmt(total_debt_est);
+
+  // Bar chart
+  const net_tuition_total = net_annual * years;
+  const opp_cost_total    = state.s1_peak_wage * years;
+  const items = [
+    { label: 'Net Tuition (after aid)', val: net_tuition_total, cls: 'bar-fill-accent' },
+    { label: 'Opportunity Cost',        val: opp_cost_total,    cls: 'bar-fill-amber'  },
+  ].filter(x => x.val > 0);
+  const maxV = Math.max(...items.map(i => i.val));
+  document.getElementById('s3_chart').innerHTML = items.map(i =>
+    `<div class="bar-row">
+      <span class="bar-lbl">${i.label}</span>
+      <div class="bar-track"><div class="bar-fill ${i.cls}" style="width:${(i.val/maxV*100).toFixed(1)}%"></div></div>
+      <span class="bar-val">${fmt(i.val)}</span>
+    </div>`
+  ).join('');
+
+  // Insights
+  const insights = [];
+  if (npv_20yr > 0)
+    insights.push({ icon: '&#9989;', cls: 'green',  text: `<strong>${program_name}</strong> generates a positive 20-year NPV of <strong>${fmt(npv_20yr)}</strong>. Including the ${fmt(opp_cost_total)} in foregone wages, the program still pays off within <strong>${break_even_yrs} years</strong> of graduation.` });
+  else
+    insights.push({ icon: '&#9888;&#65039;', cls: 'coral', text: `<strong>${program_name}</strong> shows a negative NPV of <strong>${fmt(npv_20yr)}</strong> when opportunity cost is included. Consider negotiating more scholarship aid, targeting a higher-salary specialty, or comparing lower-cost equivalent programs.` });
+
+  if (total_debt_est > 100000)
+    insights.push({ icon: '&#128179;', cls: 'amber', text: `Estimated financed debt of <strong>${fmt(total_debt_est)}</strong> is significant. At the federal Grad PLUS rate (~7.05%), standard 10-year repayment would cost approximately ${fmt(total_debt_est * 0.0140)} per month. Step 4 models all repayment plans.` });
+  else if (total_debt_est < 30000)
+    insights.push({ icon: '&#128200;', cls: 'accent', text: `Relatively low estimated debt of <strong>${fmt(total_debt_est)}</strong> makes this program manageable — especially with the expected salary uplift. Income-driven repayment plans likely offer negligible benefit vs. standard repayment.` });
+
+  document.getElementById('s3_insights').innerHTML = insights.map(i =>
+    `<div class="insight-box ${i.cls}"><span class="insight-icon">${i.icon}</span><div class="insight-text">${i.text}</div></div>`
+  ).join('');
+
+  // Pre-fill Step 4
+  document.getElementById('s4_total_loans').value = Math.round(total_debt_est);
+  const s4sal = document.getElementById('s4_salary');
+  if (!s4sal.value || parseFloat(s4sal.value) === 0) s4sal.value = parseFloat(document.getElementById('s3_expected_sal').value) || 0;
+  const s4banner = document.getElementById('s4_context_banner');
+  s4banner.style.display = '';
+  s4banner.innerHTML = `Pre-filled from Step 3: Est. financed debt <strong>${fmt(total_debt_est)}</strong> &middot; Starting salary: <strong>${fmt(expected_sal)}/yr</strong> &middot; Grad PLUS rate default: 7.05%`;
+
+  document.getElementById('s3Results').classList.add('visible');
+  markDone(3);
+}
+
+/* ═══════════════════════════════════════════════
+   STEP 4 — RUN
+═══════════════════════════════════════════════ */
+function runStep4() {
+  const P       = parseFloat(document.getElementById('s4_total_loans').value) || 0;
+  const annRate = parseFloat(document.getElementById('s4_rate').value) / 100 || 0.0705;
+  const salary  = parseFloat(document.getElementById('s4_salary').value) || 0;
+
+  if (!P || !salary) { alert('Please enter total loans and starting salary.'); return; }
+
+  const r        = annRate / 12;
+  const POVERTY  = 21870; // 150% FPL single 2024
+  const discret  = Math.max(0, salary - POVERTY);
+
+  // Standard 10yr
+  const n10  = 120;
+  const std  = r > 0 ? P * r * Math.pow(1+r,n10) / (Math.pow(1+r,n10) - 1) : P / n10;
+  const std_total = std * n10;
+  const std_int   = std_total - P;
+
+  // IBR 10% — capped at std
+  const ibr_mo    = Math.min(std, (discret * 0.10) / 12);
+  const ibr_total = ibr_mo * 240; // 20yr window, may have forgiveness
+  const ibr_int   = Math.max(0, ibr_total - P);
+
+  // PAYE 10% — forgiveness at 20yr
+  const paye_mo    = Math.min(std, (discret * 0.10) / 12);
+  const paye_total = paye_mo * 240;
+  const paye_int   = Math.max(0, paye_total - P);
+
+  // SAVE — simplified 8% (mixed rate)
+  const save_mo    = Math.min(std, (discret * 0.08) / 12);
+  const save_total = save_mo * 240;
+  const save_int   = Math.max(0, save_total - P);
+
+  // Extended 25yr
+  const n25  = 300;
+  const ext  = r > 0 ? P * r * Math.pow(1+r,n25) / (Math.pow(1+r,n25) - 1) : P / n25;
+  const ext_total = ext * n25;
+  const ext_int   = ext_total - P;
+
+  const plans = [
+    { name: 'Standard 10-yr',    mo: std,     total: std_total,  int: std_int,  term: '10 yr'  },
+    { name: 'IBR (10% discret.)', mo: ibr_mo,  total: ibr_total,  int: ibr_int,  term: '20 yr*' },
+    { name: 'PAYE',               mo: paye_mo, total: paye_total, int: paye_int, term: '20 yr*' },
+    { name: 'SAVE Plan (8%)',     mo: save_mo, total: save_total, int: save_int, term: '20 yr*' },
+    { name: 'Extended 25-yr',    mo: ext,     total: ext_total,  int: ext_int,  term: '25 yr'  },
+  ];
+
+  // Best income-driven = lowest monthly among IBR / PAYE / SAVE
+  const incomedriven = plans.slice(1, 4);
+  const bestID = incomedriven.reduce((a, b) => a.mo < b.mo ? a : b);
+  const bestPlan = bestID;
+  state.s4_monthly_payment = bestPlan.mo;
+
+  // Table
+  document.getElementById('s4_tbody').innerHTML = plans.map(p => {
+    const isBest = p.name === bestPlan.name;
+    return `<tr class="${isBest ? 'best-row' : ''}">
+      <td>${p.name}${isBest ? ' &#9733;' : ''}</td>
+      <td class="num ${isBest ? 'accent' : ''}">${fmt(p.mo)}/mo</td>
+      <td class="num">${fmt(p.total)}</td>
+      <td class="num ${p.int > P * 0.5 ? 'coral' : ''}">${fmt(p.int)}</td>
+      <td class="num" style="font-size:.65rem;color:var(--body)">${p.term}</td>
+    </tr>`;
+  }).join('');
+
+  // Metrics
+  document.getElementById('s4_best_monthly').textContent   = fmt(bestPlan.mo) + '/mo';
+  document.getElementById('s4_best_plan_name').textContent = bestPlan.name + ' (recommended)';
+  document.getElementById('s4_standard_monthly').textContent = fmt(std) + '/mo';
+  const mSavings = Math.max(0, std - bestPlan.mo);
+  document.getElementById('s4_monthly_savings').textContent = fmt(mSavings) + '/mo';
+  document.getElementById('s4_monthly_savings').className   = 'metric-n ' + (mSavings > 200 ? 'green' : 'amber');
+  const dtiRatio = salary > 0 ? (bestPlan.mo / (salary / 12) * 100).toFixed(1) : 0;
+  document.getElementById('s4_dti_ratio').textContent       = dtiRatio + '%';
+  document.getElementById('s4_dti_ratio').className         = 'metric-n ' + (dtiRatio > 20 ? 'coral' : dtiRatio > 10 ? 'amber' : 'green');
+
+  // Insights
+  const insights4 = [];
+  if (mSavings > 500)
+    insights4.push({ icon: '&#9989;', cls: 'green', text: `<strong>${bestPlan.name}</strong> saves you <strong>${fmt(mSavings)}/month</strong> vs. the standard plan — that's ${fmt(mSavings * 12)}/year in freed-up cash flow. Over 5 years, redirecting those savings to investments could compound significantly.` });
+  else if (mSavings < 100)
+    insights4.push({ icon: '&#128200;', cls: 'amber', text: `Income-driven plans save only <strong>${fmt(mSavings)}/month</strong> vs. standard repayment at your salary level. The Standard 10-year plan minimizes total interest paid — consider sticking with it if cash flow allows.` });
+
+  if (parseFloat(dtiRatio) > 20)
+    insights4.push({ icon: '&#9888;&#65039;', cls: 'coral', text: `Your best plan consumes <strong>${dtiRatio}% of monthly gross income</strong> — above the 20% benchmark for sustainable loan burden. Budget carefully and explore employer repayment assistance or PSLF if you work in public service.` });
+  else
+    insights4.push({ icon: '&#128200;', cls: 'accent', text: `At <strong>${dtiRatio}% of monthly gross income</strong>, your loan payment is within a healthy range. You have capacity to accelerate repayment on the standard plan to reduce total interest.` });
+
+  document.getElementById('s4_insights').innerHTML = insights4.map(i =>
+    `<div class="insight-box ${i.cls}"><span class="insight-icon">${i.icon}</span><div class="insight-text">${i.text}</div></div>`
+  ).join('');
+
+  // Composite summary
+  const summaryEl = document.getElementById('s4_summary_text');
+  const s1label   = state.s1_path_name || 'baseline path';
+  const s2label   = state.s2_degree_type ? `${state.s2_degree_type} — ${state.s2_specialty}` : '—';
+  const s3prog    = document.getElementById('s3_program_name').value || 'graduate program';
+  summaryEl.innerHTML = `
+    <strong>Step 1:</strong> The ${state.s1_path_type === 'trade' ? 'trade/cert' : 'degree'} path in <strong>${s1label}</strong> produced a 20-year NPV of <strong>${fmt(state.s1_npv)}</strong> with a peak wage of <strong>${fmt(state.s1_peak_wage)}</strong>.
+    <br><strong>Step 2:</strong> Upgrading to <strong>${s2label}</strong> yields a career NPV upgrade of <strong>${fmt(state.s2_career_npv)}</strong> with break-even at age <strong>${state.s2_break_even_age}</strong>.
+    <br><strong>Step 3:</strong> The <strong>${s3prog}</strong> has a 20-year program NPV of <strong>${fmt(state.s3_program_npv)}</strong> with an estimated financed debt of <strong>${fmt(state.s3_total_debt)}</strong>.
+    <br><strong>Step 4:</strong> The recommended repayment plan is <strong>${bestPlan.name}</strong> at <strong>${fmt(bestPlan.mo)}/month</strong>, saving <strong>${fmt(mSavings)}/month</strong> vs. standard repayment.
+  `;
+  document.getElementById('s4_composite').style.display = 'block';
+
+  // Build and render AP2
+  buildFinalAP2(bestPlan, mSavings, std);
+  document.getElementById('s4_ap2_block').style.display = 'block';
+  document.getElementById('s4Results').classList.add('visible');
+  markDone(4);
+}
+
+/* ═══════════════════════════════════════════════
+   AP2 MANDATE BUILDER
+═══════════════════════════════════════════════ */
+function buildAP2obj(mandateType, intent, constraints, payload) {
+  return {
+    ap2_version: '1.0',
+    schema: `@apexlogics.org/${mandateType}-v1`,
+    mandate_type: mandateType,
+    issued_at: new Date().toISOString(),
+    source: { tool: 'education-path-decision-engine', version: '1.0', suite: 'apexlogics.org' },
+    intent: intent,
+    constraints: constraints,
+    downstream_handoff_candidates: ['AL-36', 'AL-13'],
+    consulting_cta: 'https://apexadvisory.site',
+    payload: payload
+  };
+}
+
+let finalAP2obj = null;
+
+function buildFinalAP2(bestPlan, mSavings, stdPmt) {
+  finalAP2obj = buildAP2obj(
+    'education_path_decision_record',
+    'Capture full education path decision state from 4-step workflow for advisor review or downstream agent handoff.',
+    { pii_free: true, browser_only: true, data_vintage: '2025' },
+    {
+      step1_baseline: {
+        path_type:     state.s1_path_type,
+        path_name:     state.s1_path_name,
+        peak_wage:     Math.round(state.s1_peak_wage),
+        net_investment: Math.round(state.s1_investment),
+        npv_20yr:      Math.round(state.s1_npv)
+      },
+      step2_pro_degree: {
+        degree_type:     state.s2_degree_type,
+        specialty:       state.s2_specialty,
+        break_even_age:  state.s2_break_even_age,
+        career_npv:      Math.round(state.s2_career_npv)
+      },
+      step3_grad_school: {
+        program_name:    document.getElementById('s3_program_name').value || '',
+        program_npv:     Math.round(state.s3_program_npv),
+        total_debt_est:  Math.round(state.s3_total_debt)
+      },
+      step4_loan_repayment: {
+        total_loans:         Math.round(parseFloat(document.getElementById('s4_total_loans').value) || 0),
+        interest_rate_pct:   parseFloat(document.getElementById('s4_rate').value) || 7.05,
+        recommended_plan:    bestPlan.name,
+        monthly_payment:     Math.round(bestPlan.mo),
+        monthly_savings_vs_standard: Math.round(mSavings),
+        standard_monthly:    Math.round(stdPmt)
+      }
+    }
+  );
+
+  const code = JSON.stringify(finalAP2obj, null, 2)
+    .replace(/"([^"]+)":/g, '<span class="ap2-key">"$1"</span>:')
+    .replace(/: "([^"]+)"/g, ': <span class="ap2-str">"$1"</span>')
+    .replace(/: (\-?\d+\.?\d*)/g, ': <span class="ap2-num">$1</span>')
+    .replace(/: (true|false)/g, ': <span class="ap2-bool">$1</span>');
+  document.getElementById('s4_ap2_code').innerHTML = code;
+}
+
+/* ═══════════════════════════════════════════════
+   DOWNLOAD HELPERS
+═══════════════════════════════════════════════ */
+function dl(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+function downloadS1MD() {
+  const name = state.s1_path_name || '—';
+  dl('apex-education-step1-roi.md',
+    `# AL-36: Trade vs. Degree ROI Analysis\n\n**Generated by:** Apex Logics · Education Path Decision Engine\n**Date:** ${new Date().toLocaleDateString()}\n\n## Path Evaluated\n- Category: ${state.s1_path_type}\n- Path: ${name}\n\n## Results\n- 20-Year NPV: ${fmt(state.s1_npv)}\n- Net Investment: ${fmt(state.s1_investment)}\n- Peak Wage: ${fmt(state.s1_peak_wage)}\n\n---\n*All calculations performed locally. Educational purposes only. Not financial advice.*\n`,
+    'text/markdown');
+}
+
+function downloadS1AP2() {
+  const mandate = buildAP2obj('trade_vs_degree_roi_record',
+    'Capture baseline education path ROI for professional degree upgrade comparison.',
+    { pii_free: true, browser_only: true },
+    { path_type: state.s1_path_type, path_name: state.s1_path_name, peak_wage: Math.round(state.s1_peak_wage), npv_20yr: Math.round(state.s1_npv) }
+  );
+  dl('apex-education-step1-ap2.json', JSON.stringify(mandate, null, 2), 'application/json');
+}
+
+function downloadS2MD() {
+  dl('apex-education-step2-pro-degree.md',
+    `# AL-39: Professional Degree ROI Analysis\n\n**Generated by:** Apex Logics · Education Path Decision Engine\n**Date:** ${new Date().toLocaleDateString()}\n\n## Degree Evaluated\n- Degree: ${state.s2_degree_type}\n- Specialty: ${state.s2_specialty}\n\n## Results\n- Career NPV Upgrade: ${fmt(state.s2_career_npv)}\n- Break-Even Age: ${state.s2_break_even_age}\n\n---\n*Educational purposes only. Not financial advice.*\n`,
+    'text/markdown');
+}
+
+function downloadS2AP2() {
+  const mandate = buildAP2obj('pro_degree_roi_record',
+    'Capture professional degree ROI evaluation for graduate school analysis.',
+    { pii_free: true, browser_only: true },
+    { degree_type: state.s2_degree_type, specialty: state.s2_specialty, break_even_age: state.s2_break_even_age, career_npv: Math.round(state.s2_career_npv) }
+  );
+  dl('apex-education-step2-ap2.json', JSON.stringify(mandate, null, 2), 'application/json');
+}
+
+function downloadS3MD() {
+  const prog = document.getElementById('s3_program_name').value || 'Graduate Program';
+  dl('apex-education-step3-gradschool.md',
+    `# AL-26: Graduate School ROI Analysis\n\n**Generated by:** Apex Logics · Education Path Decision Engine\n**Date:** ${new Date().toLocaleDateString()}\n\n## Program\n- ${prog}\n\n## Results\n- 20-Year Program NPV: ${fmt(state.s3_program_npv)}\n- Estimated Financed Debt: ${fmt(state.s3_total_debt)}\n\n---\n*Educational purposes only. Not financial advice.*\n`,
+    'text/markdown');
+}
+
+function downloadS3AP2() {
+  const mandate = buildAP2obj('grad_school_roi_record',
+    'Capture graduate school ROI for loan repayment planning.',
+    { pii_free: true, browser_only: true },
+    { program_name: document.getElementById('s3_program_name').value || '', program_npv: Math.round(state.s3_program_npv), total_debt_est: Math.round(state.s3_total_debt) }
+  );
+  dl('apex-education-step3-ap2.json', JSON.stringify(mandate, null, 2), 'application/json');
+}
+
+function downloadFinalMD() {
+  if (!finalAP2obj) return;
+  const p = finalAP2obj.payload;
+  dl('apex-education-path-full.md',
+    `# Education Path Decision Engine — Full Workflow Summary\n\n**Generated by:** Apex Logics · apexlogics.org/demos/education-path-decision-engine.html\n**Date:** ${new Date().toLocaleDateString()}\n\n## Step 1: Baseline Path (AL-36)\n- Path: ${p.step1_baseline.path_type} / ${p.step1_baseline.path_name}\n- Peak Wage: ${fmt(p.step1_baseline.peak_wage)}\n- Net Investment: ${fmt(p.step1_baseline.net_investment)}\n- 20-Year NPV: ${fmt(p.step1_baseline.npv_20yr)}\n\n## Step 2: Professional Degree (AL-39)\n- Degree: ${p.step2_pro_degree.degree_type} — ${p.step2_pro_degree.specialty}\n- Break-Even Age: ${p.step2_pro_degree.break_even_age}\n- Career NPV Upgrade: ${fmt(p.step2_pro_degree.career_npv)}\n\n## Step 3: Graduate School (AL-26)\n- Program: ${p.step3_grad_school.program_name}\n- 20-Year Program NPV: ${fmt(p.step3_grad_school.program_npv)}\n- Estimated Financed Debt: ${fmt(p.step3_grad_school.total_debt_est)}\n\n## Step 4: Loan Repayment (AL-13)\n- Total Loans: ${fmt(p.step4_loan_repayment.total_loans)}\n- Interest Rate: ${p.step4_loan_repayment.interest_rate_pct}%\n- Recommended Plan: ${p.step4_loan_repayment.recommended_plan}\n- Monthly Payment: ${fmt(p.step4_loan_repayment.monthly_payment)}/mo\n- Monthly Savings vs. Standard: ${fmt(p.step4_loan_repayment.monthly_savings_vs_standard)}/mo\n\n---\n*🔒 All calculations performed locally. No PII transmitted.*\n*Educational purposes only. Not financial, legal, or career advice.*\n*Data: BLS OEWS 2024, IRS 2025, Federal Poverty Guidelines 2024, Grad PLUS rates 2025.*\n`,
+    'text/markdown');
+}
+
+function downloadFinalAP2() {
+  if (!finalAP2obj) return;
+  dl('apex-education-path-ap2.json', JSON.stringify(finalAP2obj, null, 2), 'application/json');
+}
+
+function downloadFinalJSON() {
+  if (!finalAP2obj) return;
+  dl('apex-education-path-summary.json', JSON.stringify(finalAP2obj.payload, null, 2), 'application/json');
+}
+</script>
+</body>
+</html>
