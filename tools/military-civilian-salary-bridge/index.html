@@ -1077,6 +1077,14 @@ function exportAP2() {
       message: "Connect with a career advisor to navigate your military-to-civilian transition."
     }
   };
+  // ── AP2 v2.0 validation — validate before emit (CONTRACT §3.3 / Appendix F2) ──
+  const _ap2errs = [];
+  ['ap2_version','mandate_type','generated_at','inputs'].forEach(k => { if (payload[k] == null) _ap2errs.push('missing ' + k); });
+  if (payload.mandate_type && ![
+    'ai_skills_premium_record','federal_comp_record','military_civilian_record',
+    'noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record'
+  ].includes(payload.mandate_type)) _ap2errs.push('unknown mandate_type: ' + payload.mandate_type);
+  if (_ap2errs.length) { alert('AP2 validation failed: ' + _ap2errs.join('; ')); return; }
   downloadFile('military-civilian-bridge-ap2.json', JSON.stringify(payload, null, 2), 'application/json');
 }
 

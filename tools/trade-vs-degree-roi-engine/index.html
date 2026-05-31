@@ -1461,7 +1461,16 @@ function exportMarkdown() {
 
 function exportAP2() {
   if (!_lastResults) { alert('Run a calculation first.'); return; }
-  const json = JSON.stringify(buildAP2(_lastResults), null, 2);
+  const ap2 = buildAP2(_lastResults);
+  // ── AP2 v2.0 validation — validate before emit (CONTRACT §3.3 / Appendix F2) ──
+  const _ap2errs = [];
+  ['ap2_version','mandate_type','generated_at','inputs'].forEach(k => { if (ap2[k] == null) _ap2errs.push('missing ' + k); });
+  if (ap2.mandate_type && ![
+    'ai_skills_premium_record','federal_comp_record','military_civilian_record',
+    'noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record'
+  ].includes(ap2.mandate_type)) _ap2errs.push('unknown mandate_type: ' + ap2.mandate_type);
+  if (_ap2errs.length) { alert('AP2 validation failed: ' + _ap2errs.join('; ')); return; }
+  const json = JSON.stringify(ap2, null, 2);
   const slug = (_lastResults.tradeKey + '-vs-' + _lastResults.degreeKey)
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   downloadFile(json, `al36-ap2-${slug}.json`, 'application/json');
