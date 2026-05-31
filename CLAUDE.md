@@ -12,9 +12,9 @@
 |---|---|
 | Tools shipped | **35** (AL-01–AL-40; AL-06+16 and AL-08+14 combined) |
 | Display numbers | #01–#35 |
-| CONTRACT | v1.3.1 (internal: `../apexlogics_CONTRACT.md`) |
+| CONTRACT | v1.4.0 (internal: `../apexlogics_CONTRACT.md`) |
 | MasterSpec | v9.9 (internal: `../ApexLogics_v8_MasterSpec.md`) |
-| Suite registry | v3.2.0 — `suite-registry.json` |
+| Suite registry | v3.2.1 — `suite-registry.json` |
 | Demos | 12 live at `/demos/` |
 | Sitemap URLs | 51 (`sitemap.xml`) |
 | GitHub | `github.com/PostOakLabs/apexlogics` (public, CC BY 4.0) |
@@ -55,7 +55,7 @@ git push
 ```
 repo/
 ├── index.html              # Hub (35 tool cards) — 84KB, grep don't read whole
-├── suite-registry.json     # MCP registry v3.2.0 — 40KB, grep don't read whole
+├── suite-registry.json     # MCP registry v3.2.1 — 40KB, grep don't read whole
 ├── llms.txt                # Agent index — 35 tools
 ├── sitemap.xml             # 51 URLs
 ├── demos/                  # 12 multitool demos
