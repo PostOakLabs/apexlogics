@@ -1,0 +1,83 @@
+{
+  "tool_id": "al-32-parent-college-roi-planner",
+  "al_id": "AL-32",
+  "version": "1.0.0",
+  "title": "Parent College ROI Planner",
+  "description": "Helps parents plan college funding by modeling 529 balance projection, SAI/EFC asset impact on financial aid, and Parent PLUS loan vs. gift split. Tab 1: 529 projection + SAI asset impact — shows how 529 vs. non-529 assets shift the SAI and Pell eligibility using NCES IPEDS 2023-24 COA data. Tab 2: funding mix optimizer — models loan vs. gift split across 4 school tiers with Parent PLUS (7.54% 2024-25) amortization schedule. Deterministic.",
+  "category": "student_finance_debt",
+  "journeys": ["education_path"],
+  "personas": ["parent", "counselor"],
+  "tags": ["529", "fafsa", "sai", "efc", "pell grant", "parent plus", "college funding", "financial aid", "roi", "loan vs gift"],
+  "status": "shipped",
+  "shipped_date": "2026-05-19",
+  "display_num": "#20",
+  "maintenance": "low",
+  "data_vintage": "NCES IPEDS 2023-24 · Federal Pell Grant 2024-25 · Parent PLUS 7.54% 2024-25",
+  "frozen_baseline": false,
+  "input_schema": {
+    "type": "object",
+    "required": ["years_to_enrollment"],
+    "properties": {
+      "years_to_enrollment": { "type": "integer", "minimum": 1, "maximum": 20, "description": "Years until child enrolls" },
+      "current_529_balance": { "type": "number", "minimum": 0, "default": 0, "description": "Current 529 plan balance" },
+      "annual_529_contribution": { "type": "number", "minimum": 0, "default": 0, "description": "Annual 529 contribution" },
+      "non_529_assets": { "type": "number", "minimum": 0, "default": 0, "description": "Non-529 parent assets (affects SAI)" },
+      "parent_agi": { "type": "number", "minimum": 0, "description": "Parent adjusted gross income" },
+      "school_tier": {
+        "type": "string",
+        "enum": ["public_in_state", "public_out_state", "private_nonprofit", "for_profit"],
+        "default": "public_in_state",
+        "description": "School tier for COA lookup"
+      },
+      "growth_rate_pct": { "type": "number", "minimum": 0, "default": 6.0, "description": "529 investment growth rate %" },
+      "gift_pct": { "type": "number", "minimum": 0, "maximum": 100, "default": 50, "description": "Desired % of net cost to cover as gift (vs. loan)" }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "projected_529": { "type": "number", "description": "Projected 529 balance at enrollment" },
+      "annual_coa": { "type": "number", "description": "Annual COA for selected school tier (NCES IPEDS 2023-24)" },
+      "sai_estimate": { "type": "number", "description": "Estimated SAI from parent AGI and assets" },
+      "pell_estimate": { "type": "number", "description": "Annual Pell Grant estimate (if SAI-eligible)" },
+      "net_coa_annual": { "type": "number", "description": "Net annual COA after 529 and Pell" },
+      "loan_amount": { "type": "number", "description": "Parent PLUS loan amount for funding gap" },
+      "monthly_payment": { "type": "number", "description": "Parent PLUS monthly payment at 7.54%" },
+      "total_loan_cost": { "type": "number", "description": "Total principal + interest over repayment" },
+      "gift_total": { "type": "number", "description": "Total gift contribution over 4 years" }
+    }
+  },
+  "mcp_tool_definition": {
+    "name": "plan_parent_college_roi",
+    "description": "Model college funding for parents: 529 projection, SAI asset impact, Pell eligibility, and Parent PLUS loan vs. gift split. Uses NCES IPEDS 2023-24 COA, 2024-25 Pell schedule, and Parent PLUS 7.54% rate.",
+    "inputSchema": {
+      "type": "object",
+      "required": ["years_to_enrollment"],
+      "properties": {
+        "years_to_enrollment": { "type": "integer" },
+        "current_529_balance": { "type": "number" },
+        "parent_agi": { "type": "number" },
+        "school_tier": { "type": "string", "default": "public_in_state" }
+      }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "runAnalysis",
+    "secondary_function_names": ["runComparison"],
+    "timeout_ms": 3000
+  },
+  "ap2_export": true,
+  "ap2_mandate_types": ["parent_college_roi_record"],
+  "ap2_inbound_mandate_types": ["fafsa_sai_estimate"],
+  "downstream_handoff_candidates": ["AL-12", "AL-17"],
+  "regulatory_citations": [
+    "NCES IPEDS 2023-24 Average Cost of Attendance by institution type",
+    "Federal Pell Grant schedule 2024-25 (Federal Register)",
+    "Parent PLUS loan rate 7.54% — studentaid.gov 2024-25"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+}

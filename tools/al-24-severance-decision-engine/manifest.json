@@ -1,0 +1,80 @@
+{
+  "tool_id": "al-24-severance-decision-engine",
+  "al_id": "AL-24",
+  "version": "1.1.0",
+  "title": "Separation Package Analyzer",
+  "description": "Models the after-tax take-home value of a separation package offer. Handles lump-sum (IRS supplemental 22%/37% flat rate, no FICA) and salary-continuation (2024 IRS Pub 15-T brackets, FICA applicable) payment structures. User-entered state income tax rate. Optional runway estimate (net take-home ÷ monthly expenses). Inline legal disclaimer. AP2 export with downstream handoff to AL-08+14.",
+  "category": "career_transition_mobility",
+  "journeys": ["career_navigation", "compensation_benefits"],
+  "personas": ["career_changer", "working_professional", "counselor"],
+  "tags": ["separation", "package", "after-tax", "take-home", "lump sum", "salary continuation", "IRS", "withholding", "runway"],
+  "status": "shipped",
+  "maintenance": "low",
+  "data_vintage": "IRS Publication 15-T (2024) · IRS Rev. Proc. 2023-34 (2024 brackets) · 2024 FICA wage base $168,600",
+  "frozen_baseline": false,
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "payment_type": { "type": "string", "enum": ["lump_sum", "salary_continuation"] },
+      "gross_package_usd": { "type": "number", "description": "Total gross separation package amount in USD" },
+      "current_annual_salary_usd": { "type": "number", "description": "Current annual base salary for withholding reference" },
+      "filing_status": { "type": "string", "enum": ["single", "mfj", "hoh"] },
+      "state_tax_rate_pct": { "type": "number", "description": "User-entered state income tax rate as a percentage (0–15)" },
+      "monthly_expenses_usd": { "type": "number", "description": "Monthly living expenses for runway calculation (optional)" },
+      "cobra_premium_usd": { "type": "number", "description": "Monthly COBRA continuation premium during job search (optional)" },
+      "ui_weekly_benefit_usd": { "type": "number", "description": "Estimated weekly unemployment insurance benefit (optional; reduces burn rate)" },
+      "prior_year_ss_wages_usd": { "type": "number", "description": "Prior-year Social Security wages; used to compute remaining FICA-subject headroom under the $168,600 wage base (optional)" }
+    },
+    "required": ["payment_type", "gross_package_usd", "filing_status"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "gross_package_usd": { "type": "number" },
+      "federal_tax_usd": { "type": "number" },
+      "fica_tax_usd": { "type": "number" },
+      "state_tax_usd": { "type": "number" },
+      "net_takeHome_usd": { "type": "number" },
+      "effective_tax_rate_pct": { "type": "number" },
+      "runway_months": { "type": ["number", "null"] }
+    }
+  },
+  "mcp_tool_definition": {
+    "name": "analyze_separation_package",
+    "tool_number": "AL-24",
+    "description": "Given a separation package amount, payment type (lump sum vs. salary continuation), filing status, and state tax rate, returns after-tax net take-home using IRS Publication 15-T 2024 withholding rules. Optionally computes runway months if monthly expenses provided. Returns AP2 severance_decision_record mandate.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "payment_type": { "type": "string", "enum": ["lump_sum", "salary_continuation"], "description": "How the package is paid" },
+        "gross_package_usd": { "type": "number", "description": "Total gross package amount in USD" },
+        "filing_status": { "type": "string", "enum": ["single", "mfj", "hoh"], "description": "Federal income tax filing status" },
+        "state_tax_rate_pct": { "type": "number", "description": "State income tax rate as a percentage (0–15); 0 for no-income-tax states" },
+        "monthly_expenses_usd": { "type": "number", "description": "Monthly living expenses for runway calculation (optional)" },
+        "cobra_premium_usd": { "type": "number", "description": "Monthly COBRA continuation premium during job search (optional)" },
+        "ui_weekly_benefit_usd": { "type": "number", "description": "Estimated weekly unemployment insurance benefit (optional; reduces effective burn rate)" },
+        "prior_year_ss_wages_usd": { "type": "number", "description": "Prior-year SS wages to compute remaining FICA-subject headroom under $168,600 wage base (optional)" }
+      },
+      "required": ["payment_type", "gross_package_usd", "filing_status"]
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 1000
+  },
+  "ap2_export": true,
+  "ap2_mandate_types": ["severance_decision_record"],
+  "ap2_inbound_mandate_types": [],
+  "downstream_handoff_candidates": ["AL-08+14"],
+  "regulatory_citations": [
+    "IRS Publication 15-T, Federal Income Tax Withholding Methods (2024)",
+    "IRS Revenue Procedure 2023-34 — 2024 income tax brackets",
+    "IRC §3402 — Income Tax Collected at Source",
+    "IRC §3121(a) — FICA wage definition (salary continuation vs. lump-sum treatment)"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+}

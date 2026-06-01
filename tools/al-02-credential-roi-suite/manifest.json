@@ -1,0 +1,74 @@
+{
+  "tool_id": "al-02-credential-roi-suite",
+  "al_id": "AL-02",
+  "version": "1.0.0",
+  "title": "Credential ROI Suite",
+  "description": "Compare bootcamp, degree, and certification ROI using BLS earnings data. Models NPV, payback period, opportunity cost, and salary premium with an AP2 handoff to the Graduate School ROI Comparator.",
+  "category": "education_path_roi",
+  "journeys": ["education_path"],
+  "personas": ["student", "counselor", "career_changer"],
+  "tags": ["bootcamp", "degree", "certification", "ROI", "NPV", "salary", "BLS", "career"],
+  "status": "shipped",
+  "maintenance": "medium",
+  "data_vintage": "BLS OEWS May 2023 (16 SOC codes) · CIRR/SwitchUp 2023 bootcamp benchmarks · NCES IPEDS 2022-23 tuition tiers · Q4 2024 exam fee schedules (15 certifications)",
+  "frozen_baseline": false,
+  "regulatory_citations": [
+    "BLS Occupational Employment and Wage Statistics (OEWS) May 2023 — bls.gov/oes",
+    "NCES Integrated Postsecondary Education Data System (IPEDS) 2022-23 — nces.ed.gov/ipeds",
+    "CIRR Outcomes Standards 2023 — cirr.com/standards",
+    "SwitchUp Bootcamp Reviews and Data 2023 — switchup.org",
+    "AWS, CompTIA, PMI, AICPA/NASBA, ISACA exam fee schedules Q4 2024"
+  ],
+  "input_schema": {
+    "tab": "string — bootcamp | degree | certification",
+    "roleKey": "string — BLS SOC role key (e.g. software_dev, data_analyst)",
+    "institutionName": "string — program or institution name",
+    "programCost": "number — total direct program cost in USD",
+    "durationYears": "number — program duration in years (0 for certs)",
+    "currentSalary": "number — current annual salary in USD",
+    "postSalary": "number — expected post-credential annual salary in USD",
+    "careerHorizon": "number — planning horizon in years (default 10)",
+    "discountRate": "number — discount rate as percentage (default 5)",
+    "annualRenewal": "number — annual renewal/maintenance cost in USD (certs only)"
+  },
+  "output_schema": {
+    "totalDirectCost": "number — direct program cost in USD",
+    "oppCost": "number — opportunity cost (foregone salary during study) in USD",
+    "totalInvestment": "number — direct cost + opportunity cost in USD",
+    "annualPremium": "number — salary increase post-credential in USD/yr",
+    "netPremium": "number — annualPremium minus annualRenewal in USD/yr",
+    "npv": "number — net present value over career horizon in USD",
+    "paybackYears": "number | null — simple payback period in years (null if beyond horizon)",
+    "tenYrGain": "number — approximate net financial gain over 10 years in USD"
+  },
+  "mcp_tool_definition": {
+    "name": "credential_roi_suite",
+    "description": "Model ROI, NPV, and payback period for bootcamp, degree, or certification credentials using BLS earnings benchmarks. Exports AP2 credential_roi_evaluation for downstream use by AL-26 Graduate School ROI Comparator.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "tab": { "type": "string", "enum": ["bootcamp", "degree", "certification"] },
+        "roleKey": { "type": "string" },
+        "institutionName": { "type": "string" },
+        "programCost": { "type": "number", "minimum": 0 },
+        "durationYears": { "type": "number", "minimum": 0 },
+        "currentSalary": { "type": "number", "minimum": 0 },
+        "postSalary": { "type": "number", "minimum": 0 },
+        "careerHorizon": { "type": "number", "minimum": 1, "maximum": 40 },
+        "discountRate": { "type": "number", "minimum": 0, "maximum": 20 }
+      },
+      "required": ["tab", "programCost", "currentSalary", "postSalary"]
+    }
+  },
+  "execution": {
+    "type": "static_html",
+    "entrypoint": "index.html",
+    "requires_network": false,
+    "requires_auth": false
+  },
+  "ap2_export": true,
+  "ap2_mandate_types": ["credential_roi_evaluation"],
+  "downstream_handoff_candidates": ["AL-26"],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site"
+}

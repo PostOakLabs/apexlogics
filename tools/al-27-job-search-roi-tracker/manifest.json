@@ -1,0 +1,115 @@
+{
+  "$schema": "https://apexlogics.org/schema/tool-manifest-v1.1.json",
+  "al_id": "AL-27",
+  "tool_id": "al-27-job-search-roi-tracker",
+  "title": "Job Search ROI Tracker",
+  "subtitle": "Search Channel ROI + Accept vs. Continue Planner",
+  "version": "1.1.0",
+  "spec_version": "8.0",
+  "contract_version": "1.1",
+  "category": "career_transition_mobility",
+  "journeys": ["career_navigation", "compensation_benefits"],
+  "personas": ["career_changer", "working_professional", "counselor"],
+  "publisher": "Apex Advisors",
+  "publisher_url": "https://apexadvisory.site",
+  "suite_url": "https://apexlogics.org",
+  "tool_url": "https://apexlogics.org/tools/al-27-job-search-roi-tracker/",
+  "license": "CC-BY-4.0",
+  "pii_free": true,
+  "zero_network": true,
+  "storage_policy": "sessionStorage apex_lang only",
+  "frozen_baseline": false,
+  "maintenance": "low",
+  "data_vintage": "Tab 1: Channel benchmark rates — BLS JOLT 2024 (job openings/hire rates), LinkedIn Economic Graph 2024 (response rates), SHRM 2024 (time-to-fill). Tab 2: Zero maintenance (user-entered inputs only). Annual spot-check recommended.",
+  "regulatory_citations": [
+    "BLS JOLT 2024 (Job Openings and Labor Turnover Survey — hire rates by sector)",
+    "LinkedIn Economic Graph 2024 (InMail response rates, application-to-interview ratios)",
+    "SHRM 2024 Workforce Survey (recruiter channel benchmarks, time-to-fill)",
+    "NALP 2024 Employment Report (referral hire rates)",
+    "IRS Rev. Proc. 2024-25 (income year used for NPV base)",
+    "BLS OEWS May 2023 (wage benchmarks for target salary validation)"
+  ],
+  "ap2_export": true,
+  "ap2_protocol": "google_agent_purchase_protocol_sep_2025",
+  "ap2_mandate_types": ["job_search_roi_record"],
+  "ap2_inbound_mandate_types": ["offer_negotiation_record"],
+  "downstream_handoff_candidates": ["AL-28", "AL-25"],
+  "downstream_handoff_note": "Tab 2 accept verdict → AL-28 (Career Break & Reentry Cost Engine) if user chooses to continue searching and a gap is likely. Offer accepted → AL-25 (Offer Negotiation Calculator) for counter-offer strategy.",
+  "status": "shipped",
+  "shipped_date": "2026-05-17",
+  "rubric_score": "72/0/3/1",
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "mcp_tool_definition": {
+    "name": "track_job_search_roi",
+    "tool_number": "AL-27",
+    "description": "Model the expected ROI of job search effort by channel (referral, LinkedIn, recruiter, direct apply, cold outreach, job boards) using geometric probability models and NPV. Tab 1 computes EV/hour and channel ranking by expected offer timeline. Tab 2 computes the NPV delta of accepting a current offer vs. continuing to search, with break-even months and runway analysis. Returns two AP2-compliant mandates under job_search_roi_record: channel_roi (Tab 1) and accept_vs_continue (Tab 2). Accepts AP2 inbound from offer_negotiation_record (AL-25).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "current_salary_usd": {
+          "type": "number",
+          "description": "Current annual salary in USD (or last salary if unemployed)."
+        },
+        "target_salary_usd": {
+          "type": "number",
+          "description": "Target annual salary for the new role, USD."
+        },
+        "hourly_rate_usd": {
+          "type": "number",
+          "description": "User's effective hourly rate for opportunity cost calculations (annual / 2080)."
+        },
+        "channels": {
+          "type": "array",
+          "description": "Array of job search channels to model.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": { "type": "string", "description": "Channel name (e.g., 'Referral / Network')." },
+              "apps_per_week": { "type": "integer", "minimum": 1, "maximum": 50 },
+              "response_rate_pct": { "type": "number", "minimum": 0, "maximum": 100, "description": "% of applications that receive any response." },
+              "interview_to_offer_pct": { "type": "number", "minimum": 0, "maximum": 100, "description": "% of interviews that convert to an offer." },
+              "hours_per_app": { "type": "number", "minimum": 0.1, "maximum": 20, "description": "Hours spent per application (research + prep + submission)." }
+            }
+          }
+        },
+        "current_offer_usd": {
+          "type": "number",
+          "description": "Current offer in hand, annual USD (Tab 2)."
+        },
+        "liquid_savings_usd": {
+          "type": "number",
+          "description": "Liquid savings / runway available during continued search, USD."
+        },
+        "monthly_expenses_usd": {
+          "type": "number",
+          "description": "Monthly essential expenses during job search, USD."
+        },
+        "expected_weeks_remaining": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 104,
+          "description": "Expected weeks remaining to receive a better offer (from Tab 1 portfolio median or user estimate)."
+        },
+        "discount_rate_annual_pct": {
+          "type": "number",
+          "default": 3.0,
+          "description": "Annual discount rate for NPV calculations (default 3%)."
+        },
+        "years_to_model": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30,
+          "default": 10,
+          "description": "Years over which to model the salary differential NPV."
+        }
+      }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "runTab1",
+    "timeout_ms": 5000
+  }
+}

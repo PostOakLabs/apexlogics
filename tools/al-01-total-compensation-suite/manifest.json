@@ -1,0 +1,83 @@
+{
+  "tool_id": "al-01-total-compensation-suite",
+  "al_id": "AL-01",
+  "version": "1.0.0",
+  "title": "Total Compensation Suite",
+  "description": "Three-offer total compensation stack with federal + 8-tier state income tax, FICA, bonus, equity (RSU + options via Black-Scholes Abramowitz-Stegun), signing bonus, and benefits. Tab 1: single offer deep-dive with tax breakdown and equity fair value. Tab 2: side-by-side comparison of up to 3 offers with net comp ranking. Entirely deterministic; no network calls.",
+  "category": "compensation_offers",
+  "journeys": ["compensation_benefits"],
+  "personas": ["working_professional", "career_changer"],
+  "tags": ["total comp", "salary", "equity", "rsu", "options", "tax", "fica", "bonus", "comparison", "black-scholes"],
+  "status": "shipped",
+  "shipped_date": "2026-05-21",
+  "display_num": "#25",
+  "maintenance": "low",
+  "data_vintage": "2026 est. federal brackets · 8-tier state effective rates · FICA SS $176,100 base · Black-Scholes (Abramowitz-Stegun) for options",
+  "frozen_baseline": false,
+  "input_schema": {
+    "type": "object",
+    "required": ["base"],
+    "properties": {
+      "base": { "type": "number", "minimum": 0, "description": "Annual base salary in USD" },
+      "bonus_pct": { "type": "number", "minimum": 0, "maximum": 200, "description": "Target bonus as % of base" },
+      "rsu_annual": { "type": "number", "minimum": 0, "description": "Annual RSU vesting value at current price" },
+      "options_annual": { "type": "number", "minimum": 0, "description": "Annual option grant fair value" },
+      "strike": { "type": "number", "minimum": 0, "description": "Option strike price (for Black-Scholes)" },
+      "stock_price": { "type": "number", "minimum": 0, "description": "Current stock price" },
+      "volatility": { "type": "number", "minimum": 0, "maximum": 3, "description": "Annualized volatility (decimal)" },
+      "ttm": { "type": "number", "minimum": 0, "description": "Time to maturity in years" },
+      "signing": { "type": "number", "minimum": 0, "description": "One-time signing bonus" },
+      "state": { "type": "string", "description": "Two-letter state code for state income tax" },
+      "filing_status": { "type": "string", "enum": ["single", "mfj", "mfs", "hoh"], "default": "single" },
+      "benefits_annual": { "type": "number", "minimum": 0, "description": "Estimated annual value of benefits" }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "gross_total": { "type": "number", "description": "Total gross comp (base + bonus + equity + signing)" },
+      "federal_tax": { "type": "number", "description": "Estimated federal income tax" },
+      "state_tax": { "type": "number", "description": "Estimated state income tax" },
+      "fica": { "type": "number", "description": "FICA (SS + Medicare)" },
+      "net_cash": { "type": "number", "description": "After-tax net cash compensation" },
+      "equity_fv": { "type": "number", "description": "Black-Scholes fair value of option grant (if applicable)" },
+      "effective_rate": { "type": "number", "description": "Combined effective tax rate as decimal" },
+      "ranking": { "type": "array", "description": "Ranked offers by net comp (Tab 2)" }
+    }
+  },
+  "mcp_tool_definition": {
+    "name": "calculate_total_compensation",
+    "description": "Calculate full after-tax total compensation for up to 3 job offers. Applies 2026 est. federal brackets, 8-tier state effective rates, FICA, and Black-Scholes (Abramowitz-Stegun) for option fair value. Returns net cash comp, effective tax rate, equity fair value, and multi-offer ranking. Deterministic.",
+    "inputSchema": {
+      "type": "object",
+      "required": ["base"],
+      "properties": {
+        "base": { "type": "number", "description": "Annual base salary in USD" },
+        "bonus_pct": { "type": "number", "description": "Target bonus as % of base" },
+        "rsu_annual": { "type": "number", "description": "Annual RSU vesting value" },
+        "state": { "type": "string", "description": "Two-letter state code" },
+        "filing_status": { "type": "string", "enum": ["single", "mfj", "mfs", "hoh"] }
+      }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "runTab1",
+    "secondary_function_names": ["renderCompareTable"],
+    "timeout_ms": 5000
+  },
+  "ap2_export": true,
+  "ap2_mandate_types": ["total_comp_record"],
+  "ap2_inbound_mandate_types": ["offer_negotiation_record", "equity_compensation_record", "geo_arbitrage_record"],
+  "downstream_handoff_candidates": ["AL-33", "AL-04"],
+  "regulatory_citations": [
+    "IRS Rev. Proc. 2025 (est. 2026 brackets)",
+    "FICA SS §3101/§3111 wage base $176,100",
+    "IRC §83 (RSU inclusion)",
+    "Black-Scholes-Merton option pricing model"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+}

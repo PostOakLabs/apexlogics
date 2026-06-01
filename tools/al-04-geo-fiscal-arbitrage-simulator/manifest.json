@@ -1,0 +1,71 @@
+{
+  "tool_id": "al-04-geo-fiscal-arbitrage-simulator",
+  "al_id": "AL-04",
+  "version": "1.0.0",
+  "title": "Geo-Fiscal Arbitrage Simulator",
+  "description": "Models purchasing power equivalence across 70 US metros by combining cost-of-living index with state income tax. Tab 1: salary equivalence — enter a salary in one metro and get the purchasing-power-equivalent salary in any comparison metro. Tab 2: remote pay policy impact — models the net delta when employer applies geographic pay adjustments. Category weights: housing 30%, food 14%, healthcare 10%, transport 12%, misc 34%.",
+  "category": "compensation_offers",
+  "journeys": ["compensation_benefits"],
+  "personas": ["working_professional"],
+  "tags": ["cost of living", "geo pay", "remote work", "salary equivalence", "arbitrage", "metro comparison", "state tax", "purchasing power"],
+  "status": "shipped",
+  "shipped_date": "2026-05-21",
+  "display_num": "#26",
+  "maintenance": "low",
+  "data_vintage": "70-metro CoL index (C2ER/Numbeo est. 2025-26) · 8-tier state effective rates · category weights: housing 30%, food 14%, healthcare 10%, transport 12%, misc 34%",
+  "frozen_baseline": false,
+  "input_schema": {
+    "type": "object",
+    "required": ["salary", "origin_metro", "target_metro"],
+    "properties": {
+      "salary": { "type": "number", "minimum": 0, "description": "Current annual salary in USD" },
+      "origin_metro": { "type": "string", "description": "Origin metro name from the 70-metro index" },
+      "target_metro": { "type": "string", "description": "Target metro for equivalence comparison" },
+      "remote_pay_policy": {
+        "type": "string",
+        "enum": ["none", "national_rate", "geo_adjusted"],
+        "default": "none",
+        "description": "Employer remote pay policy for Tab 2"
+      },
+      "adjustment_pct": { "type": "number", "description": "Employer-applied geographic pay adjustment %" }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "equiv_salary": { "type": "number", "description": "Purchasing-power-equivalent salary in target metro" },
+      "col_index_origin": { "type": "number", "description": "CoL index for origin metro (US avg = 100)" },
+      "col_index_target": { "type": "number", "description": "CoL index for target metro" },
+      "state_tax_delta": { "type": "number", "description": "Effective state tax rate difference (decimal)" },
+      "net_pp_delta": { "type": "number", "description": "Net purchasing power delta after CoL + tax adjustment" },
+      "remote_net_impact": { "type": "number", "description": "Net dollar impact of remote pay policy (Tab 2)" }
+    }
+  },
+  "mcp_tool_definition": {
+    "name": "simulate_geo_arbitrage",
+    "description": "Calculate purchasing-power-equivalent salary across 70 US metros. Combines C2ER/Numbeo cost-of-living index with 8-tier state effective income tax rates. Returns equiv_salary, CoL indices, state tax delta, and net purchasing-power delta. Tab 2 models remote employer geographic pay adjustment impact.",
+    "inputSchema": {
+      "type": "object",
+      "required": ["salary", "origin_metro", "target_metro"],
+      "properties": {
+        "salary": { "type": "number", "description": "Current annual salary in USD" },
+        "origin_metro": { "type": "string", "description": "Origin metro name" },
+        "target_metro": { "type": "string", "description": "Target metro name" }
+      }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "runTab1",
+    "secondary_function_names": ["runTab2"],
+    "timeout_ms": 5000
+  },
+  "ap2_export": true,
+  "ap2_mandate_types": ["geo_arbitrage_record"],
+  "ap2_inbound_mandate_types": ["offer_negotiation_record"],
+  "downstream_handoff_candidates": ["AL-01", "AL-25"],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+}

@@ -1,0 +1,96 @@
+{
+  "tool_id": "al-09-visa-strategy-navigator",
+  "al_id": "AL-09",
+  "version": "1.0.0",
+  "title": "Visa Strategy Navigator",
+  "description": "Scores 7 US work visa pathways (H-1B, O-1A, O-1B, L-1A, L-1B, EB-1A, EB-2 NIW) against user profile and models green card timeline. Tab 1: pathway scorer — weights 10 profile factors (specialty occupation, extraordinary ability, multinational role, etc.) against FY2025-26 USCIS approval rates to produce a ranked pathway matrix. Tab 2: GC timeline modeler — projects priority date movement for EB-1/EB-2/EB-3 by country of birth using DOS Visa Bulletin backlog data. Legal disclaimer prominently displayed.",
+  "category": "immigration_visa",
+  "journeys": ["career_navigation"],
+  "personas": ["working_professional", "career_changer"],
+  "tags": ["h1b", "o1", "l1", "eb1", "eb2", "niw", "green card", "visa", "immigration", "uscis", "priority date"],
+  "status": "shipped",
+  "shipped_date": "2026-05-21",
+  "display_num": "#27",
+  "maintenance": "medium",
+  "data_vintage": "USCIS FY2025-26 approval rates · DOS Visa Bulletin GC backlog estimates · 7 visa pathway scoring rubric",
+  "frozen_baseline": false,
+  "legal_disclaimer_required": true,
+  "content_filter_risk": "medium",
+  "input_schema": {
+    "type": "object",
+    "required": ["profile"],
+    "properties": {
+      "profile": {
+        "type": "object",
+        "description": "User immigration profile",
+        "properties": {
+          "specialty_occupation": { "type": "boolean", "description": "Qualifies for H-1B specialty occupation" },
+          "advanced_degree": { "type": "boolean", "description": "Holds advanced degree (master's or higher)" },
+          "extraordinary_ability": { "type": "boolean", "description": "Evidence of extraordinary ability (awards, publications, etc.)" },
+          "multinational_role": { "type": "boolean", "description": "Has managerial/executive role with multinational employer" },
+          "intracompany_transfer": { "type": "boolean", "description": "Eligible for intracompany transfer (L-1)" },
+          "phd_stem": { "type": "boolean", "description": "PhD in STEM field for NIW eligibility" },
+          "national_interest": { "type": "boolean", "description": "Work is in national interest (NIW)" },
+          "country_of_birth": { "type": "string", "description": "Country of birth for GC backlog modeling" },
+          "current_visa": { "type": "string", "description": "Current visa status (F-1, H-1B, L-1, etc.)" }
+        }
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "pathway_scores": {
+        "type": "array",
+        "description": "Ranked visa pathways with score and approval rate",
+        "items": {
+          "type": "object",
+          "properties": {
+            "pathway": { "type": "string" },
+            "score": { "type": "number" },
+            "approval_rate": { "type": "number" },
+            "recommended": { "type": "boolean" }
+          }
+        }
+      },
+      "top_pathway": { "type": "string", "description": "Highest-scoring recommended pathway" },
+      "gc_timeline_years": { "type": "number", "description": "Estimated green card wait years for top EB category (Tab 2)" },
+      "priority_date_est": { "type": "string", "description": "Estimated priority date movement projection (Tab 2)" }
+    }
+  },
+  "mcp_tool_definition": {
+    "name": "navigate_visa_strategy",
+    "description": "Score 7 US work visa pathways against a user profile using USCIS FY2025-26 approval rates and model GC timeline from DOS Visa Bulletin backlog data. Returns ranked pathway matrix, top recommendation, and GC wait estimate. NOT legal advice — outputs are educational estimates only.",
+    "inputSchema": {
+      "type": "object",
+      "required": ["profile"],
+      "properties": {
+        "profile": {
+          "type": "object",
+          "description": "User profile with boolean flags for specialty occupation, extraordinary ability, multinational role, advanced degree, and country of birth"
+        }
+      }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "runTab1",
+    "secondary_function_names": ["runTab2"],
+    "timeout_ms": 5000
+  },
+  "ap2_export": true,
+  "ap2_mandate_types": ["visa_strategy_record"],
+  "ap2_inbound_mandate_types": ["international_student_cost_record"],
+  "downstream_handoff_candidates": ["AL-31"],
+  "regulatory_citations": [
+    "8 CFR 214.2(h) H-1B",
+    "8 CFR 214.2(o) O-1",
+    "8 CFR 214.2(l) L-1",
+    "8 CFR 204.5 EB preference categories",
+    "INA §203(b) employment-based preference"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+}
