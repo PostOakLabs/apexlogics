@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Certification Renewal Cost Forecaster · ApexLogics #41</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/41-cert-renewal-forecaster/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: var(--accent); } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; transition: all 0.15s; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 36px; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+
+    /* CERT SLOTS */
+    .cert-slots { display: flex; flex-direction: column; gap: 12px; }
+    .cert-slot { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .cert-slot-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .slot-num { width: 24px; height: 24px; border-radius: 50%; background: var(--accent-dim); color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .cert-slot-body { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: end; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 0.72rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.85rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.68rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .remove-btn { background: none; border: 1px solid rgba(248,113,113,0.3); color: var(--red); border-radius: 6px; padding: 6px 10px; cursor: pointer; font-size: 0.78rem; font-family: 'JetBrains Mono', monospace; transition: all 0.15s; white-space: nowrap; }
+    .remove-btn:hover { background: rgba(248,113,113,0.1); }
+    .add-btn { background: none; border: 1px dashed var(--border); color: var(--text-dim); border-radius: 8px; padding: 10px; cursor: pointer; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; width: 100%; text-align: center; transition: all 0.15s; margin-top: 8px; }
+    .add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+
+    /* SUMMARY CARDS */
+    .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .sum-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .sum-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .sum-val { font-family: 'JetBrains Mono', monospace; font-size: 1.35rem; font-weight: 500; }
+    .sum-val.green { color: var(--green); } .sum-val.amber { color: var(--amber); }
+    .sum-val.red { color: var(--red); } .sum-val.accent { color: var(--accent); }
+    .sum-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
+
+    /* ALERTS */
+    .alert-box { border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 0.82rem; display: flex; gap: 10px; align-items: flex-start; }
+    .alert-box.warn { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.3); color: var(--amber); }
+    .alert-icon { flex-shrink: 0; }
+
+    /* CALENDAR TABLE */
+    .cal-wrap { overflow-x: auto; }
+    .cal-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    .cal-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+    .cal-table th.year-col { text-align: center; min-width: 110px; }
+    .cal-table td { padding: 8px 12px; border-bottom: 1px solid rgba(167,139,250,0.06); vertical-align: top; }
+    .cal-table td.cert-name { font-size: 0.82rem; color: var(--text-muted); white-space: nowrap; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; }
+    .cal-table tr:last-child td { border-bottom: none; }
+    .cal-table tr.total-row td { border-top: 1px solid var(--border); background: var(--accent-low); font-weight: 600; }
+
+    /* RENEWAL CELL */
+    .renewal-cell { display: flex; flex-direction: column; gap: 2px; align-items: center; text-align: center; }
+    .renewal-cost { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--red); font-weight: 600; }
+    .renewal-ceu { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); }
+    .renewal-hrs { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--blue); }
+    .no-renewal { color: var(--text-dim); font-size: 0.72rem; text-align: center; }
+    .col-collision { background: rgba(251,191,36,0.06); }
+
+    /* CERT DETAIL CARDS */
+    .cert-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .cert-detail-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+    .cdc-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; }
+    .cdc-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 3px 0; border-bottom: 1px solid rgba(167,139,250,0.06); }
+    .cdc-row:last-child { border-bottom: none; }
+    .cdc-key { color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; }
+    .cdc-val { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+    .cdc-tip { font-size: 0.72rem; color: var(--text-dim); margin-top: 6px; font-style: italic; }
+
+    /* EXPORT */
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .mcp-toggle { margin-top: 32px; background: none; border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); width: 100%; text-align: left; transition: all 0.15s; }
+    .mcp-toggle:hover { border-color: var(--accent); color: var(--text-muted); }
+    .mcp-panel { display: none; background: var(--surface2); border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; padding: 20px; }
+    .mcp-panel.open { display: block; }
+    .mcp-panel pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; overflow-x: auto; }
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+
+    @media (max-width: 768px) {
+      .cert-slot-body { grid-template-columns: 1fr 1fr; }
+      .summary-grid { grid-template-columns: 1fr 1fr; }
+      .cert-details-grid { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) {
+      .cert-slot-body { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#A78BFA" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#A78BFA" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#A78BFA"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#A78BFA" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#A78BFA" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#A78BFA"/>
+          <circle cx="52" cy="56" r="2.5" fill="#A78BFA"/>
+          <path d="M22 32 L42 32" stroke="#A78BFA" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a class="nav-pill accent" href="../../index.html">← All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+  </div>
+
+  <p class="tool-eyebrow">#41 · AL-46 · Licensing &amp; Credentials</p>
+  <h1 class="tool-title">Certification Renewal<br>Cost Forecaster</h1>
+  <p class="tool-desc">Model the 6-year renewal cost and study time for your entire credential portfolio. Identifies collision years (multiple certs due at once), peak spending years, and total 5-year cash-flow commitment across 19 embedded certifications.</p>
+  <p class="tool-vintage">Data: Issuer-published renewal requirements as of 2025 · PMI, ISC², CompTIA, AWS, SHRM, HRCI, ASQ, GBCI, Cisco, CNCF · Fees are midpoint estimates; verify with issuer before renewing</p>
+
+  <!-- ── CREDENTIAL PORTFOLIO ──────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">Your Credential Portfolio <span class="badge">Up to 6 certifications</span></div>
+    <div class="cert-slots" id="certSlots"></div>
+    <button class="add-btn" id="addBtn" onclick="addSlot()">+ Add another certification</button>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Generate 6-Year Renewal Forecast →</button>
+
+  <!-- ══ RESULTS ═══════════════════════════════════════════════════════════ -->
+  <div class="results-section" id="resultsSection">
+
+    <div id="alertsArea"></div>
+
+    <!-- SUMMARY -->
+    <div class="summary-grid" id="summaryGrid"></div>
+
+    <!-- CALENDAR -->
+    <div class="card">
+      <div class="card-title">Renewal Calendar — 2026 through 2031</div>
+      <div class="cal-wrap">
+        <table class="cal-table" id="calTable"></table>
+      </div>
+      <p style="font-size:0.72rem;color:var(--text-dim);margin-top:10px;">
+        Highlighted columns = collision years (≥2 renewals due). Fees are per-renewal midpoint estimates.
+        Study hours are rough targets — actual time varies by experience level.
+      </p>
+    </div>
+
+    <!-- CERT DETAILS -->
+    <div class="card">
+      <div class="card-title">Credential Details</div>
+      <div class="cert-details-grid" id="certDetailsGrid"></div>
+    </div>
+
+    <!-- EXPORT -->
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download AP2 JSON</button>
+      <span class="ap2-hint">AP2 v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+    </div>
+
+  </div>
+
+  <button class="mcp-toggle" id="mcpBtn" onclick="toggleMCP()" aria-expanded="false">▸ Developer / Agent Integration (manifest.json)</button>
+  <div class="mcp-panel" id="mcpPanel"><pre id="mcpPre"></pre></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-46 · Data as of issuer-published requirements 2025 · Fees are estimates; verify with issuer
+  </footer>
+
+</div>
+
+<script>
+// ── CERT DATABASE ─────────────────────────────────────────────────────────────
+// Sources: issuer websites, PMI.org, isc2.org, comptia.org, aws.amazon.com/certification,
+// shrm.org, hrci.org, asq.org, pmi.org (ACP), cisco.com, gbci.org, linuxfoundation.org
+// Fees = midpoint estimates for non-member / standard renewal as of 2025
+const CERT_DB = [
+  { id:'pmp',      name:'PMP — Project Management Professional',
+    cycle:3, fee:150, feeNote:'PMI member $60 · non-member $150',
+    ceuCycle:60, ceuUnit:'PDUs', studyHrs:30, issuer:'PMI',
+    tip:'Earn PDUs through PMI chapter events, LinkedIn Learning, or volunteer service.' },
+  { id:'cissp',    name:'CISSP — Certified Information Systems Security Professional',
+    cycle:3, fee:375, feeNote:'$125/yr AMF × 3 years',
+    ceuCycle:120, ceuUnit:'CPE credits', studyHrs:40, issuer:'ISC²',
+    tip:'Free CPEs via ISC² webinars; 40 must come from education, not professional experience.' },
+  { id:'cpa',      name:'CPA — Certified Public Accountant',
+    cycle:1, fee:150, feeNote:'Varies by state: $50–$500/yr',
+    ceuCycle:40, ceuUnit:'CPE hours', studyHrs:40, issuer:'State Board',
+    tip:'AICPA and state society courses qualify; ethics CPE is usually a separate requirement.' },
+  { id:'aws_saa',  name:'AWS Solutions Architect Associate',
+    cycle:3, fee:150, feeNote:'Retake exam ~$150; no CE path',
+    ceuCycle:0, ceuUnit:'N/A (exam only)', studyHrs:40, issuer:'AWS',
+    tip:'Passing a higher-level AWS exam (Professional) automatically renews lower certs.' },
+  { id:'sec_plus', name:'CompTIA Security+',
+    cycle:3, fee:50, feeNote:'CE program: $50 + 50 CEUs or retake exam',
+    ceuCycle:50, ceuUnit:'CEUs', studyHrs:20, issuer:'CompTIA',
+    tip:'DoD 8570 required; higher CompTIA certs (CySA+, CASP+) renew Security+ automatically.' },
+  { id:'a_plus',   name:'CompTIA A+',
+    cycle:3, fee:50, feeNote:'CE program: $50 + 20 CEUs or retake',
+    ceuCycle:20, ceuUnit:'CEUs', studyHrs:10, issuer:'CompTIA',
+    tip:'Any higher CompTIA cert automatically satisfies A+ renewal.' },
+  { id:'shrm_cp',  name:'SHRM-CP / SHRM-SCP',
+    cycle:3, fee:100, feeNote:'Member $100 · non-member $150',
+    ceuCycle:60, ceuUnit:'PDCs', studyHrs:30, issuer:'SHRM',
+    tip:'SHRM chapter events and conferences count toward PDCs.' },
+  { id:'phr',      name:'PHR / SPHR (HRCI)',
+    cycle:3, fee:100, feeNote:'$100 recertification fee',
+    ceuCycle:60, ceuUnit:'recertification credits', studyHrs:25, issuer:'HRCI',
+    tip:'Business credits must include 15 credits of California (if CA-certified) or general HR strategy.' },
+  { id:'pe',       name:'PE — Professional Engineer',
+    cycle:2, fee:150, feeNote:'Varies by state: $50–$300',
+    ceuCycle:30, ceuUnit:'PDH', studyHrs:30, issuer:'State Board',
+    tip:'Ethics PDH is typically required; NSPE and state society courses qualify.' },
+  { id:'cfa',      name:'CFA — Chartered Financial Analyst',
+    cycle:1, fee:350, feeNote:'Annual membership (no renewal exam)',
+    ceuCycle:20, ceuUnit:'PL credits', studyHrs:20, issuer:'CFA Institute',
+    tip:'2 hours of ethics PL are required annually; CFA Institute provides qualifying courses.' },
+  { id:'six_sigma',name:'Six Sigma Black Belt (ASQ)',
+    cycle:3, fee:70, feeNote:'ASQ member $70 · non-member $140',
+    ceuCycle:18, ceuUnit:'recertification units', studyHrs:15, issuer:'ASQ',
+    tip:'Documenting improvements in your organization counts toward recertification units.' },
+  { id:'cna',      name:'CNA — Certified Nursing Assistant',
+    cycle:2, fee:100, feeNote:'Varies by state: $40–$200',
+    ceuCycle:12, ceuUnit:'in-service hours', studyHrs:12, issuer:'State Board',
+    tip:'In-service hours must be completed at your employing facility in most states.' },
+  { id:'real_est', name:'Real Estate License',
+    cycle:2, fee:200, feeNote:'Varies by state: $75–$500',
+    ceuCycle:30, ceuUnit:'CE hours', studyHrs:30, issuer:'State Board',
+    tip:'Ethics and fair housing CE is typically mandated; check your state's elective hours.' },
+  { id:'leed_ap',  name:'LEED AP (Green Building)',
+    cycle:2, fee:200, feeNote:'$100/yr credential maintenance',
+    ceuCycle:30, ceuUnit:'CE hours', studyHrs:20, issuer:'GBCI',
+    tip:'USGBC events and Green Building courses qualify toward CE hours.' },
+  { id:'pmi_acp',  name:'PMI-ACP — Agile Certified Practitioner',
+    cycle:3, fee:60, feeNote:'PMI member $60',
+    ceuCycle:30, ceuUnit:'PDUs (agile)', studyHrs:20, issuer:'PMI',
+    tip:'Must earn at least 18 of 30 PDUs in the "Technical" PMI Talent Triangle category.' },
+  { id:'ccna',     name:'CCNA — Cisco Certified Network Associate',
+    cycle:3, fee:330, feeNote:'Retake exam ~$330; or pass higher cert',
+    ceuCycle:0, ceuUnit:'N/A (exam only)', studyHrs:60, issuer:'Cisco',
+    tip:'Passing any CCNP or higher exam automatically renews CCNA.' },
+  { id:'google_cl',name:'Google Cloud Professional Architect',
+    cycle:2, fee:200, feeNote:'Retake exam ~$200; no CE path',
+    ceuCycle:0, ceuUnit:'N/A (exam only)', studyHrs:40, issuer:'Google',
+    tip:'Associate-level Google Cloud cert does NOT renew Professional-level credentials.' },
+  { id:'cka',      name:'CKA — Certified Kubernetes Administrator',
+    cycle:2, fee:395, feeNote:'Retake exam ~$395',
+    ceuCycle:0, ceuUnit:'N/A (exam only)', studyHrs:40, issuer:'CNCF / Linux Foundation',
+    tip:'CKS (security) and CKAD (developer) are separate certs with independent renewal cycles.' },
+  { id:'cdl',      name:'CDL — Commercial Driver\'s License',
+    cycle:4, fee:100, feeNote:'State fee: $60–$200; DOT medical cert: annual',
+    ceuCycle:0, ceuUnit:'N/A', studyHrs:0, issuer:'State DMV',
+    tip:'DOT physical certification is separate and must be renewed annually by a medical examiner.' },
+];
+
+const CERT_MAP = Object.fromEntries(CERT_DB.map(c => [c.id, c]));
+const START_YEAR = 2026;
+const FORECAST_YEARS = 6; // 2026-2031
+const MAX_SLOTS = 6;
+
+let slots = [];
+let _lastResults = null;
+
+const $ = id => document.getElementById(id);
+const fmt = n => '$' + Math.round(n).toLocaleString();
+
+// ── SLOT MANAGEMENT ───────────────────────────────────────────────────────────
+function addSlot() {
+  if (slots.length >= MAX_SLOTS) return;
+  const id = Date.now();
+  slots.push({ id, certId: '', lastYear: 2024, customFee: '' });
+  renderSlots();
+}
+
+function removeSlot(id) {
+  slots = slots.filter(s => s.id !== id);
+  renderSlots();
+}
+
+function renderSlots() {
+  const container = $('certSlots');
+  container.innerHTML = slots.map((slot, i) => `
+    <div class="cert-slot" id="slot-${slot.id}">
+      <div class="cert-slot-header">
+        <div class="slot-num">${i + 1}</div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--text-dim)">Certification ${i + 1}</span>
+      </div>
+      <div class="cert-slot-body">
+        <div class="field">
+          <label>Credential</label>
+          <select onchange="updateSlot(${slot.id},'certId',this.value)">
+            <option value="">— Select a certification —</option>
+            ${CERT_DB.map(c => `<option value="${c.id}" ${slot.certId===c.id?'selected':''}>${c.name}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field">
+          <label>Year Last Renewed / Obtained</label>
+          <input type="number" value="${slot.lastYear}" min="2015" max="2026" step="1"
+            onchange="updateSlot(${slot.id},'lastYear',+this.value)" />
+          <span class="field-hint">Year you last renewed or first earned it</span>
+        </div>
+        <div class="field">
+          <label>Custom Fee Override — $ (opt.)</label>
+          <input type="number" value="${slot.customFee}" min="0" max="10000" step="10"
+            placeholder="Use embedded fee"
+            onchange="updateSlot(${slot.id},'customFee',this.value)" />
+          <span class="field-hint">Leave blank to use embedded fee</span>
+        </div>
+        ${slots.length > 1 ? `<button class="remove-btn" onclick="removeSlot(${slot.id})">✕ Remove</button>` : '<div></div>'}
+      </div>
+    </div>
+  `).join('');
+
+  $('addBtn').style.display = slots.length >= MAX_SLOTS ? 'none' : '';
+}
+
+function updateSlot(id, field, value) {
+  const slot = slots.find(s => s.id === id);
+  if (slot) slot[field] = value;
+}
+
+// ── CALCULATE ─────────────────────────────────────────────────────────────────
+function calculate() {
+  const validSlots = slots.filter(s => s.certId && CERT_MAP[s.certId]);
+  if (validSlots.length === 0) { alert('Please select at least one certification.'); return; }
+
+  const years = Array.from({length: FORECAST_YEARS}, (_, i) => START_YEAR + i);
+
+  // Build renewal schedule per cert
+  const certSchedules = validSlots.map(slot => {
+    const cert = CERT_MAP[slot.certId];
+    const fee = slot.customFee ? +slot.customFee : cert.fee;
+    const renewalYears = [];
+    let next = +slot.lastYear + cert.cycle;
+    while (next <= START_YEAR + FORECAST_YEARS - 1) {
+      if (next >= START_YEAR) renewalYears.push(next);
+      next += cert.cycle;
+    }
+    return { cert, fee, lastYear: +slot.lastYear, renewalYears };
+  });
+
+  // Year summaries
+  const yearData = years.map(yr => {
+    const dueThisYear = certSchedules.filter(cs => cs.renewalYears.includes(yr));
+    return {
+      year: yr,
+      certs: dueThisYear,
+      totalCost: dueThisYear.reduce((a, cs) => a + cs.fee, 0),
+      totalCEU: dueThisYear.reduce((a, cs) => a + cs.cert.ceuCycle, 0),
+      totalHours: dueThisYear.reduce((a, cs) => a + cs.cert.studyHrs, 0),
+      isCollision: dueThisYear.length >= 2,
+    };
+  });
+
+  const totalCost  = yearData.reduce((a, y) => a + y.totalCost, 0);
+  const avgAnnual  = totalCost / FORECAST_YEARS;
+  const peakYear   = yearData.reduce((best, y) => y.totalCost > best.totalCost ? y : best, yearData[0]);
+  const totalStudy = yearData.reduce((a, y) => a + y.totalHours, 0);
+  const collisionYears = yearData.filter(y => y.isCollision).map(y => y.year);
+
+  _lastResults = { certSchedules, yearData, totalCost, avgAnnual, peakYear, totalStudy, collisionYears };
+  render();
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render() {
+  const r = _lastResults;
+  const years = r.yearData.map(y => y.year);
+
+  // Alerts
+  $('alertsArea').innerHTML = r.collisionYears.length > 0 ? `
+    <div class="alert-box warn">
+      <span class="alert-icon">⚠️</span>
+      <span><strong>Collision years detected:</strong> ${r.collisionYears.join(', ')} — multiple renewals due simultaneously.
+      Consider staggering future certification timelines or budgeting extra study time for these years.</span>
+    </div>` : '';
+
+  // Summary
+  $('summaryGrid').innerHTML = `
+    <div class="sum-card"><div class="sum-label">6-Year Total Renewal Cost</div>
+      <div class="sum-val red">${fmt(r.totalCost)}</div><div class="sum-note">All fees, all certs, 2026–2031</div></div>
+    <div class="sum-card"><div class="sum-label">Average Annual Cost</div>
+      <div class="sum-val amber">${fmt(r.avgAnnual)}</div><div class="sum-note">Smoothed across 6 years</div></div>
+    <div class="sum-card"><div class="sum-label">Peak Year</div>
+      <div class="sum-val accent">${r.peakYear.year} — ${fmt(r.peakYear.totalCost)}</div>
+      <div class="sum-note">${r.peakYear.certs.map(c=>c.cert.name.split('—')[0].trim()).join(', ')}</div></div>
+    <div class="sum-card"><div class="sum-label">Total Study Hours</div>
+      <div class="sum-val green">${r.totalStudy} hrs</div><div class="sum-note">Across all renewals, 6-year window</div></div>
+  `;
+
+  // Calendar table
+  const colClass = yr => r.yearData.find(y=>y.year===yr)?.isCollision ? ' col-collision' : '';
+  let html = '<thead><tr><th>Certification</th>';
+  years.forEach(yr => { html += `<th class="year-col${colClass(yr)}">${yr}${colClass(yr)?' ⚠':''}`;
+    html += '</th>'; });
+  html += '</tr></thead><tbody>';
+
+  r.certSchedules.forEach(cs => {
+    html += `<tr><td class="cert-name">${cs.cert.name.length > 36 ? cs.cert.name.slice(0,36)+'…' : cs.cert.name}<br><span style="color:var(--text-dim);font-size:0.62rem">${cs.cert.issuer} · ${cs.cert.cycle}-yr cycle</span></td>`;
+    years.forEach(yr => {
+      const due = cs.renewalYears.includes(yr);
+      html += `<td class="${colClass(yr)}" style="text-align:center">`;
+      if (due) {
+        html += `<div class="renewal-cell">
+          <span class="renewal-cost">${fmt(cs.fee)}</span>
+          ${cs.cert.ceuCycle > 0 ? `<span class="renewal-ceu">${cs.cert.ceuCycle} ${cs.cert.ceuUnit}</span>` : ''}
+          ${cs.cert.studyHrs > 0 ? `<span class="renewal-hrs">${cs.cert.studyHrs} study hrs</span>` : ''}
+        </div>`;
+      } else {
+        html += `<span class="no-renewal">—</span>`;
+      }
+      html += '</td>';
+    });
+    html += '</tr>';
+  });
+
+  // Totals row
+  html += '<tr class="total-row"><td class="cert-name" style="color:var(--accent)">TOTAL</td>';
+  years.forEach(yr => {
+    const yd = r.yearData.find(y => y.year === yr);
+    html += `<td class="${colClass(yr)}" style="text-align:center">`;
+    if (yd.totalCost > 0) {
+      html += `<div class="renewal-cell">
+        <span style="color:var(--amber);font-family:'JetBrains Mono',monospace;font-size:0.88rem;font-weight:700">${fmt(yd.totalCost)}</span>
+        ${yd.totalHours > 0 ? `<span class="renewal-hrs">${yd.totalHours} hrs</span>` : ''}
+      </div>`;
+    } else { html += `<span class="no-renewal">$0</span>`; }
+    html += '</td>';
+  });
+  html += '</tr></tbody>';
+  $('calTable').innerHTML = html;
+
+  // Cert details
+  $('certDetailsGrid').innerHTML = r.certSchedules.map(cs => {
+    const nextRenewal = cs.renewalYears[0] || 'None in window';
+    return `
+      <div class="cert-detail-card">
+        <div class="cdc-name">${cs.cert.name.split('—')[0].trim()}</div>
+        <div class="cdc-row"><span class="cdc-key">Issuer</span><span class="cdc-val">${cs.cert.issuer}</span></div>
+        <div class="cdc-row"><span class="cdc-key">Renewal cycle</span><span class="cdc-val">${cs.cert.cycle} years</span></div>
+        <div class="cdc-row"><span class="cdc-key">Next renewal</span><span class="cdc-val" style="color:var(--amber)">${nextRenewal}</span></div>
+        <div class="cdc-row"><span class="cdc-key">Fee</span><span class="cdc-val">${fmt(cs.fee)} <span style="color:var(--text-dim);font-size:0.68rem">(${cs.cert.feeNote})</span></span></div>
+        <div class="cdc-row"><span class="cdc-key">CEU requirement</span><span class="cdc-val">${cs.cert.ceuCycle > 0 ? cs.cert.ceuCycle + ' ' + cs.cert.ceuUnit + '/cycle' : 'Exam only'}</span></div>
+        <div class="cdc-row"><span class="cdc-key">Est. study time</span><span class="cdc-val">${cs.cert.studyHrs > 0 ? cs.cert.studyHrs + ' hrs/renewal' : 'Exam-based — varies'}</span></div>
+        <div class="cdc-tip">${cs.cert.tip}</div>
+      </div>
+    `;
+  }).join('');
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────────
+function exportMarkdown() {
+  if (!_lastResults) return;
+  const r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const years = r.yearData.map(y => y.year);
+  const lines = [
+    '# Certification Renewal Cost Forecast',
+    `\n_Generated ${d} · AL-46 · apexlogics.org_\n`,
+    '## Portfolio Summary',
+    `- **6-year total cost:** ${fmt(r.totalCost)}`,
+    `- **Average annual cost:** ${fmt(r.avgAnnual)}`,
+    `- **Peak year:** ${r.peakYear.year} (${fmt(r.peakYear.totalCost)})`,
+    `- **Total study hours:** ${r.totalStudy} hrs`,
+    r.collisionYears.length > 0 ? `- **⚠️ Collision years:** ${r.collisionYears.join(', ')}` : '',
+    '\n## Year-by-Year Cash Flow',
+    '| Year | Certifications Due | Total Cost | Study Hours |',
+    '|---|---|---|---|',
+    ...r.yearData.map(yd => `| ${yd.year} | ${yd.certs.map(c=>c.cert.name.split('—')[0].trim()).join(', ') || '—'} | ${yd.totalCost > 0 ? fmt(yd.totalCost) : '$0'} | ${yd.totalHours > 0 ? yd.totalHours + ' hrs' : '—'} |`),
+    '\n## Credential Details',
+    ...r.certSchedules.map(cs => [
+      `### ${cs.cert.name}`,
+      `- **Issuer:** ${cs.cert.issuer} · **Cycle:** ${cs.cert.cycle} years`,
+      `- **Fee:** ${fmt(cs.fee)} (${cs.cert.feeNote})`,
+      `- **CEU:** ${cs.cert.ceuCycle > 0 ? cs.cert.ceuCycle + ' ' + cs.cert.ceuUnit + '/cycle' : 'Exam only'}`,
+      `- **Next renewal:** ${cs.renewalYears[0] || 'None in forecast window'}`,
+      `- _Tip: ${cs.cert.tip}_`,
+    ].join('\n')),
+    '\n---',
+    '_Fees are midpoint estimates as of 2025. Verify current requirements with each issuer before renewing._'
+  ];
+  dlFile('cert-renewal-forecast.md', lines.filter(Boolean).join('\n'), 'text/markdown');
+}
+
+// ── EXPORT: AP2 ───────────────────────────────────────────────────────────────
+function exportAP2() {
+  if (!_lastResults) return;
+  const r = _lastResults;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "cert_renewal_forecast_record",
+    generated_at: new Date().toISOString(),
+    tool_id: "41-cert-renewal-forecaster",
+    tool_name: "Certification Renewal Cost Forecaster",
+    inputs: {
+      credentials: r.certSchedules.map(cs => ({
+        cert_id: cs.cert.id, cert_name: cs.cert.name,
+        last_renewed: cs.lastYear, fee_used: cs.fee
+      }))
+    },
+    results: {
+      total_6yr_cost: Math.round(r.totalCost),
+      avg_annual_cost: Math.round(r.avgAnnual),
+      peak_year: r.peakYear.year,
+      peak_year_cost: Math.round(r.peakYear.totalCost),
+      total_study_hours: r.totalStudy,
+      collision_years: r.collisionYears,
+      year_by_year: r.yearData.map(yd => ({
+        year: yd.year,
+        certs_due: yd.certs.map(c => c.cert.id),
+        total_cost: Math.round(yd.totalCost),
+        study_hours: yd.totalHours,
+        is_collision: yd.isCollision
+      }))
+    },
+    downstream_handoff_candidates: ["AL-13", "AL-12"],
+    data_sources: [
+      "Issuer-published renewal requirements as of 2025",
+      "PMI.org, isc2.org, comptia.org, shrm.org, hrci.org, asq.org"
+    ],
+    license: "CC-BY-4.0"
+  };
+  const errs = [];
+  ['ap2_version','mandate_type','generated_at','inputs'].forEach(k=>{if(!payload[k])errs.push('missing '+k);});
+  const valid = [
+    'ai_skills_premium_record','federal_comp_record','military_civilian_record',
+    'noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record',
+    'workforce_pell_record','workforce_pell_credential_rank','net_worth_trajectory_record',
+    'signing_bonus_record','gig_income_record','cert_renewal_forecast_record'
+  ];
+  if (!valid.includes(payload.mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('AP2 validation failed: ' + errs.join('; ')); return; }
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-46_cert-renewal-forecast_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+function toggleMCP() {
+  const panel=$('mcpPanel'), btn=$('mcpBtn'), pre=$('mcpPre');
+  const open = panel.classList.toggle('open');
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    pre.textContent = JSON.stringify({
+  "tool_id": "41-cert-renewal-forecaster",
+  "al_id": "AL-46",
+  "version": "1.0.0",
+  "title": "Certification Renewal Cost Forecaster",
+  "description": "6-year renewal cash-flow planner for up to 6 professional certifications. Embeds 19 credentials (PMP, CISSP, CPA, AWS, CompTIA, PE, CFA, SHRM, HRCI, ASQ, CCNA, CKA, and more) with renewal cycles, fees, CEU requirements, and study hour estimates. Detects collision years. AP2 v2.0: cert_renewal_forecast_record.",
+  "category": "licensing_credentials",
+  "journeys": ["education_path", "career_navigation"],
+  "personas": ["working_professional", "career_changer", "counselor"],
+  "tags": ["certification","renewal","cpd","ceu","pmp","cissp","cpa","aws","comptia","career-planning"],
+  "status": "shipped",
+  "maintenance": "low",
+  "data_vintage": "Issuer-published renewal requirements as of 2025 (PMI, ISC², CompTIA, AWS, SHRM, HRCI, ASQ, GBCI, Cisco, CNCF)",
+  "ap2_export": true,
+  "ap2_mandate_types": ["cert_renewal_forecast_record"],
+  "downstream_handoff_candidates": ["AL-13", "AL-12"],
+  "regulatory_citations": [
+    "PMI Continuing Certification Requirements (CCR) Program 2022–",
+    "ISC² CPE Handbook 2024",
+    "CompTIA Continuing Education Policy 2024",
+    "SHRM Recertification Policies 2024"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0",
+  "execution": {"type":"browser-javascript","entry":"index.html","function_name":"calculate","timeout_ms":3000},
+  "mcp_tool_definition": {
+    "name": "forecast_cert_renewal_costs",
+    "description": "Given a list of certifications and last-renewal years, generates a 6-year cash-flow forecast with renewal dates, fees, CEU requirements, study hours, collision years, and total cost. 19 credentials embedded. Deterministic.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "credentials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "cert_id":      {"type":"string"},
+              "last_renewed": {"type":"integer"},
+              "custom_fee":   {"type":"number"}
+            },
+            "required": ["cert_id","last_renewed"]
+          }
+        }
+      },
+      "required": ["credentials"]
+    }
+  }
+}, null, 2);
+  }
+}
+
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function(){
+  const s = sessionStorage.getItem('apex_lang');
+  const m = {en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'};
+  setLang(s || m[(navigator.language||'en').slice(0,2)] || 'en');
+  // Initialize with 2 default slots
+  addSlot(); addSlot();
+  // Set defaults for demo
+  if (slots[0]) { slots[0].certId='pmp'; slots[0].lastYear=2023; }
+  if (slots[1]) { slots[1].certId='sec_plus'; slots[1].lastYear=2024; }
+  renderSlots();
+})();
+</script>
+</body>
+</html>
