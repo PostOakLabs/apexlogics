@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Early Career Net Worth Trajectory Engine · ApexLogics #38</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/38-early-career-net-worth-engine/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+      --scenario-agg: #34d399; --scenario-base: #A78BFA; --scenario-con: #fbbf24;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    /* NAV */
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: var(--accent); } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; transition: all 0.15s; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+
+    /* LANG BAR */
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+
+    /* LAYOUT */
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 36px; }
+
+    /* CARDS */
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .form-grid.four { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .field-hint a { color: var(--accent); text-decoration: none; }
+
+    /* TOGGLE ADVANCED */
+    .adv-toggle { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 9px 16px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); width: 100%; text-align: left; margin-bottom: 16px; transition: all 0.15s; }
+    .adv-toggle:hover { border-color: var(--accent); color: var(--text-muted); }
+    .adv-section { display: none; }
+    .adv-section.open { display: block; }
+
+    /* RUN */
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    /* RESULTS */
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+
+    /* SCENARIO LEGEND */
+    .legend { display: flex; gap: 20px; margin-bottom: 16px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+    .legend-dot { width: 12px; height: 3px; border-radius: 2px; }
+
+    /* SUMMARY CARDS */
+    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .sum-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .sum-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .sum-scenarios { display: flex; flex-direction: column; gap: 4px; }
+    .sum-row { display: flex; justify-content: space-between; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; }
+    .sum-row .s-label { color: var(--text-dim); font-size: 0.7rem; }
+    .s-agg  { color: var(--scenario-agg); }
+    .s-base { color: var(--scenario-base); }
+    .s-con  { color: var(--scenario-con); }
+
+    /* CHART */
+    .chart-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; }
+    .chart-wrap { overflow-x: auto; }
+    #nwChart { width: 100%; display: block; }
+
+    /* MILESTONES */
+    .milestone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .milestone { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; }
+    .m-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
+    .m-val { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; }
+    .m-val.green { color: var(--green); } .m-val.amber { color: var(--amber); } .m-val.accent { color: var(--accent); } .m-val.dim { color: var(--text-dim); }
+
+    /* YEAR TABLE */
+    .tbl-toggle { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 7px 14px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); transition: all 0.15s; margin-bottom: 10px; }
+    .tbl-toggle:hover { border-color: var(--accent); color: var(--text-muted); }
+    .tbl-wrap { display: none; overflow-x: auto; }
+    .tbl-wrap.open { display: block; }
+    .yr-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    .yr-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; text-transform: uppercase; color: var(--text-dim); padding: 7px 12px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+    .yr-table th:first-child { text-align: left; }
+    .yr-table td { padding: 7px 12px; border-bottom: 1px solid rgba(167,139,250,0.06); text-align: right; font-family: 'JetBrains Mono', monospace; }
+    .yr-table td:first-child { text-align: left; color: var(--text-muted); }
+    .yr-table tr:last-child td { border-bottom: none; }
+    .pos { color: var(--green); } .neg { color: var(--red); }
+
+    /* EXPORT ROW */
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    /* MCP */
+    .mcp-toggle { margin-top: 32px; background: none; border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); width: 100%; text-align: left; transition: all 0.15s; }
+    .mcp-toggle:hover { border-color: var(--accent); color: var(--text-muted); }
+    .mcp-panel { display: none; background: var(--surface2); border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; padding: 20px; }
+    .mcp-panel.open { display: block; }
+    .mcp-panel pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; overflow-x: auto; }
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+
+    @media (max-width: 768px) {
+      .form-grid.three, .form-grid.four { grid-template-columns: 1fr 1fr; }
+      .form-grid.two { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .milestone-grid { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) {
+      .form-grid.three, .form-grid.four { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ LANG BAR ══════════════════════════════════════════════════════════════ -->
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<!-- ══ NAV ═══════════════════════════════════════════════════════════════════ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#A78BFA" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#A78BFA" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#A78BFA"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#A78BFA" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#A78BFA" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#A78BFA"/>
+          <circle cx="52" cy="56" r="2.5" fill="#A78BFA"/>
+          <path d="M22 32 L42 32" stroke="#A78BFA" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a class="nav-pill accent" href="../../index.html">← All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+  </div>
+
+  <p class="tool-eyebrow">#38 · AL-43 · Compensation &amp; Offers</p>
+  <h1 class="tool-title">Early Career Net Worth<br>Trajectory Engine</h1>
+  <p class="tool-desc">Model your 10-year net worth across three saving scenarios — aggressive, on-track, and under-saving. See when student debt gets paid off, when your portfolio crosses zero, and the dollar cost of delaying savings by even one year.</p>
+  <p class="tool-vintage">Data: IRS 2026 tax brackets (projected) · SS/Medicare 7.65% employee rate · 7% real investment return (historical S&amp;P 500 avg, Damodaran 2024)</p>
+
+  <!-- ── INPUTS ────────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">Income &amp; Savings <span class="badge">STEP 1</span></div>
+    <div class="form-grid four" style="margin-bottom:14px;">
+      <div class="field">
+        <label for="startSalary">Starting Gross Salary — $</label>
+        <input type="number" id="startSalary" value="52000" min="15000" max="500000" step="1000" />
+      </div>
+      <div class="field">
+        <label for="salaryGrowth">Annual Salary Growth — %</label>
+        <input type="number" id="salaryGrowth" value="4" min="0" max="25" step="0.5" />
+        <span class="field-hint">US median: ~3.5–4% incl. merit</span>
+      </div>
+      <div class="field">
+        <label for="savingsRate">Savings Rate — % of take-home</label>
+        <input type="number" id="savingsRate" value="15" min="0" max="70" step="1" />
+        <span class="field-hint">Scenarios: ±10 pp around this</span>
+      </div>
+      <div class="field">
+        <label for="filingStatus">Tax Filing Status</label>
+        <select id="filingStatus">
+          <option value="single" selected>Single</option>
+          <option value="mfj">Married Filing Jointly</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Student Debt <span class="badge">STEP 2</span></div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="debtBalance">Current Loan Balance — $</label>
+        <input type="number" id="debtBalance" value="35000" min="0" max="500000" step="500" />
+        <span class="field-hint">Enter 0 if debt-free</span>
+      </div>
+      <div class="field">
+        <label for="loanRate">Loan Interest Rate — %</label>
+        <input type="number" id="loanRate" value="5.5" min="0" max="20" step="0.1" />
+        <span class="field-hint">Federal grad rate 2024–25: 7.05%</span>
+      </div>
+      <div class="field">
+        <label for="monthlyPayment">Monthly Payment — $</label>
+        <input type="number" id="monthlyPayment" value="375" min="0" max="10000" step="25" />
+        <span class="field-hint">Standard 10-yr plan on $35k ≈ $375/mo</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADVANCED -->
+  <button class="adv-toggle" onclick="toggleAdv()" id="advBtn">▸ Advanced: 401(k) Match &amp; Investment Return</button>
+  <div class="adv-section card" id="advSection">
+    <div class="form-grid four">
+      <div class="field">
+        <label for="contrib401k">Your 401(k) Contribution — % salary</label>
+        <input type="number" id="contrib401k" value="6" min="0" max="23" step="1" />
+        <span class="field-hint">2026 limit: $23,500/yr</span>
+      </div>
+      <div class="field">
+        <label for="matchPct">Employer Match — % of contribution</label>
+        <input type="number" id="matchPct" value="100" min="0" max="200" step="10" />
+        <span class="field-hint">Common: 100% match</span>
+      </div>
+      <div class="field">
+        <label for="matchCap">Match Cap — % of salary</label>
+        <input type="number" id="matchCap" value="4" min="0" max="20" step="0.5" />
+        <span class="field-hint">e.g. 100% match up to 4% = free 4%</span>
+      </div>
+      <div class="field">
+        <label for="investReturn">Investment Return — % real annual</label>
+        <input type="number" id="investReturn" value="7" min="1" max="15" step="0.5" />
+        <span class="field-hint">7% = historical S&P 500 real avg</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Project My Net Worth →</button>
+
+  <!-- ══ RESULTS ════════════════════════════════════════════════════════════ -->
+  <div class="results-section" id="resultsSection">
+
+    <div class="legend" id="chartLegend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--scenario-agg)"></div><span class="s-agg">Aggressive saver (+10pp)</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--scenario-base)"></div><span class="s-base">Your scenario (base)</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--scenario-con)"></div><span class="s-con">Under-saver (−10pp)</span></div>
+    </div>
+
+    <!-- SUMMARY CARDS -->
+    <div class="summary-grid" id="summaryGrid"></div>
+
+    <!-- CHART -->
+    <div class="chart-card">
+      <div class="card-title" style="margin-bottom:12px;">10-Year Net Worth Projection</div>
+      <div class="chart-wrap">
+        <svg id="nwChart" viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+    </div>
+
+    <!-- MILESTONES -->
+    <div class="card">
+      <div class="card-title">Key Milestones — Base Scenario</div>
+      <div class="milestone-grid" id="milestoneGrid"></div>
+    </div>
+
+    <!-- YEAR TABLE -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:8px;">Year-by-Year Detail</div>
+      <button class="tbl-toggle" onclick="toggleTable()" id="tblBtn">▸ Show year-by-year table</button>
+      <div class="tbl-wrap" id="tblWrap">
+        <table class="yr-table" id="yrTable"></table>
+      </div>
+    </div>
+
+    <!-- EXPORT -->
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download AP2 JSON</button>
+      <span class="ap2-hint">AP2 v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+    </div>
+
+  </div><!-- /results-section -->
+
+  <!-- MCP -->
+  <button class="mcp-toggle" id="mcpBtn" onclick="toggleMCP()" aria-expanded="false">▸ Developer / Agent Integration (manifest.json)</button>
+  <div class="mcp-panel" id="mcpPanel"><pre id="mcpPre"></pre></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-43 · Data as of IRS 2026 tax brackets (projected); Damodaran historical equity returns 2024
+  </footer>
+
+</div>
+
+<script>
+// ── TAX DATA 2026 (projected from 2025 + CPI; note these are estimates for planning) ──────
+const BRACKETS = {
+  single: [
+    {min:0,      max:11925,   rate:0.10},
+    {min:11925,  max:48475,   rate:0.12},
+    {min:48475,  max:103350,  rate:0.22},
+    {min:103350, max:197300,  rate:0.24},
+    {min:197300, max:250525,  rate:0.32},
+    {min:250525, max:626350,  rate:0.35},
+    {min:626350, max:Infinity,rate:0.37},
+  ],
+  mfj: [
+    {min:0,      max:23850,   rate:0.10},
+    {min:23850,  max:96950,   rate:0.12},
+    {min:96950,  max:206700,  rate:0.22},
+    {min:206700, max:394600,  rate:0.24},
+    {min:394600, max:501050,  rate:0.32},
+    {min:501050, max:751600,  rate:0.35},
+    {min:751600, max:Infinity,rate:0.37},
+  ]
+};
+const STD_DED = { single: 15000, mfj: 30000 };
+const FICA = 0.0765; // employee SS + Medicare (simplified, ignores SS wage base)
+const K401_LIMIT = 23500; // 2026 IRS 401k elective deferral limit
+
+// ── UTILITIES ─────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fmt = (n, dec=0) => (n < 0 ? '-$' : '$') + Math.abs(Math.round(n)).toLocaleString();
+const fmtK = n => { const v = Math.round(n/1000); return (n<0?'-$':'$')+Math.abs(v)+'k'; };
+
+function federalTax(gross, status, contrib401k) {
+  const deduct = STD_DED[status];
+  const taxable = Math.max(0, gross - contrib401k - deduct);
+  let tax = 0;
+  for (const b of BRACKETS[status]) {
+    if (taxable <= b.min) break;
+    tax += (Math.min(taxable, b.max) - b.min) * b.rate;
+  }
+  return tax;
+}
+
+function afterTax(gross, status, contrib401k) {
+  const ftax = federalTax(gross, status, contrib401k);
+  const fica = gross * FICA;
+  return gross - contrib401k - ftax - fica;
+}
+
+// ── PROJECTION ────────────────────────────────────────────────────────────────
+function project(params, years) {
+  const { startSalary, growthRate, savingsRate, status,
+          debtBalance, loanRate, monthlyPmt,
+          contrib401kPct, matchPct, matchCap, returnRate } = params;
+
+  const rows = [];
+  let portfolio = 0;   // after-tax brokerage + 401k
+  let debt = debtBalance;
+  let annualPmt = monthlyPmt * 12;
+
+  // Year 0 (starting position)
+  rows.push({ year: 0, salary: startSalary, afterTaxIncome: 0,
+    newSavings: 0, portfolio: 0, debt, netWorth: -debt, note: 'Starting position' });
+
+  for (let y = 1; y <= years; y++) {
+    const salary = startSalary * Math.pow(1 + growthRate / 100, y);
+
+    // 401k
+    const empContrib = Math.min(salary * contrib401kPct / 100, K401_LIMIT);
+    const matchable  = Math.min(salary * contrib401kPct / 100, salary * matchCap / 100);
+    const empMatch   = matchable * matchPct / 100;
+    const total401k  = empContrib + empMatch;
+
+    // After-tax
+    const atIncome = afterTax(salary, status, empContrib);
+
+    // Savings (from take-home, distinct from 401k)
+    const brokerageSavings = atIncome * savingsRate / 100;
+
+    // Portfolio growth (combined 401k + brokerage treated as one compounding pool)
+    portfolio = (portfolio + brokerageSavings + total401k) * (1 + returnRate / 100);
+
+    // Debt paydown
+    if (debt > 0) {
+      const interestAccrued = debt * loanRate / 100;
+      const payment = Math.min(annualPmt, debt + interestAccrued);
+      const principal = Math.max(0, payment - interestAccrued);
+      debt = Math.max(0, debt - principal);
+    }
+
+    const netWorth = portfolio - debt;
+    rows.push({ year: y, salary, afterTaxIncome: atIncome, empContrib, empMatch,
+      newSavings: brokerageSavings + total401k, portfolio, debt, netWorth });
+  }
+  return rows;
+}
+
+// ── MAIN CALCULATE ────────────────────────────────────────────────────────────
+let _scenarios = null;
+let _inputs    = null;
+
+function calculate() {
+  const startSalary  = parseFloat($('startSalary').value)  || 52000;
+  const growthRate   = parseFloat($('salaryGrowth').value) || 4;
+  const savingsRate  = parseFloat($('savingsRate').value)  || 15;
+  const status       = $('filingStatus').value;
+  const debtBalance  = parseFloat($('debtBalance').value)  || 0;
+  const loanRate     = parseFloat($('loanRate').value)     || 5.5;
+  const monthlyPmt   = parseFloat($('monthlyPayment').value) || 0;
+  const contrib401k  = parseFloat($('contrib401k').value)  || 0;
+  const matchPct     = parseFloat($('matchPct').value)     || 0;
+  const matchCap     = parseFloat($('matchCap').value)     || 0;
+  const returnRate   = parseFloat($('investReturn').value) || 7;
+  const YEARS = 10;
+
+  const base = { startSalary, growthRate, savingsRate, status, debtBalance,
+    loanRate, monthlyPmt, contrib401kPct: contrib401k, matchPct, matchCap, returnRate };
+
+  const aggRate = Math.min(70, savingsRate + 10);
+  const conRate = Math.max(0,  savingsRate - 10);
+
+  const agg  = project({...base, savingsRate: aggRate},  YEARS);
+  const main = project(base,                             YEARS);
+  const con  = project({...base, savingsRate: conRate},  YEARS);
+
+  _inputs = base;
+  _scenarios = [
+    { name: 'Aggressive', shortName: 'Agg', rate: aggRate,  data: agg,  color: '#34d399', cls: 's-agg'  },
+    { name: 'Base',       shortName: 'Base',rate: savingsRate, data: main, color: '#A78BFA', cls: 's-base' },
+    { name: 'Under-saver',shortName: 'Con', rate: conRate,  data: con,  color: '#fbbf24', cls: 's-con'  },
+  ];
+
+  renderSummary();
+  drawChart();
+  renderMilestones(main);
+  renderTable(agg, main, con, YEARS);
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── SUMMARY CARDS ─────────────────────────────────────────────────────────────
+function renderSummary() {
+  const s = _scenarios;
+  const grid = $('summaryGrid');
+
+  const breakEven = sc => {
+    for (const r of sc.data) {
+      if (r.netWorth >= 0 && r.year > 0) return 'Year ' + r.year;
+    }
+    return 'After yr 10';
+  };
+
+  grid.innerHTML = `
+    <div class="sum-card">
+      <div class="sum-label">Net Worth — Year 5</div>
+      <div class="sum-scenarios">
+        ${s.map(sc => `<div class="sum-row"><span class="s-label ${sc.cls}">${sc.shortName} (${sc.rate}%)</span><span class="${sc.cls}">${fmt(sc.data[5].netWorth)}</span></div>`).join('')}
+      </div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">Net Worth — Year 10</div>
+      <div class="sum-scenarios">
+        ${s.map(sc => `<div class="sum-row"><span class="s-label ${sc.cls}">${sc.shortName} (${sc.rate}%)</span><span class="${sc.cls}">${fmt(sc.data[10].netWorth)}</span></div>`).join('')}
+      </div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">Break-Even Year (NW ≥ $0)</div>
+      <div class="sum-scenarios">
+        ${s.map(sc => `<div class="sum-row"><span class="s-label ${sc.cls}">${sc.shortName}</span><span class="${sc.cls}">${breakEven(sc.data)}</span></div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ── SVG CHART ─────────────────────────────────────────────────────────────────
+function drawChart() {
+  const s = _scenarios;
+  const YEARS = 10;
+  const W = 720, H = 280;
+  const pad = { l: 72, r: 28, t: 20, b: 38 };
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+
+  const allVals = s.flatMap(sc => sc.data.map(r => r.netWorth));
+  let minV = Math.min(...allVals), maxV = Math.max(...allVals);
+  // nice range
+  const extend = (maxV - minV) * 0.1;
+  minV = Math.floor((minV - extend) / 10000) * 10000;
+  maxV = Math.ceil( (maxV + extend) / 10000) * 10000;
+  const range = maxV - minV || 1;
+
+  const xS = i => pad.l + (i / YEARS) * pw;
+  const yS = v => pad.t + ph - ((v - minV) / range) * ph;
+  const zeroY = yS(0);
+
+  // Grid lines
+  const nGridLines = 5;
+  const step = (maxV - minV) / nGridLines;
+  let gridLines = '';
+  for (let i = 0; i <= nGridLines; i++) {
+    const v = minV + step * i;
+    const y = yS(v);
+    const lbl = fmtK(v);
+    gridLines += `<line x1="${pad.l}" x2="${W-pad.r}" y1="${y}" y2="${y}" stroke="rgba(167,139,250,0.1)" stroke-width="1"/>`;
+    gridLines += `<text x="${pad.l-6}" y="${y+4}" text-anchor="end" fill="#64748b" font-size="10" font-family="JetBrains Mono,monospace">${lbl}</text>`;
+  }
+
+  // X labels
+  let xLabels = '';
+  for (let y = 0; y <= YEARS; y += 2) {
+    xLabels += `<text x="${xS(y)}" y="${H-pad.b+18}" text-anchor="middle" fill="#64748b" font-size="10" font-family="JetBrains Mono,monospace">Yr ${y}</text>`;
+  }
+
+  // Zero line
+  const zLine = minV < 0 && maxV > 0
+    ? `<line x1="${pad.l}" x2="${W-pad.r}" y1="${zeroY}" y2="${zeroY}" stroke="rgba(167,139,250,0.35)" stroke-width="1.5" stroke-dasharray="4 3"/>`
+    : '';
+
+  // Paths
+  const toPath = sc => {
+    const pts = sc.data.map((r,i) => `${i===0?'M':'L'}${xS(r.year)},${yS(r.netWorth)}`).join(' ');
+    return `<path d="${pts}" fill="none" stroke="${sc.color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  };
+  // Endpoint labels
+  const toEndLabel = sc => {
+    const last = sc.data[YEARS];
+    const x = xS(YEARS) + 4, y = yS(last.netWorth);
+    return `<text x="${x}" y="${y+4}" fill="${sc.color}" font-size="10" font-family="JetBrains Mono,monospace">${fmtK(last.netWorth)}</text>`;
+  };
+
+  $('nwChart').innerHTML = `
+    ${gridLines}
+    <line x1="${pad.l}" x2="${pad.l}" y1="${pad.t}" y2="${H-pad.b}" stroke="rgba(167,139,250,0.2)" stroke-width="1"/>
+    <line x1="${pad.l}" x2="${W-pad.r}" y1="${H-pad.b}" y2="${H-pad.b}" stroke="rgba(167,139,250,0.2)" stroke-width="1"/>
+    ${zLine}
+    ${xLabels}
+    ${s.map(toPath).join('')}
+    ${s.map(toEndLabel).join('')}
+  `;
+}
+
+// ── MILESTONES ────────────────────────────────────────────────────────────────
+function renderMilestones(rows) {
+  const debtFree = rows.find(r => r.debt === 0 && r.year > 0);
+  const breakEven = rows.find(r => r.netWorth >= 0 && r.year > 0);
+  const first50k  = rows.find(r => r.portfolio >= 50000 && r.year > 0);
+  const first100k = rows.find(r => r.portfolio >= 100000 && r.year > 0);
+  const y10 = rows[10];
+  const yr1Salary = rows[1] ? rows[1].salary : null;
+
+  $('milestoneGrid').innerHTML = `
+    <div class="milestone">
+      <div class="m-label">Debt-Free</div>
+      <div class="m-val ${debtFree ? 'green' : 'amber'}">${debtFree ? 'Year ' + debtFree.year : 'Beyond yr 10'}</div>
+    </div>
+    <div class="milestone">
+      <div class="m-label">Net Worth Crosses $0</div>
+      <div class="m-val ${breakEven ? 'accent' : 'amber'}">${breakEven ? 'Year ' + breakEven.year : 'Beyond yr 10'}</div>
+    </div>
+    <div class="milestone">
+      <div class="m-label">Portfolio Hits $50k</div>
+      <div class="m-val ${first50k ? 'green' : 'dim'}">${first50k ? 'Year ' + first50k.year : 'Beyond yr 10'}</div>
+    </div>
+    <div class="milestone">
+      <div class="m-label">Portfolio Hits $100k</div>
+      <div class="m-val ${first100k ? 'green' : 'dim'}">${first100k ? 'Year ' + first100k.year : 'Beyond yr 10'}</div>
+    </div>
+    <div class="milestone">
+      <div class="m-label">Year 10 Salary</div>
+      <div class="m-val accent">${fmt(y10.salary)}</div>
+    </div>
+    <div class="milestone">
+      <div class="m-label">Year 10 Portfolio</div>
+      <div class="m-val green">${fmt(y10.portfolio)}</div>
+    </div>
+    <div class="milestone">
+      <div class="m-label">Agg vs. Under-Saver Gap (Yr 10)</div>
+      <div class="m-val green">+${fmt(_scenarios[0].data[10].netWorth - _scenarios[2].data[10].netWorth)}</div>
+    </div>
+    <div class="milestone">
+      <div class="m-label">Year 10 Remaining Debt</div>
+      <div class="m-val ${y10.debt < 1 ? 'green' : 'amber'}">${y10.debt < 1 ? '$0 — Debt free!' : fmt(y10.debt)}</div>
+    </div>
+  `;
+}
+
+// ── YEAR TABLE ────────────────────────────────────────────────────────────────
+function renderTable(agg, main, con, years) {
+  const tbl = $('yrTable');
+  const hdr = `<thead><tr>
+    <th style="text-align:left">Year</th>
+    <th>Salary</th>
+    <th>After-Tax</th>
+    <th>Saved/yr</th>
+    <th>Portfolio</th>
+    <th>Debt</th>
+    <th class="s-agg">NW (Agg)</th>
+    <th class="s-base">NW (Base)</th>
+    <th class="s-con">NW (Con)</th>
+  </tr></thead>`;
+  const rows = Array.from({length:years+1},(_,i)=>i).map(y => {
+    const m = main[y], a = agg[y], c = con[y];
+    const nwCls = v => v >= 0 ? 'pos' : 'neg';
+    return `<tr>
+      <td>Year ${y}</td>
+      <td>${fmt(m.salary)}</td>
+      <td>${y===0?'—':fmt(m.afterTaxIncome)}</td>
+      <td>${y===0?'—':fmt(m.newSavings)}</td>
+      <td>${fmt(m.portfolio)}</td>
+      <td>${m.debt<1?'<span class="pos">$0</span>':fmt(m.debt)}</td>
+      <td class="${nwCls(a.netWorth)}">${fmt(a.netWorth)}</td>
+      <td class="${nwCls(m.netWorth)}">${fmt(m.netWorth)}</td>
+      <td class="${nwCls(c.netWorth)}">${fmt(c.netWorth)}</td>
+    </tr>`;
+  }).join('');
+  tbl.innerHTML = hdr + '<tbody>' + rows + '</tbody>';
+}
+
+function toggleTable() {
+  const w = $('tblWrap'), b = $('tblBtn');
+  const open = w.classList.toggle('open');
+  b.textContent = (open ? '▾' : '▸') + ' ' + (open ? 'Hide' : 'Show') + ' year-by-year table';
+}
+
+function toggleAdv() {
+  const s = $('advSection'), b = $('advBtn');
+  const open = s.classList.toggle('open');
+  b.textContent = (open ? '▾' : '▸') + ' Advanced: 401(k) Match & Investment Return';
+}
+
+// ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────────
+function exportMarkdown() {
+  if (!_scenarios) return;
+  const i = _inputs, s = _scenarios;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Early Career Net Worth Trajectory — Results',
+    `\n_Generated ${d} · AL-43 · apexlogics.org_\n`,
+    '## Inputs',
+    `| Field | Value |`,`|---|---|`,
+    `| Starting Salary | ${fmt(i.startSalary)} |`,
+    `| Annual Salary Growth | ${i.growthRate}% |`,
+    `| Base Savings Rate | ${i.savingsRate}% of take-home |`,
+    `| Filing Status | ${i.status === 'mfj' ? 'Married Filing Jointly' : 'Single'} |`,
+    `| Student Debt | ${fmt(i.debtBalance)} @ ${i.loanRate}% · ${fmt(i.monthlyPmt)}/mo |`,
+    `| 401(k) Contribution | ${i.contrib401kPct}% + ${i.matchPct}% match up to ${i.matchCap}% |`,
+    `| Investment Return | ${i.returnRate}% real annual |`,
+    '\n## 10-Year Projection Summary',
+    '| Scenario | Savings Rate | Net Worth Yr 5 | Net Worth Yr 10 |',
+    '|---|---|---|---|',
+    ...s.map(sc => `| ${sc.name} | ${sc.rate}% | ${fmt(sc.data[5].netWorth)} | ${fmt(sc.data[10].netWorth)} |`),
+    '\n## Scenario Gap',
+    `- Aggressive vs. Under-saver at Year 10: **${fmt(s[0].data[10].netWorth - s[2].data[10].netWorth)}** difference`,
+    `- Debt-free year (base): ${s[1].data.find(r=>r.debt<1&&r.year>0) ? 'Year '+s[1].data.find(r=>r.debt<1&&r.year>0).year : 'Beyond year 10'}`,
+    '\n---',
+    '_Tax: IRS 2026 projected brackets + 7.65% FICA. Returns: 7% real (Damodaran S&P 500 historical). Estimates for planning — not financial advice._'
+  ];
+  dlFile('net-worth-trajectory.md', lines.join('\n'), 'text/markdown');
+}
+
+// ── EXPORT: AP2 ───────────────────────────────────────────────────────────────
+function exportAP2() {
+  if (!_scenarios) return;
+  const i = _inputs, s = _scenarios;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "net_worth_trajectory_record",
+    generated_at: new Date().toISOString(),
+    tool_id: "38-early-career-net-worth-engine",
+    tool_name: "Early Career Net Worth Trajectory Engine",
+    inputs: {
+      starting_salary: i.startSalary, salary_growth_pct: i.growthRate,
+      base_savings_rate_pct: i.savingsRate, filing_status: i.status,
+      student_debt_balance: i.debtBalance, loan_rate_pct: i.loanRate,
+      monthly_loan_payment: i.monthlyPmt, contrib_401k_pct: i.contrib401kPct,
+      employer_match_pct: i.matchPct, employer_match_cap_pct: i.matchCap,
+      investment_return_pct: i.returnRate
+    },
+    results: {
+      scenarios: s.map(sc => ({
+        name: sc.name, savings_rate_pct: sc.rate,
+        net_worth_yr5: Math.round(sc.data[5].netWorth),
+        net_worth_yr10: Math.round(sc.data[10].netWorth),
+        portfolio_yr10: Math.round(sc.data[10].portfolio),
+        debt_yr10: Math.round(sc.data[10].debt),
+        break_even_year: (() => { const r = sc.data.find(r=>r.netWorth>=0&&r.year>0); return r?r.year:null; })()
+      })),
+      scenario_gap_yr10: Math.round(s[0].data[10].netWorth - s[2].data[10].netWorth)
+    },
+    downstream_handoff_candidates: ["AL-13", "AL-25"],
+    data_sources: [
+      "IRS 2026 tax brackets (projected from 2025 with CPI inflation)",
+      "SS/Medicare employee rate 7.65% (FICA)",
+      "IRS 2026 401(k) elective deferral limit $23,500",
+      "Damodaran 2024 — historical S&P 500 real return ~7%"
+    ],
+    license: "CC-BY-4.0"
+  };
+  const errs = [];
+  ['ap2_version','mandate_type','generated_at','inputs'].forEach(k=>{if(!payload[k])errs.push('missing '+k);});
+  const valid = [
+    'ai_skills_premium_record','federal_comp_record','military_civilian_record',
+    'noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record',
+    'workforce_pell_record','workforce_pell_credential_rank','net_worth_trajectory_record'
+  ];
+  if (!valid.includes(payload.mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('AP2 validation failed: ' + errs.join('; ')); return; }
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-43_net-worth-trajectory_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+// ── MCP ───────────────────────────────────────────────────────────────────────
+function toggleMCP() {
+  const panel=$('mcpPanel'), btn=$('mcpBtn'), pre=$('mcpPre');
+  const open = panel.classList.toggle('open');
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    pre.textContent = JSON.stringify({
+  "tool_id": "38-early-career-net-worth-engine",
+  "al_id": "AL-43",
+  "version": "1.0.0",
+  "title": "Early Career Net Worth Trajectory Engine",
+  "description": "Projects 10-year net worth for early-career individuals (18-30) across three savings scenarios (aggressive/base/conservative ±10pp). Inputs: starting salary, salary growth, savings rate, student debt, loan payment, 401k match, filing status, investment return. Outputs: year-by-year net worth, portfolio, debt balance, break-even year, milestone calendar. Uses 2026 IRS projected tax brackets. AP2 v2.0 mandate: net_worth_trajectory_record.",
+  "category": "compensation_offers",
+  "journeys": ["compensation_benefits", "education_path"],
+  "personas": ["student", "working_professional", "career_changer"],
+  "tags": ["net-worth", "savings", "student-debt", "401k", "projection", "early-career", "personal-finance"],
+  "status": "shipped",
+  "maintenance": "zero",
+  "data_vintage": "IRS 2026 tax brackets (projected); SS/Medicare 7.65%; Damodaran 2024 equity returns",
+  "ap2_export": true,
+  "ap2_mandate_types": ["net_worth_trajectory_record"],
+  "downstream_handoff_candidates": ["AL-13", "AL-25"],
+  "regulatory_citations": [
+    "IRS Rev. Proc. 2025-22 — 2026 tax bracket inflation adjustments (projected)",
+    "IRS Notice 2025-82 — 2026 retirement plan contribution limits",
+    "Damodaran Online 2024 — historical US equity risk premium and real returns"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0",
+  "execution": { "type": "browser-javascript", "entry": "index.html", "function_name": "calculate", "timeout_ms": 3000 },
+  "mcp_tool_definition": {
+    "name": "project_early_career_net_worth",
+    "description": "Given starting salary, growth rate, savings rate, student debt, loan payment, 401k match, and filing status, returns 10-year net worth projections for aggressive/base/conservative savings scenarios. Uses 2026 projected tax brackets. Deterministic.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "starting_salary":   {"type":"number"},
+        "salary_growth_pct": {"type":"number"},
+        "savings_rate_pct":  {"type":"number"},
+        "filing_status":     {"type":"string","enum":["single","mfj"]},
+        "student_debt":      {"type":"number"},
+        "loan_rate_pct":     {"type":"number"},
+        "monthly_payment":   {"type":"number"},
+        "contrib_401k_pct":  {"type":"number"},
+        "employer_match_pct":{"type":"number"},
+        "employer_match_cap":{"type":"number"},
+        "investment_return_pct":{"type":"number"}
+      },
+      "required": ["starting_salary"]
+    }
+  }
+}, null, 2);
+  }
+}
+
+// ── LANG BAR ──────────────────────────────────────────────────────────────────
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function(){
+  const s = sessionStorage.getItem('apex_lang');
+  const m = {en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'};
+  setLang(s || m[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+</script>
+</body>
+</html>
