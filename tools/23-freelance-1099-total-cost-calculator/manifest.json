@@ -1,0 +1,82 @@
+{
+  "tool_id": "23-freelance-1099-total-cost-calculator",
+  "al_id": "AL-22",
+  "version": "1.0.0",
+  "title": "Freelance / 1099 Total Cost Calculator",
+  "description": "Calculates the true after-tax cost of freelance / 1099 work vs. W-2 employment. Applies SE tax (15.3% on 92.35% of net), self-employed health insurance deduction, SEP-IRA contribution limit, IRS mileage deduction, home office deduction, and 8-tier state effective rate lookup. Binary search algorithm finds the 1099 gross equivalent of any W-2 salary. Single-tab deterministic tool.",
+  "category": "compensation_offers",
+  "journeys": ["compensation_benefits"],
+  "personas": ["working_professional", "career_changer"],
+  "tags": ["1099", "freelance", "self-employed", "se tax", "w2 vs 1099", "sep-ira", "mileage", "home office", "contractor", "independent contractor"],
+  "status": "shipped",
+  "shipped_date": "2026-05-19",
+  "display_num": "#23",
+  "maintenance": "low",
+  "data_vintage": "2026 est. federal brackets · IRS SE tax rules · IRS mileage rate $0.70/mile 2026 est. · SEP-IRA limit $70K",
+  "frozen_baseline": false,
+  "input_schema": {
+    "type": "object",
+    "required": ["w2_salary"],
+    "properties": {
+      "w2_salary": { "type": "number", "minimum": 0, "description": "Current or target W-2 annual salary for equivalence comparison" },
+      "gross_1099": { "type": "number", "minimum": 0, "description": "1099 gross revenue (if known; otherwise tool calculates equivalent)" },
+      "state": { "type": "string", "description": "Two-letter state code for state income tax" },
+      "filing_status": { "type": "string", "enum": ["single", "mfj", "mfs", "hoh"], "default": "single" },
+      "health_insurance_monthly": { "type": "number", "minimum": 0, "default": 0, "description": "Self-paid health insurance premium per month" },
+      "sep_ira_pct": { "type": "number", "minimum": 0, "maximum": 25, "default": 0, "description": "SEP-IRA contribution as % of net SE income (max 25%)" },
+      "annual_mileage": { "type": "number", "minimum": 0, "default": 0, "description": "Business miles driven per year" },
+      "home_office_sqft": { "type": "number", "minimum": 0, "default": 0, "description": "Home office square footage for simplified method" },
+      "other_deductions": { "type": "number", "minimum": 0, "default": 0, "description": "Other Schedule C deductions in USD" }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "se_tax": { "type": "number", "description": "Self-employment tax (15.3% on 92.35% of net)" },
+      "se_deduction": { "type": "number", "description": "Above-the-line SE tax deduction (50% of SE tax)" },
+      "total_deductions": { "type": "number", "description": "All deductions: SE, HI, SEP-IRA, mileage, home office, other" },
+      "net_se_income": { "type": "number", "description": "Net self-employment income after deductions" },
+      "federal_income_tax": { "type": "number", "description": "Federal income tax on net SE income" },
+      "state_tax": { "type": "number", "description": "State income tax" },
+      "total_tax": { "type": "number", "description": "Total tax burden (SE + federal + state)" },
+      "net_take_home": { "type": "number", "description": "After-tax take-home" },
+      "effective_rate": { "type": "number", "description": "Effective total tax rate as decimal" },
+      "w2_equivalent_gross": { "type": "number", "description": "1099 gross equivalent to matched W-2 salary after-tax" },
+      "w2_net_take_home": { "type": "number", "description": "W-2 after-tax take-home for comparison" }
+    }
+  },
+  "mcp_tool_definition": {
+    "name": "calculate_1099_total_cost",
+    "description": "Calculate true after-tax cost of 1099 freelance work vs. W-2. Applies SE tax, self-employed HI deduction, SEP-IRA, IRS mileage ($0.70/mi), home office, and 8-tier state rates. Binary search finds 1099 gross equivalent of any W-2 salary. Returns net take-home, effective rate, and W-2 equivalence.",
+    "inputSchema": {
+      "type": "object",
+      "required": ["w2_salary"],
+      "properties": {
+        "w2_salary": { "type": "number", "description": "W-2 salary for equivalence comparison" },
+        "state": { "type": "string", "description": "Two-letter state code" },
+        "health_insurance_monthly": { "type": "number", "description": "Monthly health insurance premium" },
+        "sep_ira_pct": { "type": "number", "description": "SEP-IRA contribution %" }
+      }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calcEquiv",
+    "timeout_ms": 5000
+  },
+  "ap2_export": true,
+  "ap2_mandate_types": ["freelance_total_cost_record"],
+  "ap2_inbound_mandate_types": ["offer_negotiation_record"],
+  "downstream_handoff_candidates": ["AL-25"],
+  "regulatory_citations": [
+    "IRC §1401 — self-employment tax",
+    "IRC §164(f) — SE tax deduction",
+    "IRC §162(l) — self-employed health insurance deduction",
+    "IRC §408(k) — SEP-IRA contribution limits",
+    "Rev. Proc. 2025 (IRS standard mileage rate est. $0.70/mile 2026)"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+}

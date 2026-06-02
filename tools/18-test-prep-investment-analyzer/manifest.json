@@ -1,0 +1,89 @@
+{
+  "tool_id": "18-test-prep-investment-analyzer",
+  "al_id": "AL-30",
+  "version": "1.0.0",
+  "title": "Test Prep Investment Analyzer",
+  "description": "ROI analysis for test preparation investment across 6 exams (GMAT, GRE, TOEFL, IELTS, LSAT, MCAT). Tab 1: score gap analysis — maps current score vs. target percentile, prep cost by provider (Kaplan, Princeton Review, self-study), and expected admissions tier shift. Tab 2: scholarship lift modeler — estimates scholarship delta from score improvement based on embedded program award data. Deterministic; no network calls.",
+  "category": "education_path_roi",
+  "journeys": ["education_path"],
+  "personas": ["student", "counselor", "career_changer"],
+  "tags": ["gmat", "gre", "toefl", "ielts", "lsat", "mcat", "test prep", "roi", "score gap", "admissions", "scholarship"],
+  "status": "shipped",
+  "shipped_date": "2026-05-18",
+  "display_num": "#18",
+  "maintenance": "very_low",
+  "data_vintage": "GMAT 2024 percentiles · GRE 2024 · TOEFL iBT · IELTS · LSAT · MCAT · Kaplan/Princeton Review 2024",
+  "frozen_baseline": true,
+  "input_schema": {
+    "type": "object",
+    "required": ["exam", "current_score"],
+    "properties": {
+      "exam": {
+        "type": "string",
+        "enum": ["gmat", "gre", "toefl", "ielts", "lsat", "mcat"],
+        "description": "Target exam"
+      },
+      "current_score": { "type": "number", "description": "Current or practice test score" },
+      "target_score": { "type": "number", "description": "Target score; if omitted tool uses 75th percentile as default" },
+      "prep_provider": {
+        "type": "string",
+        "enum": ["kaplan", "princeton_review", "manhattan_prep", "self_study", "tutor"],
+        "default": "self_study",
+        "description": "Prep provider for cost lookup"
+      },
+      "prep_months": { "type": "integer", "minimum": 1, "maximum": 24, "default": 3, "description": "Planned months of preparation" },
+      "target_program_tier": {
+        "type": "string",
+        "enum": ["t5", "t10", "t25", "t50", "regional", "any"],
+        "description": "Desired school tier for scholarship lift calculation (Tab 2)"
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "score_gap": { "type": "number", "description": "Points needed to reach target score" },
+      "current_percentile": { "type": "number", "description": "Current score percentile" },
+      "target_percentile": { "type": "number", "description": "Target score percentile" },
+      "prep_cost": { "type": "number", "description": "Estimated total prep cost in USD" },
+      "admissions_tier_shift": { "type": "string", "description": "Estimated school tier improvement from score gain" },
+      "scholarship_lift": { "type": "number", "description": "Estimated annual scholarship delta from score improvement (Tab 2)" },
+      "roi_ratio": { "type": "number", "description": "Scholarship lift / prep cost ratio" },
+      "payback_months": { "type": "number", "description": "Months for prep investment to pay back via scholarship lift" }
+    }
+  },
+  "mcp_tool_definition": {
+    "name": "analyze_test_prep_roi",
+    "description": "Calculate ROI of test prep investment for GMAT/GRE/TOEFL/IELTS/LSAT/MCAT. Maps score gap to admissions tier shift and scholarship lift using 2024 percentile and provider cost data. Returns prep cost, tier shift, scholarship delta, and payback period.",
+    "inputSchema": {
+      "type": "object",
+      "required": ["exam", "current_score"],
+      "properties": {
+        "exam": { "type": "string", "enum": ["gmat", "gre", "toefl", "ielts", "lsat", "mcat"] },
+        "current_score": { "type": "number" },
+        "target_score": { "type": "number" },
+        "prep_provider": { "type": "string", "default": "self_study" }
+      }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "runROI",
+    "timeout_ms": 3000
+  },
+  "ap2_export": true,
+  "ap2_mandate_types": ["test_prep_roi_record"],
+  "ap2_inbound_mandate_types": ["mba_roi_evaluation"],
+  "downstream_handoff_candidates": ["AL-29", "AL-20", "AL-26"],
+  "regulatory_citations": [
+    "GMAT Official Score Percentile Rankings 2024",
+    "GRE Interpretive Data 2024 (ETS)",
+    "TOEFL iBT Score Descriptors (ETS 2024)",
+    "LSAC LSAT Percentile Ranks 2024",
+    "MCAT Percentile Ranks 2024 (AAMC)"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+}

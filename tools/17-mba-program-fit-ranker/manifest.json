@@ -1,0 +1,115 @@
+{
+  "tool_id": "17-mba-program-fit-ranker",
+  "al_id": "AL-29",
+  "version": "1.0.0",
+  "title": "MBA Program Fit & ROI Ranker",
+  "description": "Compares up to 4 MBA programs across total cost of attendance, opportunity cost, post-MBA salary by specialization, payback period, and 10-year NPV. 40+ programs with embedded data from NCES IPEDS 2023-24, FT Global MBA Rankings 2024, and Bloomberg Businessweek 2024. Tab 1: program ROI ranker with custom weighting across 6 dimensions. Tab 2: opportunity cost deep-dive modeling foregone earnings during full-time enrollment.",
+  "category": "education_path_roi",
+  "journeys": ["education_path"],
+  "personas": ["student", "working_professional", "counselor", "career_changer"],
+  "tags": ["mba", "roi", "npv", "graduate", "gmat", "gre", "payback", "opportunity cost", "b-school", "mba ranking"],
+  "status": "shipped",
+  "shipped_date": "2026-05-18",
+  "display_num": "#17",
+  "maintenance": "low",
+  "data_vintage": "NCES IPEDS 2023-24 · FT Global MBA Rankings 2024 · Bloomberg Businessweek 2024",
+  "frozen_baseline": false,
+  "input_schema": {
+    "type": "object",
+    "required": ["programs"],
+    "properties": {
+      "programs": {
+        "type": "array",
+        "maxItems": 4,
+        "description": "Up to 4 MBA programs to compare",
+        "items": {
+          "type": "object",
+          "required": ["name"],
+          "properties": {
+            "name": { "type": "string", "description": "Program name (must match embedded 40+ program list)" },
+            "specialization": {
+              "type": "string",
+              "enum": ["finance", "marketing", "consulting", "tech", "operations", "entrepreneurship", "healthcare"],
+              "description": "Target specialization for post-MBA salary lookup"
+            },
+            "scholarship": { "type": "number", "minimum": 0, "description": "Annual scholarship/fellowship in USD" },
+            "loan_rate_pct": { "type": "number", "minimum": 0, "default": 7.05, "description": "Expected loan interest rate %" }
+          }
+        }
+      },
+      "current_salary": { "type": "number", "minimum": 0, "description": "Pre-MBA salary for opportunity cost calculation" },
+      "discount_rate_pct": { "type": "number", "minimum": 0, "default": 8.0, "description": "Discount rate for NPV calculation %" },
+      "weights": {
+        "type": "object",
+        "description": "Custom weighting for 6 ranking dimensions (must sum to 100)",
+        "properties": {
+          "npv": { "type": "number" },
+          "payback": { "type": "number" },
+          "salary_lift": { "type": "number" },
+          "brand": { "type": "number" },
+          "cost": { "type": "number" },
+          "placement": { "type": "number" }
+        }
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "rankings": {
+        "type": "array",
+        "description": "Programs ranked by weighted score",
+        "items": {
+          "type": "object",
+          "properties": {
+            "rank": { "type": "integer" },
+            "program": { "type": "string" },
+            "total_coa": { "type": "number" },
+            "opportunity_cost": { "type": "number" },
+            "post_mba_salary": { "type": "number" },
+            "payback_years": { "type": "number" },
+            "npv_10yr": { "type": "number" },
+            "weighted_score": { "type": "number" }
+          }
+        }
+      },
+      "top_program": { "type": "string", "description": "Highest-ranked program" }
+    }
+  },
+  "mcp_tool_definition": {
+    "name": "rank_mba_programs",
+    "description": "Compare up to 4 MBA programs by total COA, opportunity cost, post-MBA salary by specialization, payback period, and 10-year NPV. Uses NCES IPEDS 2023-24, FT Global MBA Rankings 2024, and Bloomberg BW 2024 embedded data. Returns ranked matrix and NPV comparison.",
+    "inputSchema": {
+      "type": "object",
+      "required": ["programs"],
+      "properties": {
+        "programs": {
+          "type": "array",
+          "maxItems": 4,
+          "description": "Array of up to 4 program objects with name and specialization"
+        },
+        "current_salary": { "type": "number", "description": "Pre-MBA salary for opportunity cost" },
+        "discount_rate_pct": { "type": "number", "default": 8.0 }
+      }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "runAnalysis",
+    "secondary_function_names": ["renderRanking"],
+    "timeout_ms": 5000
+  },
+  "ap2_export": true,
+  "ap2_mandate_types": ["mba_roi_evaluation"],
+  "ap2_inbound_mandate_types": ["credential_roi_evaluation", "graduate_school_roi_record"],
+  "downstream_handoff_candidates": ["AL-30", "AL-20", "AL-26"],
+  "regulatory_citations": [
+    "NCES IPEDS 2023-24",
+    "FT Global MBA Rankings 2024",
+    "Bloomberg Businessweek MBA Rankings 2024"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+}

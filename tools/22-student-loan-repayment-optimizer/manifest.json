@@ -1,0 +1,88 @@
+{
+  "tool_id": "22-student-loan-repayment-optimizer",
+  "al_id": "AL-13",
+  "version": "1.0.0",
+  "title": "Student Loan Repayment Optimizer",
+  "description": "Compares 5 federal repayment plans (Standard 10-yr, Graduated, Extended 25-yr, IBR, PAYE/ICR) across total cost, monthly payment trajectory, and PSLF eligibility. Calculates discretionary income for IDR plans using HHS FPL guidelines. PSLF tracker models 120-payment forgiveness timeline. Note: SAVE plan wound down mid-2026 and is excluded. Entirely deterministic.",
+  "category": "student_finance_debt",
+  "journeys": ["education_path"],
+  "personas": ["student", "working_professional", "career_changer", "counselor"],
+  "tags": ["student loans", "repayment", "ibr", "paye", "icr", "pslf", "forgiveness", "federal loans", "income driven", "discretionary income"],
+  "status": "shipped",
+  "shipped_date": "2026-05-19",
+  "display_num": "#22",
+  "maintenance": "low",
+  "data_vintage": "Federal repayment plan formulas 2026 · FPL est. 2026 · PSLF rules studentaid.gov",
+  "frozen_baseline": false,
+  "input_schema": {
+    "type": "object",
+    "required": ["loan_balance", "interest_rate_pct", "agi"],
+    "properties": {
+      "loan_balance": { "type": "number", "minimum": 0, "description": "Total federal student loan balance in USD" },
+      "interest_rate_pct": { "type": "number", "minimum": 0, "maximum": 15, "description": "Weighted average interest rate %" },
+      "agi": { "type": "number", "minimum": 0, "description": "Adjusted gross income for IDR calculation" },
+      "family_size": { "type": "integer", "minimum": 1, "maximum": 20, "default": 1, "description": "Family size for FPL lookup" },
+      "state": { "type": "string", "description": "State of residence (Alaska/Hawaii use different FPL)" },
+      "pslf_eligible": { "type": "boolean", "default": false, "description": "Qualifying for PSLF (public service employer)" },
+      "payments_made": { "type": "integer", "minimum": 0, "maximum": 120, "default": 0, "description": "Qualifying PSLF payments already made" },
+      "expected_income_growth_pct": { "type": "number", "minimum": 0, "default": 3.0, "description": "Annual income growth rate assumption %" }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "plans": {
+        "type": "array",
+        "description": "Comparison results for each repayment plan",
+        "items": {
+          "type": "object",
+          "properties": {
+            "plan": { "type": "string", "description": "Plan name (Standard, Graduated, Extended, IBR, PAYE, ICR)" },
+            "monthly_payment_initial": { "type": "number" },
+            "total_paid": { "type": "number" },
+            "total_interest": { "type": "number" },
+            "payoff_years": { "type": "number" },
+            "forgiveness_amount": { "type": "number", "description": "Amount forgiven at end of IDR period (if any)" },
+            "pslf_forgiven": { "type": "number", "description": "Amount forgiven under PSLF after 120 payments" }
+          }
+        }
+      },
+      "recommended_plan": { "type": "string", "description": "Lowest total cost plan given PSLF eligibility" },
+      "pslf_remaining_payments": { "type": "integer", "description": "Qualifying payments remaining for PSLF forgiveness" }
+    }
+  },
+  "mcp_tool_definition": {
+    "name": "optimize_loan_repayment",
+    "description": "Compare 5 federal student loan repayment plans (Standard, Graduated, Extended, IBR, PAYE/ICR) by total cost, monthly payment, and PSLF forgiveness. Uses 2026 HHS FPL guidelines for IDR discretionary income. Returns plan comparison, total interest, and PSLF forgiveness estimate.",
+    "inputSchema": {
+      "type": "object",
+      "required": ["loan_balance", "interest_rate_pct", "agi"],
+      "properties": {
+        "loan_balance": { "type": "number", "description": "Total federal loan balance" },
+        "interest_rate_pct": { "type": "number", "description": "Weighted average rate %" },
+        "agi": { "type": "number", "description": "Adjusted gross income" },
+        "family_size": { "type": "integer", "default": 1 },
+        "pslf_eligible": { "type": "boolean", "default": false }
+      }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calcAll",
+    "secondary_function_names": ["calcPSLF"],
+    "timeout_ms": 5000
+  },
+  "ap2_export": true,
+  "ap2_mandate_types": ["loan_repayment_record"],
+  "ap2_inbound_mandate_types": ["fafsa_sai_estimate", "scholarship_roi_tracker"],
+  "downstream_handoff_candidates": ["AL-26"],
+  "regulatory_citations": [
+    "34 CFR Part 685",
+    "PSLF program rules — studentaid.gov",
+    "HHS FPL guidelines 2026"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+}

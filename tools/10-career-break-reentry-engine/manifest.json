@@ -1,0 +1,117 @@
+{
+  "$schema": "https://apexlogics.org/schema/tool-manifest-v1.1.json",
+  "al_id": "AL-28",
+  "tool_id": "10-career-break-reentry-engine",
+  "title": "Career Break & Reentry Cost Engine",
+  "subtitle": "Break Feasibility Engine + Reentry Cost Modeler",
+  "version": "1.1.0",
+  "spec_version": "8.0",
+  "contract_version": "1.1",
+  "category": "career_transition_mobility",
+  "journeys": ["career_navigation", "compensation_benefits"],
+  "personas": ["career_changer", "working_professional", "counselor"],
+  "publisher": "Apex Advisors",
+  "publisher_url": "https://apexadvisory.site",
+  "suite_url": "https://apexlogics.org",
+  "tool_url": "https://apexlogics.org/tools/10-career-break-reentry-engine/",
+  "license": "CC-BY-4.0",
+  "pii_free": true,
+  "zero_network": true,
+  "storage_policy": "sessionStorage apex_lang only",
+  "frozen_baseline": false,
+  "maintenance": "low",
+  "data_vintage": "Tab 1: Zero maintenance (user-entered inputs only). Tab 2: Industry reentry penalty curves — SHRM 2024 · BLS OEWS May 2023 · CFA Institute 2024 · NALP 2024 · IEEE 2024 · AGC 2024. Annual spot-check recommended.",
+  "regulatory_citations": [
+    "IRS Pub 590-A 2024 (401k contribution limits)",
+    "SSA OASDI 2024 (Social Security credits)",
+    "ERISA 29 USC §1001 (retirement plan law)",
+    "IRS Rev. Proc. 2024-25 (SS wage base $168,600)",
+    "BLS OEWS May 2023 (wage benchmarks)",
+    "SHRM 2024 Workforce Survey (reentry penalty curves)",
+    "CFA Institute 2024 (finance reentry data)",
+    "NALP 2024 Employment Report (legal reentry data)",
+    "IEEE 2024 Salary & Benefits Survey (engineering reentry data)",
+    "AGC 2024 Workforce Survey (construction reentry data)"
+  ],
+  "ap2_export": true,
+  "ap2_protocol": "google_agent_purchase_protocol_sep_2025",
+  "ap2_mandate_types": ["career_break_record"],
+  "ap2_inbound_mandate_types": ["severance_decision_record", "career_pivot_assessment", "career_transition_record"],
+  "downstream_handoff_candidates": ["AL-03", "AL-08+14"],
+  "downstream_handoff_note": "Tab 1 → AL-03 (Human Capital Engine) for skills depreciation analysis. Tab 2 → AL-08+14 (Career Transition Suite) for career pivot planning.",
+  "status": "shipped",
+  "shipped_date": "2026-05-17",
+  "rubric_score": "72/0/3/1",
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "mcp_tool_definition": {
+    "name": "model_career_break_cost",
+    "tool_number": "AL-28",
+    "description": "Model the full financial cost of a career break (lost income, 401k compounding gap, Social Security impact, break timing NPV) and the industry-specific reentry salary penalty by break duration and role level. Returns two AP2-compliant mandates under career_break_record: break_feasibility (Tab 1) and reentry_cost (Tab 2). Accepts AP2 inbound from severance_decision_record (AL-24), career_pivot_assessment, and career_transition_record (AL-08+14).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "current_age": {
+          "type": "integer",
+          "minimum": 22,
+          "maximum": 65,
+          "description": "User's current age."
+        },
+        "annual_salary_usd": {
+          "type": "number",
+          "description": "Current annual salary in USD."
+        },
+        "break_duration_months": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60,
+          "description": "Planned career break duration in months."
+        },
+        "monthly_expenses_usd": {
+          "type": "number",
+          "description": "Monthly essential expenses during the break (housing, food, utilities), USD."
+        },
+        "liquid_savings_usd": {
+          "type": "number",
+          "description": "Current liquid savings / assets available for the break, USD."
+        },
+        "cobra_monthly_usd": {
+          "type": "number",
+          "description": "Monthly COBRA or ACA premium estimate during break. 2025 avg: ~$584 individual / ~$1,850 family."
+        },
+        "k401_balance_usd": {
+          "type": "number",
+          "description": "Current 401(k) balance, USD."
+        },
+        "k401_contrib_rate_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 30,
+          "description": "Annual 401(k) contribution rate as % of salary (include employer match)."
+        },
+        "industry": {
+          "type": "string",
+          "enum": ["healthcare","tech","finance","legal","education","engineering","sales_marketing","consulting","government","creative","construction","retail"],
+          "description": "Industry for Tab 2 reentry penalty modeling."
+        },
+        "role_level": {
+          "type": "string",
+          "enum": ["same","step_down","lateral"],
+          "description": "Planned reentry role level: same (same title/level), step_down (one level below), lateral (new field)."
+        },
+        "years_to_retirement": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 40,
+          "description": "Years remaining to planned retirement."
+        }
+      }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "runTab1",
+    "timeout_ms": 5000
+  }
+}
