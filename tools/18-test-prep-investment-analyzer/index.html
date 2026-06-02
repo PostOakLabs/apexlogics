@@ -438,8 +438,8 @@ select option { background:var(--bg-3); color:var(--bright); }
         </div>
       </div>
 
-      <button class="mcp-toggle" id="mcpToggle" onclick="toggleMCP()">MCP · AP2 Payload Preview</button>
-      <div class="mcp-panel" id="mcpPanel"><pre id="mcpPre"></pre></div>
+      <button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()">MCP · AP2 Payload Preview</button>
+      <div class="mcp-panel" id="mcpPanel"><pre id="mcpManifestPre"></pre></div>
 
     </div><!-- /roiResults -->
 
@@ -453,7 +453,14 @@ select option { background:var(--bg-3); color:var(--bright); }
 
 <div class="toast" id="toast"></div>
 
-<footer class="tool-footer">
+<button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">
+    MCP Tool Manifest
+  </button>
+  <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+    <pre id="mcpManifestPre"></pre>
+  </div>
+
+  <footer class="tool-footer">
   <a href="../../about.html">About</a> · CC BY 4.0 · AL-30 · Data as of Q4 2024
 </footer>
 
@@ -1116,11 +1123,91 @@ function exportMarkdown() {
 
 /* ─── MCP / MANIFEST ─────────────────────────────────────────── */
 function toggleMCP() {
-  const btn = document.getElementById('mcpToggle');
+  const btn   = document.getElementById('mcpToggleBtn');
   const panel = document.getElementById('mcpPanel');
-  btn.classList.toggle('open'); panel.classList.toggle('open');
-  if (panel.classList.contains('open') && lastROIResult) {
-    document.getElementById('mcpPre').textContent = JSON.stringify(buildAP2Mandate(lastROIResult), null, 2);
+  const pre   = document.getElementById('mcpManifestPre');
+  const open  = panel.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    const manifest = {
+  "tool_id": "18-test-prep-investment-analyzer",
+  "al_id": "AL-30",
+  "version": "1.0.0",
+  "title": "Test Prep Investment Analyzer",
+  "description": "ROI analysis for test preparation investment across 6 exams (GMAT, GRE, TOEFL, IELTS, LSAT, MCAT). Tab 1: score gap analysis \u2014 maps current score vs. target percentile, prep cost by provider (Kaplan, Princeton Review, self-study), and expected admissions tier shift. Tab 2: scholarship lift modeler \u2014 estimates scholarship delta from score improvement based on embedded program award data. Deterministic; no network calls.",
+  "category": "education_path_roi",
+  "journeys": [
+    "education_path"
+  ],
+  "personas": [
+    "student",
+    "counselor",
+    "career_changer"
+  ],
+  "tags": [
+    "gmat",
+    "gre",
+    "toefl",
+    "ielts",
+    "lsat",
+    "mcat",
+    "test prep",
+    "roi",
+    "score gap",
+    "admissions",
+    "scholarship"
+  ],
+  "status": "shipped",
+  "maintenance": "very_low",
+  "data_vintage": "GMAT 2024 percentiles \u00b7 GRE 2024 \u00b7 TOEFL iBT \u00b7 IELTS \u00b7 LSAT \u00b7 MCAT \u00b7 Kaplan/Princeton Review 2024",
+  "ap2_export": true,
+  "ap2_mandate_types": [
+    "test_prep_roi_record"
+  ],
+  "license": "CC-BY-4.0",
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "runROI",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "analyze_test_prep_roi",
+    "description": "Calculate ROI of test prep investment for GMAT/GRE/TOEFL/IELTS/LSAT/MCAT. Maps score gap to admissions tier shift and scholarship lift using 2024 percentile and provider cost data. Returns prep cost, tier shift, scholarship delta, and payback period.",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "exam",
+        "current_score"
+      ],
+      "properties": {
+        "exam": {
+          "type": "string",
+          "enum": [
+            "gmat",
+            "gre",
+            "toefl",
+            "ielts",
+            "lsat",
+            "mcat"
+          ]
+        },
+        "current_score": {
+          "type": "number"
+        },
+        "target_score": {
+          "type": "number"
+        },
+        "prep_provider": {
+          "type": "string",
+          "default": "self_study"
+        }
+      }
+    }
+  }
+};
+    pre.textContent = JSON.stringify(manifest, null, 2);
   }
 }
 

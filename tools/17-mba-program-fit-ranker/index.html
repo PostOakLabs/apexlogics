@@ -747,9 +747,9 @@ select option { background:var(--bg-3); color:var(--bright); }
     </div>
 
     <!-- MCP PANEL -->
-    <button class="mcp-toggle" id="mcpToggle" onclick="toggleMCP()" data-i18n="btn_mcp">MCP · AP2 Payload Preview</button>
+    <button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" data-i18n="btn_mcp">MCP · AP2 Payload Preview</button>
     <div class="mcp-panel" id="mcpPanel">
-      <pre id="mcpPre"></pre>
+      <pre id="mcpManifestPre"></pre>
     </div>
 
   </div><!-- /results-panel -->
@@ -777,7 +777,14 @@ select option { background:var(--bg-3); color:var(--bright); }
 <div class="toast" id="toast"></div>
 
 <!-- FOOTER -->
-<footer class="tool-footer">
+<button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">
+    MCP Tool Manifest
+  </button>
+  <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+    <pre id="mcpManifestPre"></pre>
+  </div>
+
+  <footer class="tool-footer">
   <a href="../../about.html">About</a> · CC BY 4.0 · AL-29 · Data as of NCES IPEDS 2023-24
 </footer>
 
@@ -1927,12 +1934,85 @@ function handoffTo(target) {
 
 /* ─── MCP PANEL ──────────────────────────────────────────────── */
 function toggleMCP() {
-  const btn = document.getElementById('mcpToggle');
+  const btn   = document.getElementById('mcpToggleBtn');
   const panel = document.getElementById('mcpPanel');
-  const isOpen = panel.classList.toggle('visible');
-  btn.textContent = isOpen ? 'Hide AP2 Payload ▲' : 'MCP · AP2 Payload Preview';
-  if (isOpen && lastResults) {
-    document.getElementById('mcpPre').textContent = JSON.stringify(buildAP2Mandate(lastResults), null, 2);
+  const pre   = document.getElementById('mcpManifestPre');
+  const open  = panel.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    const manifest = {
+  "tool_id": "17-mba-program-fit-ranker",
+  "al_id": "AL-29",
+  "version": "1.0.0",
+  "title": "MBA Program Fit & ROI Ranker",
+  "description": "Compares up to 4 MBA programs across total cost of attendance, opportunity cost, post-MBA salary by specialization, payback period, and 10-year NPV. 40+ programs with embedded data from NCES IPEDS 2023-24, FT Global MBA Rankings 2024, and Bloomberg Businessweek 2024. Tab 1: program ROI ranker with custom weighting across 6 dimensions. Tab 2: opportunity cost deep-dive modeling foregone earnings during full-time enrollment.",
+  "category": "education_path_roi",
+  "journeys": [
+    "education_path"
+  ],
+  "personas": [
+    "student",
+    "working_professional",
+    "counselor",
+    "career_changer"
+  ],
+  "tags": [
+    "mba",
+    "roi",
+    "npv",
+    "graduate",
+    "gmat",
+    "gre",
+    "payback",
+    "opportunity cost",
+    "b-school",
+    "mba ranking"
+  ],
+  "status": "shipped",
+  "maintenance": "low",
+  "data_vintage": "NCES IPEDS 2023-24 \u00b7 FT Global MBA Rankings 2024 \u00b7 Bloomberg Businessweek 2024",
+  "ap2_export": true,
+  "ap2_mandate_types": [
+    "mba_roi_evaluation"
+  ],
+  "license": "CC-BY-4.0",
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "runAnalysis",
+    "secondary_function_names": [
+      "renderRanking"
+    ],
+    "timeout_ms": 5000
+  },
+  "mcp_tool_definition": {
+    "name": "rank_mba_programs",
+    "description": "Compare up to 4 MBA programs by total COA, opportunity cost, post-MBA salary by specialization, payback period, and 10-year NPV. Uses NCES IPEDS 2023-24, FT Global MBA Rankings 2024, and Bloomberg BW 2024 embedded data. Returns ranked matrix and NPV comparison.",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "programs"
+      ],
+      "properties": {
+        "programs": {
+          "type": "array",
+          "maxItems": 4,
+          "description": "Array of up to 4 program objects with name and specialization"
+        },
+        "current_salary": {
+          "type": "number",
+          "description": "Pre-MBA salary for opportunity cost"
+        },
+        "discount_rate_pct": {
+          "type": "number",
+          "default": 8.0
+        }
+      }
+    }
+  }
+};
+    pre.textContent = JSON.stringify(manifest, null, 2);
   }
 }
 

@@ -650,7 +650,14 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);margin-top:12px
 </div>
 
 <!-- FOOTER -->
-<footer class="tool-footer">
+<button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">
+    MCP Tool Manifest
+  </button>
+  <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+    <pre id="mcpManifestPre"></pre>
+  </div>
+
+  <footer class="tool-footer">
   <a href="../../about.html">About</a> · CC BY 4.0 · AL-27 · Data as of 2024 · Channel benchmarks: BLS JOLT 2024
 </footer>
 
@@ -1486,6 +1493,138 @@ function downloadText(text, name) {
     if (saved) setLang(saved);
   } catch (e) {}
 })();
+
+/* -- MCP TOGGLE -- */
+function toggleMCP() {
+  const btn   = document.getElementById('mcpToggleBtn');
+  const panel = document.getElementById('mcpPanel');
+  const pre   = document.getElementById('mcpManifestPre');
+  const open  = panel.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    const manifest = {
+  "tool_id": "09-job-search-roi-tracker",
+  "al_id": "AL-27",
+  "version": "1.1.0",
+  "title": "Job Search ROI Tracker",
+  "category": "career_transition_mobility",
+  "journeys": [
+    "career_navigation",
+    "compensation_benefits"
+  ],
+  "personas": [
+    "career_changer",
+    "working_professional",
+    "counselor"
+  ],
+  "status": "shipped",
+  "maintenance": "low",
+  "data_vintage": "Tab 1: Channel benchmark rates \u2014 BLS JOLT 2024 (job openings/hire rates), LinkedIn Economic Graph 2024 (response rates), SHRM 2024 (time-to-fill). Tab 2: Zero maintenance (user-entered inputs only). Annual spot-check recommended.",
+  "ap2_export": true,
+  "ap2_mandate_types": [
+    "job_search_roi_record"
+  ],
+  "license": "CC-BY-4.0",
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "runTab1",
+    "timeout_ms": 5000
+  },
+  "mcp_tool_definition": {
+    "name": "track_job_search_roi",
+    "tool_number": "AL-27",
+    "description": "Model the expected ROI of job search effort by channel (referral, LinkedIn, recruiter, direct apply, cold outreach, job boards) using geometric probability models and NPV. Tab 1 computes EV/hour and channel ranking by expected offer timeline. Tab 2 computes the NPV delta of accepting a current offer vs. continuing to search, with break-even months and runway analysis. Returns two AP2-compliant mandates under job_search_roi_record: channel_roi (Tab 1) and accept_vs_continue (Tab 2). Accepts AP2 inbound from offer_negotiation_record (AL-25).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "current_salary_usd": {
+          "type": "number",
+          "description": "Current annual salary in USD (or last salary if unemployed)."
+        },
+        "target_salary_usd": {
+          "type": "number",
+          "description": "Target annual salary for the new role, USD."
+        },
+        "hourly_rate_usd": {
+          "type": "number",
+          "description": "User's effective hourly rate for opportunity cost calculations (annual / 2080)."
+        },
+        "channels": {
+          "type": "array",
+          "description": "Array of job search channels to model.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string",
+                "description": "Channel name (e.g., 'Referral / Network')."
+              },
+              "apps_per_week": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 50
+              },
+              "response_rate_pct": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "% of applications that receive any response."
+              },
+              "interview_to_offer_pct": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "% of interviews that convert to an offer."
+              },
+              "hours_per_app": {
+                "type": "number",
+                "minimum": 0.1,
+                "maximum": 20,
+                "description": "Hours spent per application (research + prep + submission)."
+              }
+            }
+          }
+        },
+        "current_offer_usd": {
+          "type": "number",
+          "description": "Current offer in hand, annual USD (Tab 2)."
+        },
+        "liquid_savings_usd": {
+          "type": "number",
+          "description": "Liquid savings / runway available during continued search, USD."
+        },
+        "monthly_expenses_usd": {
+          "type": "number",
+          "description": "Monthly essential expenses during job search, USD."
+        },
+        "expected_weeks_remaining": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 104,
+          "description": "Expected weeks remaining to receive a better offer (from Tab 1 portfolio median or user estimate)."
+        },
+        "discount_rate_annual_pct": {
+          "type": "number",
+          "default": 3.0,
+          "description": "Annual discount rate for NPV calculations (default 3%)."
+        },
+        "years_to_model": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30,
+          "default": 10,
+          "description": "Years over which to model the salary differential NPV."
+        }
+      }
+    }
+  }
+};
+    pre.textContent = JSON.stringify(manifest, null, 2);
+  }
+}
+
 </script>
 </body>
 </html>

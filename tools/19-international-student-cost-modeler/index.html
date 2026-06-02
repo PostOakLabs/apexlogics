@@ -424,8 +424,8 @@ select option { background:var(--bg-3); color:var(--bright); }
         </div>
       </div>
 
-      <button class="mcp-toggle" id="mcpToggle" onclick="toggleMCP()">MCP · AP2 Payload Preview</button>
-      <div class="mcp-panel" id="mcpPanel"><pre id="mcpPre"></pre></div>
+      <button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()">MCP · AP2 Payload Preview</button>
+      <div class="mcp-panel" id="mcpPanel"><pre id="mcpManifestPre"></pre></div>
 
     </div>
   </div><!-- /pane-us -->
@@ -500,7 +500,14 @@ select option { background:var(--bg-3); color:var(--bright); }
 
 <div class="toast" id="toast"></div>
 
-<footer class="tool-footer">
+<button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">
+    MCP Tool Manifest
+  </button>
+  <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+    <pre id="mcpManifestPre"></pre>
+  </div>
+
+  <footer class="tool-footer">
   <a href="../../about.html">About</a> · CC BY 4.0 · AL-31 · Data as of 2024-25 academic year
 </footer>
 
@@ -1082,10 +1089,90 @@ function exportMarkdown() {
 
 /* ─── MCP / MANIFEST ─────────────────────────────────────────── */
 function toggleMCP() {
-  const btn=document.getElementById('mcpToggle'), panel=document.getElementById('mcpPanel');
-  btn.classList.toggle('open'); panel.classList.toggle('open');
-  if (panel.classList.contains('open') && lastUSResult) {
-    document.getElementById('mcpPre').textContent = JSON.stringify(buildAP2Mandate(lastUSResult),null,2);
+  const btn   = document.getElementById('mcpToggleBtn');
+  const panel = document.getElementById('mcpPanel');
+  const pre   = document.getElementById('mcpManifestPre');
+  const open  = panel.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    const manifest = {
+  "tool_id": "19-international-student-cost-modeler",
+  "al_id": "AL-31",
+  "version": "1.0.0",
+  "title": "International Student Cost Modeler",
+  "description": "Models full F-1 visa costs, OPT/STEM OPT earnings window, and H-1B lottery probability for international students. Tab 1 (US programs): F-1 visa fees (SEVIS + consular), 12-month OPT earnings at BLS regional rate, STEM OPT extension (24 months), H-1B FY2020-FY2024 approval rates by cap-subject vs. cap-exempt. Tab 2 (international comparison): side-by-side cost comparison between US and non-US programs using QS 2024 rankings and regional CPI. Legal disclaimer prominently displayed.",
+  "category": "education_path_roi",
+  "journeys": [
+    "education_path"
+  ],
+  "personas": [
+    "student",
+    "parent",
+    "counselor"
+  ],
+  "tags": [
+    "f-1 visa",
+    "sevis",
+    "opt",
+    "stem opt",
+    "h-1b",
+    "international student",
+    "uscis",
+    "study abroad",
+    "program comparison"
+  ],
+  "status": "shipped",
+  "maintenance": "low",
+  "data_vintage": "US Dept of State 2024 \u00b7 USCIS H-1B FY2020-FY2024 \u00b7 BLS regional CPI \u00b7 QS 2024",
+  "ap2_export": true,
+  "ap2_mandate_types": [
+    "international_student_cost_record"
+  ],
+  "license": "CC-BY-4.0",
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "runUS",
+    "secondary_function_names": [
+      "runCompare"
+    ],
+    "timeout_ms": 5000
+  },
+  "mcp_tool_definition": {
+    "name": "model_international_student_cost",
+    "description": "Model F-1 visa costs, OPT/STEM OPT earnings window, and H-1B approval rates for international students. Tab 1: US total cost net of OPT income. Tab 2: US vs. non-US program cost comparison using QS 2024 and BLS regional CPI. NOT immigration legal advice.",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "program_type"
+      ],
+      "properties": {
+        "program_type": {
+          "type": "string",
+          "enum": [
+            "stem",
+            "non_stem"
+          ]
+        },
+        "annual_tuition": {
+          "type": "number"
+        },
+        "annual_living": {
+          "type": "number"
+        },
+        "program_years": {
+          "type": "integer",
+          "default": 2
+        },
+        "state": {
+          "type": "string"
+        }
+      }
+    }
+  }
+};
+    pre.textContent = JSON.stringify(manifest, null, 2);
   }
 }
 const MANIFEST = {

@@ -233,6 +233,25 @@ select option { background:var(--bg-3); color:var(--bright); }
   .results-export-row{flex-direction:column;align-items:flex-start;}
   .metrics-grid{grid-template-columns:1fr 1fr;}
 }
+/* -- MCP PANEL -- */
+.mcp-toggle {
+  display:flex; align-items:center; gap:8px; cursor:pointer;
+  background:none; border:1px solid var(--border); border-radius:var(--radius,4px);
+  color:var(--muted); padding:.45rem 1rem; font-size:.65rem;
+  font-family:'JetBrains Mono',monospace; letter-spacing:.07em;
+  transition:all .15s; margin-bottom:12px;
+}
+.mcp-toggle:hover { border-color:var(--border-2); color:var(--body); }
+.mcp-toggle.open::before { transform:rotate(90deg); }
+.mcp-panel {
+  display:none; background:var(--bg-2,#0C1220); border:1px solid var(--border);
+  border-radius:var(--radius-lg,6px); padding:16px; margin-bottom:16px;
+}
+.mcp-panel.open { display:block; }
+.mcp-panel pre {
+  font-family:'JetBrains Mono',monospace; font-size:.68rem; color:var(--body);
+  line-height:1.55; overflow-x:auto; white-space:pre-wrap; word-break:break-word; margin:0;
+}
 </style>
 </head>
 <body>
@@ -601,7 +620,14 @@ select option { background:var(--bg-3); color:var(--bright); }
 <div class="toast" id="toast"></div>
 
 <!-- FOOTER — CONTRACT §6.2 attribution -->
-<footer class="tool-footer">
+<button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">
+    MCP Tool Manifest
+  </button>
+  <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+    <pre id="mcpManifestPre"></pre>
+  </div>
+
+  <footer class="tool-footer">
   <a href="../../about.html">About</a> · CC BY 4.0 · AL-05 · Data as of Jan 2026 · State 529 rules vary — verify deduction caps with your state
 </footer>
 
@@ -1420,6 +1446,94 @@ function buildManifest(){
 
 /* ─── INIT MANIFEST DISPLAY ──────────────────────────────────────── */
 document.getElementById('manifest-content').textContent=JSON.stringify(buildManifest(),null,2);
+
+
+/* -- MCP TOGGLE -- */
+function toggleMCP() {
+  const btn   = document.getElementById('mcpToggleBtn');
+  const panel = document.getElementById('mcpPanel');
+  const pre   = document.getElementById('mcpManifestPre');
+  const open  = panel.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    const manifest = {
+  "tool_id": "24-education-savings-projector",
+  "al_id": "AL-05",
+  "version": "1.0.0",
+  "title": "Education Savings Projector",
+  "description": "Projects 529 plan growth to a target year and models the impact of plan assets on FAFSA Student Aid Index (SAI). Tab 1: 529 balance projection with state tax deduction benefit and investment growth. Tab 2: SAI asset impact modeler \u2014 shows how 529 and non-529 assets shift the SAI and estimated financial aid eligibility. Covers SECURE 2.0 Roth rollover provision (IRC \u00a7529(c)(3)(E)).",
+  "category": "student_finance_debt",
+  "journeys": [
+    "education_path"
+  ],
+  "personas": [
+    "student",
+    "parent",
+    "counselor"
+  ],
+  "tags": [
+    "529",
+    "education savings",
+    "fafsa",
+    "sai",
+    "college",
+    "tax deduction",
+    "secure 2.0",
+    "roth rollover",
+    "financial aid"
+  ],
+  "status": "shipped",
+  "maintenance": "very_low",
+  "data_vintage": "IRS Pub. 970 (2025) \u00b7 State 529 rules Jan 2026 \u00b7 NCES IPEDS 2023-24 \u00b7 SECURE 2.0 Act",
+  "ap2_export": true,
+  "ap2_mandate_types": [
+    "education_savings_record"
+  ],
+  "license": "CC-BY-4.0",
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "runTab1",
+    "secondary_function_names": [
+      "runTab2"
+    ],
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "project_education_savings",
+    "description": "Project 529 plan growth and model SAI/financial-aid impact. Tab 1: projects balance at enrollment using compound growth and state tax deduction. Tab 2: estimates SAI shift from 529 vs. non-529 asset treatment under FAFSA formula. Covers SECURE 2.0 Roth rollover provision.",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "current_balance",
+        "years_to_enrollment"
+      ],
+      "properties": {
+        "current_balance": {
+          "type": "number",
+          "description": "Current 529 balance"
+        },
+        "annual_contribution": {
+          "type": "number",
+          "description": "Annual contribution"
+        },
+        "years_to_enrollment": {
+          "type": "integer",
+          "description": "Years until college"
+        },
+        "growth_rate_pct": {
+          "type": "number",
+          "default": 6.0,
+          "description": "Annual growth rate %"
+        }
+      }
+    }
+  }
+};
+    pre.textContent = JSON.stringify(manifest, null, 2);
+  }
+}
 
 </script>
 </body>

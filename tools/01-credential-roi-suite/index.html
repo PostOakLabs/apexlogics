@@ -550,7 +550,14 @@ pre.mcp-json{font-family:var(--font-mono);font-size:.7rem;color:var(--body);whit
 </main>
 
 <!-- ══ FOOTER ════════════════════════════════════════════════ -->
-<footer class="tool-footer">
+<button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">
+    MCP Tool Manifest
+  </button>
+  <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+    <pre id="mcpManifestPre"></pre>
+  </div>
+
+  <footer class="tool-footer">
   <a href="../../about.html">About</a> · CC BY 4.0 · AL-02 · Data: BLS OEWS May 2023 · CIRR/SwitchUp 2023 · Exam fees Q4 2024
 </footer>
 
@@ -1184,6 +1191,114 @@ document.addEventListener('DOMContentLoaded', () => {
   setLang(lang);
   initSelects();
 });
+
+/* -- MCP TOGGLE -- */
+function toggleMCP() {
+  const btn   = document.getElementById('mcpToggleBtn');
+  const panel = document.getElementById('mcpPanel');
+  const pre   = document.getElementById('mcpManifestPre');
+  const open  = panel.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    const manifest = {
+  "tool_id": "01-credential-roi-suite",
+  "al_id": "AL-02",
+  "version": "1.0.0",
+  "title": "Credential ROI Suite",
+  "description": "Compare bootcamp, degree, and certification ROI using BLS earnings data. Models NPV, payback period, opportunity cost, and salary premium with an AP2 handoff to the Graduate School ROI Comparator.",
+  "category": "education_path_roi",
+  "journeys": [
+    "education_path"
+  ],
+  "personas": [
+    "student",
+    "counselor",
+    "career_changer"
+  ],
+  "tags": [
+    "bootcamp",
+    "degree",
+    "certification",
+    "ROI",
+    "NPV",
+    "salary",
+    "BLS",
+    "career"
+  ],
+  "status": "shipped",
+  "maintenance": "medium",
+  "data_vintage": "BLS OEWS May 2023 (16 SOC codes) \u00b7 CIRR/SwitchUp 2023 bootcamp benchmarks \u00b7 NCES IPEDS 2022-23 tuition tiers \u00b7 Q4 2024 exam fee schedules (15 certifications)",
+  "ap2_export": true,
+  "ap2_mandate_types": [
+    "credential_roi_evaluation"
+  ],
+  "execution": {
+    "type": "static_html",
+    "entrypoint": "index.html",
+    "requires_network": false,
+    "requires_auth": false
+  },
+  "mcp_tool_definition": {
+    "name": "credential_roi_suite",
+    "description": "Model ROI, NPV, and payback period for bootcamp, degree, or certification credentials using BLS earnings benchmarks. Exports AP2 credential_roi_evaluation for downstream use by AL-26 Graduate School ROI Comparator.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "tab": {
+          "type": "string",
+          "enum": [
+            "bootcamp",
+            "degree",
+            "certification"
+          ]
+        },
+        "roleKey": {
+          "type": "string"
+        },
+        "institutionName": {
+          "type": "string"
+        },
+        "programCost": {
+          "type": "number",
+          "minimum": 0
+        },
+        "durationYears": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currentSalary": {
+          "type": "number",
+          "minimum": 0
+        },
+        "postSalary": {
+          "type": "number",
+          "minimum": 0
+        },
+        "careerHorizon": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 40
+        },
+        "discountRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 20
+        }
+      },
+      "required": [
+        "tab",
+        "programCost",
+        "currentSalary",
+        "postSalary"
+      ]
+    }
+  }
+};
+    pre.textContent = JSON.stringify(manifest, null, 2);
+  }
+}
+
 </script>
 </body>
 </html>

@@ -587,9 +587,9 @@ td input[type="text"], td input[type="number"], td input[type="date"] {
 
   <!-- ════ MCP PANEL ════ -->
   <div class="mcp-wrap">
-    <button class="mcp-toggle" onclick="toggleMCP()" id="mcpToggle">▶ MCP / Agent Discovery</button>
+    <button class="mcp-toggle" onclick="toggleMCP()" id="mcpToggleBtn">▶ MCP / Agent Discovery</button>
     <div class="mcp-panel" id="mcpPanel">
-      <pre id="mcpPre"></pre>
+      <pre id="mcpManifestPre"></pre>
     </div>
   </div>
 
@@ -1267,38 +1267,92 @@ function exportMarkdown() {
 
 /* ════ MCP PANEL ════ */
 function toggleMCP() {
-  const panel  = document.getElementById('mcpPanel');
-  const toggle = document.getElementById('mcpToggle');
-  const isOpen = panel.classList.toggle('open');
-  toggle.textContent = (isOpen ? '▼' : '▶') + ' MCP / Agent Discovery';
-  if (isOpen && !document.getElementById('mcpPre').textContent) {
-    document.getElementById('mcpPre').textContent = JSON.stringify({
-      tool_id: 'cpd-credit-tracker',
-      al_id: 'AL-18',
-      version: '1.0.0',
-      title: 'CPD / CPE Credit Tracker',
-      category: 'licensing_credentials',
-      status: 'shipped',
-      ap2_mandate_types: ['cpd_credit_record'],
-      downstream_handoff_candidates: ['AL-03', 'AL-20'],
-      sister_suite: 'https://ainumbers.co',
-      consulting_site: 'https://apexadvisory.site',
-      mcp_tool_definition: {
-        name: 'track_cpd_cpe_credits',
-        description: 'Tracks CPD/CPE credits for CPA, CLE, HR (SHRM/HRCI), and CME/CEU credentials. Computes gap to renewal deadline and pace model. Returns an AP2 cpd_credit_record mandate.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            profession_key: { type: 'string' },
-            total_required: { type: 'number' },
-            total_earned:   { type: 'number' },
-            ethics_required: { type: 'number' },
-            deadline: { type: 'string' }
-          },
-          required: ['profession_key', 'total_required', 'total_earned', 'deadline']
+  const btn   = document.getElementById('mcpToggleBtn');
+  const panel = document.getElementById('mcpPanel');
+  const pre   = document.getElementById('mcpManifestPre');
+  const open  = panel.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    const manifest = {
+  "tool_id": "12-cpd-credit-tracker",
+  "al_id": "AL-18",
+  "version": "1.1.0",
+  "title": "CPD / CPE Credit Tracker",
+  "description": "Tracks continuing professional development (CPD) and continuing professional education (CPE) credits for CPA, CLE, HR (SHRM/HRCI), and CME/CEU credentials. User logs completed activities; tool computes credits earned, gap to renewal, ethics minimum status, pace required per week/month, and on-track vs. at-risk status. Zero embedded data \u2014 fully user-driven.",
+  "category": "licensing_credentials",
+  "journeys": [
+    "career_navigation",
+    "education_path"
+  ],
+  "personas": [
+    "working_professional",
+    "counselor"
+  ],
+  "tags": [
+    "CPE",
+    "CPD",
+    "CPA",
+    "CLE",
+    "SHRM",
+    "HRCI",
+    "CME",
+    "CEU",
+    "continuing education",
+    "license renewal",
+    "recertification",
+    "gap calculator"
+  ],
+  "status": "shipped",
+  "maintenance": "zero",
+  "data_vintage": "User-driven \u2014 no embedded reference data. Requirement figures per published 2024 standards (NASBA, ABA, SHRM, HRCI, ACCME, ANCC).",
+  "ap2_export": true,
+  "ap2_mandate_types": [
+    "cpd_credit_record"
+  ],
+  "license": "CC-BY-4.0",
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 1000
+  },
+  "mcp_tool_definition": {
+    "name": "track_cpd_cpe_credits",
+    "tool_number": "AL-18",
+    "description": "Tracks CPD/CPE credits for CPA, CLE, HR (SHRM/HRCI), and CME/CEU credentials. Computes gap to renewal deadline, ethics minimum status, and pace model. Returns AP2 cpd_credit_record mandate with downstream handoff candidates to AL-03 (Human Capital Engine) and AL-20 (Exam Cost Planner).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "profession_key": {
+          "type": "string",
+          "description": "One of: cpa_annual, cpa_triennial, cle_12, cle_15, shrm, hrci, cme_25, cme_50, ceu_nursing"
+        },
+        "total_required": {
+          "type": "number",
+          "description": "Override total credits required (optional; auto-filled from profession)"
+        },
+        "deadline": {
+          "type": "string",
+          "description": "Renewal deadline in YYYY-MM-DD format"
+        },
+        "ethics_required": {
+          "type": "number",
+          "description": "Mandatory ethics credit minimum (auto-filled, user-overridable)"
+        },
+        "total_earned": {
+          "type": "number",
+          "description": "Total credits already earned (optional; can be computed from activities list)"
         }
-      }
-    }, null, 2);
+      },
+      "required": [
+        "profession_key",
+        "deadline"
+      ]
+    }
+  }
+};
+    pre.textContent = JSON.stringify(manifest, null, 2);
   }
 }
 
@@ -1381,7 +1435,14 @@ function setLang(lang) {
   setLang(lang);
 })();
 </script>
-<footer class="tool-footer">
+<button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">
+    MCP Tool Manifest
+  </button>
+  <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+    <pre id="mcpManifestPre"></pre>
+  </div>
+
+  <footer class="tool-footer">
   <a href="../../about.html">About</a> · CC BY 4.0 · AL-18 · CPD/CE standards as of 2024 · No embedded reference data requiring annual refresh
 </footer>
 

@@ -363,7 +363,14 @@ input:focus,select:focus{outline:none;border-color:var(--accent)}
   </div>
 </div>
 
-<footer class="tool-footer">
+<button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">
+    MCP Tool Manifest
+  </button>
+  <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+    <pre id="mcpManifestPre"></pre>
+  </div>
+
+  <footer class="tool-footer">
   <a href="../../about.html">About</a> · CC BY 4.0 · AL-37 · Data as of State Revenue Dept. 2025-26, IRS 2025. Educational purposes only — not tax advice.
 </footer>
 
@@ -913,6 +920,83 @@ function setLang(lang) {
   const fb = (navigator.language || 'en').slice(0, 2);
   setLang(saved || (['en','es','fr','ar','pt','zh'].includes(fb) ? fb : 'en'));
 })();
+
+
+/* -- MCP TOGGLE -- */
+function toggleMCP() {
+  const btn   = document.getElementById('mcpToggleBtn');
+  const panel = document.getElementById('mcpPanel');
+  const pre   = document.getElementById('mcpManifestPre');
+  const open  = panel.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    const manifest = {
+  "tool_id": "32-remote-work-tax-mapper",
+  "al_id": "AL-37",
+  "version": "1.0.0",
+  "title": "Remote Work Tax Mapper",
+  "description": "Calculates state income tax liability across all 50 states + DC for remote workers. Embeds full state tax rates, reciprocity pairs, NY/PA convenience-of-employer rules, and 2025 federal brackets for single/MFJ. Compares three scenarios: current arrangement, move to employer state, and 100% WFH in a no-tax state.",
+  "category": "compensation_offers",
+  "journeys": [
+    "compensation_benefits"
+  ],
+  "personas": [
+    "working_professional"
+  ],
+  "tags": [
+    "remote",
+    "tax",
+    "state-tax",
+    "reciprocity",
+    "work-from-home",
+    "relocation"
+  ],
+  "status": "shipped",
+  "maintenance": "medium",
+  "data_vintage": "2025 state income tax rates, 2025 IRS federal brackets, FICA 2025 ($176,100 SS wage base)",
+  "ap2_export": true,
+  "ap2_mandate_types": [
+    "remote_tax_record"
+  ],
+  "license": "CC-BY-4.0",
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculateTax",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "map_remote_work_tax",
+    "description": "Given residence state, employer state, salary, and filing status, returns state + federal + FICA tax across three scenarios. Flags NY convenience-of-employer doctrine and reciprocity agreements. Uses embedded 2025 rate data. Deterministic.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "residence_state": {
+          "type": "string"
+        },
+        "employer_state": {
+          "type": "string"
+        },
+        "gross_salary": {
+          "type": "number"
+        },
+        "filing_status": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "residence_state",
+        "employer_state",
+        "gross_salary",
+        "filing_status"
+      ]
+    }
+  }
+};
+    pre.textContent = JSON.stringify(manifest, null, 2);
+  }
+}
 
 </script>
 </body>

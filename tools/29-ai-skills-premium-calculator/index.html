@@ -577,6 +577,25 @@
 .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-family:'JetBrains Mono',monospace; line-height:1; }
 @media (max-width:600px) { .logo-tag { display:none; } }
 .nav-right { display:flex; align-items:center; gap:8px; margin-left:auto; flex-shrink:0; }
+/* -- MCP PANEL -- */
+.mcp-toggle {
+  display:flex; align-items:center; gap:8px; cursor:pointer;
+  background:none; border:1px solid var(--border); border-radius:var(--radius,4px);
+  color:var(--muted); padding:.45rem 1rem; font-size:.65rem;
+  font-family:'JetBrains Mono',monospace; letter-spacing:.07em;
+  transition:all .15s; margin-bottom:12px;
+}
+.mcp-toggle:hover { border-color:var(--border-2); color:var(--body); }
+.mcp-toggle.open::before { transform:rotate(90deg); }
+.mcp-panel {
+  display:none; background:var(--bg-2,#0C1220); border:1px solid var(--border);
+  border-radius:var(--radius-lg,6px); padding:16px; margin-bottom:16px;
+}
+.mcp-panel.open { display:block; }
+.mcp-panel pre {
+  font-family:'JetBrains Mono',monospace; font-size:.68rem; color:var(--body);
+  line-height:1.55; overflow-x:auto; white-space:pre-wrap; word-break:break-word; margin:0;
+}
 </style>
 </head>
 <body>
@@ -806,7 +825,14 @@
 </main>
 
 <!-- ── FOOTER ── -->
-<footer class="tool-footer">
+<button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">
+    MCP Tool Manifest
+  </button>
+  <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+    <pre id="mcpManifestPre"></pre>
+  </div>
+
+  <footer class="tool-footer">
   <a href="../../about.html">About</a> · CC BY 4.0 · AL-34 · Data as of BLS OEWS 2024, PwC AI Jobs Barometer 2025
 </footer>
 
@@ -1212,6 +1238,81 @@ function setLang(lang) {
   const fb = (navigator.language || 'en').slice(0, 2);
   setLang(saved || (['en','es','fr','ar','pt','zh'].includes(fb) ? fb : 'en'));
 })();
+
+
+/* -- MCP TOGGLE -- */
+function toggleMCP() {
+  const btn   = document.getElementById('mcpToggleBtn');
+  const panel = document.getElementById('mcpPanel');
+  const pre   = document.getElementById('mcpManifestPre');
+  const open  = panel.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    const manifest = {
+  "tool_id": "29-ai-skills-premium-calculator",
+  "al_id": "AL-34",
+  "version": "1.0.0",
+  "title": "AI Skills Premium Calculator",
+  "description": "Calculates salary premium from AI skill acquisition across 14 role categories and 10 AI skills. Embeds 2024-25 BLS OEWS median salaries, upskilling cost and time data, and PwC AI Jobs Barometer premium coefficients. Outputs NPV at 1/3/5-year horizons at 5% discount rate.",
+  "category": "compensation_offers",
+  "journeys": [
+    "compensation_benefits",
+    "career_growth"
+  ],
+  "personas": [
+    "working_professional",
+    "career_changer",
+    "student"
+  ],
+  "tags": [
+    "ai",
+    "skills",
+    "salary",
+    "premium",
+    "upskilling",
+    "npv",
+    "roi"
+  ],
+  "status": "shipped",
+  "maintenance": "low",
+  "data_vintage": "BLS OEWS 2024, PwC AI Jobs Barometer 2025",
+  "ap2_export": true,
+  "ap2_mandate_types": [
+    "ai_skills_premium_record"
+  ],
+  "license": "CC-BY-4.0",
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculatePremium",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "calculate_ai_skills_premium",
+    "description": "Given a role category and list of target AI skills, returns salary premium percentage, annual premium dollar value, upskilling cost/time, and NPV at 1/3/5 years. Uses embedded BLS/PwC data. Deterministic.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "role_category": {
+          "type": "string"
+        },
+        "target_skills": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "role_category"
+      ]
+    }
+  }
+};
+    pre.textContent = JSON.stringify(manifest, null, 2);
+  }
+}
 
 </script>
 </body>

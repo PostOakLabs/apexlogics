@@ -591,6 +591,25 @@ body {
 .logo-org { color:var(--muted); font-size:.8rem; }
 .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-family:'JetBrains Mono',monospace; line-height:1; }
 @media (max-width:600px) { .logo-tag { display:none; } }
+/* -- MCP PANEL -- */
+.mcp-toggle {
+  display:flex; align-items:center; gap:8px; cursor:pointer;
+  background:none; border:1px solid var(--border); border-radius:var(--radius,4px);
+  color:var(--muted); padding:.45rem 1rem; font-size:.65rem;
+  font-family:'JetBrains Mono',monospace; letter-spacing:.07em;
+  transition:all .15s; margin-bottom:12px;
+}
+.mcp-toggle:hover { border-color:var(--border-2); color:var(--body); }
+.mcp-toggle.open::before { transform:rotate(90deg); }
+.mcp-panel {
+  display:none; background:var(--bg-2,#0C1220); border:1px solid var(--border);
+  border-radius:var(--radius-lg,6px); padding:16px; margin-bottom:16px;
+}
+.mcp-panel.open { display:block; }
+.mcp-panel pre {
+  font-family:'JetBrains Mono',monospace; font-size:.68rem; color:var(--body);
+  line-height:1.55; overflow-x:auto; white-space:pre-wrap; word-break:break-word; margin:0;
+}
 </style>
 </head>
 <body>
@@ -917,6 +936,13 @@ body {
     </div>
 
   </div><!-- /results-section -->
+
+  <button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">
+    MCP Tool Manifest
+  </button>
+  <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+    <pre id="mcpManifestPre"></pre>
+  </div>
 
   <footer class="tool-footer">
   <a href="../../about.html">About</a> · CC BY 4.0 · AL-36 · Data as of BLS OEWS 2024, NCES IPEDS 2023-24
@@ -1564,6 +1590,80 @@ function setLang(lang) {
   const fb = (navigator.language || 'en').slice(0, 2);
   setLang(saved || (['en','es','fr','ar','pt','zh'].includes(fb) ? fb : 'en'));
 })();
+
+
+/* -- MCP TOGGLE -- */
+function toggleMCP() {
+  const btn   = document.getElementById('mcpToggleBtn');
+  const panel = document.getElementById('mcpPanel');
+  const pre   = document.getElementById('mcpManifestPre');
+  const open  = panel.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    const manifest = {
+  "tool_id": "31-trade-vs-degree-roi-engine",
+  "al_id": "AL-36",
+  "version": "1.0.0",
+  "title": "Trade vs. Degree ROI Engine",
+  "description": "Compares NPV of 10 trade/certification paths against 10 degree tracks using BLS wage data, state multipliers, apprenticeship income credits, and opportunity cost ($35K baseline). Draws canvas earnings trajectories and animated bar comparisons. 3% discount rate, 20-year horizon.",
+  "category": "education_path_roi",
+  "journeys": [
+    "education_planning"
+  ],
+  "personas": [
+    "student",
+    "career_changer"
+  ],
+  "tags": [
+    "trade",
+    "degree",
+    "roi",
+    "npv",
+    "apprenticeship",
+    "career",
+    "education"
+  ],
+  "status": "shipped",
+  "maintenance": "low",
+  "data_vintage": "BLS OEWS 2024, BLS Employment Projections 2022-32",
+  "ap2_export": true,
+  "ap2_mandate_types": [
+    "education_path_record"
+  ],
+  "license": "CC-BY-4.0",
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculateROI",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "compare_trade_vs_degree",
+    "description": "Given a trade/cert path or degree track plus state and school type, returns NPV over 20 years, break-even timeline, peak wage, and BLS job growth. Accounts for opportunity cost and apprenticeship income. Deterministic.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path_type": {
+          "type": "string"
+        },
+        "path_name": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path_type",
+        "path_name"
+      ]
+    }
+  }
+};
+    pre.textContent = JSON.stringify(manifest, null, 2);
+  }
+}
 
 </script>
 </body>
