@@ -1,0 +1,77 @@
+{
+  "tool_id": "40-gig-income-optimizer",
+  "al_id": "AL-45",
+  "version": "1.0.0",
+  "title": "Part-Time / Gig Income Optimizer",
+  "description": "For hybrid W-2 + 1099 workers. Computes marginal effective rate on gig income (income tax + SE tax net of IRC §164(f) deduction), quarterly estimated payment amounts and due dates, safe harbor thresholds, and optional net hourly rate analysis. Uses 2026 projected IRS brackets. AP2 v2.0: gig_income_record.",
+  "category": "compensation_offers",
+  "journeys": ["compensation_benefits"],
+  "personas": ["working_professional", "career_changer"],
+  "tags": ["gig", "1099", "self-employment", "SE-tax", "quarterly-estimates", "side-income", "hybrid"],
+  "status": "shipped",
+  "maintenance": "very_low",
+  "data_vintage": "IRS 2026 brackets (projected Rev. Proc. 2025-22); SE tax 15.3% (IRC §1401); SS wage base $176,100 (2025); IRS $1,000 quarterly trigger",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["gig_income_record"],
+  "ap2_inbound_mandate_types": ["freelance_total_cost_record"],
+  "downstream_handoff_candidates": ["AL-23", "AL-32"],
+  "regulatory_citations": [
+    "IRC §1401 — Self-employment tax (15.3% on 92.35% of net SE income)",
+    "IRC §164(f) — 50% SE tax above-the-line deduction",
+    "IRS Publication 505 — Tax Withholding and Estimated Tax",
+    "IRS Rev. Proc. 2025-22 — 2026 inflation-adjusted tax parameters (projected)"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "w2_salary":         {"type":"number"},
+      "filing_status":     {"type":"string"},
+      "state_rate_pct":    {"type":"number"},
+      "gross_gig_income":  {"type":"number"},
+      "business_expenses": {"type":"number"},
+      "billing_rate_hr":   {"type":"number"},
+      "prior_year_tax":    {"type":"number"},
+      "prior_year_agi":    {"type":"number"}
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "net_gig_income":             {"type":"number"},
+      "self_employment_tax":        {"type":"number"},
+      "se_deduction":               {"type":"number"},
+      "total_gig_tax":              {"type":"number"},
+      "effective_marginal_rate_pct":{"type":"number"},
+      "net_after_tax_gig":          {"type":"number"},
+      "quarterly_payment_required": {"type":"boolean"},
+      "quarterly_payment_amount":   {"type":"number"}
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "optimize_gig_income_tax",
+    "description": "Given W-2 salary, filing status, state rate, gig income, and business expenses, returns effective marginal rate on gig income, SE tax breakdown, quarterly payment amounts, and net after-tax income. Uses 2026 projected IRS brackets. Deterministic.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "w2_salary":         {"type":"number"},
+        "filing_status":     {"type":"string","enum":["single","mfj"]},
+        "state_rate_pct":    {"type":"number"},
+        "gross_gig_income":  {"type":"number"},
+        "business_expenses": {"type":"number"},
+        "billing_rate_hr":   {"type":"number"},
+        "prior_year_tax":    {"type":"number"}
+      },
+      "required": ["w2_salary","gross_gig_income"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+}
