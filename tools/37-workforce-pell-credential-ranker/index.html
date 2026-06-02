@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workforce Pell Credential Value Ranker · ApexLogics #37</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/37-workforce-pell-credential-ranker/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    /* NAV */
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: var(--accent); } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-family: 'Sora', sans-serif; font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; transition: all 0.15s; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+
+    /* LANG BAR */
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+
+    /* LAYOUT */
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 36px; }
+
+    /* CARDS */
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 20px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 16px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input[type="number"]:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .field-hint a { color: var(--accent); text-decoration: none; }
+
+    /* RUN BUTTON */
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    /* RESULTS */
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+
+    /* FILTER + SORT BAR */
+    .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 20px; padding: 16px 20px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; }
+    .filter-label { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-right: 4px; }
+    .pill { padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-family: 'JetBrains Mono', monospace; border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; background: var(--surface); transition: all 0.15s; }
+    .pill.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .filter-sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+    .sort-select { background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); padding: 5px 10px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; }
+
+    /* RESULTS SUMMARY */
+    .results-summary { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+    .summary-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text-muted); }
+    .summary-chip strong { color: var(--accent); }
+
+    /* CREDENTIAL GRID */
+    .cred-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    /* CREDENTIAL CARD */
+    .cred-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; cursor: pointer; transition: border-color 0.15s; position: relative; }
+    .cred-card:hover { border-color: var(--accent); }
+    .cred-card.top-pick { border-color: var(--green); }
+    .cred-card.top-pick::before { content: '★ TOP PICK'; position: absolute; top: -1px; right: 12px; background: var(--green); color: #000; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; font-weight: 700; padding: 2px 8px; border-radius: 0 0 4px 4px; }
+    .cred-rank { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 4px; }
+    .cred-name { font-size: 0.95rem; font-weight: 600; margin-bottom: 6px; line-height: 1.3; }
+    .cred-cat-badge { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; padding: 2px 8px; border-radius: 3px; margin-bottom: 10px; }
+    .cat-healthcare    { background: rgba(52,211,153,0.12); color: var(--green); }
+    .cat-it_cyber      { background: rgba(96,165,250,0.12); color: var(--blue); }
+    .cat-hvac          { background: rgba(251,191,36,0.12); color: var(--amber); }
+    .cat-electrical    { background: rgba(251,191,36,0.12); color: var(--amber); }
+    .cat-plumbing      { background: rgba(45,212,191,0.12); color: var(--teal); }
+    .cat-welding_mfg   { background: rgba(248,113,113,0.12); color: var(--red); }
+    .cat-cdl_transport { background: rgba(167,139,250,0.12); color: var(--accent); }
+    .cat-construction  { background: rgba(251,191,36,0.12); color: var(--amber); }
+    .cat-early_childhood { background: rgba(52,211,153,0.12); color: var(--green); }
+    .cat-financial_services { background: rgba(96,165,250,0.12); color: var(--blue); }
+    .cat-emergency_safety { background: rgba(248,113,113,0.12); color: var(--red); }
+
+    .cred-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .metric { background: var(--surface); border-radius: 6px; padding: 8px 10px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 2px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.blue  { color: var(--blue); }
+    .metric-val.accent { color: var(--accent); }
+    .metric-val.dim { color: var(--text-dim); font-size: 0.78rem; }
+
+    .cred-bar-row { margin-bottom: 8px; }
+    .cred-bar-label { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); margin-bottom: 3px; }
+    .cred-bar-track { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .cred-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+    .fill-green { background: var(--green); }
+    .fill-blue  { background: var(--blue); }
+    .fill-amber { background: var(--amber); }
+
+    .demand-stars { font-size: 0.82rem; letter-spacing: 1px; }
+    .star-lit  { color: var(--amber); }
+    .star-dim  { color: var(--text-dim); }
+
+    .cred-note { font-size: 0.72rem; color: var(--text-dim); font-style: italic; margin-top: 6px; border-top: 1px solid var(--border); padding-top: 6px; }
+    .cred-warn { font-size: 0.7rem; color: var(--amber); margin-top: 4px; }
+
+    .no-results { text-align: center; padding: 48px; color: var(--text-dim); font-size: 0.9rem; }
+
+    /* EXPORT ROW */
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    /* MCP */
+    .mcp-toggle { margin-top: 32px; background: none; border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); width: 100%; text-align: left; transition: all 0.15s; }
+    .mcp-toggle:hover { border-color: var(--accent); color: var(--text-muted); }
+    .mcp-panel { display: none; background: var(--surface2); border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; padding: 20px; }
+    .mcp-panel.open { display: block; }
+    .mcp-panel pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; overflow-x: auto; }
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .cred-grid { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ LANG BAR ══════════════════════════════════════════════════════════════ -->
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<!-- ══ NAV ═══════════════════════════════════════════════════════════════════ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#A78BFA" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#A78BFA" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#A78BFA"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#A78BFA" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#A78BFA" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#A78BFA"/>
+          <circle cx="52" cy="56" r="2.5" fill="#A78BFA"/>
+          <path d="M22 32 L42 32" stroke="#A78BFA" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a class="nav-pill accent" href="../../index.html">← All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+  </div>
+
+  <p class="tool-eyebrow">#37 · AL-42 · Workforce Development</p>
+  <h1 class="tool-title">Workforce Pell<br>Credential Value Ranker</h1>
+  <p class="tool-desc">Rank 21 Workforce Pell-eligible short-term credentials by ROI, wage gain, and demand — personalized to your Pell award. Wage data from BLS OEWS 2023; demand from BLS Occupational Outlook Handbook 2024–34 projections.</p>
+  <p class="tool-vintage">Data: BLS OEWS May 2023 · BLS OOH 2024–34 projections · ED Pell Grant 2026–27 · OBBBA P.L. 119-21 (effective July 1, 2026)</p>
+
+  <!-- ── INPUTS ────────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">Your Profile <span class="badge">Personalizes Pell awards &amp; ROI</span></div>
+    <div class="form-grid three" style="margin-bottom:16px;">
+      <div class="field">
+        <label for="agi">Adjusted Gross Income (AGI) — $</label>
+        <input type="number" id="agi" value="32000" min="0" max="300000" step="500" />
+        <span class="field-hint">Used to estimate your base Pell eligibility</span>
+      </div>
+      <div class="field">
+        <label for="saiDirect">Or enter SAI directly</label>
+        <input type="number" id="saiDirect" value="" min="-1500" max="99999" placeholder="Overrides AGI" />
+        <span class="field-hint"><a href="../../tools/02-fafsa-sai-simulator/index.html">Calculate precise SAI (AL-02) →</a></span>
+      </div>
+      <div class="field">
+        <label for="famSize">Family Size</label>
+        <select id="famSize">
+          <option value="1" selected>1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+          <option value="7">7</option><option value="8">8+</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="currentIncome">Current Annual Income — $ (optional)</label>
+        <input type="number" id="currentIncome" value="30000" min="0" max="500000" step="1000" />
+        <span class="field-hint">Used to calculate wage gain vs. credential median. Leave blank to skip.</span>
+      </div>
+      <div class="field">
+        <label for="maxOOP">Max Out-of-Pocket Budget — $ (optional)</label>
+        <input type="number" id="maxOOP" value="" min="0" max="50000" step="250" placeholder="No limit" />
+        <span class="field-hint">Filters out credentials where net cost exceeds this amount after Pell.</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Rank Credentials →</button>
+
+  <!-- ══ RESULTS ════════════════════════════════════════════════════════════ -->
+  <div class="results-section" id="resultsSection">
+
+    <!-- FILTER + SORT BAR -->
+    <div class="filter-bar">
+      <span class="filter-label">Category:</span>
+      <button class="pill active" data-cat="all" onclick="setFilter('all')">All</button>
+      <button class="pill" data-cat="healthcare" onclick="setFilter('healthcare')">Healthcare</button>
+      <button class="pill" data-cat="it_cyber" onclick="setFilter('it_cyber')">IT &amp; Cyber</button>
+      <button class="pill" data-cat="hvac" onclick="setFilter('hvac')">HVAC</button>
+      <button class="pill" data-cat="electrical" onclick="setFilter('electrical')">Electrical</button>
+      <button class="pill" data-cat="welding_mfg" onclick="setFilter('welding_mfg')">Mfg</button>
+      <button class="pill" data-cat="cdl_transport" onclick="setFilter('cdl_transport')">CDL</button>
+      <button class="pill" data-cat="construction" onclick="setFilter('construction')">Construction</button>
+      <div class="filter-sep"></div>
+      <span class="filter-label">Sort by:</span>
+      <select class="sort-select" id="sortBy" onchange="renderCards()">
+        <option value="roi">ROI Score</option>
+        <option value="wage_gain">Wage Gain</option>
+        <option value="demand">Job Demand</option>
+        <option value="cost_asc">Cost ↑</option>
+        <option value="pell_pct">Pell Coverage %</option>
+      </select>
+    </div>
+
+    <!-- SUMMARY CHIPS -->
+    <div class="results-summary">
+      <div class="summary-chip">Base Pell: <strong id="sumBasePell">—</strong></div>
+      <div class="summary-chip">Credentials shown: <strong id="sumCount">—</strong></div>
+      <div class="summary-chip">Fully covered by Pell: <strong id="sumFree">—</strong></div>
+      <div class="summary-chip">Avg wage gain: <strong id="sumAvgGain">—</strong></div>
+    </div>
+
+    <!-- CREDENTIAL CARDS -->
+    <div class="cred-grid" id="credGrid"></div>
+    <div class="no-results" id="noResults" style="display:none;">No credentials match current filters.</div>
+
+    <!-- EXPORT ROW -->
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download AP2 JSON</button>
+      <span class="ap2-hint">AP2 v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+    </div>
+
+  </div><!-- /results-section -->
+
+  <!-- MCP PANEL -->
+  <button class="mcp-toggle" id="mcpBtn" onclick="toggleMCP()" aria-expanded="false">▸ Developer / Agent Integration (manifest.json)</button>
+  <div class="mcp-panel" id="mcpPanel"><pre id="mcpPre"></pre></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-42 · Data as of BLS OEWS May 2023, BLS OOH 2024–34, ED Pell 2026–27
+  </footer>
+
+</div>
+
+<script>
+// ── PELL CONSTANTS ────────────────────────────────────────────────────────────
+const PELL_MAX = 7395, PELL_MIN = 740, SAI_CUTOFF = 14790;
+const HRS_DENOM = 900, WKS_DENOM = 24;
+const IPA = {1:12010,2:15810,3:19690,4:24290,5:28690,6:33090,7:37490,8:41890};
+
+// ── CREDENTIAL DATASET ────────────────────────────────────────────────────────
+// Sources: BLS OEWS May 2023 (wages), BLS OOH 2024-34 (demand %), program data from
+// community college catalogs and apprenticeship.gov. Costs are national midpoint estimates.
+const CREDENTIALS = [
+  { id:'cna',          name:'Certified Nursing Assistant (CNA)',
+    cat:'healthcare',  hours:165, weeks:8,
+    cost:2200,         soc:'31-1131', median:36200, entry:30000, demand:5,  tte:2,
+    certFee:150, note:'OBRA-required training; fastest path to healthcare employment; universally in-demand.' },
+  { id:'emt',          name:'EMT Basic',
+    cat:'healthcare',  hours:170, weeks:8,
+    cost:1800,         soc:'29-2042', median:46500, entry:35000, demand:6,  tte:3,
+    certFee:100, note:'NREMT certification required after program; strong urban and rural demand.' },
+  { id:'phlebotomy',   name:'Phlebotomy Technician',
+    cat:'healthcare',  hours:180, weeks:8,
+    cost:2000,         soc:'31-9097', median:40000, entry:32000, demand:10, tte:2,
+    certFee:150, note:'NPA or ASCP certification recommended; hospital, lab, and blood center demand.' },
+  { id:'sterile',      name:'Sterile Processing Technician',
+    cat:'healthcare',  hours:200, weeks:10,
+    cost:3000,         soc:'51-9111', median:45600, entry:36000, demand:9,  tte:3,
+    certFee:200, note:'CRCST certification preferred; hospital shortage credential with strong wage growth.' },
+  { id:'dental_asst',  name:'Dental Assistant Certificate',
+    cat:'healthcare',  hours:400, weeks:14,
+    cost:5000,         soc:'31-9091', median:47700, entry:38000, demand:8,  tte:4,
+    certFee:350, note:'DANB certification optional but boosts hire rate; consistent demand at dental offices.' },
+  { id:'pharmacy_tech',name:'Pharmacy Technician Certificate',
+    cat:'healthcare',  hours:350, weeks:14,
+    cost:3500,         soc:'29-2052', median:42700, entry:34000, demand:5,  tte:3,
+    certFee:150, note:'PTCB or NHA ExCPT certification required; retail pharmacy and hospital tracks.' },
+  { id:'comptia_a',    name:'CompTIA A+ (IT Support Specialist)',
+    cat:'it_cyber',    hours:240, weeks:10,
+    cost:2800,         soc:'15-1232', median:60400, entry:42000, demand:8,  tte:6,
+    certFee:500, note:'Two exam vouchers ~$500; DoD 8570 baseline cert; widely recognized by employers.' },
+  { id:'comptia_sec',  name:'CompTIA Security+ (Cybersecurity)',
+    cat:'it_cyber',    hours:350, weeks:14,
+    cost:3800,         soc:'15-1212', median:75000, entry:55000, demand:32, tte:8,
+    certFee:400, note:'DoD 8570 IAT Level II; fastest-growing IT cert pathway; exam ~$400.' },
+  { id:'network_plus', name:'CompTIA Network+ / CCNA',
+    cat:'it_cyber',    hours:300, weeks:12,
+    cost:4000,         soc:'15-1231', median:72300, entry:50000, demand:8,  tte:8,
+    certFee:400, note:'Network+ or Cisco CCNA; cloud networking demand growing; remote-work friendly roles.' },
+  { id:'hvac',         name:'HVAC/R Technician Certificate',
+    cat:'hvac',        hours:400, weeks:14,
+    cost:5500,         soc:'49-9021', median:56500, entry:40000, demand:9,  tte:4,
+    certFee:100, note:'EPA 608 certification required; residential and commercial demand; overtime common.' },
+  { id:'solar_pv',     name:'Solar PV Installer Certificate',
+    cat:'electrical',  hours:200, weeks:10,
+    cost:3500,         soc:'47-2231', median:51400, entry:38000, demand:22, tte:5,
+    certFee:250, note:'NABCEP PV Associate certification recommended; fastest-growing energy occupation nationally.' },
+  { id:'elec_pre',     name:'Electrician Pre-Apprenticeship',
+    cat:'electrical',  hours:250, weeks:12,
+    cost:2800,         soc:'47-2111', median:61600, entry:40000, demand:11, tte:4,
+    certFee:0,   note:'Gateway to IBEW or independent apprenticeship; high demand for EV and solar infrastructure.' },
+  { id:'plumbing_pre', name:'Plumbing Pre-Apprenticeship',
+    cat:'construction',hours:250, weeks:12,
+    cost:2500,         soc:'47-2152', median:61550, entry:39000, demand:6,  tte:4,
+    certFee:0,   note:'Gateway to UA plumber apprenticeship; strong residential and commercial pipeline.' },
+  { id:'welding',      name:'Welding Certificate (MIG/TIG)',
+    cat:'welding_mfg', hours:450, weeks:14,
+    cost:5500,         soc:'51-4121', median:48100, entry:36000, demand:5,  tte:3,
+    certFee:300, note:'AWS D1.1 certification increases hire rate; manufacturing and construction demand.' },
+  { id:'cnc',          name:'CNC Machine Operator Certificate',
+    cat:'welding_mfg', hours:350, weeks:14,
+    cost:5500,         soc:'51-4011', median:50200, entry:38000, demand:9,  tte:4,
+    certFee:150, note:'NIMS credentials valued; aerospace, auto, and defense manufacturing demand.' },
+  { id:'cdl_a',        name:'CDL Class A (Tractor-Trailer)',
+    cat:'cdl_transport',hours:200, weeks:8,
+    cost:6000,         soc:'53-3032', median:54940, entry:45000, demand:4,  tte:2,
+    certFee:200, warn:'⚠️ Many CDL programs are 3–7 weeks — verify your program meets the 8-week minimum for Workforce Pell.',
+    note:'Carriers often sponsor training with sign-on bonuses. High immediate income at entry.' },
+  { id:'carpentry',    name:'Carpentry / Construction Certificate',
+    cat:'construction', hours:300, weeks:12,
+    cost:3500,         soc:'47-2031', median:54000, entry:36000, demand:5,  tte:3,
+    certFee:100, note:'NCCER certification recognized nationally; residential and commercial demand.' },
+  { id:'firefighter',  name:'Firefighter I/II Certificate',
+    cat:'emergency_safety', hours:300, weeks:12,
+    cost:4000,         soc:'33-2011', median:56320, entry:40000, demand:4,  tte:12,
+    certFee:200, note:'NFPA 1001 standard; competitive municipal hiring; pension and benefits package.' },
+  { id:'cda',          name:'Child Development Associate (CDA)',
+    cat:'early_childhood', hours:480, weeks:14,
+    cost:2200,         soc:'39-9011', median:33100, entry:27000, demand:6,  tte:3,
+    certFee:425, note:'CDA credential from CDA Council; childcare shortage persists nationally; entry-level wages low.' },
+  { id:'insurance',    name:'Insurance Agent Pre-License',
+    cat:'financial_services', hours:150, weeks:8,
+    cost:1200,         soc:'41-3021', median:59600, entry:38000, demand:7,  tte:4,
+    certFee:200, note:'State licensing exam required; P&C and life/health tracks; significant commission upside.' },
+  { id:'construction_mgmt', name:'Construction Management Certificate',
+    cat:'construction', hours:300, weeks:12,
+    cost:3000,         soc:'11-9021', median:98890, entry:55000, demand:8,  tte:8,
+    certFee:0,   note:'Targets supervisor/PM track rather than trades; strong for career changers from construction.' },
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let _results = null;
+let _activeFilter = 'all';
+
+// ── UTILITIES ─────────────────────────────────────────────────────────────────
+const r5  = n => Math.round(n / 5) * 5;
+const $   = id => document.getElementById(id);
+const fmt = n => '$' + Math.round(n).toLocaleString();
+const pct = r => (r * 100).toFixed(0) + '%';
+
+function estimateSAI(agi, fam) {
+  const s = Math.min(Math.max(1, fam), 8);
+  return Math.max(-1500, Math.round((Math.max(0, agi - IPA[s])) * 0.22));
+}
+function pellFromSAI(sai) {
+  if (sai >= SAI_CUTOFF) return 0;
+  return Math.max(PELL_MIN, Math.min(r5(PELL_MAX - Math.max(0, sai)), PELL_MAX));
+}
+function workforceAward(basePell, hrs, wks) {
+  const ratio = Math.min(hrs / HRS_DENOM, wks / WKS_DENOM);
+  return { award: r5(ratio * basePell), ratio };
+}
+
+function demandStars(pct) {
+  const n = pct >= 20 ? 5 : pct >= 13 ? 4 : pct >= 7 ? 3 : pct >= 3 ? 2 : 1;
+  return '<span class="demand-stars">' +
+    '<span class="star-lit">' + '★'.repeat(n) + '</span>' +
+    '<span class="star-dim">' + '★'.repeat(5 - n) + '</span>' +
+    '</span>';
+}
+
+const CAT_LABELS = {
+  healthcare:'Healthcare', it_cyber:'IT & Cyber', hvac:'HVAC',
+  electrical:'Electrical', plumbing:'Plumbing', welding_mfg:'Manufacturing',
+  cdl_transport:'CDL / Transport', construction:'Construction',
+  early_childhood:'Early Childhood', financial_services:'Financial Services',
+  emergency_safety:'Emergency Services'
+};
+
+// ── MAIN CALCULATE ────────────────────────────────────────────────────────────
+function calculate() {
+  const agi = parseFloat($('agi').value) || 0;
+  const saiRaw = $('saiDirect').value.trim();
+  const fam = parseInt($('famSize').value);
+  const currentIncome = parseFloat($('currentIncome').value) || 0;
+  const maxOOP = parseFloat($('maxOOP').value) || Infinity;
+
+  const sai = (saiRaw !== '' && !isNaN(+saiRaw)) ? +saiRaw : estimateSAI(agi, fam);
+  const basePell = pellFromSAI(sai);
+
+  // Score each credential
+  const scored = CREDENTIALS.map(c => {
+    const { award, ratio } = workforceAward(basePell, c.hours, c.weeks);
+    const netCost = Math.max(0, c.cost - award);
+    const pellCoverage = c.cost > 0 ? Math.min(1, award / c.cost) : 0;
+    const wageGain = c.entry - currentIncome;
+    // ROI: annualized wage gain / net cost (years to break even; lower = better)
+    // Score inverted so higher = better
+    const roiScore = netCost === 0
+      ? (wageGain > 0 ? 1000 + wageGain / 1000 : 500)
+      : (wageGain > 0 ? (wageGain / netCost) * 10 : 0);
+
+    return { ...c, award, ratio, netCost, pellCoverage, wageGain, roiScore,
+             withinBudget: netCost <= maxOOP };
+  });
+
+  _results = { sai, basePell, currentIncome, maxOOP, scored, agi, fam };
+
+  // Summary stats
+  const shown = scored.filter(c => c.withinBudget);
+  const free = shown.filter(c => c.netCost === 0).length;
+  const avgGain = shown.length > 0
+    ? shown.reduce((a, c) => a + c.wageGain, 0) / shown.length
+    : 0;
+
+  $('sumBasePell').textContent = basePell > 0 ? fmt(basePell) : '$0 (not eligible)';
+  $('sumCount').textContent = shown.length + ' / ' + CREDENTIALS.length;
+  $('sumFree').textContent = free;
+  $('sumAvgGain').textContent = avgGain > 0 ? '+' + fmt(avgGain) + '/yr' : '—';
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  renderCards();
+}
+
+// ── RENDER CARDS ──────────────────────────────────────────────────────────────
+function renderCards() {
+  if (!_results) return;
+  const sortBy = $('sortBy').value;
+  let items = _results.scored.filter(c => {
+    if (!c.withinBudget) return false;
+    if (_activeFilter === 'all') return true;
+    return c.cat === _activeFilter;
+  });
+
+  items.sort((a, b) => {
+    if (sortBy === 'roi')       return b.roiScore - a.roiScore;
+    if (sortBy === 'wage_gain') return b.wageGain - a.wageGain;
+    if (sortBy === 'demand')    return b.demand - a.demand;
+    if (sortBy === 'cost_asc')  return a.netCost - b.netCost;
+    if (sortBy === 'pell_pct')  return b.pellCoverage - a.pellCoverage;
+    return 0;
+  });
+
+  const grid = $('credGrid');
+  const noRes = $('noResults');
+
+  if (items.length === 0) {
+    grid.innerHTML = '';
+    noRes.style.display = '';
+    return;
+  }
+  noRes.style.display = 'none';
+
+  // Top 3 picks (by current sort)
+  const topIds = new Set(items.slice(0, 3).map(c => c.id));
+  const basePell = _results.basePell;
+
+  grid.innerHTML = items.map((c, i) => {
+    const pellBar = Math.round(c.pellCoverage * 100);
+    const demandBar = Math.min(100, Math.round((c.demand / 35) * 100));
+    const gainBar = c.wageGain > 0 ? Math.min(100, Math.round((c.wageGain / 50000) * 100)) : 0;
+
+    const netCostDisplay = c.netCost === 0
+      ? '<span class="metric-val green">$0 — Fully Covered</span>'
+      : `<span class="metric-val amber">${fmt(c.netCost)}</span>`;
+
+    const wageGainDisplay = c.wageGain > 0
+      ? `<span class="metric-val green">+${fmt(c.wageGain)}/yr</span>`
+      : c.wageGain < 0
+      ? `<span class="metric-val dim">Below current</span>`
+      : `<span class="metric-val dim">Enter income</span>`;
+
+    const roiDisplay = c.netCost === 0
+      ? '<span class="metric-val green">∞ (fully funded)</span>'
+      : c.wageGain > 0
+      ? `<span class="metric-val accent">${(c.netCost / c.wageGain).toFixed(1)} yrs to recover</span>`
+      : '<span class="metric-val dim">—</span>';
+
+    return `
+      <div class="cred-card ${topIds.has(c.id) ? 'top-pick' : ''}">
+        <div class="cred-rank">#${i+1} ${sortBy === 'roi' ? '· ROI' : sortBy === 'wage_gain' ? '· Wage' : sortBy === 'demand' ? '· Demand' : sortBy === 'cost_asc' ? '· Cost' : '· Pell %'} ranked</div>
+        <div class="cred-name">${c.name}</div>
+        <span class="cred-cat-badge cat-${c.cat}">${CAT_LABELS[c.cat] || c.cat}</span>
+
+        <div class="cred-metrics">
+          <div class="metric">
+            <div class="metric-label">Program</div>
+            <div class="metric-val blue">${c.hours} hrs · ${c.weeks} wks</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Typical Cost</div>
+            <div class="metric-val">${fmt(c.cost)}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Pell Award</div>
+            <div class="metric-val green">${basePell > 0 ? fmt(c.award) : '$0'}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Net Cost</div>
+            ${netCostDisplay}
+          </div>
+          <div class="metric">
+            <div class="metric-label">BLS Entry Wage</div>
+            <div class="metric-val">${fmt(c.entry)}/yr</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Est. Wage Gain</div>
+            ${wageGainDisplay}
+          </div>
+          <div class="metric">
+            <div class="metric-label">ROI</div>
+            ${roiDisplay}
+          </div>
+          <div class="metric">
+            <div class="metric-label">Job Demand</div>
+            <div class="metric-val">${demandStars(c.demand)} <span style="font-size:0.65rem;color:var(--text-dim)">${c.demand > 0 ? '+'+c.demand+'%' : ''}</span></div>
+          </div>
+        </div>
+
+        <div class="cred-bar-row">
+          <div class="cred-bar-label"><span>Pell Coverage</span><span>${pellBar}%</span></div>
+          <div class="cred-bar-track"><div class="cred-bar-fill fill-green" style="width:${pellBar}%"></div></div>
+        </div>
+        <div class="cred-bar-row">
+          <div class="cred-bar-label"><span>10-yr Job Demand</span><span>+${c.demand}%</span></div>
+          <div class="cred-bar-track"><div class="cred-bar-fill fill-blue" style="width:${demandBar}%"></div></div>
+        </div>
+        ${c.wageGain > 0 ? `
+        <div class="cred-bar-row">
+          <div class="cred-bar-label"><span>Wage Gain vs. Current</span><span>+${fmt(c.wageGain)}</span></div>
+          <div class="cred-bar-track"><div class="cred-bar-fill fill-amber" style="width:${gainBar}%"></div></div>
+        </div>` : ''}
+        ${c.warn ? `<div class="cred-warn">${c.warn}</div>` : ''}
+        <div class="cred-note">${c.note}${c.certFee > 0 ? ` Cert exam fee: ~${fmt(c.certFee)}.` : ''} SOC ${c.soc}.</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function setFilter(cat) {
+  _activeFilter = cat;
+  document.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.dataset.cat === cat));
+  renderCards();
+}
+
+// ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────────
+function exportMarkdown() {
+  if (!_results) return;
+  const r = _results;
+  const sortBy = $('sortBy').value;
+  const items = r.scored.filter(c => c.withinBudget && (_activeFilter === 'all' || c.cat === _activeFilter));
+  items.sort((a,b) => b.roiScore - a.roiScore); // always ROI sort for export
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Workforce Pell Credential Value Ranker — Results',
+    `\n_Generated ${d} · AL-42 · apexlogics.org_\n`,
+    '## Your Profile',
+    `- **Estimated SAI:** ${fmt(r.sai)}`,
+    `- **Base Pell Eligibility:** ${fmt(r.basePell)}/yr`,
+    `- **Current Income:** ${r.currentIncome > 0 ? fmt(r.currentIncome) : 'not entered'}`,
+    '\n## Top 10 Credentials by ROI\n',
+    '| # | Credential | Pell Award | Net Cost | Entry Wage | Wage Gain | Demand | Time to Recover |',
+    '|---|---|---|---|---|---|---|---|',
+    ...items.slice(0,10).map((c,i) =>
+      `| ${i+1} | ${c.name} | ${fmt(c.award)} | ${c.netCost===0?'$0 (covered)':fmt(c.netCost)} | ${fmt(c.entry)}/yr | ${c.wageGain>0?'+'+fmt(c.wageGain):'-'} | +${c.demand}%/10yr | ${c.netCost===0?'∞':c.wageGain>0?(c.netCost/c.wageGain).toFixed(1)+' yrs':'—'} |`
+    ),
+    '\n---',
+    '_Wages: BLS OEWS May 2023. Demand: BLS OOH 2024–34 projections. Pell: ED 2026–27 tables + OBBBA proration. Estimates for planning purposes._'
+  ];
+  dlFile('workforce-pell-credential-ranker.md', lines.join('\n'), 'text/markdown');
+}
+
+// ── EXPORT: AP2 ───────────────────────────────────────────────────────────────
+function exportAP2() {
+  if (!_results) return;
+  const r = _results;
+  const top5 = [...r.scored].filter(c=>c.withinBudget).sort((a,b)=>b.roiScore-a.roiScore).slice(0,5);
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "workforce_pell_credential_rank",
+    generated_at: new Date().toISOString(),
+    tool_id: "37-workforce-pell-credential-ranker",
+    tool_name: "Workforce Pell Credential Value Ranker",
+    inputs: { agi: r.agi, sai: r.sai, family_size: r.fam, current_income: r.currentIncome },
+    results: {
+      base_pell_annual: r.basePell,
+      top_credentials: top5.map((c,i) => ({
+        rank: i+1, id: c.id, name: c.name, category: c.cat,
+        program_hours: c.hours, program_weeks: c.weeks,
+        typical_cost: c.cost, pell_award: c.award, net_cost: c.netCost,
+        pell_coverage_pct: parseFloat((c.pellCoverage*100).toFixed(1)),
+        entry_wage_annual: c.entry, wage_gain_annual: c.wageGain,
+        demand_growth_pct: c.demand, roi_score: parseFloat(c.roiScore.toFixed(2)),
+        soc: c.soc
+      }))
+    },
+    downstream_handoff_candidates: ["AL-41", "AL-01"],
+    data_sources: [
+      "BLS OEWS May 2023 — occupational wage data",
+      "BLS OOH 2024-34 — employment demand projections",
+      "ED Dear Colleague Letter 2026-01-30 — 2026-27 Pell Grant tables",
+      "OBBBA P.L. 119-21 (July 4, 2025) — Workforce Pell proration formula"
+    ],
+    license: "CC-BY-4.0"
+  };
+  const errs = [];
+  ['ap2_version','mandate_type','generated_at','inputs'].forEach(k=>{if(!payload[k])errs.push('missing '+k);});
+  const valid = ['ai_skills_premium_record','federal_comp_record','military_civilian_record',
+    'noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record',
+    'workforce_pell_record','workforce_pell_credential_rank'];
+  if (!valid.includes(payload.mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('AP2 validation failed: ' + errs.join('; ')); return; }
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-42_workforce-pell-credential-ranker_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+// ── MCP PANEL ─────────────────────────────────────────────────────────────────
+function toggleMCP() {
+  const panel=$('mcpPanel'), btn=$('mcpBtn'), pre=$('mcpPre');
+  const open = panel.classList.toggle('open');
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    pre.textContent = JSON.stringify({
+  "tool_id": "37-workforce-pell-credential-ranker",
+  "al_id": "AL-42",
+  "version": "1.0.0",
+  "title": "Workforce Pell Credential Value Ranker",
+  "description": "Ranks 21 Workforce Pell-eligible short-term credentials by ROI, wage gain, demand, and Pell coverage — personalized to the user's base Pell eligibility. Embeds BLS OEWS May 2023 wage data and BLS OOH 2024-34 demand projections for 21 credentials across healthcare, IT/cyber, skilled trades, manufacturing, transportation, and financial services. AP2 v2.0 mandate type: workforce_pell_credential_rank.",
+  "category": "workforce_development",
+  "journeys": ["education_path", "career_navigation"],
+  "personas": ["student", "career_changer", "working_professional", "counselor"],
+  "tags": ["pell-grant", "workforce-pell", "credentials", "obbba", "roi", "wage-gain", "bls"],
+  "status": "shipped",
+  "maintenance": "low",
+  "data_vintage": "BLS OEWS May 2023; BLS OOH 2024-34; ED Pell Grant 2026-27; OBBBA P.L. 119-21",
+  "ap2_export": true,
+  "ap2_mandate_types": ["workforce_pell_credential_rank"],
+  "ap2_inbound_mandate_types": ["workforce_pell_record", "fafsa_sai_estimate"],
+  "downstream_handoff_candidates": ["AL-41", "AL-01"],
+  "regulatory_citations": [
+    "BLS OEWS May 2023 — national occupational wage statistics",
+    "BLS OOH 2024-34 — 10-year employment projections",
+    "ED Dear Colleague Letter 2026-01-30 — 2026-27 Pell max/min",
+    "OBBBA P.L. 119-21 (July 4, 2025) — Workforce Pell proration formula"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0",
+  "execution": { "type": "browser-javascript", "entry": "index.html", "function_name": "calculate", "timeout_ms": 3000 },
+  "mcp_tool_definition": {
+    "name": "rank_workforce_pell_credentials",
+    "description": "Given AGI or SAI, family size, current income, and optional budget, ranks 21 Workforce Pell-eligible credentials by ROI, wage gain, demand, and Pell coverage. Returns top 5 credentials with award amounts, net cost, BLS entry wages, and 10-yr demand projections. Deterministic.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "agi": {"type":"number"}, "sai": {"type":"number"},
+        "family_size": {"type":"integer","minimum":1,"maximum":8},
+        "current_income": {"type":"number"},
+        "max_oop_budget": {"type":"number"},
+        "category_filter": {"type":"string"}
+      }
+    }
+  }
+}, null, 2);
+  }
+}
+
+// ── LANG BAR ──────────────────────────────────────────────────────────────────
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function(){
+  const s = sessionStorage.getItem('apex_lang');
+  const m = {en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'};
+  setLang(s || m[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+</script>
+</body>
+</html>
