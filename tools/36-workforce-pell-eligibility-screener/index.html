@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workforce Pell Eligibility Screener · ApexLogics #36</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/36-workforce-pell-eligibility-screener/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14;
+      --surface: #0D1117;
+      --surface2: #111827;
+      --accent: #A78BFA;
+      --accent-dim: rgba(167,139,250,0.18);
+      --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18);
+      --border-focus: #A78BFA;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --green: #34d399;
+      --amber: #fbbf24;
+      --red: #f87171;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    /* NAV */
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: var(--accent); }
+    .logo-org { color: var(--text-dim); }
+    .logo-tag { font-family: 'Sora', sans-serif; font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; transition: all 0.15s; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .nav-pill:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* LANG BAR */
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+
+    /* LAYOUT */
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* PII BANNER */
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+
+    /* HEADER */
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 36px; }
+
+    /* CARDS */
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 20px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+
+    /* FORM GRID */
+    .form-grid { display: grid; gap: 16px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field.full { grid-column: 1 / -1; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select {
+      background: var(--surface); border: 1px solid var(--border); color: var(--text);
+      padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif;
+      font-size: 0.9rem; width: 100%; transition: border-color 0.2s;
+    }
+    input[type="number"]:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--accent); padding: 4px 0; }
+    .range-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; margin-bottom: 6px; }
+    .range-val { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--accent); min-width: 58px; text-align: right; }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .field-hint a { color: var(--accent); text-decoration: none; }
+    .field-hint a:hover { text-decoration: underline; }
+
+    /* RADIO TOGGLE */
+    .radio-group { display: flex; gap: 8px; }
+    .radio-btn { flex: 1; text-align: center; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 0.82rem; color: var(--text-muted); font-family: 'Sora', sans-serif; transition: all 0.15s; }
+    .radio-btn.selected { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+    /* CHECKLIST */
+    .checklist { display: flex; flex-direction: column; gap: 10px; }
+    .check-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: border-color 0.15s; user-select: none; }
+    .check-item.checked { border-color: var(--green); background: rgba(52,211,153,0.06); }
+    .check-item input[type="checkbox"] { display: none; }
+    .check-box { width: 18px; height: 18px; border: 2px solid var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+    .check-item.checked .check-box { background: var(--green); border-color: var(--green); }
+    .check-box::after { content: '✓'; font-size: 0.7rem; color: #000; display: none; }
+    .check-item.checked .check-box::after { display: block; }
+    .check-label { font-size: 0.88rem; }
+
+    /* RUN BUTTON */
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 24px 0; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    /* RESULTS */
+    .results-panel { display: none; }
+    .results-panel.visible { display: block; }
+
+    /* STATUS BANNER */
+    .status-banner { border-radius: 10px; padding: 18px 24px; margin-bottom: 24px; display: flex; align-items: center; gap: 16px; }
+    .status-banner.eligible { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.35); }
+    .status-banner.review { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.35); }
+    .status-banner.ineligible { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.35); }
+    .status-icon { font-size: 2rem; flex-shrink: 0; }
+    .status-text h3 { font-size: 1.1rem; margin-bottom: 4px; }
+    .status-text p { font-size: 0.82rem; color: var(--text-muted); }
+    .status-banner.eligible .status-text h3 { color: var(--green); }
+    .status-banner.review .status-text h3 { color: var(--amber); }
+    .status-banner.ineligible .status-text h3 { color: var(--red); }
+
+    /* RESULT GRID */
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
+    .result-label { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .result-value { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; color: var(--accent); font-weight: 500; }
+    .result-value.green { color: var(--green); }
+    .result-value.amber { color: var(--amber); }
+    .result-value.red { color: var(--red); }
+    .result-value.lg { font-size: 2rem; }
+    .result-note { font-size: 0.72rem; color: var(--text-dim); margin-top: 4px; }
+
+    /* PRORATION TABLE */
+    .pro-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
+    .pro-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); padding: 6px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+    .pro-table td { padding: 8px 12px; border-bottom: 1px solid rgba(167,139,250,0.07); }
+    .pro-table tr:last-child td { border-bottom: none; }
+    .binding-tag { color: var(--accent); font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+
+    /* NEXT STEPS */
+    .step-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .step-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font-size: 0.85rem; }
+    .step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--accent-dim); color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .step-item a { color: var(--accent); text-decoration: none; }
+    .step-item a:hover { text-decoration: underline; }
+
+    /* EXPORT ROW */
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+    .ap2-hint a:hover { color: var(--accent); }
+
+    /* MCP PANEL */
+    .mcp-toggle { margin-top: 32px; background: none; border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); width: 100%; text-align: left; transition: all 0.15s; }
+    .mcp-toggle:hover { border-color: var(--accent); color: var(--text-muted); }
+    .mcp-panel { display: none; background: var(--surface2); border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; padding: 20px; }
+    .mcp-panel.open { display: block; }
+    .mcp-panel pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; overflow-x: auto; }
+
+    /* FOOTER */
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .result-grid { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ LANG BAR ══════════════════════════════════════════════════════════════ -->
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<!-- ══ NAV ═══════════════════════════════════════════════════════════════════ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#A78BFA" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#A78BFA" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#A78BFA"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#A78BFA" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#A78BFA" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#A78BFA"/>
+          <circle cx="52" cy="56" r="2.5" fill="#A78BFA"/>
+          <path d="M22 32 L42 32" stroke="#A78BFA" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a class="nav-pill accent" href="../../index.html">← All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+  </div>
+
+  <p class="tool-eyebrow">#36 · AL-41 · Workforce Development</p>
+  <h1 class="tool-title">Workforce Pell<br>Eligibility Screener</h1>
+  <p class="tool-desc">Estimate your Workforce Pell Grant award for short-term credential programs (8–14 weeks, 150–599 clock hours), now eligible under the One Big Beautiful Bill Act (P.L. 119-21), effective July 1, 2026. Bachelor's degree holders qualify for the first time.</p>
+  <p class="tool-vintage">Data: Federal Pell Grant 2026–27 · ED Dear Colleague Letter (Jan 2026) · OBBBA P.L. 119-21 (signed July 4, 2025) · Workforce Pell Final Rule (March 9, 2026)</p>
+
+  <!-- ── STEP 1: FINANCIAL PROFILE ─────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">Financial Profile <span class="badge">STEP 1</span></div>
+
+    <div class="form-grid two" style="margin-bottom:18px;">
+      <div class="field">
+        <label>Dependency Status</label>
+        <div class="radio-group">
+          <div class="radio-btn selected" id="depIndependent" onclick="setDep('independent')">Independent</div>
+          <div class="radio-btn" id="depDependent" onclick="setDep('dependent')">Dependent</div>
+        </div>
+        <span class="field-hint">Most Workforce Pell applicants are independent (age 24+, married, veteran, or self-supporting adult)</span>
+      </div>
+      <div class="field">
+        <label for="familySize">Family Size</label>
+        <select id="familySize">
+          <option value="1" selected>1 — Just me</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8+</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-grid two" style="margin-bottom:18px;">
+      <div class="field">
+        <label for="agi">Adjusted Gross Income (AGI) — $</label>
+        <input type="number" id="agi" value="32000" min="0" max="300000" step="500" />
+        <span class="field-hint">Student's AGI (and spouse if married), most recent tax year</span>
+      </div>
+      <div class="field">
+        <label for="saiDirect">Or enter SAI directly (overrides AGI)</label>
+        <input type="number" id="saiDirect" value="" min="-1500" max="99999" step="1" placeholder="Leave blank to estimate from AGI" />
+        <span class="field-hint">From your FAFSA Student Aid Report · <a href="../../tools/02-fafsa-sai-simulator/index.html">Calculate precise SAI (AL-02) →</a></span>
+      </div>
+    </div>
+
+    <div class="form-grid two">
+      <div class="field">
+        <label for="pellYearsUsed">Pell Grant Years Already Used</label>
+        <select id="pellYearsUsed">
+          <option value="0" selected>0 — Never received Pell</option>
+          <option value="1">~1 year used</option>
+          <option value="2">~2 years used</option>
+          <option value="3">~3 years used</option>
+          <option value="4">~4 years used</option>
+          <option value="5">~5 years used</option>
+          <option value="5.5">~5.5 years (near limit)</option>
+          <option value="6">6 years — lifetime limit reached</option>
+        </select>
+        <span class="field-hint">Lifetime limit: 6 years (12 full-time semesters). Workforce Pell counts toward this limit.</span>
+      </div>
+      <div class="field">
+        <label for="degreeLevel">Highest Degree Earned</label>
+        <select id="degreeLevel">
+          <option value="none">No degree / some college</option>
+          <option value="associates">Associate's degree</option>
+          <option value="bachelors">Bachelor's degree</option>
+          <option value="graduate">Graduate or professional degree</option>
+        </select>
+        <span class="field-hint">Under OBBBA, bachelor's holders can receive Workforce Pell. Graduate/professional degree holders cannot.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: PROGRAM DETAILS ──────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">Program Details <span class="badge">STEP 2</span></div>
+
+    <div class="form-grid two" style="margin-bottom:18px;">
+      <div class="field">
+        <label for="clockHours">Program Clock Hours</label>
+        <div class="range-row">
+          <input type="range" id="clockHoursSlider" min="150" max="599" step="1" value="300"
+            oninput="document.getElementById('clockHours').value=this.value; document.getElementById('chVal').textContent=this.value+' hrs';" />
+          <span class="range-val" id="chVal">300 hrs</span>
+        </div>
+        <input type="number" id="clockHours" value="300" min="150" max="599" step="1"
+          oninput="document.getElementById('clockHoursSlider').value=this.value; document.getElementById('chVal').textContent=this.value+' hrs';" />
+        <span class="field-hint">Workforce Pell range: 150–599 clock hours. Programs ≥ 600 hrs use standard Pell formula.</span>
+      </div>
+      <div class="field">
+        <label for="programWeeks">Program Duration (weeks)</label>
+        <div class="range-row">
+          <input type="range" id="programWeeksSlider" min="8" max="14" step="1" value="10"
+            oninput="document.getElementById('programWeeks').value=this.value; document.getElementById('pwVal').textContent=this.value+' wks';" />
+          <span class="range-val" id="pwVal">10 wks</span>
+        </div>
+        <input type="number" id="programWeeks" value="10" min="8" max="14" step="1"
+          oninput="document.getElementById('programWeeksSlider').value=this.value; document.getElementById('pwVal').textContent=this.value+' wks';" />
+        <span class="field-hint">Must be 8–14 weeks (OBBBA: at least 8 weeks, less than 15 weeks).</span>
+      </div>
+    </div>
+
+    <div class="form-grid two">
+      <div class="field">
+        <label for="occCategory">Target Occupation Category</label>
+        <select id="occCategory">
+          <option value="">— Select a field —</option>
+          <option value="healthcare">Healthcare &amp; Allied Health (CNA, MA, EMT, Phlebotomy)</option>
+          <option value="it_cyber">IT &amp; Cybersecurity (CompTIA, Network Admin, Help Desk)</option>
+          <option value="hvac">HVAC &amp; Building Systems</option>
+          <option value="electrical">Electrical Trades (Pre-Apprenticeship, Solar PV)</option>
+          <option value="plumbing">Plumbing &amp; Pipefitting</option>
+          <option value="welding_mfg">Welding &amp; Advanced Manufacturing (CNC, Mechatronics)</option>
+          <option value="cdl_transport">Transportation &amp; Logistics (CDL, Forklift)</option>
+          <option value="construction">Construction &amp; Infrastructure</option>
+          <option value="early_childhood">Early Childhood Education (CDA Certificate)</option>
+          <option value="culinary">Culinary &amp; Food Service Management</option>
+          <option value="cosmetology">Cosmetology &amp; Personal Services</option>
+          <option value="emergency_safety">Emergency &amp; Public Safety (EMT, Firefighter I/II)</option>
+          <option value="financial_services">Financial Services (Insurance, Mortgage, Tax Prep Certs)</option>
+          <option value="agriculture">Agriculture &amp; Environmental Technology</option>
+          <option value="other_indemand">Other In-Demand Occupation (state/federal designation)</option>
+          <option value="unknown">Not sure / program not listed</option>
+        </select>
+        <span class="field-hint">Workforce Pell requires enrollment in a high-skill, high-wage, or in-demand occupation program per DOL/state designation.</span>
+      </div>
+      <div class="field">
+        <label for="programCost">Program Cost ($ — optional)</label>
+        <input type="number" id="programCost" value="" min="0" max="50000" step="100" placeholder="e.g. 4500" />
+        <span class="field-hint">Enter to calculate grant coverage %, out-of-pocket cost, and cost recovery analysis.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: ELIGIBILITY CHECKLIST ────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">Eligibility Checklist <span class="badge">STEP 3</span></div>
+    <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:16px;">Check all items that apply. Each is a Title IV federal student aid requirement.</p>
+    <div class="checklist">
+      <label class="check-item" onclick="toggleCheck(this)">
+        <input type="checkbox" checked /><div class="check-box"></div>
+        <span class="check-label">I am a U.S. citizen, U.S. national, or eligible non-citizen</span>
+      </label>
+      <label class="check-item" onclick="toggleCheck(this)">
+        <input type="checkbox" checked /><div class="check-box"></div>
+        <span class="check-label">I am not currently in default on any federal student loan</span>
+      </label>
+      <label class="check-item" onclick="toggleCheck(this)">
+        <input type="checkbox" checked /><div class="check-box"></div>
+        <span class="check-label">I do not owe an unresolved Pell Grant overpayment</span>
+      </label>
+      <label class="check-item" onclick="toggleCheck(this)">
+        <input type="checkbox" checked /><div class="check-box"></div>
+        <span class="check-label">My target program is at an accredited, Title IV-eligible institution</span>
+      </label>
+      <label class="check-item" onclick="toggleCheck(this)">
+        <input type="checkbox" checked /><div class="check-box"></div>
+        <span class="check-label">I will complete (or have completed) the 2026–27 FAFSA</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- ── RUN BUTTON ────────────────────────────────────────────────────────── -->
+  <button class="run-btn" onclick="calculate()">Calculate Workforce Pell Award →</button>
+
+  <!-- ══ RESULTS PANEL ════════════════════════════════════════════════════════ -->
+  <div class="results-panel" id="resultsPanel">
+
+    <!-- STATUS BANNER -->
+    <div id="statusBanner" class="status-banner eligible">
+      <div class="status-icon" id="statusIcon">✅</div>
+      <div class="status-text">
+        <h3 id="statusTitle">Likely Eligible for Workforce Pell</h3>
+        <p id="statusMsg">Your inputs indicate Workforce Pell eligibility. Verify with your institution's financial aid office.</p>
+      </div>
+    </div>
+
+    <!-- TOP METRICS -->
+    <div class="result-grid">
+      <div class="result-card">
+        <div class="result-label">Estimated Student Aid Index (SAI)</div>
+        <div class="result-value" id="rSAI">—</div>
+        <div class="result-note" id="rSAINote">Estimated from AGI + family size</div>
+      </div>
+      <div class="result-card">
+        <div class="result-label">Base Pell Eligibility (annual)</div>
+        <div class="result-value green" id="rBasePell">—</div>
+        <div class="result-note">2026–27: max $7,395 · min $740 · cutoff $14,790 (OBBBA)</div>
+      </div>
+      <div class="result-card">
+        <div class="result-label">Proration Ratio</div>
+        <div class="result-value" id="rRatio">—</div>
+        <div class="result-note" id="rRatioNote">min(weeks ÷ 24, hours ÷ 900)</div>
+      </div>
+      <div class="result-card">
+        <div class="result-label">Estimated Workforce Pell Award</div>
+        <div class="result-value green lg" id="rAward">—</div>
+        <div class="result-note">Base Pell × proration · rounded to nearest $5</div>
+      </div>
+    </div>
+
+    <!-- PRORATION BREAKDOWN -->
+    <div class="card">
+      <div class="card-title">Proration Breakdown</div>
+      <table class="pro-table">
+        <thead>
+          <tr><th>Factor</th><th>Your Program</th><th>Full-Year Denominator</th><th>Ratio</th><th>Binding?</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Program Weeks</td>
+            <td id="ptWeeks">—</td>
+            <td>24 weeks</td>
+            <td id="ptWeeksRatio">—</td>
+            <td id="ptWeeksBinding">—</td>
+          </tr>
+          <tr>
+            <td>Clock Hours</td>
+            <td id="ptHours">—</td>
+            <td>900 hours</td>
+            <td id="ptHoursRatio">—</td>
+            <td id="ptHoursBinding">—</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:0.7rem; color:var(--text-dim); margin-top:10px;">The lower of the two ratios is binding. Award = base Pell × binding ratio, rounded to nearest $5. (Source: <a href="https://www.ed.gov/media/document/2025-ahead-calculation-of-federal-pell-grant-eligible-workforce-program-112683.pdf" target="_blank" rel="noopener" style="color:var(--text-dim)">ED Illustrative Examples, Nov 2025</a>)</p>
+    </div>
+
+    <!-- COST ROI ROW (populated by JS if programCost > 0) -->
+    <div class="result-grid" id="costGrid" style="display:none;">
+      <div class="result-card">
+        <div class="result-label">Program Cost</div>
+        <div class="result-value" id="rCost">—</div>
+        <div class="result-note">Entered program cost</div>
+      </div>
+      <div class="result-card">
+        <div class="result-label">Grant Covers</div>
+        <div class="result-value green" id="rCoverage">—</div>
+        <div class="result-note" id="rCoverageNote">—</div>
+      </div>
+      <div class="result-card">
+        <div class="result-label">Est. Out-of-Pocket</div>
+        <div class="result-value amber" id="rOOP">—</div>
+        <div class="result-note">After Workforce Pell (other aid may apply)</div>
+      </div>
+    </div>
+
+    <!-- LIFETIME PELL -->
+    <div class="card">
+      <div class="card-title">Lifetime Pell Usage</div>
+      <div id="pellLifetimeContent"></div>
+    </div>
+
+    <!-- NEXT STEPS -->
+    <div class="card">
+      <div class="card-title">Recommended Next Steps</div>
+      <ul class="step-list" id="nextStepsList">
+        <li class="step-item" id="occNoteStep" style="display:none;"><div class="step-num">ℹ</div><span id="occNoteText" style="color:var(--text-muted);"></span></li>
+        <li class="step-item"><div class="step-num">1</div><span>Complete your 2026–27 FAFSA at <a href="https://studentaid.gov" target="_blank" rel="noopener">studentaid.gov</a> to confirm your official SAI and Pell eligibility.</span></li>
+        <li class="step-item"><div class="step-num">2</div><span>Ask your institution for their <strong>Workforce Pell-eligible program list</strong> — required by the ED Final Rule, effective July 1, 2026.</span></li>
+        <li class="step-item"><div class="step-num">3</div><span>For a precise SAI, use the <a href="../../tools/02-fafsa-sai-simulator/index.html">FAFSA SAI Simulator (AL-02) →</a></span></li>
+        <li class="step-item"><div class="step-num">4</div><span>Model the credential's full return on investment at the <a href="../../tools/01-credential-roi-suite/index.html">Credential ROI Suite (AL-01) →</a></span></li>
+      </ul>
+    </div>
+
+    <!-- EXPORT ROW -->
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()" id="mdBtn">⬇ Download Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()" id="ap2Btn" title="For agent integration · audit trail · scenario handoff">⬇ Download AP2 JSON</button>
+      <span class="ap2-hint">AP2 v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+    </div>
+
+  </div><!-- /results-panel -->
+
+  <!-- ══ MCP PANEL ═══════════════════════════════════════════════════════════ -->
+  <button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false">
+    ▸ Developer / Agent Integration (manifest.json)
+  </button>
+  <div class="mcp-panel" id="mcpPanel">
+    <pre id="mcpPre"></pre>
+  </div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-41 · Data as of ED 2026–27 Pell tables, OBBBA P.L. 119-21 (July 4, 2025)
+  </footer>
+
+</div><!-- /tool-wrapper -->
+
+<script>
+// ── CONSTANTS ────────────────────────────────────────────────────────────────
+const PELL_MAX   = 7395;   // 2026-27 maximum
+const PELL_MIN   = 740;    // 10% minimum floor
+const SAI_CUTOFF = 14790;  // OBBBA: 2× PELL_MAX
+const HRS_DENOM  = 900;    // full clock-hour academic year
+const WKS_DENOM  = 24;     // full academic-year weeks
+
+// Income Protection Allowances — independent students, 2026-27 (estimated; based on ED methodology + CPI)
+// Source: ED FSA Handbook; exact tables published annually in Student Aid Index Guide
+const IPA = { 1:12010, 2:15810, 3:19690, 4:24290, 5:28690, 6:33090, 7:37490, 8:41890 };
+
+// Occupation eligibility context strings
+const OCC_NOTES = {
+  healthcare:      'Healthcare programs (CNA, EMT, Medical Assistant) are designated in-demand by DOL in all 50 states.',
+  it_cyber:        'IT and cybersecurity credentials (CompTIA A+, Security+, etc.) qualify as high-skill/high-wage in all 50 states.',
+  hvac:            'HVAC programs qualify under skilled trades and green energy workforce designations nationally.',
+  electrical:      'Electrical trade pre-apprenticeship programs qualify under skilled trades designations.',
+  plumbing:        'Plumbing programs qualify under skilled trades workforce designations.',
+  welding_mfg:     'Advanced manufacturing and welding programs qualify under in-demand manufacturing occupations.',
+  cdl_transport:   'CDL and transportation programs are designated in-demand; verify institutional program approval.',
+  construction:    'Construction programs qualify under skilled trades workforce designations.',
+  early_childhood: 'CDA and early childhood programs qualify in most states — confirm with your state workforce agency.',
+  culinary:        'Culinary management certificates qualify in most states as in-demand hospitality/service sector credentials.',
+  cosmetology:     'Cosmetology and esthetics programs qualify in most states — confirm program-level Workforce Pell eligibility.',
+  emergency_safety:'Emergency services programs (EMT Basic, Firefighter I/II) typically qualify under in-demand public safety.',
+  financial_services:'Insurance licensing and mortgage originator certs qualify in most states — confirm state in-demand list.',
+  agriculture:     'Agriculture and environmental tech programs qualify in most states.',
+  other_indemand:  'Verify your specific program is on your institution\'s published Workforce Pell-eligible program list.',
+  unknown:         'Program eligibility is determined by your institution and state workforce agency — confirm before enrolling.',
+};
+
+let _lastInputs  = null;
+let _lastResults = null;
+let _dep         = 'independent';
+
+// ── UTILITIES ────────────────────────────────────────────────────────────────
+const r5  = n => Math.round(n / 5) * 5;
+const $   = id => document.getElementById(id);
+const fmt = n => '$' + Math.round(n).toLocaleString();
+const pct = r => (r * 100).toFixed(1) + '%';
+
+function setDep(d) {
+  _dep = d;
+  $('depIndependent').classList.toggle('selected', d === 'independent');
+  $('depDependent').classList.toggle('selected', d === 'dependent');
+}
+
+function toggleCheck(el) {
+  const cb = el.querySelector('input[type="checkbox"]');
+  cb.checked = !cb.checked;
+  el.classList.toggle('checked', cb.checked);
+}
+
+function estimateSAI(agi, famSize) {
+  const s = Math.min(Math.max(1, famSize), 8);
+  const ipa = IPA[s];
+  const avail = Math.max(0, agi - ipa);
+  return Math.max(-1500, Math.round(avail * 0.22));
+}
+
+function pellFromSAI(sai) {
+  if (sai >= SAI_CUTOFF) return 0;
+  const raw = r5(PELL_MAX - Math.max(0, sai));
+  return Math.max(PELL_MIN, Math.min(raw, PELL_MAX));
+}
+
+function prorate(basePell, hrs, wks) {
+  const rH = hrs / HRS_DENOM;
+  const rW = wks / WKS_DENOM;
+  const ratio = Math.min(rH, rW);
+  return { award: r5(ratio * basePell), ratio, rH, rW, binding: rH <= rW ? 'hours' : 'weeks' };
+}
+
+// ── MAIN CALCULATE ───────────────────────────────────────────────────────────
+function calculate() {
+  const agi       = parseFloat($('agi').value) || 0;
+  const saiRaw    = $('saiDirect').value.trim();
+  const famSize   = parseInt($('familySize').value);
+  const pellUsed  = parseFloat($('pellYearsUsed').value);
+  const degLevel  = $('degreeLevel').value;
+  const hrs       = parseInt($('clockHours').value);
+  const wks       = parseInt($('programWeeks').value);
+  const occ       = $('occCategory').value;
+  const cost      = parseFloat($('programCost').value) || 0;
+
+  const checks    = Array.from(document.querySelectorAll('.check-item input[type="checkbox"]')).map(c => c.checked);
+  const allOk     = checks.every(Boolean);
+  const failCount = checks.filter(c => !c).length;
+
+  // SAI
+  let sai, saiSrc;
+  if (saiRaw !== '' && !isNaN(+saiRaw)) {
+    sai = +saiRaw;
+    saiSrc = 'Direct entry (from FAFSA Student Aid Report)';
+  } else {
+    sai = estimateSAI(agi, famSize);
+    saiSrc = 'Estimated: AGI − IPA × 22% (independent student formula)';
+  }
+
+  // Eligibility gates
+  const gradIneligible = degLevel === 'graduate';
+  const pellExhausted  = pellUsed >= 6;
+  const validRange     = hrs >= 150 && hrs <= 599 && wks >= 8 && wks <= 14;
+  const basePell       = pellFromSAI(sai);
+  const finEligible    = basePell > 0;
+
+  // Proration
+  let pro = null;
+  if (validRange && finEligible && !gradIneligible && !pellExhausted) {
+    pro = prorate(basePell, hrs, wks);
+  }
+
+  // Status
+  const reasons = [];
+  if (gradIneligible) reasons.push('graduate/professional degree holders are not eligible');
+  if (pellExhausted)  reasons.push('lifetime Pell limit of 6 years has been reached');
+  if (!finEligible)   reasons.push('SAI ≥ $14,790 (above OBBBA income threshold)');
+  if (!validRange)    reasons.push('program outside 150–599 hrs / 8–14 wks range');
+  if (!allOk)         reasons.push(failCount + ' eligibility requirement(s) unchecked');
+
+  const status = reasons.length > 0 ? 'ineligible'
+               : (occ === '' || occ === 'unknown') ? 'review'
+               : 'eligible';
+
+  _lastInputs  = { agi, sai, saiSrc, famSize, dep: _dep, pellUsed, degLevel, hrs, wks, occ, cost };
+  _lastResults = { sai, basePell, pro, award: pro ? pro.award : 0, status, reasons, pellRemaining: Math.max(0, 6 - pellUsed), finEligible, pellExhausted };
+
+  render(_lastInputs, _lastResults);
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function render(inp, res) {
+  const panel = $('resultsPanel');
+  panel.classList.add('visible');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Status banner
+  const banner = $('statusBanner');
+  banner.className = 'status-banner ' + res.status;
+  $('statusIcon').textContent    = res.status === 'eligible' ? '✅' : res.status === 'review' ? '⚠️' : '❌';
+  $('statusTitle').textContent   = res.status === 'eligible' ? 'Likely Eligible for Workforce Pell'
+                                 : res.status === 'review'   ? 'Review Required'
+                                 : 'Not Eligible Based on Inputs';
+  $('statusMsg').textContent     = res.status === 'ineligible' ? 'Reason(s): ' + res.reasons.join('; ') + '.'
+                                 : res.status === 'review' ? 'Select an occupation category and verify your program is on your institution\'s Workforce Pell-eligible list.'
+                                 : 'Inputs indicate Workforce Pell eligibility. Confirm with your institution\'s financial aid office. Effective July 1, 2026.';
+
+  // SAI + Base Pell
+  $('rSAI').textContent     = res.sai < 0 ? '$0 (negative SAI — full Pell)' : fmt(res.sai);
+  $('rSAINote').textContent = inp.saiSrc;
+  $('rBasePell').textContent = res.basePell > 0 ? fmt(res.basePell) : '$0 — Not eligible';
+  $('rBasePell').className   = 'result-value ' + (res.basePell > 0 ? 'green' : 'red');
+
+  // Proration
+  if (res.pro) {
+    $('rRatio').textContent     = pct(res.pro.ratio);
+    $('rRatioNote').textContent = 'Binding: ' + res.pro.binding + ' (' + pct(res.pro.binding === 'hours' ? res.pro.rH : res.pro.rW) + ')';
+    $('rAward').textContent     = fmt(res.award);
+    $('rAward').className       = 'result-value green lg';
+    $('ptWeeks').textContent    = inp.wks + ' weeks';
+    $('ptHours').textContent    = inp.hrs + ' hours';
+    $('ptWeeksRatio').textContent = pct(res.pro.rW);
+    $('ptHoursRatio').textContent = pct(res.pro.rH);
+    $('ptWeeksBinding').innerHTML  = res.pro.binding === 'weeks' ? '<span class="binding-tag">✓ Binding</span>' : '—';
+    $('ptHoursBinding').innerHTML  = res.pro.binding === 'hours' ? '<span class="binding-tag">✓ Binding</span>' : '—';
+  } else {
+    $('rRatio').textContent = '—';
+    $('rAward').textContent = '$0';
+    $('rAward').className   = 'result-value red lg';
+    ['ptWeeks','ptHours','ptWeeksRatio','ptHoursRatio'].forEach(id => $(id).textContent = '—');
+    $('ptWeeksBinding').textContent = '—';
+    $('ptHoursBinding').textContent = '—';
+  }
+
+  // Cost ROI
+  const costGrid = $('costGrid');
+  if (inp.cost > 0) {
+    costGrid.style.display = '';
+    $('rCost').textContent = fmt(inp.cost);
+    if (res.award > 0) {
+      const cov = Math.min(100, (res.award / inp.cost) * 100);
+      $('rCoverage').textContent    = cov.toFixed(0) + '%';
+      $('rCoverageNote').textContent = fmt(res.award) + ' of ' + fmt(inp.cost);
+      $('rOOP').textContent         = fmt(Math.max(0, inp.cost - res.award));
+    } else {
+      $('rCoverage').textContent    = '0%';
+      $('rCoverageNote').textContent = 'No Workforce Pell award';
+      $('rOOP').textContent         = fmt(inp.cost);
+    }
+  } else {
+    costGrid.style.display = 'none';
+  }
+
+  // Lifetime Pell
+  const ltEl = $('pellLifetimeContent');
+  if (res.pellExhausted) {
+    ltEl.innerHTML = '<p style="color:var(--red);font-size:0.88rem;">⚠️ Lifetime limit reached (6.0 of 6.0 years used). No additional Pell Grant eligibility remains.</p>';
+  } else {
+    const proratedYr = res.pro ? res.pro.ratio : 0;
+    ltEl.innerHTML = `
+      <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:8px;">
+        <strong style="color:var(--text)">Used:</strong> ${inp.pellUsed} of 6.0 years &nbsp;·&nbsp;
+        <strong style="color:var(--text)">Remaining:</strong> ${res.pellRemaining.toFixed(1)} years
+      </p>
+      ${res.pro ? `<p style="font-size:0.82rem;color:var(--text-dim);">This Workforce Pell award counts as approximately <strong style="color:var(--accent)">${pct(proratedYr)}</strong> of one academic year against your 6-year lifetime limit.</p>` : ''}
+      <p style="font-size:0.72rem;color:var(--text-dim);margin-top:8px;">Clock-hour programs are prorated by the same ratio used to calculate the award, per ED FSA Handbook §3.</p>
+    `;
+  }
+
+  // Occupation note
+  const occStep = $('occNoteStep');
+  if (inp.occ && OCC_NOTES[inp.occ]) {
+    $('occNoteText').textContent = OCC_NOTES[inp.occ];
+    occStep.style.display = '';
+  } else {
+    occStep.style.display = 'none';
+  }
+}
+
+// ── EXPORT: MARKDOWN ─────────────────────────────────────────────────────────
+function exportMarkdown() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  const lines = [
+    '# Workforce Pell Eligibility Screener — Results',
+    `\n_Generated ${d} · AL-41 · apexlogics.org_\n`,
+    '## Eligibility Summary',
+    `- **Status:** ${r.status === 'eligible' ? '✅ Likely Eligible' : r.status === 'review' ? '⚠️ Review Required' : '❌ Not Eligible'}`,
+    `- **Estimated SAI:** ${r.sai < 0 ? '$0 (negative)' : fmt(r.sai)}`,
+    `- **Base Pell Eligibility (annual):** ${fmt(r.basePell)}`,
+  ];
+  if (r.pro) {
+    lines.push(`- **Proration Ratio:** ${pct(r.pro.ratio)} (binding: ${r.pro.binding})`);
+    lines.push(`- **Workforce Pell Weeks Ratio:** ${pct(r.pro.rW)} (${i.wks} ÷ 24)`);
+    lines.push(`- **Workforce Pell Hours Ratio:** ${pct(r.pro.rH)} (${i.hrs} ÷ 900)`);
+    lines.push(`- **Estimated Award:** **${fmt(r.award)}**`);
+  }
+  if (i.cost > 0 && r.award > 0) {
+    lines.push(`- **Program Cost:** ${fmt(i.cost)} · Grant covers ${Math.min(100,(r.award/i.cost)*100).toFixed(0)}% · Out-of-pocket: ${fmt(Math.max(0,i.cost-r.award))}`);
+  }
+  lines.push('\n## Inputs', '| Field | Value |', '|---|---|',
+    `| AGI | ${fmt(i.agi)} |`,
+    `| SAI | ${fmt(r.sai)} (${i.saiSrc}) |`,
+    `| Family Size | ${i.famSize} |`,
+    `| Dependency | ${i.dep} |`,
+    `| Pell Years Used | ${i.pellUsed} of 6.0 |`,
+    `| Highest Degree | ${i.degLevel} |`,
+    `| Clock Hours | ${i.hrs} |`,
+    `| Program Weeks | ${i.wks} |`,
+    `| Occupation Category | ${i.occ || 'not specified'} |`,
+  );
+  if (i.cost > 0) lines.push(`| Program Cost | ${fmt(i.cost)} |`);
+  lines.push(
+    '\n## Methodology',
+    `- SAI-to-Pell: max($740, round5($7,395 − max(0, SAI))). SAI ≥ $14,790 → $0 (OBBBA cutoff).`,
+    `- Proration: min(${i.wks} ÷ 24, ${i.hrs} ÷ 900) = ${r.pro ? pct(r.pro.ratio) : 'N/A'}`,
+    `- Award: ${fmt(r.basePell)} × ${r.pro ? pct(r.pro.ratio) : '0%'} = **${fmt(r.award)}** (rounded to nearest $5)`,
+    '\n---',
+    '_Data: ED 2026–27 Pell tables (max $7,395). OBBBA P.L. 119-21 (signed July 4, 2025), Workforce Pell effective July 1, 2026. Estimates for planning purposes only — verify with your institution and FAFSA._'
+  );
+  dlFile('workforce-pell-screener.md', lines.join('\n'), 'text/markdown');
+}
+
+// ── EXPORT: AP2 ──────────────────────────────────────────────────────────────
+function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "workforce_pell_record",
+    generated_at: new Date().toISOString(),
+    tool_id: "36-workforce-pell-eligibility-screener",
+    tool_name: "Workforce Pell Eligibility Screener",
+    inputs: {
+      agi: i.agi, sai: r.sai, sai_source: i.saiSrc,
+      family_size: i.famSize, dependency_status: i.dep,
+      pell_years_used: i.pellUsed, highest_degree: i.degLevel,
+      clock_hours: i.hrs, program_weeks: i.wks,
+      occupation_category: i.occ, program_cost: i.cost
+    },
+    results: {
+      eligibility_status: r.status,
+      estimated_sai: r.sai,
+      base_pell_annual: r.basePell,
+      proration_ratio: r.pro ? parseFloat(r.pro.ratio.toFixed(4)) : 0,
+      binding_constraint: r.pro ? r.pro.binding : null,
+      workforce_pell_award: r.award,
+      pell_years_remaining: r.pellRemaining,
+      program_cost_coverage_pct: (i.cost > 0 && r.award > 0) ? parseFloat(((r.award / i.cost) * 100).toFixed(1)) : null,
+      out_of_pocket: i.cost > 0 ? Math.max(0, i.cost - r.award) : null,
+      ineligibility_reasons: r.reasons.length > 0 ? r.reasons : null
+    },
+    downstream_handoff_candidates: ["AL-02", "AL-01"],
+    data_sources: [
+      "ED Dear Colleague Letter Jan 2026 — 2026-27 Pell max $7,395 / min $740",
+      "OBBBA P.L. 119-21 (signed July 4, 2025) — SAI cutoff expanded to $14,790",
+      "Federal Register 2026-04520 (March 9, 2026) — Workforce Pell Final Rule"
+    ],
+    license: "CC-BY-4.0"
+  };
+  // AP2 v2.0 validation (CONTRACT §3.2.1)
+  const errs = [];
+  ['ap2_version','mandate_type','generated_at','inputs'].forEach(k => { if (payload[k] == null) errs.push('missing ' + k); });
+  const validTypes = [
+    'ai_skills_premium_record','federal_comp_record','military_civilian_record',
+    'noncompete_risk_record','remote_tax_record','education_path_record',
+    'professional_degree_record','workforce_pell_record'
+  ];
+  if (!validTypes.includes(payload.mandate_type)) errs.push('unknown mandate_type: ' + payload.mandate_type);
+  if (errs.length) { alert('AP2 validation failed: ' + errs.join('; ')); return; }
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-41_workforce-pell-screener_${ts}.ap2.json`, JSON.stringify(payload, null, 2), 'application/json');
+}
+
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+// ── MCP PANEL ────────────────────────────────────────────────────────────────
+function toggleMCP() {
+  const btn  = $('mcpToggleBtn'), panel = $('mcpPanel'), pre = $('mcpPre');
+  const open = panel.classList.toggle('open');
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    pre.textContent = JSON.stringify({
+  "tool_id": "36-workforce-pell-eligibility-screener",
+  "al_id": "AL-41",
+  "version": "1.0.0",
+  "title": "Workforce Pell Eligibility Screener",
+  "description": "Estimates Workforce Pell Grant award for short-term credential programs (150–599 clock hours, 8–14 weeks) under OBBBA P.L. 119-21 (effective July 1, 2026). Inputs: AGI or SAI, family size, dependency status, clock hours, program weeks, occupation category, optional program cost. Outputs: estimated SAI, base Pell eligibility, proration ratio, Workforce Pell award, program cost coverage, lifetime Pell usage. New OBBBA rule: SAI cutoff raised to $14,790 (from ~$6,600); bachelor's degree holders now eligible.",
+  "category": "workforce_development",
+  "journeys": ["education_path", "career_navigation"],
+  "personas": ["student", "career_changer", "working_professional", "counselor"],
+  "tags": ["pell-grant", "workforce-pell", "obbba", "short-term-credentials", "financial-aid", "clock-hours", "title-iv"],
+  "status": "shipped",
+  "maintenance": "low",
+  "data_vintage": "ED Pell Grant 2026-27 (Dear Colleague Letter Jan 2026); OBBBA P.L. 119-21 (July 4, 2025); Workforce Pell Final Rule (March 9, 2026)",
+  "ap2_export": true,
+  "ap2_mandate_types": ["workforce_pell_record"],
+  "ap2_inbound_mandate_types": ["fafsa_sai_estimate"],
+  "downstream_handoff_candidates": ["AL-02", "AL-01"],
+  "regulatory_citations": [
+    "ED Dear Colleague Letter 2026-01-30 — 2026-27 Pell max/min amounts",
+    "OBBBA P.L. 119-21 (July 4, 2025) — SAI eligibility expansion to $14,790",
+    "Federal Register 2026-04520 (March 9, 2026) — Workforce Pell Final Rule",
+    "ED Illustrative Pell Calculation Examples (November 2025)"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0",
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "screen_workforce_pell_eligibility",
+    "description": "Given AGI or SAI, family size, program clock hours (150–599), program weeks (8–14), and occupation category, returns estimated Workforce Pell award, proration ratio (lower of hours÷900 or weeks÷24), eligibility status, and optional program cost coverage. Uses 2026-27 Pell tables (max $7,395, min $740) and OBBBA SAI expansion ($14,790 cutoff). Deterministic, client-side only.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "agi": { "type": "number", "description": "Adjusted Gross Income in dollars" },
+        "sai": { "type": "number", "description": "Student Aid Index (overrides AGI estimate if provided)" },
+        "family_size": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "dependency_status": { "type": "string", "enum": ["independent", "dependent"] },
+        "clock_hours": { "type": "integer", "minimum": 150, "maximum": 599 },
+        "program_weeks": { "type": "integer", "minimum": 8, "maximum": 14 },
+        "occupation_category": { "type": "string" },
+        "program_cost": { "type": "number", "description": "Optional total program cost for coverage analysis" }
+      },
+      "required": ["clock_hours", "program_weeks"]
+    }
+  }
+}, null, 2);
+  }
+}
+
+// ── LANG BAR ─────────────────────────────────────────────────────────────────
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function init() {
+  const saved = sessionStorage.getItem('apex_lang');
+  const fb = (navigator.language || 'en').slice(0, 2);
+  const map = { en:'en', es:'es', fr:'fr', ar:'ar', pt:'pt', zh:'zh' };
+  setLang(saved || map[fb] || 'en');
+  document.querySelectorAll('.check-item').forEach(el => {
+    const cb = el.querySelector('input[type="checkbox"]');
+    if (cb && cb.checked) el.classList.add('checked');
+  });
+})();
+</script>
+</body>
+</html>

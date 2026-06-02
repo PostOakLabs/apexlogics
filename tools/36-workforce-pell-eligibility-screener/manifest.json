@@ -1,0 +1,81 @@
+{
+  "tool_id": "36-workforce-pell-eligibility-screener",
+  "al_id": "AL-41",
+  "version": "1.0.0",
+  "title": "Workforce Pell Eligibility Screener",
+  "description": "Estimates Workforce Pell Grant award for short-term credential programs (150–599 clock hours, 8–14 weeks) under OBBBA P.L. 119-21 (effective July 1, 2026). Inputs: AGI or SAI, family size, dependency status, clock hours, program weeks, occupation category, optional program cost. Outputs: estimated SAI, base Pell eligibility, proration ratio, Workforce Pell award, program cost coverage, lifetime Pell usage note. New OBBBA rules: SAI cutoff raised to $14,790; bachelor's degree holders now eligible.",
+  "category": "workforce_development",
+  "journeys": ["education_path", "career_navigation"],
+  "personas": ["student", "career_changer", "working_professional", "counselor"],
+  "tags": ["pell-grant", "workforce-pell", "obbba", "short-term-credentials", "financial-aid", "clock-hours", "title-iv"],
+  "status": "shipped",
+  "maintenance": "low",
+  "data_vintage": "ED Pell Grant 2026-27 (Dear Colleague Letter Jan 2026); OBBBA P.L. 119-21 (July 4, 2025); Workforce Pell Final Rule (March 9, 2026)",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["workforce_pell_record"],
+  "ap2_inbound_mandate_types": ["fafsa_sai_estimate"],
+  "downstream_handoff_candidates": ["AL-02", "AL-01"],
+  "regulatory_citations": [
+    "ED Dear Colleague Letter 2026-01-30 — 2026-27 Pell Grant max $7,395 / min $740",
+    "OBBBA P.L. 119-21 (signed July 4, 2025) — SAI eligibility cutoff expanded to $14,790",
+    "Federal Register 2026-04520 (March 9, 2026) — Workforce Pell Final Rule",
+    "ED Illustrative Pell Calculation Examples (November 2025) — clock-hour proration formula"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "agi":                { "type": "number" },
+      "sai":                { "type": "number" },
+      "family_size":        { "type": "integer" },
+      "dependency_status":  { "type": "string" },
+      "pell_years_used":    { "type": "number" },
+      "highest_degree":     { "type": "string" },
+      "clock_hours":        { "type": "integer" },
+      "program_weeks":      { "type": "integer" },
+      "occupation_category":{ "type": "string" },
+      "program_cost":       { "type": "number" }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "eligibility_status":       { "type": "string" },
+      "estimated_sai":            { "type": "number" },
+      "base_pell_annual":         { "type": "number" },
+      "proration_ratio":          { "type": "number" },
+      "binding_constraint":       { "type": "string" },
+      "workforce_pell_award":     { "type": "number" },
+      "pell_years_remaining":     { "type": "number" },
+      "program_cost_coverage_pct":{ "type": "number" },
+      "out_of_pocket":            { "type": "number" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "screen_workforce_pell_eligibility",
+    "description": "Given AGI or SAI, family size, program clock hours (150–599), program weeks (8–14), and occupation category, returns estimated Workforce Pell award, proration ratio (lower of hours÷900 or weeks÷24), eligibility status, and optional program cost coverage. Uses 2026-27 Pell tables (max $7,395, min $740) and OBBBA SAI expansion ($14,790 cutoff). Deterministic, client-side only.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "agi":                { "type": "number", "description": "Adjusted Gross Income in dollars" },
+        "sai":                { "type": "number", "description": "Student Aid Index (overrides AGI estimate)" },
+        "family_size":        { "type": "integer", "minimum": 1, "maximum": 8 },
+        "dependency_status":  { "type": "string", "enum": ["independent", "dependent"] },
+        "clock_hours":        { "type": "integer", "minimum": 150, "maximum": 599 },
+        "program_weeks":      { "type": "integer", "minimum": 8, "maximum": 14 },
+        "occupation_category":{ "type": "string" },
+        "program_cost":       { "type": "number" }
+      },
+      "required": ["clock_hours", "program_weeks"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+}
