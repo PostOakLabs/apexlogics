@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dual Enrollment ROI Calculator · ApexLogics #43</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/43-dual-enrollment-roi-calculator/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: var(--accent); } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 36px; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+
+    /* METRICS */
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.35rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); } .metric-val.amber { color: var(--amber); }
+    .metric-val.accent { color: var(--accent); } .metric-val.teal { color: var(--teal); }
+    .metric-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
+
+    /* BREAKDOWN TABLE */
+    .break-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .break-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.67rem; text-transform: uppercase; color: var(--text-dim); padding: 8px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+    .break-table th:not(:first-child) { text-align: right; }
+    .break-table td { padding: 9px 14px; border-bottom: 1px solid rgba(167,139,250,0.06); }
+    .break-table td:not(:first-child) { text-align: right; font-family: 'JetBrains Mono', monospace; }
+    .break-table tr:last-child td { border-bottom: none; font-weight: 600; background: var(--accent-low); }
+    .break-table .saved { color: var(--green); }
+    .break-table .cost  { color: var(--red); }
+
+    /* TIMELINE */
+    .timeline-row { display: flex; align-items: center; gap: 0; margin: 20px 0; }
+    .tl-block { flex: 1; text-align: center; padding: 10px 6px; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; border: 1px solid var(--border); }
+    .tl-block:first-child { border-radius: 8px 0 0 8px; }
+    .tl-block:last-child  { border-radius: 0 8px 8px 0; }
+    .tl-block.hs  { background: rgba(96,165,250,0.1); border-color: rgba(96,165,250,0.3); color: var(--blue); }
+    .tl-block.de  { background: rgba(167,139,250,0.1); border-color: rgba(167,139,250,0.4); color: var(--accent); }
+    .tl-block.col { background: rgba(52,211,153,0.08); border-color: rgba(52,211,153,0.3); color: var(--green); }
+    .tl-block-label { font-size: 0.62rem; color: var(--text-dim); margin-top: 3px; }
+
+    /* NPV NOTE */
+    .npv-note { background: rgba(167,139,250,0.06); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; font-size: 0.8rem; color: var(--text-muted); margin-top: 16px; }
+    .npv-note strong { color: var(--accent); }
+
+    /* EXPORT */
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .mcp-toggle { margin-top: 32px; background: none; border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); width: 100%; text-align: left; }
+    .mcp-toggle:hover { border-color: var(--accent); color: var(--text-muted); }
+    .mcp-panel { display: none; background: var(--surface2); border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; padding: 20px; }
+    .mcp-panel.open { display: block; }
+    .mcp-panel pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; overflow-x: auto; }
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .timeline-row { flex-direction: column; }
+      .tl-block { width: 100%; border-radius: 6px !important; margin-bottom: 4px; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#A78BFA" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#A78BFA" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#A78BFA"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#A78BFA" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#A78BFA" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#A78BFA"/>
+          <circle cx="52" cy="56" r="2.5" fill="#A78BFA"/>
+          <path d="M22 32 L42 32" stroke="#A78BFA" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a class="nav-pill accent" href="../../index.html">← All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+  </div>
+
+  <p class="tool-eyebrow">#43 · AL-48 · Education Path &amp; ROI</p>
+  <h1 class="tool-title">Dual Enrollment<br>ROI Calculator</h1>
+  <p class="tool-desc">~5 million high school students take dual enrollment each year. This tool models the tuition arbitrage (community college rate vs. university rate for the same credit), semesters compressed, and NPV of entering the workforce earlier — the three financial arguments for dual enrollment.</p>
+  <p class="tool-vintage">Zero external data — all calculations are pure math on your inputs · NCES dual enrollment data cited for context only</p>
+
+  <!-- ── INPUTS ─────────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">Credits &amp; Costs <span class="badge">STEP 1</span></div>
+    <div class="form-grid three" style="margin-bottom:14px;">
+      <div class="field">
+        <label for="deCredits">Dual Enrollment Credits Planned</label>
+        <input type="number" id="deCredits" value="24" min="1" max="90" step="1" />
+        <span class="field-hint">Typical: 12–30 credits in HS junior/senior year</span>
+      </div>
+      <div class="field">
+        <label for="deCostPerCredit">DE Cost per Credit Hour — $</label>
+        <input type="number" id="deCostPerCredit" value="120" min="0" max="1000" step="10" />
+        <span class="field-hint">National median CC rate: ~$120/credit. Many states offer free DE.</span>
+      </div>
+      <div class="field">
+        <label for="univCostPerCredit">University Cost per Credit Hour — $</label>
+        <input type="number" id="univCostPerCredit" value="650" min="50" max="3000" step="25" />
+        <span class="field-hint">Tuition only; excl. fees. Public 4-yr avg: ~$350–800; private: $1,000–2,000+</span>
+      </div>
+    </div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="creditsPerSemester">Credits per Full-Time Semester</label>
+        <input type="number" id="creditsPerSemester" value="15" min="9" max="21" step="1" />
+        <span class="field-hint">Typical: 15 credits/semester</span>
+      </div>
+      <div class="field">
+        <label for="semesterCost">University Semester Cost (non-tuition) — $</label>
+        <input type="number" id="semesterCost" value="8500" min="0" max="40000" step="500" />
+        <span class="field-hint">Room, board, fees, books — saved for each semester cut</span>
+      </div>
+      <div class="field">
+        <label for="transferRate">Institutional Transfer Credit Rate — %</label>
+        <input type="number" id="transferRate" value="85" min="10" max="100" step="5" />
+        <span class="field-hint">What % of DE credits your target university accepts. Varies widely.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Early Workforce Entry Value <span class="badge">STEP 2 — optional</span></div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="startingSalary">Expected Starting Salary — $</label>
+        <input type="number" id="startingSalary" value="55000" min="0" max="500000" step="1000" />
+        <span class="field-hint">Salary you'd earn in the semester(s) gained</span>
+      </div>
+      <div class="field">
+        <label for="discountRate">NPV Discount Rate — %</label>
+        <input type="number" id="discountRate" value="5" min="1" max="12" step="0.5" />
+        <span class="field-hint">Opportunity cost of money; 5% is conservative</span>
+      </div>
+      <div class="field">
+        <label for="deAdditionalCosts">Additional DE Costs — $</label>
+        <input type="number" id="deAdditionalCosts" value="500" min="0" max="10000" step="100" />
+        <span class="field-hint">Transportation, books, fees not already in per-credit rate</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Calculate Dual Enrollment ROI →</button>
+
+  <!-- ══ RESULTS ═══════════════════════════════════════════════════════════ -->
+  <div class="results-section" id="resultsSection">
+
+    <div class="metrics-grid" id="metricsGrid"></div>
+
+    <!-- TIMELINE VIZ -->
+    <div class="card">
+      <div class="card-title">Path Comparison</div>
+      <div id="timelineViz"></div>
+    </div>
+
+    <!-- COST BREAKDOWN -->
+    <div class="card">
+      <div class="card-title">Cost Breakdown</div>
+      <table class="break-table" id="breakTable"></table>
+      <div class="npv-note" id="npvNote"></div>
+    </div>
+
+    <!-- EXPORT -->
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download AP2 JSON</button>
+      <span class="ap2-hint">AP2 v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+    </div>
+
+  </div>
+
+  <button class="mcp-toggle" id="mcpBtn" onclick="toggleMCP()" aria-expanded="false">▸ Developer / Agent Integration (manifest.json)</button>
+  <div class="mcp-panel" id="mcpPanel"><pre id="mcpPre"></pre></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-48 · Zero external data — pure math on user inputs
+  </footer>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString();
+const fmtD = n => n.toFixed(1);
+let _inputs = null, _results = null;
+
+function calculate() {
+  const deCredits        = parseFloat($('deCredits').value)          || 24;
+  const deCost           = parseFloat($('deCostPerCredit').value)     || 120;
+  const univCost         = parseFloat($('univCostPerCredit').value)   || 650;
+  const credPerSem       = parseFloat($('creditsPerSemester').value)  || 15;
+  const semCost          = parseFloat($('semesterCost').value)        || 8500;
+  const transferRate     = parseFloat($('transferRate').value)        / 100;
+  const salary           = parseFloat($('startingSalary').value)      || 55000;
+  const discountRate     = parseFloat($('discountRate').value)        || 5;
+  const addlCosts        = parseFloat($('deAdditionalCosts').value)   || 0;
+
+  // Credits that actually transfer
+  const transferCredits  = deCredits * transferRate;
+  // Semesters compressed
+  const semsCompressed   = transferCredits / credPerSem;
+  // Cost of DE
+  const deTotalCost      = deCredits * deCost + addlCosts;
+  // Cost those same credits at university
+  const univEquivCost    = transferCredits * univCost;
+  // Tuition arbitrage savings
+  const tuitionSaved     = univEquivCost - deTotalCost;
+  // Non-tuition savings (room/board/fees)
+  const nonTuitionSaved  = semsCompressed * semCost;
+  // Total direct savings
+  const totalDirectSaved = tuitionSaved + nonTuitionSaved;
+  // Early workforce earnings
+  const earlyEarnings    = semsCompressed * (salary / 2); // per semester
+  // NPV of early earnings (discounted)
+  const years = 4 - semsCompressed; // years until graduation without DE
+  const npvEarly = semsCompressed > 0
+    ? earlyEarnings / Math.pow(1 + discountRate / 100, years)
+    : 0;
+  // Total ROI
+  const totalROI = totalDirectSaved + npvEarly;
+  // ROI ratio
+  const roiRatio = deTotalCost > 0 ? totalROI / deTotalCost : Infinity;
+
+  _inputs  = { deCredits, deCost, univCost, credPerSem, semCost, transferRate, salary, discountRate, addlCosts };
+  _results = { transferCredits, semsCompressed, deTotalCost, univEquivCost, tuitionSaved,
+               nonTuitionSaved, totalDirectSaved, earlyEarnings, npvEarly, totalROI, roiRatio };
+  render();
+}
+
+function render() {
+  const i = _inputs, r = _results;
+
+  // Metrics
+  $('metricsGrid').innerHTML = `
+    <div class="metric-card"><div class="metric-label">Tuition Arbitrage Savings</div>
+      <div class="metric-val green">${fmt(r.tuitionSaved)}</div>
+      <div class="metric-note">${fmt(i.deCredits * i.deCost)} DE cost vs. ${fmt(r.univEquivCost)} at university rate</div>
+    </div>
+    <div class="metric-card"><div class="metric-label">Semesters Compressed</div>
+      <div class="metric-val accent">${fmtD(r.semsCompressed)} sem.</div>
+      <div class="metric-note">${fmtD(r.transferCredits)} of ${i.deCredits} credits transfer (${Math.round(i.transferRate*100)}%)</div>
+    </div>
+    <div class="metric-card"><div class="metric-label">Total Direct Savings</div>
+      <div class="metric-val green">${fmt(r.totalDirectSaved)}</div>
+      <div class="metric-note">Tuition + room/board/fees for ${fmtD(r.semsCompressed)} semester(s)</div>
+    </div>
+    <div class="metric-card"><div class="metric-label">Total ROI (incl. early earnings NPV)</div>
+      <div class="metric-val teal">${fmt(r.totalROI)}</div>
+      <div class="metric-note">${r.roiRatio === Infinity ? '∞' : r.roiRatio.toFixed(1) + '×'} return on DE investment</div>
+    </div>
+  `;
+
+  // Timeline
+  const stdYrs = 4;
+  const deYrs  = (stdYrs - r.semsCompressed / 2).toFixed(1);
+  $('timelineViz').innerHTML = `
+    <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px;">Standard 4-year path vs. dual enrollment accelerated path</p>
+    <div style="margin-bottom:14px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--text-dim);margin-bottom:4px;">STANDARD PATH — 4.0 years, no DE</div>
+      <div class="timeline-row">
+        <div class="tl-block hs">HS Jr/Sr<div class="tl-block-label">no DE credits</div></div>
+        <div class="tl-block col" style="flex:4">University — 4 full years<div class="tl-block-label">${i.credPerSem * 8} credits · ${fmt(i.univCost * i.credPerSem * 8 + i.semCost * 8)} est. total</div></div>
+        <div class="tl-block" style="background:rgba(52,211,153,0.05);border-color:var(--border);color:var(--text-dim)">Graduate<div class="tl-block-label">Year 5+: work</div></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--accent);margin-bottom:4px;">DUAL ENROLLMENT PATH — ~${deYrs} years</div>
+      <div class="timeline-row">
+        <div class="tl-block de">HS + DE<div class="tl-block-label">${i.deCredits} credits · ${fmt(r.deTotalCost)}</div></div>
+        <div class="tl-block col" style="flex:${Math.max(1.5, 4 - r.semsCompressed/2)}">University — ${fmtD(r.semsCompressed)} semester(s) shorter<div class="tl-block-label">Save ${fmt(r.totalDirectSaved)}</div></div>
+        <div class="tl-block green">Early Graduate<div class="tl-block-label">+${fmtD(r.semsCompressed / 2)} yrs income</div></div>
+      </div>
+    </div>
+  `;
+
+  // Cost breakdown table
+  const rows = [
+    { label: 'DE tuition cost', amount: -r.deTotalCost, cls: 'cost', note: `${i.deCredits} credits × ${fmt(i.deCost)}${i.addlCosts > 0 ? ' + ' + fmt(i.addlCosts) + ' fees' : ''}` },
+    { label: 'Tuition avoided at university', amount: r.univEquivCost, cls: 'saved', note: `${fmtD(r.transferCredits)} transferred credits × ${fmt(i.univCost)}` },
+    { label: 'Room/board/fees avoided', amount: r.nonTuitionSaved, cls: 'saved', note: `${fmtD(r.semsCompressed)} semesters × ${fmt(i.semCost)}` },
+    { label: 'Early workforce earnings (nominal)', amount: r.earlyEarnings, cls: 'saved', note: `${fmtD(r.semsCompressed)} semesters × ${fmt(i.salary / 2)}` },
+    { label: 'NET TOTAL ROI', amount: r.totalROI, cls: r.totalROI > 0 ? 'saved' : 'cost', note: `${r.roiRatio === Infinity ? '∞' : r.roiRatio.toFixed(1) + '×'} return on DE investment` },
+  ];
+
+  $('breakTable').innerHTML = `
+    <thead><tr><th>Item</th><th>Amount</th><th>Notes</th></tr></thead>
+    <tbody>${rows.map(row => `<tr>
+      <td>${row.label}</td>
+      <td class="${row.cls}">${row.amount >= 0 ? '+' + fmt(row.amount) : '-' + fmt(-row.amount)}</td>
+      <td style="font-size:0.75rem;color:var(--text-dim)">${row.note}</td>
+    </tr>`).join('')}</tbody>
+  `;
+
+  $('npvNote').innerHTML = `
+    <strong>On early earnings NPV:</strong> The ${fmt(r.earlyEarnings)} in early workforce earnings is discounted to a present value of <strong style="color:var(--accent)">${fmt(r.npvEarly)}</strong> using a ${i.discountRate}% annual discount rate, reflecting the time value of money relative to when you'd otherwise graduate. Early-career earnings compound via 401(k), raises, and Social Security credits — this is a conservative floor estimate.
+    <br><br>
+    <strong>Transfer credit risk:</strong> At ${Math.round(i.transferRate * 100)}% acceptance, ${i.deCredits - Math.round(r.transferCredits)} credits may not transfer. Verify articulation agreements with your specific target institution before committing to DE courses.
+  `;
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+function exportMarkdown() {
+  if (!_inputs) return;
+  const i = _inputs, r = _results;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Dual Enrollment ROI Analysis',
+    `\n_Generated ${d} · AL-48 · apexlogics.org_\n`,
+    '## Inputs',
+    `| Field | Value |`,`|---|---|`,
+    `| DE Credits Planned | ${i.deCredits} |`,
+    `| DE Cost/Credit | ${fmt(i.deCost)} |`,
+    `| University Cost/Credit | ${fmt(i.univCost)} |`,
+    `| Transfer Rate | ${Math.round(i.transferRate*100)}% |`,
+    `| Credits/Semester | ${i.credPerSem} |`,
+    `| Semester Non-Tuition Cost | ${fmt(i.semCost)} |`,
+    `| Expected Starting Salary | ${fmt(i.salary)} |`,
+    '\n## Results',
+    `- **Tuition arbitrage savings:** ${fmt(r.tuitionSaved)}`,
+    `- **Semesters compressed:** ${fmtD(r.semsCompressed)}`,
+    `- **Total direct savings:** ${fmt(r.totalDirectSaved)}`,
+    `- **Early earnings (nominal):** ${fmt(r.earlyEarnings)}`,
+    `- **Total ROI:** ${fmt(r.totalROI)} (${r.roiRatio === Infinity ? '∞' : r.roiRatio.toFixed(1)+'×'} return)`,
+    '\n---',
+    '_Pure math on user inputs. Verify articulation agreements with target institution._'
+  ];
+  dlFile('dual-enrollment-roi.md', lines.join('\n'), 'text/markdown');
+}
+
+function exportAP2() {
+  if (!_inputs || !_results) return;
+  const i = _inputs, r = _results;
+  const payload = {
+    ap2_version:"2.0", mandate_type:"dual_enrollment_record",
+    generated_at: new Date().toISOString(),
+    tool_id:"43-dual-enrollment-roi-calculator", tool_name:"Dual Enrollment ROI Calculator",
+    inputs: {
+      de_credits: i.deCredits, de_cost_per_credit: i.deCost,
+      university_cost_per_credit: i.univCost, transfer_rate_pct: i.transferRate*100,
+      credits_per_semester: i.credPerSem, semester_non_tuition_cost: i.semCost,
+      expected_starting_salary: i.salary, discount_rate_pct: i.discountRate,
+      additional_de_costs: i.addlCosts
+    },
+    results: {
+      transfer_credits: parseFloat(r.transferCredits.toFixed(1)),
+      semesters_compressed: parseFloat(r.semsCompressed.toFixed(2)),
+      tuition_arbitrage_savings: Math.round(r.tuitionSaved),
+      non_tuition_savings: Math.round(r.nonTuitionSaved),
+      total_direct_savings: Math.round(r.totalDirectSaved),
+      early_earnings_nominal: Math.round(r.earlyEarnings),
+      early_earnings_npv: Math.round(r.npvEarly),
+      total_roi: Math.round(r.totalROI),
+      roi_multiple: parseFloat(r.roiRatio.toFixed(2))
+    },
+    downstream_handoff_candidates: ["AL-02", "AL-03"],
+    data_sources: ["Zero external data — pure math on user inputs"],
+    license:"CC-BY-4.0"
+  };
+  const errs = [];
+  ['ap2_version','mandate_type','generated_at','inputs'].forEach(k=>{if(!payload[k])errs.push('missing '+k);});
+  const valid = ['ai_skills_premium_record','federal_comp_record','military_civilian_record','noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record','workforce_pell_record','workforce_pell_credential_rank','net_worth_trajectory_record','signing_bonus_record','gig_income_record','cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record'];
+  if (!valid.includes(payload.mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('AP2 validation failed: ' + errs.join('; ')); return; }
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-48_dual-enrollment-roi_${ts}.ap2.json`, JSON.stringify(payload,null,2),'application/json');
+}
+
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+function toggleMCP() {
+  const panel=$('mcpPanel'), btn=$('mcpBtn'), pre=$('mcpPre');
+  const open = panel.classList.toggle('open');
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    pre.textContent = JSON.stringify({
+  "tool_id":"43-dual-enrollment-roi-calculator","al_id":"AL-48","version":"1.0.0",
+  "title":"Dual Enrollment ROI Calculator",
+  "description":"Models three financial arguments for dual enrollment: tuition arbitrage (community college vs. university rate), semesters compressed, and NPV of early workforce entry. Inputs: DE credits, cost per credit at DE vs. university, transfer rate, semester non-tuition costs, expected salary. Zero external data. AP2 v2.0: dual_enrollment_record.",
+  "category":"education_path_roi","journeys":["education_path"],"personas":["student","parent","counselor"],
+  "tags":["dual-enrollment","tuition-savings","semester-compression","npv","high-school","college","early-graduation"],
+  "status":"shipped","maintenance":"zero",
+  "data_vintage":"Zero — all logic is pure math on user inputs",
+  "ap2_export":true,"ap2_mandate_types":["dual_enrollment_record"],
+  "downstream_handoff_candidates":["AL-02","AL-03"],
+  "regulatory_citations":["NCES dual enrollment data (cited for context only — not embedded)"],
+  "sister_suite":"https://ainumbers.co","consulting_site":"https://apexadvisory.site","license":"CC-BY-4.0",
+  "execution":{"type":"browser-javascript","entry":"index.html","function_name":"calculate","timeout_ms":3000},
+  "mcp_tool_definition":{"name":"calculate_dual_enrollment_roi","description":"Given DE credit count, cost per credit at DE vs. university, transfer rate, semester costs, and salary, returns tuition savings, semesters compressed, and total ROI including early workforce earnings NPV. Zero external data. Deterministic.","inputSchema":{"type":"object","properties":{"de_credits":{"type":"number"},"de_cost_per_credit":{"type":"number"},"university_cost_per_credit":{"type":"number"},"transfer_rate_pct":{"type":"number"},"semester_non_tuition_cost":{"type":"number"},"expected_starting_salary":{"type":"number"}},"required":["de_credits","de_cost_per_credit","university_cost_per_credit"]}}
+}, null, 2);
+  }
+}
+
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function(){
+  const s = sessionStorage.getItem('apex_lang');
+  setLang(s || ({en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'})[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deferred Comp 457(b) Decision Engine · ApexLogics #44</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/44-deferred-comp-457b-engine/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: var(--accent); } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 36px; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.35rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); } .metric-val.amber { color: var(--amber); }
+    .metric-val.accent { color: var(--accent); } .metric-val.teal { color: var(--teal); }
+    .metric-val.red { color: var(--red); }
+    .metric-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
+
+    .break-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .break-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.67rem; text-transform: uppercase; color: var(--text-dim); padding: 8px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+    .break-table th:not(:first-child) { text-align: right; }
+    .break-table td { padding: 9px 14px; border-bottom: 1px solid rgba(167,139,250,0.06); }
+    .break-table td:not(:first-child) { text-align: right; font-family: 'JetBrains Mono', monospace; }
+    .break-table tr.total td { font-weight: 600; background: var(--accent-low); border-top: 1px solid var(--border); border-bottom: none; }
+    .break-table tr.highlight td { background: rgba(52,211,153,0.05); }
+    .saved { color: var(--green); } .cost { color: var(--red); } .neutral { color: var(--text-muted); }
+
+    .scenario-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .scenario-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+    .scenario-card.winner { border-color: var(--green); background: rgba(52,211,153,0.04); }
+    .scenario-title { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .scenario-title .tag { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 6px; font-size: 0.63rem; }
+    .scenario-title .tag-green { background: rgba(52,211,153,0.15); color: var(--green); border-radius: 4px; padding: 2px 6px; font-size: 0.63rem; }
+    .scenario-row { display: flex; justify-content: space-between; font-size: 0.82rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .scenario-row:last-child { border-bottom: none; font-weight: 600; }
+    .scenario-big { font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; color: var(--green); margin: 8px 0 4px; }
+
+    .chart-wrap { margin-bottom: 8px; }
+    .chart-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 0.78rem; }
+    .chart-bar-label { width: 160px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; flex-shrink: 0; }
+    .chart-bar-track { flex: 1; background: rgba(255,255,255,0.05); border-radius: 4px; height: 22px; overflow: hidden; }
+    .chart-bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #000; font-weight: 600; transition: width 0.4s ease; }
+
+    .insight-box { background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.2); border-radius: 8px; padding: 16px 20px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; }
+    .insight-box strong { color: var(--text); }
+
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; text-decoration: none; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(167,139,250,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+
+    .mcp-toggle { background: none; border: 1px dashed var(--border); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 8px 14px; border-radius: 6px; cursor: pointer; width: 100%; text-align: left; margin-top: 24px; }
+    .mcp-panel { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 8px; }
+    .mcp-panel.open { display: block; }
+    .mcp-pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
+
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+
+    @media (max-width: 700px) {
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .scenario-grid { grid-template-columns: 1fr; }
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="28" height="28" rx="6" fill="#A78BFA" fill-opacity="0.15"/>
+          <path d="M7 21L14 7L21 21" stroke="#A78BFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9.5 16.5H18.5" stroke="#A78BFA" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-name"><span class="logo-apex">Apex</span><span class="logo-org">Logics</span></div>
+        <div class="logo-tag">apexlogics.org</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="https://apexadvisory.site" class="nav-pill accent" target="_blank" rel="noopener">Advisory</a>
+    <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    <a href="../../index.html" class="nav-pill">← All Tools</a>
+  </div>
+</nav>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <div class="tool-eyebrow">AL-49 · Compensation &amp; Benefits</div>
+  <h1 class="tool-title">Deferred Comp 457(b)<br>Decision Engine</h1>
+  <p class="tool-desc">Should you maximize your 457(b) or take the paycheck? Models the after-tax value of deferral vs. investing the same dollars in a taxable account — accounting for current vs. retirement marginal rates, growth horizon, and RMDs.</p>
+  <div class="tool-vintage">Data vintage: Very low — IRC §457 logic is stable. Contribution limit ($23,500 for 2026) is embedded; verify against IRS Notice each January. All marginal rate inputs are user-supplied.</div>
+
+  <!-- INPUTS -->
+  <div class="card">
+    <div class="card-title">Your Situation <span class="badge">§457(b)</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="annualIncome">Annual W-2 Income ($)</label>
+        <input type="number" id="annualIncome" value="120000" min="0" step="1000" />
+        <span class="field-hint">Gross salary before any deferrals</span>
+      </div>
+      <div class="field">
+        <label for="deferralAmount">Annual 457(b) Deferral ($)</label>
+        <input type="number" id="deferralAmount" value="23500" min="0" max="47000" step="500" />
+        <span class="field-hint">2026 limit: $23,500 (age 50+ catch-up: +$7,500; special 3-yr catch-up: double limit)</span>
+      </div>
+      <div class="field">
+        <label for="currentRate">Current Marginal Tax Rate (%)</label>
+        <input type="number" id="currentRate" value="24" min="0" max="60" step="1" />
+        <span class="field-hint">Federal + state (e.g., 24% fed + 5% state = 29)</span>
+      </div>
+      <div class="field">
+        <label for="retirementRate">Expected Retirement Marginal Rate (%)</label>
+        <input type="number" id="retirementRate" value="20" min="0" max="60" step="1" />
+        <span class="field-hint">Rate at withdrawal — often lower, but not always</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Growth &amp; Withdrawal <span class="badge">Projections</span></div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="yearsToRetirement">Years to Retirement</label>
+        <input type="number" id="yearsToRetirement" value="20" min="1" max="50" step="1" />
+      </div>
+      <div class="field">
+        <label for="growthRate">Expected Annual Growth Rate (%)</label>
+        <input type="number" id="growthRate" value="7" min="0" max="20" step="0.5" />
+        <span class="field-hint">Same rate applied to both scenarios</span>
+      </div>
+      <div class="field">
+        <label for="withdrawalYears">Drawdown Period (years)</label>
+        <input type="number" id="withdrawalYears" value="25" min="5" max="40" step="1" />
+        <span class="field-hint">How long retirement withdrawals span</span>
+      </div>
+    </div>
+    <div class="form-grid two" style="margin-top:14px;">
+      <div class="field">
+        <label for="taxableReturn">Taxable Account Annual Return (%)</label>
+        <input type="number" id="taxableReturn" value="6" min="0" max="20" step="0.5" />
+        <span class="field-hint">Net of dividend drag (typically ~0.5–1% below gross)</span>
+      </div>
+      <div class="field">
+        <label for="capitalGainsRate">Long-Term Capital Gains Rate (%)</label>
+        <input type="number" id="capitalGainsRate" value="15" min="0" max="40" step="1" />
+        <span class="field-hint">Federal LTCG rate (0%, 15%, or 20%)</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Run 457(b) Analysis</button>
+
+  <!-- RESULTS -->
+  <div class="results-section" id="resultsSection">
+
+    <div class="card">
+      <div class="card-title">Scenario Comparison <span class="badge">Side-by-Side</span></div>
+      <div class="scenario-grid" id="scenarioGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Key Metrics</div>
+      <div class="metrics-grid" id="metricsGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Growth Projection <span class="badge">Both Scenarios</span></div>
+      <div class="chart-wrap" id="chartWrap"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Full Breakdown</div>
+      <table class="break-table" id="breakTable"></table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Interpretation &amp; Caveats</div>
+      <div class="insight-box" id="insightBox"></div>
+    </div>
+
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+    </div>
+
+  </div><!-- /results-section -->
+
+  <button class="mcp-toggle" id="mcpBtn" onclick="toggleMCP()" aria-expanded="false">▸ Developer / Agent Integration (manifest.json)</button>
+  <div class="mcp-panel" id="mcpPanel">
+    <pre class="mcp-pre" id="mcpPre"></pre>
+  </div>
+
+  <footer class="tool-footer">
+    <p>AL-49 · ApexLogics.org · <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> · <a href="https://apexadvisory.site" target="_blank" rel="noopener">ApexAdvisory.site</a> · CC-BY-4.0</p>
+  </footer>
+
+</div><!-- /tool-wrapper -->
+
+<script>
+const $ = id => document.getElementById(id);
+let _inputs = null, _results = null;
+
+// ── FORMAT HELPERS ────────────────────────────────────────────────────────────
+function fmt(n)  { return '$' + Math.round(n).toLocaleString('en-US'); }
+function fmtPct(n) { return n.toFixed(1) + '%'; }
+function fmtD(n) { return n.toFixed(1); }
+
+// ── CALCULATE ─────────────────────────────────────────────────────────────────
+function calculate() {
+  const income          = parseFloat($('annualIncome').value)      || 120000;
+  const deferral        = Math.min(parseFloat($('deferralAmount').value) || 23500, 47000);
+  const curRate         = parseFloat($('currentRate').value)        / 100;
+  const retRate         = parseFloat($('retirementRate').value)     / 100;
+  const years           = parseInt($('yearsToRetirement').value)    || 20;
+  const growthRate      = parseFloat($('growthRate').value)         / 100;
+  const withdrawYears   = parseInt($('withdrawalYears').value)      || 25;
+  const taxableReturn   = parseFloat($('taxableReturn').value)      / 100;
+  const cgRate          = parseFloat($('capitalGainsRate').value)   / 100;
+
+  // ── Scenario A: 457(b) deferral ──────────────────────────────────────────
+  // Tax saved today
+  const taxSavedNow     = deferral * curRate;
+  // Amount in 457(b) at retirement (pre-tax, grows tax-deferred)
+  const a_balance       = deferral * Math.pow(1 + growthRate, years);
+  // Total after-tax if withdrawn evenly over drawdown period
+  const a_annualWithdraw = a_balance / withdrawYears;
+  const a_afterTaxAnnual = a_annualWithdraw * (1 - retRate);
+  const a_totalAfterTax  = a_afterTaxAnnual * withdrawYears;
+  // NPV of after-tax withdrawals (discounted at growth rate)
+  let a_npv = 0;
+  for (let y = 1; y <= withdrawYears; y++) {
+    a_npv += a_afterTaxAnnual / Math.pow(1 + growthRate, years + y);
+  }
+
+  // ── Scenario B: Take the paycheck, invest in taxable account ─────────────
+  // After-tax cash available to invest
+  const b_investable    = deferral * (1 - curRate);
+  // Grows in taxable account
+  const b_balance_gross = b_investable * Math.pow(1 + taxableReturn, years);
+  // Cost basis = b_investable; gains subject to LTCG
+  const b_gains         = b_balance_gross - b_investable;
+  const b_taxOnGains    = b_gains * cgRate;
+  const b_balance_net   = b_balance_gross - b_taxOnGains;
+  // Annual withdrawal (after-tax already)
+  const b_annualWithdraw = b_balance_net / withdrawYears;
+  const b_totalAfterTax  = b_balance_net;
+  // NPV
+  let b_npv = 0;
+  for (let y = 1; y <= withdrawYears; y++) {
+    b_npv += b_annualWithdraw / Math.pow(1 + growthRate, years + y);
+  }
+
+  // ── Advantage ────────────────────────────────────────────────────────────
+  const totalAdvantage   = a_totalAfterTax - b_totalAfterTax;
+  const npvAdvantage     = a_npv - b_npv;
+  const rateBreakEven    = computeBreakEven(deferral, curRate, growthRate, years, withdrawYears, taxableReturn, cgRate);
+
+  // ── Growth chart data ─────────────────────────────────────────────────────
+  const chartYears = [5, 10, 15, years, years + Math.floor(withdrawYears / 2)].filter((v, i, a) => a.indexOf(v) === i && v > 0).sort((a, b) => a - b);
+
+  _inputs  = { income, deferral, curRate, retRate, years, growthRate, withdrawYears, taxableReturn, cgRate };
+  _results = { taxSavedNow, a_balance, a_afterTaxAnnual, a_totalAfterTax, a_npv,
+               b_investable, b_balance_gross, b_balance_net, b_annualWithdraw, b_totalAfterTax, b_npv,
+               totalAdvantage, npvAdvantage, rateBreakEven, chartYears };
+  render();
+}
+
+// ── BREAK-EVEN RETIREMENT RATE SOLVER ────────────────────────────────────────
+function computeBreakEven(deferral, curRate, growthRate, years, withdrawYears, taxableReturn, cgRate) {
+  // Find retirement rate r such that 457 after-tax = taxable after-tax
+  // 457 after-tax = deferral * (1+g)^n * (1-r)
+  // taxable after-tax = deferral*(1-curRate)*(1+tr)^n - gains*cgRate  (already computed as b_balance_net)
+  const b_investable    = deferral * (1 - curRate);
+  const b_gross         = b_investable * Math.pow(1 + taxableReturn, years);
+  const b_gains         = b_gross - b_investable;
+  const b_net           = b_gross - b_gains * cgRate;
+
+  const a_gross = deferral * Math.pow(1 + growthRate, years);
+  if (a_gross === 0) return 0;
+  // a_gross * (1 - r) = b_net  =>  r = 1 - b_net / a_gross
+  const r = 1 - b_net / a_gross;
+  return Math.max(0, Math.min(1, r));
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render() {
+  const i = _inputs, r = _results;
+  const winner = r.totalAdvantage >= 0 ? '457(b)' : 'Taxable';
+
+  // ── Scenario cards ────────────────────────────────────────────────────────
+  $('scenarioGrid').innerHTML = `
+    <div class="scenario-card ${r.totalAdvantage >= 0 ? 'winner' : ''}">
+      <div class="scenario-title">
+        Scenario A · 457(b) Deferral
+        ${r.totalAdvantage >= 0 ? '<span class="tag-green">✓ Better</span>' : ''}
+      </div>
+      <div class="scenario-big">${fmt(r.a_totalAfterTax)}</div>
+      <div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:10px;">total after-tax over ${i.withdrawYears}-yr drawdown</div>
+      <div class="scenario-row"><span>Pre-tax deferral</span><span class="neutral">${fmt(i.deferral)}</span></div>
+      <div class="scenario-row"><span>Tax saved today</span><span class="saved">+${fmt(r.taxSavedNow)}</span></div>
+      <div class="scenario-row"><span>457(b) balance at retirement</span><span class="neutral">${fmt(r.a_balance)}</span></div>
+      <div class="scenario-row"><span>Annual after-tax withdrawal</span><span class="neutral">${fmt(r.a_afterTaxAnnual)}</span></div>
+      <div class="scenario-row"><span>Retirement tax rate applied</span><span class="neutral">${fmtPct(i.retRate * 100)}</span></div>
+    </div>
+    <div class="scenario-card ${r.totalAdvantage < 0 ? 'winner' : ''}">
+      <div class="scenario-title">
+        Scenario B · Taxable Account
+        ${r.totalAdvantage < 0 ? '<span class="tag-green">✓ Better</span>' : ''}
+      </div>
+      <div class="scenario-big">${fmt(r.b_totalAfterTax)}</div>
+      <div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:10px;">total after-tax over ${i.withdrawYears}-yr drawdown</div>
+      <div class="scenario-row"><span>After-tax investable</span><span class="neutral">${fmt(r.b_investable)}</span></div>
+      <div class="scenario-row"><span>Gross balance at retirement</span><span class="neutral">${fmt(r.b_balance_gross)}</span></div>
+      <div class="scenario-row"><span>LTCG tax at liquidation</span><span class="cost">-${fmt(r.b_balance_gross - r.b_balance_net)}</span></div>
+      <div class="scenario-row"><span>Annual after-tax withdrawal</span><span class="neutral">${fmt(r.b_annualWithdraw)}</span></div>
+      <div class="scenario-row"><span>LTCG rate applied</span><span class="neutral">${fmtPct(i.cgRate * 100)}</span></div>
+    </div>
+  `;
+
+  // ── Metrics ────────────────────────────────────────────────────────────────
+  const advantageColor = r.totalAdvantage >= 0 ? 'green' : 'red';
+  $('metricsGrid').innerHTML = `
+    <div class="metric-card">
+      <div class="metric-label">457(b) Advantage</div>
+      <div class="metric-val ${advantageColor}">${r.totalAdvantage >= 0 ? '+' : ''}${fmt(r.totalAdvantage)}</div>
+      <div class="metric-note">total after-tax over drawdown vs. taxable</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">NPV Advantage</div>
+      <div class="metric-val ${r.npvAdvantage >= 0 ? 'accent' : 'red'}">${r.npvAdvantage >= 0 ? '+' : ''}${fmt(r.npvAdvantage)}</div>
+      <div class="metric-note">present value at ${fmtPct(i.growthRate * 100)} discount rate</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Break-Even Retirement Rate</div>
+      <div class="metric-val amber">${fmtPct(r.rateBreakEven * 100)}</div>
+      <div class="metric-note">457(b) wins if retirement rate is below this</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Tax Saved Today</div>
+      <div class="metric-val teal">${fmt(r.taxSavedNow)}</div>
+      <div class="metric-note">${fmt(i.deferral)} × ${fmtPct(i.curRate * 100)} current rate</div>
+    </div>
+  `;
+
+  // ── Growth chart ──────────────────────────────────────────────────────────
+  const maxVal = Math.max(r.a_totalAfterTax, r.b_totalAfterTax, r.a_balance, r.b_balance_gross);
+  const bars = [
+    { label: '457(b) balance', val: r.a_balance, color: '#A78BFA' },
+    { label: '457(b) after-tax', val: r.a_totalAfterTax, color: '#34d399' },
+    { label: 'Taxable gross', val: r.b_balance_gross, color: '#60a5fa' },
+    { label: 'Taxable after-tax', val: r.b_balance_net, color: '#2dd4bf' },
+  ];
+  $('chartWrap').innerHTML = bars.map(b => `
+    <div class="chart-bar-row">
+      <div class="chart-bar-label">${b.label}</div>
+      <div class="chart-bar-track">
+        <div class="chart-bar-fill" style="width:${(b.val/maxVal*100).toFixed(1)}%;background:${b.color}">
+          ${fmt(b.val)}
+        </div>
+      </div>
+    </div>
+  `).join('') + `<div style="font-size:0.68rem;color:var(--text-dim);font-family:'JetBrains Mono',monospace;margin-top:6px;">At retirement (year ${i.years}) · all values nominal</div>`;
+
+  // ── Break table ───────────────────────────────────────────────────────────
+  $('breakTable').innerHTML = `
+    <thead><tr><th>Item</th><th>457(b) Path</th><th>Taxable Path</th><th>Difference</th></tr></thead>
+    <tbody>
+      <tr><td>Amount contributed / invested</td>
+        <td>${fmt(i.deferral)} (pre-tax)</td>
+        <td>${fmt(r.b_investable)} (after-tax)</td>
+        <td class="cost">-${fmt(r.taxSavedNow)} less investable</td></tr>
+      <tr><td>Balance at retirement (gross)</td>
+        <td>${fmt(r.a_balance)}</td>
+        <td>${fmt(r.b_balance_gross)}</td>
+        <td class="${r.a_balance >= r.b_balance_gross ? 'saved' : 'cost'}">${r.a_balance >= r.b_balance_gross ? '+' : ''}${fmt(r.a_balance - r.b_balance_gross)}</td></tr>
+      <tr><td>Tax at liquidation / withdrawal</td>
+        <td>Rate ${fmtPct(i.retRate * 100)} on withdrawals</td>
+        <td>${fmtPct(i.cgRate * 100)} LTCG on gains</td>
+        <td class="neutral">—</td></tr>
+      <tr><td>Annual after-tax withdrawal</td>
+        <td>${fmt(r.a_afterTaxAnnual)}</td>
+        <td>${fmt(r.b_annualWithdraw)}</td>
+        <td class="${r.a_afterTaxAnnual >= r.b_annualWithdraw ? 'saved' : 'cost'}">${r.a_afterTaxAnnual >= r.b_annualWithdraw ? '+' : ''}${fmt(r.a_afterTaxAnnual - r.b_annualWithdraw)}/yr</td></tr>
+      <tr class="total"><td>Total after-tax over ${i.withdrawYears}-yr drawdown</td>
+        <td>${fmt(r.a_totalAfterTax)}</td>
+        <td>${fmt(r.b_totalAfterTax)}</td>
+        <td class="${r.totalAdvantage >= 0 ? 'saved' : 'cost'}">${r.totalAdvantage >= 0 ? '+' : ''}${fmt(r.totalAdvantage)}</td></tr>
+    </tbody>`;
+
+  // ── Insight ───────────────────────────────────────────────────────────────
+  const beVerdict = i.retRate <= r.rateBreakEven
+    ? `Your expected retirement rate (${fmtPct(i.retRate * 100)}) is <strong style="color:var(--green)">below the break-even rate of ${fmtPct(r.rateBreakEven * 100)}</strong>, so the 457(b) wins on an after-tax basis.`
+    : `Your expected retirement rate (${fmtPct(i.retRate * 100)}) is <strong style="color:var(--red)">above the break-even rate of ${fmtPct(r.rateBreakEven * 100)}</strong>, so the taxable account produces more after-tax income.`;
+
+  $('insightBox').innerHTML = `
+    ${beVerdict}
+    <br><br>
+    <strong>Key differences from a 401(k):</strong> Government 457(b) plans have <em>no 10% early withdrawal penalty</em> — you can withdraw at separation from service at any age. This makes them especially powerful for early retirees or those planning bridge income between retirement and age 59½. However, 457(b) assets remain employer plan assets until distributed; in the event of employer insolvency (non-governmental plans), they're subject to creditor claims.
+    <br><br>
+    <strong>Contribution limit note:</strong> The 2026 limit of $23,500 applies separately from your 401(k)/403(b) limit — if you have access to both, you can potentially defer $47,000+ annually. The special 3-year catch-up provision (pre-retirement) can double the standard limit. Verify your plan document and IRS Notice annually.
+    <br><br>
+    <strong>This model simplifies:</strong> It uses a flat marginal rate, a single LTCG rate, and assumes the taxable account is fully liquidated. Real-world outcomes vary with tax bracket changes, estate planning (step-up in basis), state taxes, Social Security taxation thresholds, and RMD timing. Consult a tax advisor for your specific situation.
+  `;
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+function exportMarkdown() {
+  if (!_inputs) return;
+  const i = _inputs, r = _results;
+  const d = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const lines = [
+    '# 457(b) Deferred Compensation Analysis',
+    `\n_Generated ${d} · AL-49 · apexlogics.org_\n`,
+    '## Inputs',
+    `| Field | Value |`, `|---|---|`,
+    `| Annual Income | ${fmt(i.income)} |`,
+    `| Annual 457(b) Deferral | ${fmt(i.deferral)} |`,
+    `| Current Marginal Rate | ${fmtPct(i.curRate * 100)} |`,
+    `| Expected Retirement Rate | ${fmtPct(i.retRate * 100)} |`,
+    `| Years to Retirement | ${i.years} |`,
+    `| Growth Rate | ${fmtPct(i.growthRate * 100)} |`,
+    `| Drawdown Period | ${i.withdrawYears} years |`,
+    `| Taxable Account Return | ${fmtPct(i.taxableReturn * 100)} |`,
+    `| LTCG Rate | ${fmtPct(i.cgRate * 100)} |`,
+    '\n## Results',
+    `- **457(b) after-tax total:** ${fmt(r.a_totalAfterTax)}`,
+    `- **Taxable after-tax total:** ${fmt(r.b_totalAfterTax)}`,
+    `- **457(b) advantage:** ${r.totalAdvantage >= 0 ? '+' : ''}${fmt(r.totalAdvantage)}`,
+    `- **NPV advantage:** ${r.npvAdvantage >= 0 ? '+' : ''}${fmt(r.npvAdvantage)}`,
+    `- **Break-even retirement rate:** ${fmtPct(r.rateBreakEven * 100)}`,
+    `- **Tax saved today:** ${fmt(r.taxSavedNow)}`,
+    `- **Winner:** ${r.totalAdvantage >= 0 ? '457(b) Deferral' : 'Taxable Account'}`,
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '457b-analysis.md';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function exportAP2() {
+  if (!_inputs) { alert('Run the analysis first.'); return; }
+  const i = _inputs, r = _results;
+
+  const validMandateTypes = [
+    'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+    'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+    'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+    'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+    'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+    'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+    'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+    'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+    'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+    'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+    'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record','deferred_comp_457b_record'
+  ];
+
+  const payload = {
+    ap2_version: '2.0',
+    mandate_type: 'deferred_comp_457b_record',
+    source_tool: 'AL-49',
+    source_url: 'https://apexlogics.org/tools/44-deferred-comp-457b-engine/',
+    generated_at: new Date().toISOString(),
+    schema_version: '1.0',
+    data: {
+      annual_income: i.income,
+      annual_deferral: i.deferral,
+      current_marginal_rate_pct: +(i.curRate * 100).toFixed(1),
+      retirement_marginal_rate_pct: +(i.retRate * 100).toFixed(1),
+      years_to_retirement: i.years,
+      growth_rate_pct: +(i.growthRate * 100).toFixed(1),
+      drawdown_years: i.withdrawYears,
+      taxable_return_pct: +(i.taxableReturn * 100).toFixed(1),
+      ltcg_rate_pct: +(i.cgRate * 100).toFixed(1),
+      tax_saved_now: Math.round(r.taxSavedNow),
+      a_457b_balance_at_retirement: Math.round(r.a_balance),
+      a_total_after_tax: Math.round(r.a_totalAfterTax),
+      a_annual_withdrawal: Math.round(r.a_afterTaxAnnual),
+      b_investable: Math.round(r.b_investable),
+      b_taxable_balance_at_retirement: Math.round(r.b_balance_gross),
+      b_total_after_tax: Math.round(r.b_totalAfterTax),
+      b_annual_withdrawal: Math.round(r.b_annualWithdraw),
+      advantage_457b: Math.round(r.totalAdvantage),
+      npv_advantage: Math.round(r.npvAdvantage),
+      break_even_retirement_rate_pct: +(r.rateBreakEven * 100).toFixed(1),
+      winner: r.totalAdvantage >= 0 ? '457b' : 'taxable'
+    },
+    downstream_tools: ['AL-25', 'AL-04'],
+    advisory_cta: {
+      text: 'Model how deferred comp interacts with your full compensation package',
+      url: 'https://apexadvisory.site'
+    }
+  };
+
+  // Validate mandate type
+  if (!validMandateTypes.includes(payload.mandate_type)) {
+    alert('AP2 mandate type validation failed: ' + payload.mandate_type);
+    return;
+  }
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '457b-analysis-ap2.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+// ── MCP PANEL ────────────────────────────────────────────────────────────────
+function toggleMCP() {
+  const panel = $('mcpPanel');
+  const btn   = $('mcpBtn');
+  const open  = panel.classList.toggle('open');
+  btn.textContent = (open ? '▾ ' : '▸ ') + 'Developer / Agent Integration (manifest.json)';
+  btn.setAttribute('aria-expanded', open);
+  if (open && !$('mcpPre').textContent) {
+    $('mcpPre').textContent = JSON.stringify({
+      "al_id": "AL-49",
+      "version": "1.0.0",
+      "title": "Deferred Comp 457(b) Decision Engine",
+      "slug": "44-deferred-comp-457b-engine",
+      "file_path": "tools/44-deferred-comp-457b-engine/index.html",
+      "description": "Models after-tax value of 457(b) deferral vs. taxable account across current and retirement marginal rates, growth horizon, and LTCG rate. Computes break-even retirement rate, NPV advantage, and annual withdrawal comparison.",
+      "category": "compensation_benefits",
+      "journeys": ["compensation_offers", "career_transition"],
+      "personas": ["employee", "financial_planner", "hr"],
+      "tags": ["457b", "deferred-compensation", "tax-deferral", "retirement", "marginal-rate", "npv", "taxable-account"],
+      "status": "shipped",
+      "maintenance": "very_low",
+      "data_vintage": "Very low — IRC §457 logic is stable. 2026 contribution limit ($23,500) embedded; verify IRS Notice annually.",
+      "ap2_export": true,
+      "ap2_mandate_types": ["deferred_comp_457b_record"],
+      "downstream_handoff_candidates": ["AL-25", "AL-04"],
+      "regulatory_citations": ["IRC §457(b)", "IRS Notice 2025-XX (contribution limits)", "ERISA non-governmental plan rules"],
+      "sister_suite": "https://ainumbers.co",
+      "consulting_site": "https://apexadvisory.site",
+      "license": "CC-BY-4.0",
+      "execution": {
+        "type": "browser-javascript",
+        "entry": "index.html",
+        "function_name": "calculate",
+        "timeout_ms": 3000
+      },
+      "mcp_tool_definition": {
+        "name": "calculate_457b_deferred_comp",
+        "description": "Given annual income, deferral amount, current/retirement marginal rates, growth rate, drawdown years, taxable return, and LTCG rate — returns 457(b) vs. taxable account after-tax totals, break-even retirement rate, and NPV advantage. Deterministic.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "annual_income": {"type": "number"},
+            "annual_deferral": {"type": "number"},
+            "current_marginal_rate_pct": {"type": "number"},
+            "retirement_marginal_rate_pct": {"type": "number"},
+            "years_to_retirement": {"type": "number"},
+            "growth_rate_pct": {"type": "number"},
+            "drawdown_years": {"type": "number"},
+            "taxable_return_pct": {"type": "number"},
+            "ltcg_rate_pct": {"type": "number"}
+          },
+          "required": ["annual_deferral", "current_marginal_rate_pct", "retirement_marginal_rate_pct"]
+        }
+      }
+    }, null, 2);
+  }
+}
+
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function () {
+  const s = sessionStorage.getItem('apex_lang');
+  setLang(s || ({ en: 'en', es: 'es', fr: 'fr', ar: 'ar', pt: 'pt', zh: 'zh' })[(navigator.language || 'en').slice(0, 2)] || 'en');
+})();
+</script>
+</body>
+</html>
