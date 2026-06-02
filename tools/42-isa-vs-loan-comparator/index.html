@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ISA vs. Student Loan Comparator · ApexLogics #42</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/42-isa-vs-loan-comparator/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+      --isa-color: #A78BFA; --loan-color: #34d399;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: var(--accent); } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 36px; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+
+    /* TWO-COLUMN COMPARISON INPUT */
+    .compare-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .compare-col { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .compare-col.isa { border-color: rgba(167,139,250,0.4); }
+    .compare-col.loan { border-color: rgba(52,211,153,0.4); }
+    .col-header { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; }
+    .col-header.isa  { color: var(--isa-color); }
+    .col-header.loan { color: var(--loan-color); }
+    .form-grid { display: grid; gap: 12px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 0.72rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.88rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.68rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+
+    /* VERDICT BANNER */
+    .verdict { border-radius: 10px; padding: 18px 24px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; }
+    .verdict.isa-wins  { background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.4); }
+    .verdict.loan-wins { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.4); }
+    .verdict.tie       { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.35); }
+    .verdict-icon { font-size: 2rem; flex-shrink: 0; }
+    .verdict-text h3 { font-size: 1.1rem; margin-bottom: 4px; }
+    .verdict-text p  { font-size: 0.82rem; color: var(--text-muted); }
+    .isa-wins  .verdict-text h3 { color: var(--isa-color); }
+    .loan-wins .verdict-text h3 { color: var(--loan-color); }
+    .tie       .verdict-text h3 { color: var(--amber); }
+
+    /* METRICS */
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 500; }
+    .metric-val.isa  { color: var(--isa-color); }
+    .metric-val.loan { color: var(--loan-color); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
+
+    /* COMPARISON BARS */
+    .bar-compare { margin-bottom: 16px; }
+    .bar-row { margin-bottom: 10px; }
+    .bar-label { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; margin-bottom: 3px; }
+    .bar-label .name { color: var(--text-muted); }
+    .bar-label .val  { font-weight: 600; }
+    .bar-track { height: 20px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+    .bar-fill.isa  { background: var(--isa-color); opacity: 0.7; }
+    .bar-fill.loan { background: var(--loan-color); opacity: 0.7; }
+
+    /* YEAR TABLE */
+    .yr-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .yr-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; text-transform: uppercase; color: var(--text-dim); padding: 7px 12px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+    .yr-table th:first-child { text-align: left; }
+    .yr-table td { padding: 7px 12px; border-bottom: 1px solid rgba(167,139,250,0.06); text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+    .yr-table td:first-child { text-align: left; color: var(--text-muted); }
+    .yr-table tr:last-child td { border-bottom: none; }
+    .yr-table .isa-col { color: var(--isa-color); }
+    .yr-table .loan-col { color: var(--loan-color); }
+    .yr-table .adv-isa  { color: var(--isa-color); font-weight: 600; }
+    .yr-table .adv-loan { color: var(--loan-color); font-weight: 600; }
+    .yr-table .done { color: var(--text-dim); font-style: italic; }
+    .tbl-toggle { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 6px 14px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); margin-bottom: 10px; transition: all 0.15s; }
+    .tbl-toggle:hover { border-color: var(--accent); color: var(--text-muted); }
+    .tbl-wrap { display: none; overflow-x: auto; }
+    .tbl-wrap.open { display: block; }
+
+    /* ISA EXPLAINER */
+    .isa-note { background: rgba(167,139,250,0.06); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; font-size: 0.8rem; color: var(--text-muted); margin-top: 16px; }
+    .isa-note strong { color: var(--accent); }
+    .isa-note a { color: var(--accent); text-decoration: none; }
+
+    /* EXPORT */
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .mcp-toggle { margin-top: 32px; background: none; border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); width: 100%; text-align: left; }
+    .mcp-toggle:hover { border-color: var(--accent); color: var(--text-muted); }
+    .mcp-panel { display: none; background: var(--surface2); border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; padding: 20px; }
+    .mcp-panel.open { display: block; }
+    .mcp-panel pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; overflow-x: auto; }
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+
+    @media (max-width: 768px) {
+      .compare-cols { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#A78BFA" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#A78BFA" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#A78BFA"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#A78BFA" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#A78BFA" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#A78BFA"/>
+          <circle cx="52" cy="56" r="2.5" fill="#A78BFA"/>
+          <path d="M22 32 L42 32" stroke="#A78BFA" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a class="nav-pill accent" href="../../index.html">← All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+  </div>
+
+  <p class="tool-eyebrow">#42 · AL-47 · Student Finance &amp; Debt</p>
+  <h1 class="tool-title">ISA vs. Student Loan<br>Comparator</h1>
+  <p class="tool-desc">Income Share Agreements are income insurance — you pay less if earnings are low, but potentially far more if earnings are high. This tool models total repayment, NPV, break-even income, and year-by-year cash flow for both options under your expected income trajectory.</p>
+  <p class="tool-vintage">Zero external data — all calculations are pure math on your inputs. ISA terms vary by provider; verify before signing.</p>
+
+  <!-- ── INCOME PROFILE ─────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">Your Income Trajectory <span class="badge">Applies to both scenarios</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="startIncome">Starting Annual Income — $</label>
+        <input type="number" id="startIncome" value="52000" min="0" max="500000" step="1000" />
+        <span class="field-hint">Expected salary upon graduation / program completion</span>
+      </div>
+      <div class="field">
+        <label for="incomeGrowth">Annual Income Growth — %</label>
+        <input type="number" id="incomeGrowth" value="4" min="0" max="20" step="0.5" />
+        <span class="field-hint">US median: ~3.5–4%; adjust for your field</span>
+      </div>
+      <div class="field">
+        <label for="discountRate">NPV Discount Rate — %</label>
+        <input type="number" id="discountRate" value="4" min="1" max="12" step="0.5" />
+        <span class="field-hint">Real opportunity cost of money; 4% is a reasonable baseline</span>
+      </div>
+      <div class="field">
+        <label for="modelYears">Years to Model</label>
+        <select id="modelYears">
+          <option value="10">10 years</option>
+          <option value="15" selected>15 years</option>
+          <option value="20">20 years</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ISA vs LOAN ────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">Financing Terms</div>
+    <div class="compare-cols">
+
+      <!-- ISA -->
+      <div class="compare-col isa">
+        <div class="col-header isa">▸ Income Share Agreement (ISA)</div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="isaAmount">ISA Funding Amount — $</label>
+            <input type="number" id="isaAmount" value="20000" min="1000" max="200000" step="500" />
+          </div>
+          <div class="field">
+            <label for="isaShare">Income Share — %</label>
+            <input type="number" id="isaShare" value="10" min="0.5" max="30" step="0.5" />
+            <span class="field-hint">% of gross monthly income owed</span>
+          </div>
+          <div class="form-grid two">
+            <div class="field">
+              <label for="isaTerm">Payment Term — months</label>
+              <input type="number" id="isaTerm" value="96" min="12" max="180" step="12" />
+              <span class="field-hint">Duration of income share obligation</span>
+            </div>
+            <div class="field">
+              <label for="isaCap">Repayment Cap — $</label>
+              <input type="number" id="isaCap" value="40000" min="0" max="500000" step="1000" />
+              <span class="field-hint">Max total ever owed (0 = no cap)</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="isaFloor">Income Floor — $ (optional)</label>
+            <input type="number" id="isaFloor" value="20000" min="0" max="100000" step="1000" />
+            <span class="field-hint">Minimum annual income before payments start</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOAN -->
+      <div class="compare-col loan">
+        <div class="col-header loan">▸ Student Loan</div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="loanAmount">Loan Principal — $</label>
+            <input type="number" id="loanAmount" value="20000" min="1000" max="500000" step="500" />
+          </div>
+          <div class="field">
+            <label for="loanRate">Annual Interest Rate — %</label>
+            <input type="number" id="loanRate" value="6.53" min="0" max="20" step="0.01" />
+            <span class="field-hint">Federal grad rate 2024–25: 7.05% · undergrad: 6.53%</span>
+          </div>
+          <div class="form-grid two">
+            <div class="field">
+              <label for="loanTerm">Repayment Term — months</label>
+              <input type="number" id="loanTerm" value="120" min="12" max="360" step="12" />
+              <span class="field-hint">Standard: 120 months (10 yr)</span>
+            </div>
+            <div class="field">
+              <label for="loanDefer">Grace / Deferral — months</label>
+              <input type="number" id="loanDefer" value="6" min="0" max="60" step="1" />
+              <span class="field-hint">Capitalized interest during deferral</span>
+            </div>
+          </div>
+          <div class="field" style="visibility:hidden"><label>&nbsp;</label><input type="number" style="opacity:0" /></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Compare ISA vs. Loan →</button>
+
+  <!-- ══ RESULTS ═══════════════════════════════════════════════════════════ -->
+  <div class="results-section" id="resultsSection">
+
+    <div id="verdictBanner"></div>
+
+    <div class="metrics-grid" id="metricsGrid"></div>
+
+    <!-- TOTAL REPAYMENT BARS -->
+    <div class="card">
+      <div class="card-title">Total Repayment Comparison</div>
+      <div class="bar-compare" id="barCompare"></div>
+    </div>
+
+    <!-- YEAR TABLE -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:8px;">Year-by-Year Cash Flow</div>
+      <button class="tbl-toggle" id="tblBtn" onclick="toggleTable()">▸ Show year-by-year table</button>
+      <div class="tbl-wrap" id="tblWrap">
+        <table class="yr-table" id="yrTable"></table>
+      </div>
+      <div class="isa-note">
+        <strong>ISA is income insurance, not a loan.</strong> Unlike a loan, there is no interest rate — your obligation is a fixed percentage of income for a fixed period, capped at the repayment maximum. If your income falls, payments fall. If your income stays permanently low, you may repay far less than the funded amount. If your income rises fast, the cap protects you from unlimited liability.
+        <br><br>
+        <strong>Key negotiating points:</strong> income floor (minimum salary before payments start), payment cap (total max owed), and term. Always get these in writing.
+        See the <a href="https://studentaid.gov" target="_blank" rel="noopener">studentaid.gov</a> ISA guidance for federal context.
+      </div>
+    </div>
+
+    <!-- EXPORT -->
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download AP2 JSON</button>
+      <span class="ap2-hint">AP2 v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+    </div>
+
+  </div>
+
+  <button class="mcp-toggle" id="mcpBtn" onclick="toggleMCP()" aria-expanded="false">▸ Developer / Agent Integration (manifest.json)</button>
+  <div class="mcp-panel" id="mcpPanel"><pre id="mcpPre"></pre></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-47 · Zero external data — pure math on user inputs
+  </footer>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString();
+const fmtS = n => (n < 0 ? '-$' : '$') + Math.round(Math.abs(n)).toLocaleString();
+const pct = n => n.toFixed(1) + '%';
+let _inputs = null, _results = null;
+
+// ── LOAN MATH ─────────────────────────────────────────────────────────────────
+function calcLoan(principal, annualRate, termMonths, deferMonths) {
+  // Capitalize interest during deferral
+  const monthlyRate = annualRate / 100 / 12;
+  const deferredBalance = principal * Math.pow(1 + monthlyRate, deferMonths);
+  // Monthly payment on capitalized balance
+  if (monthlyRate === 0) return { monthlyPayment: deferredBalance / termMonths, totalPaid: deferredBalance, capitalizedBalance: deferredBalance };
+  const mp = deferredBalance * monthlyRate * Math.pow(1 + monthlyRate, termMonths)
+           / (Math.pow(1 + monthlyRate, termMonths) - 1);
+  return { monthlyPayment: mp, totalPaid: mp * termMonths, capitalizedBalance: deferredBalance };
+}
+
+// ── ISA PROJECTION ────────────────────────────────────────────────────────────
+function projectISA(startIncome, growthRate, shareRate, termMonths, capAmount, floorAmount) {
+  const termYears = termMonths / 12;
+  const rows = [];
+  let cumPaid = 0, monthsUsed = 0;
+  const cap = capAmount > 0 ? capAmount : Infinity;
+
+  for (let y = 1; y <= Math.ceil(termYears) + 5; y++) {
+    const income = startIncome * Math.pow(1 + growthRate / 100, y - 1);
+    const monthsThisYear = Math.min(12, termMonths - monthsUsed);
+    if (monthsThisYear <= 0 || cumPaid >= cap) break;
+
+    let annualPayment = 0;
+    if (income >= floorAmount) {
+      const monthly = (income / 12) * (shareRate / 100);
+      annualPayment = Math.min(monthly * monthsThisYear, cap - cumPaid);
+      monthsUsed += monthsThisYear;
+    }
+
+    cumPaid += annualPayment;
+    rows.push({ year: y, income, isaPayment: annualPayment, cumISA: cumPaid, done: false });
+    if (monthsUsed >= termMonths || cumPaid >= cap) {
+      rows[rows.length - 1].done = true;
+      break;
+    }
+  }
+  return { rows, totalPaid: cumPaid };
+}
+
+// ── LOAN YEAR ROWS ────────────────────────────────────────────────────────────
+function projectLoan(monthlyPmt, termMonths) {
+  const rows = [];
+  let cumPaid = 0, monthsLeft = termMonths;
+  for (let y = 1; y <= Math.ceil(termMonths / 12) + 1; y++) {
+    if (monthsLeft <= 0) break;
+    const mths = Math.min(12, monthsLeft);
+    const paidThisYear = monthlyPmt * mths;
+    cumPaid += paidThisYear;
+    monthsLeft -= mths;
+    rows.push({ year: y, loanPayment: paidThisYear, cumLoan: cumPaid, done: monthsLeft <= 0 });
+  }
+  return rows;
+}
+
+// ── NPV ───────────────────────────────────────────────────────────────────────
+function npv(annualPayments, discountRate) {
+  return annualPayments.reduce((sum, pmt, i) => sum + pmt / Math.pow(1 + discountRate / 100, i + 1), 0);
+}
+
+// ── BREAK-EVEN INCOME ─────────────────────────────────────────────────────────
+function breakEvenIncome(loanTotal, shareRate, termMonths, cap) {
+  // ISA total (if below cap) = income × shareRate × (termMonths/12)
+  // Break-even: income = loanTotal / (shareRate/100 × termMonths/12)
+  const raw = loanTotal / ((shareRate / 100) * (termMonths / 12));
+  return cap > 0 ? Math.min(raw, cap / (shareRate / 100 * termMonths / 12) * 1.05) : raw;
+}
+
+// ── MAIN ──────────────────────────────────────────────────────────────────────
+function calculate() {
+  const startIncome  = parseFloat($('startIncome').value)  || 52000;
+  const incomeGrowth = parseFloat($('incomeGrowth').value) || 4;
+  const discRate     = parseFloat($('discountRate').value) || 4;
+  const modelYrs     = parseInt($('modelYears').value)     || 15;
+  const isaAmount    = parseFloat($('isaAmount').value)    || 20000;
+  const isaShare     = parseFloat($('isaShare').value)     || 10;
+  const isaTerm      = parseInt($('isaTerm').value)        || 96;
+  const isaCap       = parseFloat($('isaCap').value)       || 0;
+  const isaFloor     = parseFloat($('isaFloor').value)     || 0;
+  const loanAmount   = parseFloat($('loanAmount').value)   || 20000;
+  const loanRate     = parseFloat($('loanRate').value)     || 6.53;
+  const loanTerm     = parseInt($('loanTerm').value)       || 120;
+  const loanDefer    = parseInt($('loanDefer').value)      || 6;
+
+  const loan = calcLoan(loanAmount, loanRate, loanTerm, loanDefer);
+  const isaProj  = projectISA(startIncome, incomeGrowth, isaShare, isaTerm, isaCap, isaFloor);
+  const loanRows = projectLoan(loan.monthlyPayment, loanTerm);
+
+  // Merge rows up to modelYrs
+  const years = Array.from({length: modelYrs}, (_, i) => i + 1);
+  const merged = years.map(y => {
+    const ir = isaProj.rows.find(r => r.year === y);
+    const lr = loanRows.find(r => r.year === y);
+    const income = startIncome * Math.pow(1 + incomeGrowth / 100, y - 1);
+    return {
+      year: y, income,
+      isaPayment: ir ? ir.isaPayment : 0,
+      cumISA: ir ? ir.cumISA : isaProj.totalPaid,
+      isaComplete: ir ? ir.done : true,
+      loanPayment: lr ? lr.loanPayment : 0,
+      cumLoan: lr ? lr.cumLoan : loan.totalPaid,
+      loanComplete: lr ? lr.done : true,
+    };
+  });
+
+  // NPV
+  const npvISA  = npv(merged.map(r => r.isaPayment), discRate);
+  const npvLoan = npv(merged.map(r => r.loanPayment), discRate);
+
+  // Break-even
+  const beIncome = breakEvenIncome(loan.totalPaid, isaShare, isaTerm, isaCap);
+
+  // Verdict
+  const winner = npvISA < npvLoan ? 'isa' : npvLoan < npvISA ? 'loan' : 'tie';
+  const advantage = Math.abs(npvISA - npvLoan);
+
+  _inputs  = { startIncome, incomeGrowth, discRate, modelYrs, isaAmount, isaShare, isaTerm, isaCap, isaFloor, loanAmount, loanRate, loanTerm, loanDefer };
+  _results = { loan, isaProj, loanRows, merged, npvISA, npvLoan, beIncome, winner, advantage, isaTotal: isaProj.totalPaid };
+
+  render();
+}
+
+function render() {
+  const r = _results, i = _inputs;
+
+  // Verdict
+  const vb = $('verdictBanner');
+  if (r.winner === 'isa') {
+    vb.innerHTML = `<div class="verdict isa-wins"><div class="verdict-icon">🔮</div><div class="verdict-text"><h3>ISA is lower-cost on your income trajectory</h3><p>NPV advantage: ${fmt(r.advantage)} less in present-value terms. If your salary stays near ${fmt(i.startIncome)}/yr with ${pct(i.incomeGrowth)} growth, the ISA is the better deal.</p></div></div>`;
+  } else if (r.winner === 'loan') {
+    vb.innerHTML = `<div class="verdict loan-wins"><div class="verdict-icon">💚</div><div class="verdict-text"><h3>Student loan is lower-cost on your income trajectory</h3><p>NPV advantage: ${fmt(r.advantage)} less in present-value terms. The loan's fixed payments become cheaper as your income grows faster than the income share obligation.</p></div></div>`;
+  } else {
+    vb.innerHTML = `<div class="verdict tie"><div class="verdict-icon">⚖️</div><div class="verdict-text"><h3>Near-equivalent cost under this income scenario</h3><p>NPV difference is minimal. The choice comes down to risk tolerance: ISA protects if income falls; loan is better if income rises faster than expected.</p></div></div>`;
+  }
+
+  // Metrics
+  $('metricsGrid').innerHTML = `
+    <div class="metric-card"><div class="metric-label">ISA Total Repaid</div>
+      <div class="metric-val isa">${fmt(r.isaTotal)}</div>
+      <div class="metric-note">${r.isaCap > 0 && r.isaTotal >= r.isaCap - 1 ? '⚡ Hit cap' : `vs. ${fmt(i.isaAmount)} funded (${((r.isaTotal/i.isaAmount-1)*100).toFixed(0)}% ${r.isaTotal > i.isaAmount ? 'over' : 'under'})`}</div>
+    </div>
+    <div class="metric-card"><div class="metric-label">Loan Total Repaid</div>
+      <div class="metric-val loan">${fmt(r.loan.totalPaid)}</div>
+      <div class="metric-note">vs. ${fmt(i.loanAmount)} borrowed · ${fmt(r.loan.totalPaid - r.loan.capitalizedBalance)} interest</div>
+    </div>
+    <div class="metric-card"><div class="metric-label">NPV — ISA vs. Loan</div>
+      <div class="metric-val amber">${fmtS(r.npvISA - r.npvLoan)}</div>
+      <div class="metric-note">Negative = ISA cheaper in PV terms at ${pct(i.discRate)} discount</div>
+    </div>
+    <div class="metric-card"><div class="metric-label">Break-Even Annual Income</div>
+      <div class="metric-val accent">${fmt(r.beIncome)}</div>
+      <div class="metric-note">Below this: ISA is cheaper. Above this: loan is cheaper.</div>
+    </div>
+  `;
+
+  // Bars
+  const maxTotal = Math.max(r.isaTotal, r.loan.totalPaid);
+  $('barCompare').innerHTML = `
+    <div class="bar-row">
+      <div class="bar-label"><span class="name" style="color:var(--isa-color)">ISA Total</span><span class="val" style="color:var(--isa-color)">${fmt(r.isaTotal)}</span></div>
+      <div class="bar-track"><div class="bar-fill isa" style="width:${(r.isaTotal/maxTotal*100).toFixed(1)}%"></div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label"><span class="name" style="color:var(--loan-color)">Loan Total</span><span class="val" style="color:var(--loan-color)">${fmt(r.loan.totalPaid)}</span></div>
+      <div class="bar-track"><div class="bar-fill loan" style="width:${(r.loan.totalPaid/maxTotal*100).toFixed(1)}%"></div></div>
+    </div>
+    <div class="bar-row" style="margin-top:14px;">
+      <div class="bar-label"><span class="name" style="color:var(--isa-color)">ISA NPV (${pct(i.discRate)} discount)</span><span class="val" style="color:var(--isa-color)">${fmt(r.npvISA)}</span></div>
+      <div class="bar-track"><div class="bar-fill isa" style="width:${(r.npvISA/Math.max(r.npvISA,r.npvLoan)*100).toFixed(1)}%"></div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label"><span class="name" style="color:var(--loan-color)">Loan NPV (${pct(i.discRate)} discount)</span><span class="val" style="color:var(--loan-color)">${fmt(r.npvLoan)}</span></div>
+      <div class="bar-track"><div class="bar-fill loan" style="width:${(r.npvLoan/Math.max(r.npvISA,r.npvLoan)*100).toFixed(1)}%"></div></div>
+    </div>
+  `;
+
+  // Year table
+  const hdr = `<thead><tr>
+    <th>Year</th><th>Income</th>
+    <th class="isa-col">ISA Pmt</th><th class="isa-col">ISA Cumul.</th>
+    <th class="loan-col">Loan Pmt</th><th class="loan-col">Loan Cumul.</th>
+    <th>Advantage</th>
+  </tr></thead>`;
+  const rows = r.merged.map(row => {
+    const adv = row.cumLoan - row.cumISA;
+    const advTxt = Math.abs(adv) < 50 ? 'Even' : adv > 0 ? `ISA +${fmt(adv)}` : `Loan +${fmt(-adv)}`;
+    const advCls = adv > 50 ? 'adv-isa' : adv < -50 ? 'adv-loan' : '';
+    return `<tr>
+      <td>Yr ${row.year}</td>
+      <td>${fmt(row.income)}</td>
+      <td class="isa-col">${row.isaPayment > 0 ? fmt(row.isaPayment) : row.isaComplete ? '<span class="done">Done</span>' : '—'}</td>
+      <td class="isa-col">${fmt(row.cumISA)}</td>
+      <td class="loan-col">${row.loanPayment > 0 ? fmt(row.loanPayment) : row.loanComplete ? '<span class="done">Done</span>' : '—'}</td>
+      <td class="loan-col">${fmt(row.cumLoan)}</td>
+      <td class="${advCls}">${advTxt}</td>
+    </tr>`;
+  }).join('');
+  $('yrTable').innerHTML = hdr + '<tbody>' + rows + '</tbody>';
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function toggleTable() {
+  const w = $('tblWrap'), b = $('tblBtn');
+  const open = w.classList.toggle('open');
+  b.textContent = (open ? '▾' : '▸') + ' ' + (open ? 'Hide' : 'Show') + ' year-by-year table';
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+function exportMarkdown() {
+  if (!_inputs) return;
+  const i = _inputs, r = _results;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# ISA vs. Student Loan Comparison',
+    `\n_Generated ${d} · AL-47 · apexlogics.org_\n`,
+    '## Verdict',
+    `**${r.winner === 'isa' ? 'ISA is cheaper' : r.winner === 'loan' ? 'Loan is cheaper' : 'Near-equivalent'}** by ${fmt(r.advantage)} in NPV terms at ${pct(i.discRate)} discount rate.`,
+    `\nBreak-even income: ${fmt(r.beIncome)}/yr — below this, ISA costs less; above this, loan costs less.`,
+    '\n## Terms',
+    `| | ISA | Loan |`,`|---|---|---|`,
+    `| Amount | ${fmt(i.isaAmount)} | ${fmt(i.loanAmount)} |`,
+    `| Terms | ${pct(i.isaShare)} of income · ${i.isaTerm} mos${i.isaCap>0?' · cap '+fmt(i.isaCap):''} | ${pct(i.loanRate)} · ${i.loanTerm} mos |`,
+    '\n## Totals',
+    `| Metric | ISA | Loan |`,`|---|---|---|`,
+    `| Total Repaid | ${fmt(r.isaTotal)} | ${fmt(r.loan.totalPaid)} |`,
+    `| NPV (${pct(i.discRate)}) | ${fmt(r.npvISA)} | ${fmt(r.npvLoan)} |`,
+    '\n---',
+    '_Pure math — zero external data. Verify ISA terms with your provider. Not financial advice._'
+  ];
+  dlFile('isa-vs-loan.md', lines.join('\n'), 'text/markdown');
+}
+
+function exportAP2() {
+  if (!_inputs || !_results) return;
+  const i = _inputs, r = _results;
+  const payload = {
+    ap2_version:"2.0", mandate_type:"isa_loan_record",
+    generated_at: new Date().toISOString(),
+    tool_id:"42-isa-vs-loan-comparator", tool_name:"ISA vs. Student Loan Comparator",
+    inputs: {
+      starting_income: i.startIncome, income_growth_pct: i.incomeGrowth,
+      discount_rate_pct: i.discRate, model_years: i.modelYrs,
+      isa: { amount: i.isaAmount, share_pct: i.isaShare, term_months: i.isaTerm, cap: i.isaCap, floor: i.isaFloor },
+      loan: { amount: i.loanAmount, rate_pct: i.loanRate, term_months: i.loanTerm, deferral_months: i.loanDefer }
+    },
+    results: {
+      winner: r.winner, npv_advantage: Math.round(r.advantage),
+      isa_total_paid: Math.round(r.isaTotal), loan_total_paid: Math.round(r.loan.totalPaid),
+      npv_isa: Math.round(r.npvISA), npv_loan: Math.round(r.npvLoan),
+      break_even_income: Math.round(r.beIncome)
+    },
+    downstream_handoff_candidates: ["AL-22","AL-13"],
+    data_sources: ["Zero external data — pure math on user inputs"],
+    license:"CC-BY-4.0"
+  };
+  const errs = [];
+  ['ap2_version','mandate_type','generated_at','inputs'].forEach(k=>{if(!payload[k])errs.push('missing '+k);});
+  const valid = ['ai_skills_premium_record','federal_comp_record','military_civilian_record','noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record','workforce_pell_record','workforce_pell_credential_rank','net_worth_trajectory_record','signing_bonus_record','gig_income_record','cert_renewal_forecast_record','isa_loan_record'];
+  if (!valid.includes(payload.mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('AP2 validation failed: ' + errs.join('; ')); return; }
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-47_isa-vs-loan_${ts}.ap2.json`, JSON.stringify(payload,null,2),'application/json');
+}
+
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+function toggleMCP() {
+  const panel=$('mcpPanel'), btn=$('mcpBtn'), pre=$('mcpPre');
+  const open = panel.classList.toggle('open');
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    pre.textContent = JSON.stringify({
+  "tool_id":"42-isa-vs-loan-comparator","al_id":"AL-47","version":"1.0.0",
+  "title":"ISA vs. Student Loan Comparator",
+  "description":"Compares Income Share Agreement vs. student loan financing under a user-defined income trajectory. Models total repayment, NPV at a user-set discount rate, break-even income, and year-by-year cash flow. ISA features: income share %, payment term, repayment cap, income floor. Zero external data. AP2 v2.0: isa_loan_record.",
+  "category":"student_finance_debt","journeys":["education_path"],"personas":["student","parent","counselor"],
+  "tags":["isa","income-share","student-loan","npv","break-even","financing"],
+  "status":"shipped","maintenance":"zero",
+  "data_vintage":"Zero — all logic is pure math on user inputs",
+  "ap2_export":true,"ap2_mandate_types":["isa_loan_record"],
+  "downstream_handoff_candidates":["AL-22","AL-13"],
+  "regulatory_citations":["CFPB ISA guidance (2021 and post-SAVE rule context)","studentaid.gov ISA overview"],
+  "sister_suite":"https://ainumbers.co","consulting_site":"https://apexadvisory.site","license":"CC-BY-4.0",
+  "execution":{"type":"browser-javascript","entry":"index.html","function_name":"calculate","timeout_ms":3000},
+  "mcp_tool_definition":{"name":"compare_isa_vs_loan","description":"Compares ISA vs. student loan total repayment and NPV for a given income trajectory. Returns winner, NPV advantage, total paid, and break-even income. Zero external data. Deterministic.","inputSchema":{"type":"object","properties":{"starting_income":{"type":"number"},"income_growth_pct":{"type":"number"},"isa_amount":{"type":"number"},"isa_share_pct":{"type":"number"},"isa_term_months":{"type":"integer"},"isa_cap":{"type":"number"},"loan_amount":{"type":"number"},"loan_rate_pct":{"type":"number"},"loan_term_months":{"type":"integer"}},"required":["starting_income","isa_amount","loan_amount"]}}
+}, null, 2);
+  }
+}
+
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function(){
+  const s = sessionStorage.getItem('apex_lang');
+  setLang(s || ({en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'})[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+</script>
+</body>
+</html>
