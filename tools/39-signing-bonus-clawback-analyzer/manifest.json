@@ -1,0 +1,72 @@
+{
+  "tool_id": "39-signing-bonus-clawback-analyzer",
+  "al_id": "AL-44",
+  "version": "1.0.0",
+  "title": "Signing Bonus Clawback Analyzer",
+  "description": "Models the true net cost of a signing bonus clawback. Inputs: gross bonus, clawback period and structure (full/pro-rated), federal marginal rate, state rate, FICA, repayment year. Outputs: after-tax received, four repayment scenarios (same-year wash, IRC §1341 credit, itemized deduction, worst-case), pro-rated obligation timeline. Zero external data. AP2 v2.0: signing_bonus_record.",
+  "category": "compensation_offers",
+  "journeys": ["compensation_benefits"],
+  "personas": ["working_professional", "career_changer"],
+  "tags": ["signing-bonus", "clawback", "section-1341", "tax", "offer", "repayment"],
+  "status": "shipped",
+  "maintenance": "zero",
+  "data_vintage": "IRS Pub. 525; IRC §1341; IRS supplemental wage rate 22% — no time-sensitive data embedded",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["signing_bonus_record"],
+  "downstream_handoff_candidates": ["AL-25"],
+  "regulatory_citations": [
+    "IRS Publication 525 — Taxable and Nontaxable Income",
+    "IRC §1341 — Computation of Tax Where Taxpayer Restores Substantial Amount",
+    "IRS Topic No. 419 — Gambling Income (claim of right doctrine cross-reference)"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "gross_bonus":           {"type":"number"},
+      "clawback_months":       {"type":"integer"},
+      "clawback_type":         {"type":"string"},
+      "federal_marginal_rate": {"type":"number"},
+      "state_rate":            {"type":"number"},
+      "fica_applied":          {"type":"boolean"},
+      "repayment_year":        {"type":"string"},
+      "can_itemize":           {"type":"boolean"}
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "after_tax_received":       {"type":"number"},
+      "effective_tax_rate_pct":   {"type":"number"},
+      "repayment_scenarios":      {"type":"object"},
+      "gross_over_net_gap":       {"type":"number"}
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "analyze_signing_bonus_clawback",
+    "description": "Given gross signing bonus, clawback period, tax rates, and repayment year, returns after-tax amount received, gross repayment obligation, IRC §1341 tax recovery, and net true cost across four scenarios. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "gross_bonus":           {"type":"number"},
+        "clawback_months":       {"type":"integer"},
+        "clawback_type":         {"type":"string","enum":["full","prorated"]},
+        "federal_marginal_rate": {"type":"number"},
+        "state_rate":            {"type":"number"},
+        "fica_applied":          {"type":"boolean"},
+        "repayment_year":        {"type":"string","enum":["same","different"]},
+        "can_itemize":           {"type":"boolean"}
+      },
+      "required": ["gross_bonus","clawback_months"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+}

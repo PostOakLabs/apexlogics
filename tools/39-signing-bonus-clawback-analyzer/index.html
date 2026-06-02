@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signing Bonus Clawback Analyzer · ApexLogics #39</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/39-signing-bonus-clawback-analyzer/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: var(--accent); } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; transition: all 0.15s; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 36px; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    /* TOGGLE */
+    .toggle-row { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+    .toggle-box { width: 38px; height: 20px; background: var(--border); border-radius: 10px; position: relative; transition: background 0.2s; flex-shrink: 0; }
+    .toggle-box::after { content: ''; width: 14px; height: 14px; background: #fff; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: left 0.2s; }
+    .toggle-box.on { background: var(--accent); }
+    .toggle-box.on::after { left: 21px; }
+    .toggle-label { font-size: 0.85rem; color: var(--text-muted); }
+
+    /* RADIO TOGGLE */
+    .radio-group { display: flex; gap: 8px; }
+    .radio-btn { flex: 1; text-align: center; padding: 8px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 0.82rem; color: var(--text-muted); font-family: 'Sora', sans-serif; transition: all 0.15s; }
+    .radio-btn.selected { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    /* RESULTS */
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+
+    /* TOP METRICS */
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+
+    /* SCENARIO TABLE */
+    .scenario-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .scenario-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; text-transform: uppercase; color: var(--text-dim); padding: 8px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+    .scenario-table td { padding: 10px 14px; border-bottom: 1px solid rgba(167,139,250,0.07); }
+    .scenario-table tr:last-child td { border-bottom: none; }
+    .scenario-table td:not(:first-child) { font-family: 'JetBrains Mono', monospace; }
+    .scenario-name { font-weight: 600; }
+    .best-row td { background: rgba(52,211,153,0.05); }
+    .worst-row td { background: rgba(248,113,113,0.05); }
+
+    /* TIMELINE BAR */
+    .timeline-wrap { margin-top: 16px; }
+    .tl-header { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); margin-bottom: 8px; }
+    .tl-bar-track { height: 28px; background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.3); border-radius: 6px; position: relative; overflow: hidden; }
+    .tl-bar-fill { height: 100%; background: linear-gradient(90deg, rgba(248,113,113,0.5), rgba(251,191,36,0.5)); border-radius: 6px 0 0 6px; transition: width 0.3s; position: relative; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; }
+    .tl-bar-label { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text); white-space: nowrap; }
+    .tl-ticks { display: flex; justify-content: space-between; margin-top: 4px; }
+    .tl-tick { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); }
+
+    /* MONTHLY TABLE */
+    .monthly-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-top: 12px; }
+    .month-cell { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; }
+    .month-cell.safe { border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.05); }
+    .month-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); margin-bottom: 2px; }
+    .month-val { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; }
+
+    /* IRS NOTE */
+    .irs-note { background: rgba(167,139,250,0.06); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; font-size: 0.8rem; color: var(--text-muted); margin-top: 16px; }
+    .irs-note strong { color: var(--accent); }
+    .irs-note a { color: var(--accent); text-decoration: none; }
+
+    /* EXPORT */
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .mcp-toggle { margin-top: 32px; background: none; border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); width: 100%; text-align: left; transition: all 0.15s; }
+    .mcp-toggle:hover { border-color: var(--accent); color: var(--text-muted); }
+    .mcp-panel { display: none; background: var(--surface2); border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; padding: 20px; }
+    .mcp-panel.open { display: block; }
+    .mcp-panel pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; overflow-x: auto; }
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) {
+      .metrics-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="Apex Logics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#A78BFA" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#A78BFA" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#A78BFA"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#A78BFA" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#A78BFA" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#A78BFA"/>
+          <circle cx="52" cy="56" r="2.5" fill="#A78BFA"/>
+          <path d="M22 32 L42 32" stroke="#A78BFA" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a class="nav-pill accent" href="../../index.html">← All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+  </div>
+
+  <p class="tool-eyebrow">#39 · AL-44 · Compensation &amp; Offers</p>
+  <h1 class="tool-title">Signing Bonus<br>Clawback Analyzer</h1>
+  <p class="tool-desc">Most signing bonus clawback clauses require repayment of the <em>gross</em> amount — but you only received the <em>after-tax</em> amount. This tool models your true repayment exposure, IRS Section 1341 tax recovery options, and the net cost of leaving at any point during the clawback period.</p>
+  <p class="tool-vintage">Data: IRS Publication 525 · IRC §1341 (Claim of Right) · IRS supplemental wage withholding rate 22% · Zero external data dependencies</p>
+
+  <!-- ── BONUS DETAILS ──────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">Bonus Details <span class="badge">STEP 1</span></div>
+    <div class="form-grid three" style="margin-bottom:16px;">
+      <div class="field">
+        <label for="bonusAmount">Gross Signing Bonus — $</label>
+        <input type="number" id="bonusAmount" value="25000" min="500" max="5000000" step="500" />
+      </div>
+      <div class="field">
+        <label for="clawbackMonths">Clawback Period — months</label>
+        <select id="clawbackMonths">
+          <option value="6">6 months</option>
+          <option value="12" selected>12 months</option>
+          <option value="18">18 months</option>
+          <option value="24">24 months</option>
+          <option value="36">36 months</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Clawback Structure</label>
+        <div class="radio-group">
+          <div class="radio-btn selected" id="cbFull" onclick="setClawbackType('full')">Full</div>
+          <div class="radio-btn" id="cbProrated" onclick="setClawbackType('prorated')">Pro-rated</div>
+        </div>
+        <span class="field-hint">Full = 100% owed until last day. Pro-rated = obligation declines monthly.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAX PROFILE ───────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">Your Tax Profile <span class="badge">STEP 2</span></div>
+    <div class="form-grid three" style="margin-bottom:16px;">
+      <div class="field">
+        <label for="federalRate">Federal Marginal Rate — %</label>
+        <select id="federalRate">
+          <option value="10">10%</option>
+          <option value="12">12%</option>
+          <option value="22" selected>22%</option>
+          <option value="24">24%</option>
+          <option value="32">32%</option>
+          <option value="35">35%</option>
+          <option value="37">37%</option>
+        </select>
+        <span class="field-hint">Your marginal bracket on the year you received the bonus</span>
+      </div>
+      <div class="field">
+        <label for="stateRate">State Income Tax Rate — %</label>
+        <input type="number" id="stateRate" value="5" min="0" max="15" step="0.1" />
+        <span class="field-hint">Enter 0 for TX, FL, WA, NV, WY, SD, AK, NH, TN</span>
+      </div>
+      <div class="field">
+        <label>FICA Applied to Bonus?</label>
+        <div class="radio-group">
+          <div class="radio-btn selected" id="ficaYes" onclick="setFICA(true)">Yes (7.65%)</div>
+          <div class="radio-btn" id="ficaNo" onclick="setFICA(false)">No / Already met</div>
+        </div>
+        <span class="field-hint">Yes if total W-2 wages &lt; $168,600 in bonus year</span>
+      </div>
+    </div>
+    <div class="form-grid two">
+      <div class="field">
+        <label>Repayment Year vs. Receipt Year</label>
+        <div class="radio-group">
+          <div class="radio-btn selected" id="sameYear" onclick="setRepayYear('same')">Same tax year</div>
+          <div class="radio-btn" id="diffYear" onclick="setRepayYear('different')">Different tax year</div>
+        </div>
+        <span class="field-hint">Same year = full wash. Different year = Section 1341 applies (if repayment &gt; $3,000).</span>
+      </div>
+      <div class="field">
+        <label>Can you itemize deductions?</label>
+        <div class="radio-group">
+          <div class="radio-btn" id="itemYes" onclick="setItemize(true)">Yes</div>
+          <div class="radio-btn selected" id="itemNo" onclick="setItemize(false)">No (standard)</div>
+        </div>
+        <span class="field-hint">Relevant only if repaying in a different year and amount ≤ $3,000</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Calculate True Clawback Cost →</button>
+
+  <!-- ══ RESULTS ═══════════════════════════════════════════════════════════ -->
+  <div class="results-section" id="resultsSection">
+
+    <!-- TOP METRICS -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Gross Bonus</div>
+        <div class="metric-val accent" id="rGross">—</div>
+        <div class="metric-note">What the employer pays</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">After-Tax Bonus Received</div>
+        <div class="metric-val green" id="rAfterTax">—</div>
+        <div class="metric-note" id="rAfterTaxNote">What hit your bank account</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Effective Tax Rate on Bonus</div>
+        <div class="metric-val amber" id="rEffRate">—</div>
+        <div class="metric-note">Federal + state + FICA combined</div>
+      </div>
+    </div>
+
+    <!-- REPAYMENT SCENARIOS -->
+    <div class="card">
+      <div class="card-title">Repayment Cost by Scenario</div>
+      <table class="scenario-table" id="scenarioTable">
+        <thead>
+          <tr>
+            <th>Scenario</th>
+            <th>You Repay (Gross)</th>
+            <th>Tax Recovery</th>
+            <th>Net True Cost</th>
+            <th>Net Cost as % of Received</th>
+          </tr>
+        </thead>
+        <tbody id="scenarioBody"></tbody>
+      </table>
+      <div class="irs-note" id="irsNote"></div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="card">
+      <div class="card-title" id="timelineTitle">Clawback Obligation Over Time</div>
+      <div class="timeline-wrap">
+        <div class="tl-header">
+          <span>Month 0 (start)</span>
+          <span id="tlMidLabel">—</span>
+          <span id="tlEndLabel">—</span>
+        </div>
+        <div class="tl-bar-track">
+          <div class="tl-bar-fill" id="tlFill" style="width:100%">
+            <span class="tl-bar-label" id="tlBarLabel">—</span>
+          </div>
+        </div>
+        <div class="tl-ticks" id="tlTicks"></div>
+      </div>
+      <div class="monthly-grid" id="monthlyGrid"></div>
+    </div>
+
+    <!-- DECISION CALLOUT -->
+    <div class="card" id="decisionCard">
+      <div class="card-title">Decision Analysis</div>
+      <div id="decisionContent"></div>
+    </div>
+
+    <!-- EXPORT -->
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download AP2 JSON</button>
+      <span class="ap2-hint">AP2 v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+    </div>
+
+  </div>
+
+  <button class="mcp-toggle" id="mcpBtn" onclick="toggleMCP()" aria-expanded="false">▸ Developer / Agent Integration (manifest.json)</button>
+  <div class="mcp-panel" id="mcpPanel"><pre id="mcpPre"></pre></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-44 · IRS Pub. 525, IRC §1341 · Zero external data
+  </footer>
+
+</div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let _clawbackType = 'full';
+let _ficaApplied  = true;
+let _repayYear    = 'same';
+let _canItemize   = false;
+let _lastInputs   = null;
+let _lastResults  = null;
+
+const $ = id => document.getElementById(id);
+const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString();
+const pct = n => n.toFixed(1) + '%';
+
+function setClawbackType(t) {
+  _clawbackType = t;
+  $('cbFull').classList.toggle('selected', t === 'full');
+  $('cbProrated').classList.toggle('selected', t === 'prorated');
+}
+function setFICA(v) {
+  _ficaApplied = v;
+  $('ficaYes').classList.toggle('selected', v);
+  $('ficaNo').classList.toggle('selected', !v);
+}
+function setRepayYear(v) {
+  _repayYear = v;
+  $('sameYear').classList.toggle('selected', v === 'same');
+  $('diffYear').classList.toggle('selected', v === 'different');
+}
+function setItemize(v) {
+  _canItemize = v;
+  $('itemYes').classList.toggle('selected', v);
+  $('itemNo').classList.toggle('selected', !v);
+}
+
+// ── CORE MATH ─────────────────────────────────────────────────────────────────
+function calculate() {
+  const gross    = parseFloat($('bonusAmount').value)    || 25000;
+  const cbMonths = parseInt($('clawbackMonths').value)   || 12;
+  const fedRate  = parseFloat($('federalRate').value)    / 100;
+  const stRate   = parseFloat($('stateRate').value)      / 100;
+  const ficaRate = _ficaApplied ? 0.0765 : 0;
+
+  const totalTaxRate = fedRate + stRate + ficaRate;
+  const taxOnBonus   = gross * totalTaxRate;
+  const afterTax     = gross - taxOnBonus;
+
+  // ── Repayment scenarios ──────────────────────────────────────────────────
+  // 1. Same-year repayment: repay gross, tax is fully reversed
+  //    Net cost = gross - gross (refund) = $0 effectively
+  //    (income was never realized net of repayment)
+  const sameYearNetCost = 0;
+
+  // 2. Different year, Section 1341 (>$3,000): credit = tax paid on that income
+  //    IRC §1341 allows CREDIT (not just deduction) equal to the tax saved in prior year
+  //    Credit = fedRate + stRate (not FICA — SS/Med not recoverable via Sec 1341)
+  const sec1341Rate   = fedRate + stRate;
+  const sec1341Credit = gross * sec1341Rate;
+  const diffYearSec1341NetCost = gross - sec1341Credit; // = gross × ficaRate effectively
+
+  // 3. Different year, itemized deduction (if ≤$3,000 or choose deduction over credit)
+  //    Deduction saves marginalRate × repayment
+  //    But post-TCJA standard deduction means most people can't itemize
+  const itemDeductionSaving = _canItemize ? gross * fedRate : 0; // state deduction ignored (varies)
+  const diffYearItemNetCost = gross - itemDeductionSaving;
+
+  // 4. Worst case: no tax recovery (can't itemize, not using Sec 1341)
+  //    You repay full gross but only received after-tax
+  const worstNetCost = gross; // repay full gross, get nothing back
+
+  // ── Obligation at each month ─────────────────────────────────────────────
+  const months = [];
+  for (let m = 0; m <= cbMonths; m++) {
+    let obligation;
+    if (_clawbackType === 'full') {
+      obligation = m < cbMonths ? gross : 0;
+    } else {
+      // Pro-rated: reduces linearly each month
+      obligation = Math.max(0, gross * (1 - m / cbMonths));
+    }
+    months.push({ month: m, obligation });
+  }
+
+  _lastInputs  = { gross, cbMonths, fedRate, stRate, ficaRate, totalTaxRate,
+                   clawbackType: _clawbackType, repayYear: _repayYear, canItemize: _canItemize };
+  _lastResults = { afterTax, taxOnBonus, totalTaxRate,
+                   sameYearNetCost, diffYearSec1341NetCost, diffYearItemNetCost, worstNetCost,
+                   sec1341Credit, months };
+
+  render();
+}
+
+function render() {
+  const i = _lastInputs, r = _lastResults;
+  const g = i.gross;
+
+  // Top metrics
+  $('rGross').textContent      = fmt(g);
+  $('rAfterTax').textContent   = fmt(r.afterTax);
+  $('rAfterTaxNote').textContent = `After ${pct(i.fedRate*100)} fed + ${pct(i.stRate*100)} state${i.ficaRate>0?' + 7.65% FICA':''}`;
+  $('rEffRate').textContent    = pct(r.totalTaxRate * 100);
+
+  // Scenario table
+  const scenarios = [
+    { name: 'Same tax year', desc: 'Repay before Dec 31 of the year received', repay: g, recovery: r.taxOnBonus, net: r.sameYearNetCost, cls: 'best-row', note: 'Full tax wash — income treated as never received' },
+    { name: 'Sec. 1341 credit (diff. year, >$3k)', desc: 'Most common scenario; requires prior-year return', repay: g, recovery: r.sec1341Credit, net: r.diffYearSec1341NetCost, cls: '', note: `Credit = (${pct(i.fedRate*100)} fed + ${pct(i.stRate*100)} state) × gross` },
+    { name: 'Itemized deduction (diff. year)', desc: 'Only beneficial if you can itemize', repay: g, recovery: i.canItemize ? g*i.fedRate : 0, net: r.diffYearItemNetCost, cls: '', note: i.canItemize ? 'Federal deduction only — state treatment varies' : 'No benefit if using standard deduction (post-TCJA)' },
+    { name: 'No tax recovery (worst case)', desc: 'No deduction, no credit — full gross owed', repay: g, recovery: 0, net: r.worstNetCost, cls: 'worst-row', note: 'Repay gross but already lost taxes — this is the risk' },
+  ];
+
+  $('scenarioBody').innerHTML = scenarios.map(s => `
+    <tr class="${s.cls}">
+      <td><span class="scenario-name">${s.name}</span><br><span style="font-size:0.72rem;color:var(--text-dim)">${s.desc}</span></td>
+      <td>${fmt(s.repay)}</td>
+      <td style="color:var(--green)">${s.recovery > 0 ? fmt(s.recovery) : '—'}</td>
+      <td style="color:${s.net===0?'var(--green)':s.net===r.worstNetCost?'var(--red)':'var(--amber)'};font-weight:600">${s.net===0?'$0 — No cost':fmt(s.net)}</td>
+      <td style="color:var(--text-muted)">${s.net===0?'0%':pct((s.net/r.afterTax)*100)}</td>
+    </tr>
+  `).join('');
+
+  // IRS note
+  $('irsNote').innerHTML = `
+    <strong>IRC §1341 — Claim of Right:</strong> If you repay in a <em>different</em> tax year and the amount exceeds $3,000, you may claim the tax paid in the original year as a <em>credit</em> (not just a deduction) on your return for the year of repayment. This is almost always more valuable than an itemized deduction.
+    See <a href="https://www.irs.gov/publications/p525" target="_blank" rel="noopener">IRS Pub. 525</a> and <a href="https://www.irs.gov/taxtopics/tc419" target="_blank" rel="noopener">Topic 419</a>. Note: FICA taxes withheld on the bonus are generally <em>not</em> recoverable via §1341. Your tax advisor can file Form 1040 Schedule 3 for the credit.
+  `;
+
+  // Timeline
+  const cbM = i.cbMonths;
+  $('timelineTitle').textContent = `Clawback Obligation by Month — ${_clawbackType === 'full' ? 'Full Repayment' : 'Pro-rated'}`;
+  $('tlMidLabel').textContent   = `Month ${Math.floor(cbM/2)}: ${fmt(r.months[Math.floor(cbM/2)].obligation)}`;
+  $('tlEndLabel').textContent   = `Month ${cbM}: $0 — Free`;
+  $('tlFill').style.width       = '100%';
+  $('tlBarLabel').textContent   = fmt(g) + ' owed';
+
+  // Monthly cells (show key checkpoints)
+  const checkpoints = [];
+  const step = cbM <= 12 ? 1 : cbM <= 24 ? 2 : 3;
+  for (let m = 0; m <= cbM; m += step) {
+    checkpoints.push(r.months[m]);
+  }
+  if (r.months[cbM] && checkpoints[checkpoints.length-1].month !== cbM) {
+    checkpoints.push(r.months[cbM]);
+  }
+
+  $('monthlyGrid').innerHTML = checkpoints.map(c => `
+    <div class="month-cell ${c.obligation === 0 ? 'safe' : ''}">
+      <div class="month-label">Month ${c.month}</div>
+      <div class="month-val" style="color:${c.obligation===0?'var(--green)':c.obligation<g/2?'var(--amber)':'var(--red)'}">${c.obligation===0?'Free!':fmt(c.obligation)}</div>
+    </div>
+  `).join('');
+
+  // Decision analysis
+  const bestNetCost = i.repayYear === 'same' ? r.sameYearNetCost : r.diffYearSec1341NetCost;
+  const breakEvenMonth = _clawbackType === 'prorated'
+    ? Math.ceil(cbM * (1 - (r.afterTax / g)))
+    : cbM;
+
+  $('decisionContent').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">You received (after-tax)</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:1.3rem;color:var(--green)">${fmt(r.afterTax)}</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Best-case net repayment cost</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:1.3rem;color:${bestNetCost===0?'var(--green)':'var(--amber)'}">${bestNetCost===0?'$0 — Full wash':fmt(bestNetCost)}</div>
+        <div style="font-size:0.7rem;color:var(--text-dim);margin-top:4px;">${i.repayYear==='same'?'Same-year repayment (Sec. 1341 moot)':'Via IRC §1341 credit'}</div>
+      </div>
+      ${_clawbackType === 'prorated' ? `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Stay to keep full after-tax value</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:1.3rem;color:var(--accent)">Month ${breakEvenMonth}</div>
+        <div style="font-size:0.7rem;color:var(--text-dim);margin-top:4px;">At this point, remaining obligation = after-tax received</div>
+      </div>` : ''}
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Worst-case: leave tomorrow</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:1.3rem;color:var(--red)">${fmt(r.worstNetCost - r.afterTax)} out of pocket</div>
+        <div style="font-size:0.7rem;color:var(--text-dim);margin-top:4px;">Repay ${fmt(g)} gross, having only kept ${fmt(r.afterTax)} net</div>
+      </div>
+    </div>
+    <p style="font-size:0.82rem;color:var(--text-muted);">
+      <strong style="color:var(--text)">Key negotiation lever:</strong> Always ask if the clawback can be structured as net-of-tax repayment (i.e., you repay only what you actually received). Employers sometimes agree — it costs them nothing structurally, since they deducted the gross on their end. If denied, ensure you understand whether the clawback clause says "gross" or "net" before signing.
+    </p>
+  `;
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────────
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Signing Bonus Clawback Analyzer — Results',
+    `\n_Generated ${d} · AL-44 · apexlogics.org_\n`,
+    '## Inputs',
+    `| Field | Value |`,`|---|---|`,
+    `| Gross Bonus | ${fmt(i.gross)} |`,
+    `| Clawback Period | ${i.cbMonths} months (${i.clawbackType}) |`,
+    `| Federal Marginal Rate | ${pct(i.fedRate*100)} |`,
+    `| State Rate | ${pct(i.stRate*100)} |`,
+    `| FICA Applied | ${i.ficaRate > 0 ? 'Yes (7.65%)' : 'No'} |`,
+    `| Repayment Year | ${i.repayYear} as receipt year |`,
+    `| Can Itemize | ${i.canItemize ? 'Yes' : 'No'} |`,
+    '\n## Key Figures',
+    `- **After-tax bonus received:** ${fmt(r.afterTax)} (${pct((1-r.totalTaxRate)*100)} of gross)`,
+    `- **Effective tax rate on bonus:** ${pct(r.totalTaxRate*100)}`,
+    '\n## Repayment Scenarios',
+    '| Scenario | You Repay | Tax Recovery | Net True Cost |',
+    '|---|---|---|---|',
+    `| Same tax year | ${fmt(i.gross)} | ${fmt(r.taxOnBonus)} | $0 |`,
+    `| IRC §1341 credit (diff. year) | ${fmt(i.gross)} | ${fmt(r.sec1341Credit)} | ${fmt(r.diffYearSec1341NetCost)} |`,
+    `| Itemized deduction (diff. year) | ${fmt(i.gross)} | ${i.canItemize?fmt(i.gross*i.fedRate):'$0'} | ${fmt(r.diffYearItemNetCost)} |`,
+    `| No recovery (worst case) | ${fmt(i.gross)} | $0 | ${fmt(r.worstNetCost)} |`,
+    '\n## Key Takeaway',
+    `Always ask if the clawback can be structured as **net-of-tax** repayment. If leaving in a different tax year and the bonus exceeded $3,000, use IRC §1341 to claim a **credit** (not just a deduction) for the tax paid on the original bonus.`,
+    '\n---',
+    '_Source: IRS Pub. 525; IRC §1341; IRS Topic 419. For planning purposes only — consult a tax advisor for your specific situation._'
+  ];
+  dlFile('signing-bonus-clawback.md', lines.join('\n'), 'text/markdown');
+}
+
+// ── EXPORT: AP2 ───────────────────────────────────────────────────────────────
+function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "signing_bonus_record",
+    generated_at: new Date().toISOString(),
+    tool_id: "39-signing-bonus-clawback-analyzer",
+    tool_name: "Signing Bonus Clawback Analyzer",
+    inputs: {
+      gross_bonus: i.gross, clawback_months: i.cbMonths, clawback_type: i.clawbackType,
+      federal_marginal_rate_pct: i.fedRate*100, state_rate_pct: i.stRate*100,
+      fica_applied: i.ficaRate > 0, repayment_year: i.repayYear, can_itemize: i.canItemize
+    },
+    results: {
+      after_tax_received: Math.round(r.afterTax),
+      effective_tax_rate_pct: parseFloat((r.totalTaxRate*100).toFixed(2)),
+      repayment_scenarios: {
+        same_year_net_cost: 0,
+        sec1341_credit_net_cost: Math.round(r.diffYearSec1341NetCost),
+        itemized_deduction_net_cost: Math.round(r.diffYearItemNetCost),
+        worst_case_net_cost: Math.round(r.worstNetCost)
+      },
+      gross_over_net_gap: Math.round(i.gross - r.afterTax)
+    },
+    downstream_handoff_candidates: ["AL-25"],
+    data_sources: [
+      "IRS Publication 525 — Taxable and Nontaxable Income",
+      "IRC §1341 — Computation of Tax Where Taxpayer Restores Substantial Amount",
+      "IRS Topic No. 419 — Gambling Income and Losses (cross-reference for claim of right)",
+      "IRS supplemental wage withholding rate: 22% flat (up to $1M)"
+    ],
+    license: "CC-BY-4.0"
+  };
+  const errs = [];
+  ['ap2_version','mandate_type','generated_at','inputs'].forEach(k=>{if(!payload[k])errs.push('missing '+k);});
+  const valid = [
+    'ai_skills_premium_record','federal_comp_record','military_civilian_record',
+    'noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record',
+    'workforce_pell_record','workforce_pell_credential_rank','net_worth_trajectory_record','signing_bonus_record'
+  ];
+  if (!valid.includes(payload.mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('AP2 validation failed: ' + errs.join('; ')); return; }
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-44_signing-bonus-clawback_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+function toggleMCP() {
+  const panel=$('mcpPanel'), btn=$('mcpBtn'), pre=$('mcpPre');
+  const open = panel.classList.toggle('open');
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    pre.textContent = JSON.stringify({
+  "tool_id": "39-signing-bonus-clawback-analyzer",
+  "al_id": "AL-44",
+  "version": "1.0.0",
+  "title": "Signing Bonus Clawback Analyzer",
+  "description": "Models the true cost of a signing bonus clawback obligation. Inputs: gross bonus, clawback period and structure (full/pro-rated), federal marginal rate, state rate, FICA, repayment year, itemize status. Outputs: after-tax received, repayment scenarios (same-year wash, IRC §1341 credit, itemized deduction, worst-case), net true cost, and pro-rated timeline. Zero external data. AP2 v2.0: signing_bonus_record.",
+  "category": "compensation_offers",
+  "journeys": ["compensation_benefits"],
+  "personas": ["working_professional", "career_changer"],
+  "tags": ["signing-bonus","clawback","section-1341","tax","offer","repayment"],
+  "status": "shipped",
+  "maintenance": "zero",
+  "data_vintage": "IRS Pub. 525; IRC §1341; IRS supplemental wage rate 22% — no time-sensitive data embedded",
+  "ap2_export": true,
+  "ap2_mandate_types": ["signing_bonus_record"],
+  "downstream_handoff_candidates": ["AL-25"],
+  "regulatory_citations": [
+    "IRS Publication 525 — Taxable and Nontaxable Income",
+    "IRC §1341 — Computation of Tax Where Taxpayer Restores Substantial Amount",
+    "IRS Topic No. 419 — Gambling Income (cross-reference for claim of right doctrine)"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0",
+  "execution": {"type":"browser-javascript","entry":"index.html","function_name":"calculate","timeout_ms":3000},
+  "mcp_tool_definition": {
+    "name": "analyze_signing_bonus_clawback",
+    "description": "Given gross signing bonus, clawback period, tax rates, and repayment year, returns after-tax amount received, gross repayment obligation, tax recovery under IRC §1341, and net true cost across four scenarios. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "gross_bonus":           {"type":"number"},
+        "clawback_months":       {"type":"integer"},
+        "clawback_type":         {"type":"string","enum":["full","prorated"]},
+        "federal_marginal_rate": {"type":"number"},
+        "state_rate":            {"type":"number"},
+        "fica_applied":          {"type":"boolean"},
+        "repayment_year":        {"type":"string","enum":["same","different"]},
+        "can_itemize":           {"type":"boolean"}
+      },
+      "required": ["gross_bonus","clawback_months"]
+    }
+  }
+}, null, 2);
+  }
+}
+
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function(){
+  const s = sessionStorage.getItem('apex_lang');
+  const m = {en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'};
+  setLang(s || m[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+</script>
+</body>
+</html>
