@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Test Retake Decision Engine · ApexLogics #46</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/46-test-retake-decision-engine/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: var(--accent); } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 36px; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.35rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); } .metric-val.amber { color: var(--amber); }
+    .metric-val.accent { color: var(--accent); } .metric-val.red { color: var(--red); }
+    .metric-val.teal { color: var(--teal); }
+    .metric-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
+    .scenario-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .scenario-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+    .scenario-card.winner { border-color: var(--green); background: rgba(52,211,153,0.04); }
+    .scenario-title { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .tag-green { background: rgba(52,211,153,0.15); color: var(--green); border-radius: 4px; padding: 2px 6px; font-size: 0.63rem; }
+    .scenario-big { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; margin: 8px 0 4px; }
+    .scenario-row { display: flex; justify-content: space-between; font-size: 0.82rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .scenario-row:last-child { border-bottom: none; }
+    .break-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .break-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.67rem; text-transform: uppercase; color: var(--text-dim); padding: 8px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+    .break-table td { padding: 9px 14px; border-bottom: 1px solid rgba(167,139,250,0.06); }
+    .break-table td:not(:first-child) { text-align: right; font-family: 'JetBrains Mono', monospace; }
+    .break-table tr.total td { font-weight: 600; background: var(--accent-low); border-bottom: none; }
+    .saved { color: var(--green); } .cost { color: var(--red); }
+    .insight-box { background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.2); border-radius: 8px; padding: 16px 20px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; }
+    .insight-box strong { color: var(--text); }
+    .verdict-banner { border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; }
+    .verdict-banner.retake { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.3); }
+    .verdict-banner.apply { background: rgba(96,165,250,0.08); border: 1px solid rgba(96,165,250,0.3); }
+    .verdict-banner.close { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.3); }
+    .verdict-icon { font-size: 1.8rem; }
+    .verdict-text strong { color: var(--text); font-size: 1rem; display: block; margin-bottom: 2px; }
+    .verdict-text { font-size: 0.92rem; color: var(--text-muted); }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(167,139,250,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .mcp-toggle { background: none; border: 1px dashed var(--border); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 8px 14px; border-radius: 6px; cursor: pointer; width: 100%; text-align: left; margin-top: 24px; }
+    .mcp-panel { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 8px; }
+    .mcp-panel.open { display: block; }
+    .mcp-pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    @media (max-width: 700px) {
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .scenario-grid { grid-template-columns: 1fr; }
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="28" height="28" rx="6" fill="#A78BFA" fill-opacity="0.15"/>
+          <path d="M7 21L14 7L21 21" stroke="#A78BFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9.5 16.5H18.5" stroke="#A78BFA" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-name"><span class="logo-apex">Apex</span><span class="logo-org">Logics</span></div>
+        <div class="logo-tag">apexlogics.org</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="https://apexadvisory.site" class="nav-pill accent" target="_blank" rel="noopener">Advisory</a>
+    <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    <a href="../../index.html" class="nav-pill">← All Tools</a>
+  </div>
+</nav>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <div class="tool-eyebrow">AL-51 · Education Path &amp; ROI</div>
+  <h1 class="tool-title">Test Retake<br>Decision Engine</h1>
+  <p class="tool-desc">Should you retake the GRE, GMAT, LSAT, MCAT, SAT, or ACT — or apply now with your current score? Computes expected value of retaking vs. applying, break-even improvement probability, and the cost of waiting a cycle. All estimates are yours to set.</p>
+  <div class="tool-vintage">Data vintage: Zero — all logic is pure expected-value math on user inputs. No embedded score tables or admit-rate databases.</div>
+
+  <!-- INPUTS -->
+  <div class="card">
+    <div class="card-title">Your Current Score <span class="badge">Situation</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="examType">Exam</label>
+        <select id="examType">
+          <option value="GRE">GRE (260–340)</option>
+          <option value="GMAT">GMAT (205–805)</option>
+          <option value="LSAT">LSAT (120–180)</option>
+          <option value="MCAT">MCAT (472–528)</option>
+          <option value="SAT">SAT (400–1600)</option>
+          <option value="ACT">ACT (1–36)</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="currentScore">Your Current Score</label>
+        <input type="number" id="currentScore" value="310" min="0" />
+      </div>
+      <div class="field">
+        <label for="programMedian">Target Program Median Score</label>
+        <input type="number" id="programMedian" value="320" min="0" />
+        <span class="field-hint">Median or 50th percentile at your target program. Use 75th for reach schools.</span>
+      </div>
+      <div class="field">
+        <label for="admitProbCurrent">Admit Probability with Current Score (%)</label>
+        <input type="number" id="admitProbCurrent" value="25" min="0" max="100" step="5" />
+        <span class="field-hint">Your honest estimate given current score, GPA, other factors.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Retake Investment</div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="retakeFee">Exam Registration Fee ($)</label>
+        <input type="number" id="retakeFee" value="250" min="0" step="10" />
+        <span class="field-hint">GRE: $220 · GMAT: $275 · LSAT: $200 · MCAT: $330</span>
+      </div>
+      <div class="field">
+        <label for="prepCost">Additional Prep Investment ($)</label>
+        <input type="number" id="prepCost" value="500" min="0" step="50" />
+        <span class="field-hint">Tutoring, courses, materials beyond what you've already spent</span>
+      </div>
+      <div class="field">
+        <label for="studyHours">Study Hours Required</label>
+        <input type="number" id="studyHours" value="80" min="0" step="10" />
+        <span class="field-hint">Your honest estimate to reach the target improvement</span>
+      </div>
+    </div>
+    <div class="form-grid two" style="margin-top:14px;">
+      <div class="field">
+        <label for="hourlyTimeValue">Your Hourly Time Value ($)</label>
+        <input type="number" id="hourlyTimeValue" value="40" min="0" step="5" />
+        <span class="field-hint">Opportunity cost of study time (your hourly wage, freelance rate, etc.)</span>
+      </div>
+      <div class="field">
+        <label for="cycleDelay">Does retaking delay your application by one cycle?</label>
+        <select id="cycleDelay">
+          <option value="no">No — retake fits in current cycle</option>
+          <option value="yes">Yes — retaking pushes to next cycle</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Outcome Estimates <span class="badge">If You Retake</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="expectedGain">Expected Score Improvement (points)</label>
+        <input type="number" id="expectedGain" value="10" min="0" />
+        <span class="field-hint">Realistic gain from targeted prep. GRE: 5–15 pts. LSAT: 5–10 pts. SAT: 50–150 pts.</span>
+      </div>
+      <div class="field">
+        <label for="probImprove">Probability of Achieving That Gain (%)</label>
+        <input type="number" id="probImprove" value="60" min="1" max="100" step="5" />
+        <span class="field-hint">Your confidence in reaching the target after prep. Be conservative.</span>
+      </div>
+      <div class="field">
+        <label for="admitProbImproved">Admit Probability with Improved Score (%)</label>
+        <input type="number" id="admitProbImproved" value="50" min="0" max="100" step="5" />
+        <span class="field-hint">Your estimate if you hit the target score.</span>
+      </div>
+      <div class="field">
+        <label for="programValue">Program NPV to You ($)</label>
+        <input type="number" id="programValue" value="150000" min="0" step="5000" />
+        <span class="field-hint">Present value of the program's career benefit (salary delta × years − tuition). Use AL-03 to estimate.</span>
+      </div>
+    </div>
+    <div class="form-grid two" style="margin-top:14px;">
+      <div class="field">
+        <label for="annualIncome">Annual Income If Delayed ($)</label>
+        <input type="number" id="annualIncome" value="65000" min="0" step="1000" />
+        <span class="field-hint">Income you'd earn during the extra year if cycle is delayed</span>
+      </div>
+      <div class="field">
+        <label for="discountRate">Discount Rate (%)</label>
+        <input type="number" id="discountRate" value="5" min="0" max="20" step="0.5" />
+        <span class="field-hint">For NPV of delayed program value. 5% is standard.</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Run Retake Analysis</button>
+
+  <!-- RESULTS -->
+  <div class="results-section" id="resultsSection">
+
+    <div class="verdict-banner" id="verdictBanner">
+      <div class="verdict-icon" id="verdictIcon"></div>
+      <div class="verdict-text" id="verdictText"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">EV Comparison</div>
+      <div class="scenario-grid" id="scenarioGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Key Metrics</div>
+      <div class="metrics-grid" id="metricsGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Full Breakdown</div>
+      <table class="break-table" id="breakTable"></table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Sensitivity &amp; Interpretation</div>
+      <div class="insight-box" id="insightBox"></div>
+    </div>
+
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+    </div>
+
+  </div>
+
+  <button class="mcp-toggle" id="mcpBtn" onclick="toggleMCP()" aria-expanded="false">▸ Developer / Agent Integration (manifest.json)</button>
+  <div class="mcp-panel" id="mcpPanel">
+    <pre class="mcp-pre" id="mcpPre"></pre>
+  </div>
+
+  <footer class="tool-footer">
+    <p>AL-51 · ApexLogics.org · <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> · <a href="https://apexadvisory.site" target="_blank" rel="noopener">ApexAdvisory.site</a> · CC-BY-4.0</p>
+  </footer>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let _inputs = null, _results = null;
+
+function fmt(n)    { return '$' + Math.round(n).toLocaleString('en-US'); }
+function fmtPct(n) { return n.toFixed(1) + '%'; }
+function fmtPts(n) { return (n >= 0 ? '+' : '') + n + ' pts'; }
+
+function calculate() {
+  const exam            = $('examType').value;
+  const curScore        = parseFloat($('currentScore').value)       || 0;
+  const progMedian      = parseFloat($('programMedian').value)      || 0;
+  const admitCurrent    = parseFloat($('admitProbCurrent').value)   / 100;
+  const retakeFee       = parseFloat($('retakeFee').value)          || 0;
+  const prepCost        = parseFloat($('prepCost').value)           || 0;
+  const studyHours      = parseFloat($('studyHours').value)         || 0;
+  const timeValue       = parseFloat($('hourlyTimeValue').value)    || 0;
+  const cycleDelay      = $('cycleDelay').value;
+  const expectedGain    = parseFloat($('expectedGain').value)       || 0;
+  const probImprove     = parseFloat($('probImprove').value)        / 100;
+  const admitImproved   = parseFloat($('admitProbImproved').value)  / 100;
+  const progValue       = parseFloat($('programValue').value)       || 0;
+  const annualIncome    = parseFloat($('annualIncome').value)       || 0;
+  const discRate        = parseFloat($('discountRate').value)       / 100;
+
+  const scoreGap        = progMedian - curScore;
+  const improvedScore   = curScore + expectedGain;
+
+  // ── Total retake cost ─────────────────────────────────────────────────────
+  const timeCost        = studyHours * timeValue;
+  const totalRetakeCost = retakeFee + prepCost + timeCost;
+
+  // ── Cycle delay cost ──────────────────────────────────────────────────────
+  // If delay: you earn income during the extra year but the program value is discounted by one year
+  // Net delay cost = PV of program value now - PV discounted one more year - income earned
+  const delayCost = cycleDelay === 'yes'
+    ? progValue - progValue / (1 + discRate) - annualIncome
+    : 0;
+  // (could be negative if income > program discount)
+
+  // ── EV: Apply now ────────────────────────────────────────────────────────
+  const ev_applyNow = admitCurrent * progValue;
+
+  // ── EV: Retake ────────────────────────────────────────────────────────────
+  // If improve: admit at improved rate. If don't improve: admit at current rate (same cycle or delayed).
+  // Subtract retake cost and delay cost (if applicable).
+  const ev_ifImprove  = admitImproved * progValue;
+  const ev_ifNoImprove = admitCurrent * (cycleDelay === 'yes' ? progValue / (1 + discRate) : progValue);
+  const ev_retakeGross = probImprove * ev_ifImprove + (1 - probImprove) * ev_ifNoImprove;
+  const ev_retake = ev_retakeGross - totalRetakeCost - Math.max(0, delayCost);
+
+  // ── Advantage ─────────────────────────────────────────────────────────────
+  const advantage = ev_retake - ev_applyNow;
+
+  // ── Break-even probability ────────────────────────────────────────────────
+  // ev_retake = ev_applyNow
+  // probBE * ev_ifImprove + (1-probBE) * ev_ifNoImprove - costs - delayCost = admitCurrent * progValue
+  // probBE * (ev_ifImprove - ev_ifNoImprove) = admitCurrent * progValue + costs + delayCost - ev_ifNoImprove
+  const admitDelta = ev_ifImprove - ev_ifNoImprove;
+  const breakEvenProb = admitDelta > 0
+    ? (ev_applyNow + totalRetakeCost + Math.max(0, delayCost) - ev_ifNoImprove) / admitDelta
+    : Infinity;
+
+  // ── Break-even admit uplift needed ────────────────────────────────────────
+  // If prob is fixed, what admit probability improvement justifies retaking?
+  // probImprove * (admitImproved - admitCurrent) * progValue = totalRetakeCost + delayCost
+  const breakEvenAdmitDelta = probImprove > 0 && progValue > 0
+    ? (totalRetakeCost + Math.max(0, delayCost)) / (probImprove * progValue)
+    : Infinity;
+
+  _inputs  = { exam, curScore, progMedian, admitCurrent, retakeFee, prepCost, studyHours,
+               timeValue, cycleDelay, expectedGain, probImprove, admitImproved, progValue,
+               annualIncome, discRate, scoreGap, improvedScore };
+  _results = { timeCost, totalRetakeCost, delayCost, ev_applyNow, ev_ifImprove,
+               ev_ifNoImprove, ev_retakeGross, ev_retake, advantage,
+               breakEvenProb, breakEvenAdmitDelta };
+  render();
+}
+
+function render() {
+  const i = _inputs, r = _results;
+  const retakeWins = r.advantage > 0;
+  const isClose    = Math.abs(r.advantage) < r.totalRetakeCost * 0.5;
+
+  // ── Verdict ───────────────────────────────────────────────────────────────
+  const vb = $('verdictBanner');
+  vb.className = 'verdict-banner ' + (retakeWins ? 'retake' : isClose ? 'close' : 'apply');
+  $('verdictIcon').textContent = retakeWins ? '↺' : isClose ? '≈' : '→';
+  $('verdictText').innerHTML = retakeWins
+    ? `<strong>Retake has higher expected value (+${fmt(r.advantage)} advantage)</strong>At ${fmtPct(i.probImprove * 100)} probability of a ${fmtPts(i.expectedGain)} improvement, the EV of retaking exceeds applying now.`
+    : isClose
+    ? `<strong>Decision is close — within rounding of a coin flip</strong>The ${fmt(Math.abs(r.advantage))} gap is small relative to total retake cost. Non-financial factors (deadline pressure, burnout, cycle risk) should drive this decision.`
+    : `<strong>Apply now has higher expected value (+${fmt(-r.advantage)} over retake)</strong>The cost and cycle risk of retaking outweigh the expected admission probability gain at current inputs.`;
+
+  // ── Scenario cards ────────────────────────────────────────────────────────
+  $('scenarioGrid').innerHTML = `
+    <div class="scenario-card ${retakeWins ? 'winner' : ''}">
+      <div class="scenario-title">Retake ${retakeWins ? '<span class="tag-green">✓ Higher EV</span>' : ''}</div>
+      <div class="scenario-big" style="color:${retakeWins ? 'var(--green)' : 'var(--text-muted)'}">${fmt(r.ev_retake)}</div>
+      <div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:10px;">expected value after costs</div>
+      <div class="scenario-row"><span>Total retake cost</span><span style="color:var(--red)">-${fmt(r.totalRetakeCost)}</span></div>
+      <div class="scenario-row"><span>Cycle delay cost</span><span style="color:${r.delayCost > 0 ? 'var(--red)' : 'var(--text-dim)'}">${r.delayCost > 0 ? '-' + fmt(r.delayCost) : 'None'}</span></div>
+      <div class="scenario-row"><span>EV if score improves</span><span>${fmt(r.ev_ifImprove)}</span></div>
+      <div class="scenario-row"><span>EV if score doesn't improve</span><span>${fmt(r.ev_ifNoImprove)}</span></div>
+      <div class="scenario-row"><span>Weighted EV (gross)</span><span>${fmt(r.ev_retakeGross)}</span></div>
+    </div>
+    <div class="scenario-card ${!retakeWins ? 'winner' : ''}">
+      <div class="scenario-title">Apply Now ${!retakeWins ? '<span class="tag-green">✓ Higher EV</span>' : ''}</div>
+      <div class="scenario-big" style="color:${!retakeWins ? 'var(--green)' : 'var(--text-muted)'}">${fmt(r.ev_applyNow)}</div>
+      <div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:10px;">expected value of current application</div>
+      <div class="scenario-row"><span>Admit probability</span><span>${fmtPct(i.admitCurrent * 100)}</span></div>
+      <div class="scenario-row"><span>Program NPV</span><span>${fmt(i.progValue)}</span></div>
+      <div class="scenario-row"><span>Retake costs avoided</span><span style="color:var(--green)">+${fmt(r.totalRetakeCost)}</span></div>
+      <div class="scenario-row"><span>Cycle delay avoided</span><span style="color:${r.delayCost > 0 ? 'var(--green)' : 'var(--text-dim)'}">${r.delayCost > 0 ? '+' + fmt(r.delayCost) : '—'}</span></div>
+    </div>
+  `;
+
+  // ── Metrics ────────────────────────────────────────────────────────────────
+  $('metricsGrid').innerHTML = `
+    <div class="metric-card">
+      <div class="metric-label">EV Advantage</div>
+      <div class="metric-val ${retakeWins ? 'green' : 'red'}">${retakeWins ? '+' : ''}${fmt(r.advantage)}</div>
+      <div class="metric-note">${retakeWins ? 'Retake' : 'Apply now'} leads</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Break-Even Probability</div>
+      <div class="metric-val amber">${r.breakEvenProb <= 0 ? '0%' : r.breakEvenProb >= 1 ? '>100%' : fmtPct(r.breakEvenProb * 100)}</div>
+      <div class="metric-note">Min improvement probability for retake to win</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Total Retake Cost</div>
+      <div class="metric-val red">${fmt(r.totalRetakeCost)}</div>
+      <div class="metric-note">Fee + prep + ${i.studyHours} hrs × ${fmt(i.timeValue)}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Score Gap</div>
+      <div class="metric-val ${i.scoreGap <= 0 ? 'green' : i.scoreGap <= 10 ? 'amber' : 'accent'}">${i.scoreGap <= 0 ? 'At target' : '+' + i.scoreGap + ' pts'}</div>
+      <div class="metric-note">To ${i.progMedian} program median from ${i.curScore}</div>
+    </div>
+  `;
+
+  // ── Breakdown table ───────────────────────────────────────────────────────
+  $('breakTable').innerHTML = `
+    <thead><tr><th>Item</th><th>Retake Path</th><th>Apply Now</th></tr></thead>
+    <tbody>
+      <tr><td>Admit probability</td>
+        <td>${fmtPct(i.probImprove * 100)} × ${fmtPct(i.admitImproved * 100)} + ${fmtPct((1-i.probImprove)*100)} × ${fmtPct(i.admitCurrent * 100)}</td>
+        <td>${fmtPct(i.admitCurrent * 100)}</td></tr>
+      <tr><td>Program value (if admitted)</td><td>${fmt(i.progValue)}</td><td>${fmt(i.progValue)}</td></tr>
+      <tr><td>Exam registration fee</td><td class="cost">-${fmt(i.retakeFee)}</td><td>—</td></tr>
+      <tr><td>Prep investment</td><td class="cost">-${fmt(i.prepCost)}</td><td>—</td></tr>
+      <tr><td>Study time cost (${i.studyHours} hrs)</td><td class="cost">-${fmt(r.timeCost)}</td><td>—</td></tr>
+      ${r.delayCost > 0 ? `<tr><td>Cycle delay net cost</td><td class="cost">-${fmt(r.delayCost)}</td><td>—</td></tr>` : ''}
+      <tr class="total"><td>Expected Value</td><td class="${retakeWins ? 'saved' : 'cost'}">${fmt(r.ev_retake)}</td><td class="${!retakeWins ? 'saved' : 'cost'}">${fmt(r.ev_applyNow)}</td></tr>
+    </tbody>`;
+
+  // ── Insight ────────────────────────────────────────────────────────────────
+  const beStr = r.breakEvenProb <= 0 ? 'retake always wins'
+    : r.breakEvenProb >= 1 ? 'retake never reaches positive EV'
+    : `you need ≥${fmtPct(r.breakEvenProb * 100)} probability of improvement`;
+
+  $('insightBox').innerHTML = `
+    <strong>Break-even:</strong> ${beStr}. Your current estimate is ${fmtPct(i.probImprove * 100)}, which puts you ${i.probImprove >= r.breakEvenProb ? '<strong style="color:var(--green)">above</strong>' : '<strong style="color:var(--red)">below</strong>'} the threshold.
+    <br><br>
+    <strong>Sensitivity — what would change the verdict:</strong> The decision flips if (1) your improvement probability changes by ${r.breakEvenProb > 0 && r.breakEvenProb < 1 ? Math.abs(Math.round((i.probImprove - r.breakEvenProb) * 100)) + ' percentage points' : 'N/A'}, (2) the admit probability uplift from an improved score is different than assumed, or (3) the cycle delay situation changes.
+    <br><br>
+    <strong>${i.cycleDelay === 'yes' ? 'Cycle delay applies:' : 'No cycle delay:'}</strong> ${i.cycleDelay === 'yes' ? `You'd earn ${fmt(i.annualIncome)} during the gap year, but the program value is discounted by one year at ${fmtPct(i.discRate * 100)}. Net delay cost: ${r.delayCost > 0 ? fmt(r.delayCost) : 'Negative — the income exceeds the discounting cost, making delay slightly less costly'}.` : 'Retaking fits in the current cycle, so no income or discounting impact.'}
+    <br><br>
+    <strong>What this model doesn't capture:</strong> Program fit, waitlist dynamics, the value of the extra year of work experience (which can strengthen the application), mental health cost of an additional prep cycle, and the risk that the improved score still doesn't shift admit odds significantly (score is one input among many).
+  `;
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+function exportMarkdown() {
+  if (!_inputs) return;
+  const i = _inputs, r = _results;
+  const d = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  const lines = [
+    '# Test Retake Decision Analysis',
+    `\n_Generated ${d} · AL-51 · apexlogics.org_\n`,
+    '## Inputs',
+    `| Field | Value |`, `|---|---|`,
+    `| Exam | ${i.exam} |`,
+    `| Current Score | ${i.curScore} |`,
+    `| Program Median | ${i.progMedian} |`,
+    `| Admit Probability (now) | ${fmtPct(i.admitCurrent * 100)} |`,
+    `| Admit Probability (improved) | ${fmtPct(i.admitImproved * 100)} |`,
+    `| Expected Score Gain | ${fmtPts(i.expectedGain)} |`,
+    `| Probability of Improvement | ${fmtPct(i.probImprove * 100)} |`,
+    `| Total Retake Cost | ${fmt(r.totalRetakeCost)} |`,
+    `| Cycle Delay | ${i.cycleDelay} |`,
+    '\n## Results',
+    `- **EV — Retake:** ${fmt(r.ev_retake)}`,
+    `- **EV — Apply now:** ${fmt(r.ev_applyNow)}`,
+    `- **EV advantage:** ${r.advantage >= 0 ? '+' : ''}${fmt(r.advantage)} (${r.advantage >= 0 ? 'Retake' : 'Apply now'})`,
+    `- **Break-even probability:** ${r.breakEvenProb >= 1 ? '>100%' : r.breakEvenProb <= 0 ? '<0%' : fmtPct(r.breakEvenProb * 100)}`,
+    `- **Verdict:** ${r.advantage > 0 ? 'Retake' : 'Apply now'}`,
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'test-retake-decision.md';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function exportAP2() {
+  if (!_inputs) { alert('Run the analysis first.'); return; }
+  const i = _inputs, r = _results;
+  const validMandateTypes = [
+    'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+    'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+    'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+    'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+    'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+    'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+    'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+    'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+    'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+    'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+    'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+    'deferred_comp_457b_record','tutor_roi_record','test_retake_record'
+  ];
+  const payload = {
+    ap2_version: '2.0',
+    mandate_type: 'test_retake_record',
+    source_tool: 'AL-51',
+    source_url: 'https://apexlogics.org/tools/46-test-retake-decision-engine/',
+    generated_at: new Date().toISOString(),
+    schema_version: '1.0',
+    data: {
+      exam_type: i.exam,
+      current_score: i.curScore,
+      program_median_score: i.progMedian,
+      score_gap: i.scoreGap,
+      expected_score_gain: i.expectedGain,
+      improved_score: i.improvedScore,
+      admit_prob_current_pct: +(i.admitCurrent * 100).toFixed(1),
+      admit_prob_improved_pct: +(i.admitImproved * 100).toFixed(1),
+      prob_of_improvement_pct: +(i.probImprove * 100).toFixed(1),
+      total_retake_cost: Math.round(r.totalRetakeCost),
+      cycle_delay: i.cycleDelay,
+      delay_cost: Math.round(r.delayCost),
+      ev_retake: Math.round(r.ev_retake),
+      ev_apply_now: Math.round(r.ev_applyNow),
+      ev_advantage: Math.round(r.advantage),
+      break_even_probability_pct: r.breakEvenProb >= 1 ? null : r.breakEvenProb <= 0 ? 0 : +(r.breakEvenProb * 100).toFixed(1),
+      verdict: r.advantage > 0 ? 'retake' : 'apply_now'
+    },
+    downstream_tools: ['AL-03', 'AL-18', 'AL-50'],
+    advisory_cta: {
+      text: 'Get a personalized assessment of your test retake decision',
+      url: 'https://apexadvisory.site'
+    }
+  };
+  if (!validMandateTypes.includes(payload.mandate_type)) {
+    alert('AP2 mandate type validation failed: ' + payload.mandate_type);
+    return;
+  }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'test-retake-ap2.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function toggleMCP() {
+  const panel = $('mcpPanel'), btn = $('mcpBtn');
+  const open = panel.classList.toggle('open');
+  btn.textContent = (open ? '▾ ' : '▸ ') + 'Developer / Agent Integration (manifest.json)';
+  btn.setAttribute('aria-expanded', open);
+  if (open && !$('mcpPre').textContent) {
+    $('mcpPre').textContent = JSON.stringify({
+      "al_id": "AL-51",
+      "version": "1.0.0",
+      "title": "Test Retake Decision Engine",
+      "slug": "46-test-retake-decision-engine",
+      "file_path": "tools/46-test-retake-decision-engine/index.html",
+      "description": "EV model for retake vs. apply-now decision on GRE/GMAT/LSAT/MCAT/SAT/ACT. Returns expected value of each path, EV advantage, break-even probability of improvement, and cycle delay cost. Deterministic — all inputs user-supplied.",
+      "category": "education_path_roi",
+      "journeys": ["education_path"],
+      "personas": ["student", "counselor"],
+      "tags": ["test-retake","gre","gmat","lsat","mcat","sat","act","expected-value","break-even","admit-probability"],
+      "status": "shipped",
+      "maintenance": "zero",
+      "ap2_export": true,
+      "ap2_mandate_types": ["test_retake_record"],
+      "downstream_handoff_candidates": ["AL-03", "AL-18", "AL-50"],
+      "sister_suite": "https://ainumbers.co",
+      "consulting_site": "https://apexadvisory.site",
+      "license": "CC-BY-4.0"
+    }, null, 2);
+  }
+}
+
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function () {
+  const s = sessionStorage.getItem('apex_lang');
+  setLang(s || ({ en:'en', es:'es', fr:'fr', ar:'ar', pt:'pt', zh:'zh' })[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+</script>
+</body>
+</html>

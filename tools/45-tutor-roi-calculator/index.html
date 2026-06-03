@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutor ROI Calculator · ApexLogics #45</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/45-tutor-roi-calculator/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: var(--accent); } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 36px; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.35rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); } .metric-val.amber { color: var(--amber); }
+    .metric-val.accent { color: var(--accent); } .metric-val.red { color: var(--red); }
+    .metric-val.teal { color: var(--teal); }
+    .metric-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
+    .break-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .break-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.67rem; text-transform: uppercase; color: var(--text-dim); padding: 8px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+    .break-table th:not(:first-child) { text-align: right; }
+    .break-table td { padding: 9px 14px; border-bottom: 1px solid rgba(167,139,250,0.06); }
+    .break-table td:not(:first-child) { text-align: right; font-family: 'JetBrains Mono', monospace; }
+    .break-table tr.total td { font-weight: 600; background: var(--accent-low); border-bottom: none; }
+    .saved { color: var(--green); } .cost { color: var(--red); }
+    .prob-slider-wrap { margin: 16px 0 8px; }
+    .prob-slider-label { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px; }
+    .prob-scale { display: flex; gap: 0; border-radius: 6px; overflow: hidden; height: 28px; }
+    .prob-seg { flex: 1; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; cursor: pointer; transition: opacity 0.15s; }
+    .prob-seg.active { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .insight-box { background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.2); border-radius: 8px; padding: 16px 20px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; }
+    .insight-box strong { color: var(--text); }
+    .verdict-banner { border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; }
+    .verdict-banner.positive { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.3); }
+    .verdict-banner.negative { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.3); }
+    .verdict-icon { font-size: 1.8rem; }
+    .verdict-text { font-size: 0.92rem; color: var(--text-muted); }
+    .verdict-text strong { color: var(--text); font-size: 1rem; display: block; margin-bottom: 2px; }
+    .chart-wrap { margin-bottom: 8px; }
+    .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .bar-label { width: 180px; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-muted); flex-shrink: 0; }
+    .bar-track { flex: 1; background: rgba(255,255,255,0.05); border-radius: 4px; height: 24px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #000; font-weight: 600; min-width: 60px; transition: width 0.4s ease; }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(167,139,250,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .mcp-toggle { background: none; border: 1px dashed var(--border); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 8px 14px; border-radius: 6px; cursor: pointer; width: 100%; text-align: left; margin-top: 24px; }
+    .mcp-panel { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 8px; }
+    .mcp-panel.open { display: block; }
+    .mcp-pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    @media (max-width: 700px) {
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="28" height="28" rx="6" fill="#A78BFA" fill-opacity="0.15"/>
+          <path d="M7 21L14 7L21 21" stroke="#A78BFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9.5 16.5H18.5" stroke="#A78BFA" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-name"><span class="logo-apex">Apex</span><span class="logo-org">Logics</span></div>
+        <div class="logo-tag">apexlogics.org</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="https://apexadvisory.site" class="nav-pill accent" target="_blank" rel="noopener">Advisory</a>
+    <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    <a href="../../index.html" class="nav-pill">← All Tools</a>
+  </div>
+</nav>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <div class="tool-eyebrow">AL-50 · Education Path &amp; ROI</div>
+  <h1 class="tool-title">Tutor ROI Calculator</h1>
+  <p class="tool-desc">Is hiring a tutor financially worth it? Models the expected value of score improvement against tutoring cost — factoring in merit scholarship delta, admission probability uplift, and break-even thresholds. All inputs are yours to set.</p>
+  <div class="tool-vintage">Data vintage: Zero — all logic is pure math on user inputs. No embedded rate tables or outcome data.</div>
+
+  <!-- INPUTS -->
+  <div class="card">
+    <div class="card-title">Exam &amp; Score Context <span class="badge">Any Exam</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="examType">Exam Type</label>
+        <select id="examType" onchange="updateScaleHint()">
+          <option value="SAT">SAT (400–1600)</option>
+          <option value="ACT">ACT (1–36)</option>
+          <option value="GRE">GRE (260–340)</option>
+          <option value="GMAT">GMAT (205–805)</option>
+          <option value="LSAT">LSAT (120–180)</option>
+          <option value="MCAT">MCAT (472–528)</option>
+          <option value="Other">Other / Custom</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="currentScore">Current Score</label>
+        <input type="number" id="currentScore" value="1150" min="0" />
+        <span class="field-hint" id="scaleHint">SAT scale: 400–1600</span>
+      </div>
+      <div class="field">
+        <label for="targetScore">Target Score</label>
+        <input type="number" id="targetScore" value="1350" min="0" />
+        <span class="field-hint">Score needed to unlock your goal (scholarship threshold, admit cutoff, etc.)</span>
+      </div>
+      <div class="field">
+        <label for="probImprovement">Probability of Reaching Target (%)</label>
+        <input type="number" id="probImprovement" value="65" min="1" max="100" step="5" />
+        <span class="field-hint">Your honest estimate. 100+ hours of deliberate prep → 60–75% for a 150-pt SAT gain.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Tutoring Investment</div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="hourlyRate">Tutor Hourly Rate ($)</label>
+        <input type="number" id="hourlyRate" value="80" min="0" step="5" />
+        <span class="field-hint">US average: $50–$100/hr for SAT/ACT; $100–$200 for LSAT/GMAT</span>
+      </div>
+      <div class="field">
+        <label for="totalHours">Total Hours Planned</label>
+        <input type="number" id="totalHours" value="20" min="1" step="1" />
+        <span class="field-hint">Typical for 100–200pt SAT gain: 15–30 hrs with tutor + self-study</span>
+      </div>
+      <div class="field">
+        <label for="materialsCost">Materials &amp; Fees ($)</label>
+        <input type="number" id="materialsCost" value="150" min="0" step="25" />
+        <span class="field-hint">Books, practice tests, platform subscriptions</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Value Drivers <span class="badge">What's the Score Worth?</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="scholarshipCurrent">Annual Merit Aid at Current Score ($)</label>
+        <input type="number" id="scholarshipCurrent" value="0" min="0" step="500" />
+        <span class="field-hint">$0 if below scholarship threshold. Enter 0 if unsure.</span>
+      </div>
+      <div class="field">
+        <label for="scholarshipTarget">Annual Merit Aid at Target Score ($)</label>
+        <input type="number" id="scholarshipTarget" value="8000" min="0" step="500" />
+        <span class="field-hint">Many schools offer $5k–$20k/yr for hitting score thresholds</span>
+      </div>
+      <div class="field">
+        <label for="aidYears">Aid Duration (years)</label>
+        <input type="number" id="aidYears" value="4" min="1" max="8" step="1" />
+      </div>
+      <div class="field">
+        <label for="discountRate">Discount Rate (%)</label>
+        <input type="number" id="discountRate" value="5" min="0" max="20" step="0.5" />
+        <span class="field-hint">For NPV of future aid. 5% is a standard real-rate default.</span>
+      </div>
+    </div>
+    <div class="form-grid two" style="margin-top:14px;">
+      <div class="field">
+        <label for="admitDeltaPoints">Admission Probability Uplift (percentage points)</label>
+        <input type="number" id="admitDeltaPoints" value="0" min="0" max="60" step="1" />
+        <span class="field-hint">Optional. For competitive admits where score moves the needle. Leave 0 if aid is primary driver.</span>
+      </div>
+      <div class="field">
+        <label for="admissionValue">NPV of Admission Uplift ($)</label>
+        <input type="number" id="admissionValue" value="0" min="0" step="1000" />
+        <span class="field-hint">Expected lifetime value of getting into the better program. Use AL-03 (Grad School ROI) to estimate.</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Calculate Tutor ROI</button>
+
+  <!-- RESULTS -->
+  <div class="results-section" id="resultsSection">
+
+    <div class="verdict-banner" id="verdictBanner">
+      <div class="verdict-icon" id="verdictIcon"></div>
+      <div class="verdict-text" id="verdictText"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Key Metrics</div>
+      <div class="metrics-grid" id="metricsGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Cost vs. Expected Value</div>
+      <div class="chart-wrap" id="chartWrap"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Full Breakdown</div>
+      <table class="break-table" id="breakTable"></table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Break-Even Analysis</div>
+      <div class="insight-box" id="breakEvenBox"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Interpretation &amp; Caveats</div>
+      <div class="insight-box" id="insightBox"></div>
+    </div>
+
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+    </div>
+
+  </div>
+
+  <button class="mcp-toggle" id="mcpBtn" onclick="toggleMCP()" aria-expanded="false">▸ Developer / Agent Integration (manifest.json)</button>
+  <div class="mcp-panel" id="mcpPanel">
+    <pre class="mcp-pre" id="mcpPre"></pre>
+  </div>
+
+  <footer class="tool-footer">
+    <p>AL-50 · ApexLogics.org · <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> · <a href="https://apexadvisory.site" target="_blank" rel="noopener">ApexAdvisory.site</a> · CC-BY-4.0</p>
+  </footer>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let _inputs = null, _results = null;
+
+const EXAM_SCALES = {
+  SAT:  'SAT scale: 400–1600',
+  ACT:  'ACT scale: 1–36',
+  GRE:  'GRE scale: 260–340',
+  GMAT: 'GMAT scale: 205–805',
+  LSAT: 'LSAT scale: 120–180',
+  MCAT: 'MCAT scale: 472–528',
+  Other: 'Enter your score on your exam\'s scale'
+};
+
+function updateScaleHint() {
+  const exam = $('examType').value;
+  $('scaleHint').textContent = EXAM_SCALES[exam] || '';
+}
+
+function fmt(n)    { return '$' + Math.round(n).toLocaleString('en-US'); }
+function fmtPct(n) { return n.toFixed(1) + '%'; }
+function fmtX(n)   { return n === Infinity ? '∞' : n.toFixed(1) + '×'; }
+
+function calculate() {
+  const exam          = $('examType').value;
+  const curScore      = parseFloat($('currentScore').value)     || 0;
+  const tgtScore      = parseFloat($('targetScore').value)      || 0;
+  const prob          = parseFloat($('probImprovement').value)  / 100;
+  const rate          = parseFloat($('hourlyRate').value)       || 0;
+  const hours         = parseFloat($('totalHours').value)       || 0;
+  const materials     = parseFloat($('materialsCost').value)    || 0;
+  const schCurrent    = parseFloat($('scholarshipCurrent').value) || 0;
+  const schTarget     = parseFloat($('scholarshipTarget').value)  || 0;
+  const aidYears      = parseInt($('aidYears').value)           || 4;
+  const discRate      = parseFloat($('discountRate').value)     / 100;
+  const admitDelta    = parseFloat($('admitDeltaPoints').value) / 100;
+  const admitValue    = parseFloat($('admissionValue').value)   || 0;
+
+  // Costs
+  const tutorCost   = rate * hours + materials;
+
+  // Scholarship value
+  const schDelta    = schTarget - schCurrent;
+  // NPV of aid delta over aidYears
+  let aidNPV = 0;
+  for (let y = 1; y <= aidYears; y++) {
+    aidNPV += schDelta / Math.pow(1 + discRate, y);
+  }
+  const aidNPVTotal = Math.max(0, aidNPV);
+
+  // Admission value (probability-weighted by prob of improving score)
+  const admitValueWeighted = admitValue * admitDelta;
+
+  // Expected value = probability of improvement × (aid NPV + admission value)
+  const grossValue  = aidNPVTotal + admitValueWeighted;
+  const expectedValue = prob * grossValue;
+
+  // Net ROI
+  const netROI    = expectedValue - tutorCost;
+  const roiRatio  = tutorCost > 0 ? expectedValue / tutorCost : Infinity;
+
+  // Break-even probability
+  const breakEvenProb = grossValue > 0 ? tutorCost / grossValue : Infinity;
+  // Break-even aid delta per year (what annual merit aid would justify cost at given prob)
+  const breakEvenAidAnnual = (prob > 0 && aidYears > 0)
+    ? (tutorCost / prob - admitValueWeighted) / aidYears
+    : Infinity;
+
+  // Score gap
+  const scoreGap = tgtScore - curScore;
+
+  _inputs  = { exam, curScore, tgtScore, prob, rate, hours, materials, schCurrent, schTarget,
+               aidYears, discRate, admitDelta, admitValue };
+  _results = { tutorCost, schDelta, aidNPVTotal, admitValueWeighted, grossValue,
+               expectedValue, netROI, roiRatio, breakEvenProb, breakEvenAidAnnual, scoreGap };
+  render();
+}
+
+function render() {
+  const i = _inputs, r = _results;
+  const positive = r.netROI >= 0;
+
+  // Verdict
+  const vb = $('verdictBanner');
+  vb.className = 'verdict-banner ' + (positive ? 'positive' : 'negative');
+  $('verdictIcon').textContent = positive ? '✓' : '↯';
+  $('verdictText').innerHTML = positive
+    ? `<strong>Tutoring is financially justified at ${fmtPct(i.prob * 100)} probability of improvement</strong>Expected value of ${fmt(r.expectedValue)} exceeds tutoring cost of ${fmt(r.tutorCost)} by ${fmt(r.netROI)}.`
+    : `<strong>Tutoring cost exceeds expected value at ${fmtPct(i.prob * 100)} probability of improvement</strong>Raise the probability estimate, find a lower-cost tutor, or confirm the scholarship threshold before committing.`;
+
+  // Metrics
+  $('metricsGrid').innerHTML = `
+    <div class="metric-card">
+      <div class="metric-label">Total Tutor Cost</div>
+      <div class="metric-val red">${fmt(r.tutorCost)}</div>
+      <div class="metric-note">${i.hours} hrs × ${fmt(i.rate)} + ${fmt(i.materials)} materials</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Expected Value</div>
+      <div class="metric-val ${r.expectedValue >= r.tutorCost ? 'green' : 'amber'}">${fmt(r.expectedValue)}</div>
+      <div class="metric-note">${fmtPct(i.prob * 100)} × ${fmt(r.grossValue)} gross value</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Net ROI</div>
+      <div class="metric-val ${r.netROI >= 0 ? 'green' : 'red'}">${r.netROI >= 0 ? '+' : ''}${fmt(r.netROI)}</div>
+      <div class="metric-note">${fmtX(r.roiRatio)} return on investment</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Break-Even Probability</div>
+      <div class="metric-val accent">${r.breakEvenProb >= 1 ? '>100%' : fmtPct(r.breakEvenProb * 100)}</div>
+      <div class="metric-note">Min success rate for positive EV</div>
+    </div>
+  `;
+
+  // Chart
+  const maxVal = Math.max(r.tutorCost, r.expectedValue, r.grossValue, 1);
+  $('chartWrap').innerHTML = [
+    { label: 'Tutor cost (certain)', val: r.tutorCost, color: '#f87171' },
+    { label: 'Gross value if target hit', val: r.grossValue, color: '#60a5fa' },
+    { label: `Expected value (${fmtPct(i.prob * 100)} prob)`, val: r.expectedValue, color: '#34d399' },
+  ].map(b => `
+    <div class="bar-row">
+      <div class="bar-label">${b.label}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${(b.val/maxVal*100).toFixed(1)}%;background:${b.color}">
+          ${fmt(b.val)}
+        </div>
+      </div>
+    </div>
+  `).join('') + `<div style="font-size:0.68rem;color:var(--text-dim);font-family:'JetBrains Mono',monospace;margin-top:6px;">Expected value = probability × gross value. Gross value = NPV of aid delta + admission value.</div>`;
+
+  // Breakdown table
+  $('breakTable').innerHTML = `
+    <thead><tr><th>Item</th><th>Amount</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Tutor sessions</td><td class="cost">-${fmt(i.hours * i.rate)}</td><td style="font-size:0.75rem;color:var(--text-dim)">${i.hours} hrs × ${fmt(i.rate)}/hr</td></tr>
+      <tr><td>Materials &amp; fees</td><td class="cost">-${fmt(i.materials)}</td><td style="font-size:0.75rem;color:var(--text-dim)">Books, practice tests</td></tr>
+      <tr><td>Annual merit aid delta</td><td class="saved">+${fmt(i.schTarget - i.schCurrent)}/yr</td><td style="font-size:0.75rem;color:var(--text-dim)">${fmt(i.schTarget)} − ${fmt(i.schCurrent)} at target vs. current score</td></tr>
+      <tr><td>Aid NPV (${i.aidYears} yrs @ ${fmtPct(i.discRate * 100)})</td><td class="saved">+${fmt(r.aidNPVTotal)}</td><td style="font-size:0.75rem;color:var(--text-dim)">Present value of total aid delta</td></tr>
+      ${r.admitValueWeighted > 0 ? `<tr><td>Admission value (probability-weighted)</td><td class="saved">+${fmt(r.admitValueWeighted)}</td><td style="font-size:0.75rem;color:var(--text-dim)">${fmtPct(i.admitDelta * 100)} uplift × ${fmt(i.admitValue)}</td></tr>` : ''}
+      <tr><td>Gross value (if target reached)</td><td class="saved">+${fmt(r.grossValue)}</td><td style="font-size:0.75rem;color:var(--text-dim)">Aid NPV + admission value</td></tr>
+      <tr><td>Expected value (prob-weighted)</td><td class="${r.expectedValue >= r.tutorCost ? 'saved' : 'cost'}">${fmt(r.expectedValue)}</td><td style="font-size:0.75rem;color:var(--text-dim)">${fmtPct(i.prob * 100)} × ${fmt(r.grossValue)}</td></tr>
+      <tr class="total"><td>Net ROI</td><td class="${r.netROI >= 0 ? 'saved' : 'cost'}">${r.netROI >= 0 ? '+' : ''}${fmt(r.netROI)}</td><td style="font-size:0.75rem;color:var(--text-dim)">Expected value − tutor cost</td></tr>
+    </tbody>`;
+
+  // Break-even box
+  $('breakEvenBox').innerHTML = `
+    <strong>Break-even probability: ${r.breakEvenProb >= 1 ? 'N/A (gross value &lt; tutor cost)' : fmtPct(r.breakEvenProb * 100)}</strong>
+    ${r.breakEvenProb < 1 ? ` — you need at least a ${fmtPct(r.breakEvenProb * 100)} chance of reaching ${i.tgtScore} for tutoring to have positive expected value.` : ' — even with certainty of improvement, the value unlocked doesn\'t cover tutoring cost. Reconsider the scholarship threshold or target school.'}
+    <br><br>
+    <strong>Break-even annual aid:</strong> At your ${fmtPct(i.prob * 100)} probability estimate, the scholarship delta would need to be at least ${r.breakEvenAidAnnual === Infinity || r.breakEvenAidAnnual < 0 ? 'N/A' : fmt(r.breakEvenAidAnnual) + '/year'} for tutoring to break even.
+    <br><br>
+    <strong>Score gap:</strong> ${r.scoreGap > 0 ? `+${r.scoreGap} points on the ${i.exam}` : `No gap — current score already meets target`}. For context: typical tutoring with 20+ deliberate hours of practice yields 100–200 point SAT gains / 3–5 ACT points for motivated students.
+  `;
+
+  // Insight
+  $('insightBox').innerHTML = `
+    <strong>What this model captures:</strong> The expected financial value of score-linked merit aid and admission probability uplift, net of tutoring cost, using a probabilistic model. It does not model non-financial benefits (stress reduction, skill confidence, long-term career network from a better school).
+    <br><br>
+    <strong>What it doesn't capture:</strong> (1) The marginal value of an additional test attempt after tutoring — see AL-51 (Test Retake Decision Engine). (2) The full career earnings delta of attending a higher-ranked program — see AL-03 (Graduate School ROI Comparator). (3) The risk that the target school's merit aid policy changes by enrollment.
+    <br><br>
+    <strong>Probability calibration:</strong> Research on SAT tutoring suggests that motivated students doing 15–20+ hours with a tutor plus substantial self-study have a 55–70% chance of a 100–150 point improvement. Students who only attend sessions without self-study show much lower gains (~20–30% chance of &gt;50 points). Your probability input is the single biggest lever in this model.
+  `;
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+function exportMarkdown() {
+  if (!_inputs) return;
+  const i = _inputs, r = _results;
+  const d = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  const lines = [
+    '# Tutor ROI Analysis',
+    `\n_Generated ${d} · AL-50 · apexlogics.org_\n`,
+    '## Inputs',
+    `| Field | Value |`, `|---|---|`,
+    `| Exam | ${i.exam} |`,
+    `| Current Score | ${i.curScore} |`,
+    `| Target Score | ${i.tgtScore} |`,
+    `| Probability of Reaching Target | ${fmtPct(i.prob * 100)} |`,
+    `| Tutor Hourly Rate | ${fmt(i.rate)} |`,
+    `| Total Hours | ${i.hours} |`,
+    `| Materials | ${fmt(i.materials)} |`,
+    `| Annual Aid at Current Score | ${fmt(i.schCurrent)} |`,
+    `| Annual Aid at Target Score | ${fmt(i.schTarget)} |`,
+    `| Aid Duration | ${i.aidYears} years |`,
+    '\n## Results',
+    `- **Total tutor cost:** ${fmt(r.tutorCost)}`,
+    `- **Gross value if target reached:** ${fmt(r.grossValue)}`,
+    `- **Expected value:** ${fmt(r.expectedValue)}`,
+    `- **Net ROI:** ${r.netROI >= 0 ? '+' : ''}${fmt(r.netROI)} (${fmtX(r.roiRatio)} return)`,
+    `- **Break-even probability:** ${r.breakEvenProb >= 1 ? '>100%' : fmtPct(r.breakEvenProb * 100)}`,
+    `- **Verdict:** ${r.netROI >= 0 ? 'Financially justified' : 'Negative expected value at current inputs'}`,
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tutor-roi.md';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function exportAP2() {
+  if (!_inputs) { alert('Run the analysis first.'); return; }
+  const i = _inputs, r = _results;
+  const validMandateTypes = [
+    'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+    'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+    'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+    'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+    'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+    'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+    'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+    'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+    'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+    'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+    'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+    'deferred_comp_457b_record','tutor_roi_record'
+  ];
+  const payload = {
+    ap2_version: '2.0',
+    mandate_type: 'tutor_roi_record',
+    source_tool: 'AL-50',
+    source_url: 'https://apexlogics.org/tools/45-tutor-roi-calculator/',
+    generated_at: new Date().toISOString(),
+    schema_version: '1.0',
+    data: {
+      exam_type: i.exam,
+      current_score: i.curScore,
+      target_score: i.tgtScore,
+      score_gap: r.scoreGap,
+      probability_of_improvement_pct: +(i.prob * 100).toFixed(1),
+      tutor_hourly_rate: i.rate,
+      total_hours: i.hours,
+      materials_cost: i.materials,
+      total_tutor_cost: Math.round(r.tutorCost),
+      annual_aid_current: i.schCurrent,
+      annual_aid_target: i.schTarget,
+      aid_delta_annual: i.schTarget - i.schCurrent,
+      aid_years: i.aidYears,
+      aid_npv: Math.round(r.aidNPVTotal),
+      gross_value: Math.round(r.grossValue),
+      expected_value: Math.round(r.expectedValue),
+      net_roi: Math.round(r.netROI),
+      roi_ratio: +r.roiRatio.toFixed(2),
+      break_even_probability_pct: r.breakEvenProb >= 1 ? null : +(r.breakEvenProb * 100).toFixed(1),
+      verdict: r.netROI >= 0 ? 'positive_ev' : 'negative_ev'
+    },
+    downstream_tools: ['AL-14', 'AL-02', 'AL-51'],
+    advisory_cta: {
+      text: 'Get help evaluating whether tutoring is right for your specific situation',
+      url: 'https://apexadvisory.site'
+    }
+  };
+  if (!validMandateTypes.includes(payload.mandate_type)) {
+    alert('AP2 mandate type validation failed: ' + payload.mandate_type);
+    return;
+  }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tutor-roi-ap2.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function toggleMCP() {
+  const panel = $('mcpPanel'), btn = $('mcpBtn');
+  const open = panel.classList.toggle('open');
+  btn.textContent = (open ? '▾ ' : '▸ ') + 'Developer / Agent Integration (manifest.json)';
+  btn.setAttribute('aria-expanded', open);
+  if (open && !$('mcpPre').textContent) {
+    $('mcpPre').textContent = JSON.stringify({
+      "al_id": "AL-50",
+      "version": "1.0.0",
+      "title": "Tutor ROI Calculator",
+      "slug": "45-tutor-roi-calculator",
+      "file_path": "tools/45-tutor-roi-calculator/index.html",
+      "description": "Models expected value of tutoring investment: score improvement probability × (merit scholarship NPV + admission value uplift) vs. tutor cost. Returns net ROI, break-even probability, and gross value. Zero embedded data — all inputs user-supplied.",
+      "category": "education_path_roi",
+      "journeys": ["education_path"],
+      "personas": ["student", "parent", "counselor"],
+      "tags": ["tutoring","test-prep","roi","scholarship","merit-aid","break-even","expected-value"],
+      "status": "shipped",
+      "maintenance": "zero",
+      "ap2_export": true,
+      "ap2_mandate_types": ["tutor_roi_record"],
+      "downstream_handoff_candidates": ["AL-14", "AL-02", "AL-51"],
+      "sister_suite": "https://ainumbers.co",
+      "consulting_site": "https://apexadvisory.site",
+      "license": "CC-BY-4.0",
+      "mcp_tool_definition": {
+        "name": "calculate_tutor_roi",
+        "description": "Given exam type, current/target scores, probability of improvement, tutor cost, and merit aid delta — returns expected value, net ROI, and break-even probability. Deterministic.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "hourly_rate": {"type": "number"},
+            "total_hours": {"type": "number"},
+            "prob_improvement_pct": {"type": "number"},
+            "annual_aid_delta": {"type": "number"},
+            "aid_years": {"type": "number"}
+          },
+          "required": ["hourly_rate", "total_hours", "prob_improvement_pct", "annual_aid_delta"]
+        }
+      }
+    }, null, 2);
+  }
+}
+
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function () {
+  const s = sessionStorage.getItem('apex_lang');
+  setLang(s || ({ en:'en', es:'es', fr:'fr', ar:'ar', pt:'pt', zh:'zh' })[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+</script>
+</body>
+</html>
