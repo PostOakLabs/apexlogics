@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MBA Application Portfolio Optimizer · ApexLogics #47</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/47-mba-application-portfolio-optimizer/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: var(--accent); } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 36px; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .form-grid.four { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .section-label { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin: 20px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+    .tier-row { display: grid; grid-template-columns: 120px 1fr 1fr 1fr 1fr; gap: 10px; align-items: end; margin-bottom: 8px; }
+    .tier-label { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text-muted); padding-bottom: 10px; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.35rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); } .metric-val.amber { color: var(--amber); }
+    .metric-val.accent { color: var(--accent); } .metric-val.red { color: var(--red); }
+    .metric-val.teal { color: var(--teal); } .metric-val.blue { color: var(--blue); }
+    .metric-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
+    .portfolio-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    .portfolio-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.67rem; text-transform: uppercase; color: var(--text-dim); padding: 8px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+    .portfolio-table td { padding: 9px 14px; border-bottom: 1px solid rgba(167,139,250,0.06); }
+    .portfolio-table td:not(:first-child) { text-align: right; font-family: 'JetBrains Mono', monospace; }
+    .portfolio-table tr.total td { font-weight: 600; background: var(--accent-low); }
+    .bar-wrap { background: rgba(167,139,250,0.08); border-radius: 4px; height: 8px; margin-top: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width 0.4s; }
+    .bar-fill.green { background: var(--green); }
+    .insight-box { background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.2); border-radius: 8px; padding: 16px 20px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; }
+    .insight-box strong { color: var(--text); }
+    .verdict-banner { border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.3); }
+    .verdict-icon { font-size: 1.8rem; }
+    .verdict-text strong { color: var(--text); font-size: 1rem; display: block; margin-bottom: 2px; }
+    .verdict-text { font-size: 0.92rem; color: var(--text-muted); }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(167,139,250,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .mcp-section { max-width: 680px; margin: 24px auto 0; }
+    .mcp-toggle { background: none; border: 1px dashed var(--border); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 8px 14px; border-radius: 6px; cursor: pointer; width: 100%; text-align: left; margin-top: 24px; }
+    .mcp-panel { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 8px; }
+    .mcp-panel.open { display: block; }
+    .mcp-pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    @media (max-width: 700px) {
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid.two, .form-grid.three, .form-grid.four { grid-template-columns: 1fr; }
+      .tier-row { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="28" height="28" rx="6" fill="#A78BFA" fill-opacity="0.15"/>
+          <path d="M7 21L14 7L21 21" stroke="#A78BFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9.5 16.5H18.5" stroke="#A78BFA" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-name"><span class="logo-apex">Apex</span><span class="logo-org">Logics</span></div>
+        <div class="logo-tag">apexlogics.org</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="https://apexadvisory.site" class="nav-pill accent" target="_blank" rel="noopener">Advisory</a>
+    <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    <a href="../../index.html" class="nav-pill">← All Tools</a>
+  </div>
+</nav>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <div class="tool-eyebrow">AL-52 · Education Path &amp; ROI</div>
+  <h1 class="tool-title">MBA Application<br>Portfolio Optimizer</h1>
+  <p class="tool-desc">How many schools should you apply to — and at which tiers? Model the expected value of your entire application portfolio: probability of receiving at least one offer, expected scholarship outcome, cost per acceptance, and the marginal ROI of adding each additional school. Pure expected-value math on your inputs.</p>
+  <div class="tool-vintage">Data vintage: Zero — all logic is probability math on user-supplied inputs. No embedded admit-rate databases.</div>
+
+  <!-- INPUTS -->
+  <div class="card">
+    <div class="card-title">Your Profile &amp; Budget <span class="badge">Situation</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="currentSalary">Current Annual Salary ($)</label>
+        <input type="number" id="currentSalary" value="95000" min="0" step="1000" />
+        <span class="field-hint">Used to estimate opportunity cost of essay/application time</span>
+      </div>
+      <div class="field">
+        <label for="hoursPerApp">Hours Per Application (essays + forms)</label>
+        <input type="number" id="hoursPerApp" value="40" min="1" max="200" step="5" />
+        <span class="field-hint">Typical range: 20–60 hrs per school for complete application</span>
+      </div>
+      <div class="field">
+        <label for="discountRate">Personal Discount Rate (%)</label>
+        <input type="number" id="discountRate" value="6" min="0" max="20" step="0.5" />
+        <span class="field-hint">Time value of money. 5–8% typical.</span>
+      </div>
+      <div class="field">
+        <label for="postMBAHorizon">Post-MBA Career Horizon (years)</label>
+        <input type="number" id="postMBAHorizon" value="10" min="1" max="30" step="1" />
+        <span class="field-hint">How many years you'll benefit from the MBA salary premium</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">School Tiers — Admit Odds &amp; Outcomes</div>
+    <p class="tool-desc" style="font-size:0.82rem; margin-bottom:16px;">For each tier, enter how many schools you're targeting, your honest admit probability, the app fee, expected scholarship offer, and median post-MBA base salary at that tier. Leave count at 0 to exclude a tier.</p>
+
+    <div class="tier-row" style="align-items:end; margin-bottom:4px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.67rem;color:var(--text-dim);text-transform:uppercase;">Tier</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.67rem;color:var(--text-dim);text-transform:uppercase;"># Schools</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.67rem;color:var(--text-dim);text-transform:uppercase;">Admit Prob (%)</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.67rem;color:var(--text-dim);text-transform:uppercase;">App Fee ($)</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.67rem;color:var(--text-dim);text-transform:uppercase;">Scholarship/yr ($)</div>
+    </div>
+
+    <!-- M7 -->
+    <div class="tier-row">
+      <div class="tier-label">M7 / Elite</div>
+      <input type="number" id="m7Count" value="2" min="0" max="7" />
+      <input type="number" id="m7Admit" value="12" min="1" max="100" />
+      <input type="number" id="m7Fee" value="250" min="0" step="25" />
+      <input type="number" id="m7Scholar" value="0" min="0" step="1000" />
+    </div>
+    <!-- T8-15 -->
+    <div class="tier-row">
+      <div class="tier-label">T8–15</div>
+      <input type="number" id="t15Count" value="3" min="0" max="10" />
+      <input type="number" id="t15Admit" value="28" min="1" max="100" />
+      <input type="number" id="t15Fee" value="225" min="0" step="25" />
+      <input type="number" id="t15Scholar" value="10000" min="0" step="1000" />
+    </div>
+    <!-- T16-30 -->
+    <div class="tier-row">
+      <div class="tier-label">T16–30</div>
+      <input type="number" id="t30Count" value="2" min="0" max="15" />
+      <input type="number" id="t30Admit" value="45" min="1" max="100" />
+      <input type="number" id="t30Fee" value="200" min="0" step="25" />
+      <input type="number" id="t30Scholar" value="20000" min="0" step="1000" />
+    </div>
+    <!-- T31-50 / Safety -->
+    <div class="tier-row">
+      <div class="tier-label">T31–50 / Safety</div>
+      <input type="number" id="safeCount" value="1" min="0" max="10" />
+      <input type="number" id="safeAdmit" value="70" min="1" max="100" />
+      <input type="number" id="safeFee" value="175" min="0" step="25" />
+      <input type="number" id="safeScholar" value="30000" min="0" step="1000" />
+    </div>
+
+    <div class="section-label" style="margin-top:24px;">Post-MBA Base Salary by Tier (Year 1)</div>
+    <div class="form-grid four">
+      <div class="field">
+        <label for="m7Salary">M7 / Elite ($)</label>
+        <input type="number" id="m7Salary" value="175000" min="0" step="5000" />
+      </div>
+      <div class="field">
+        <label for="t15Salary">T8–15 ($)</label>
+        <input type="number" id="t15Salary" value="145000" min="0" step="5000" />
+      </div>
+      <div class="field">
+        <label for="t30Salary">T16–30 ($)</label>
+        <input type="number" id="t30Salary" value="125000" min="0" step="5000" />
+      </div>
+      <div class="field">
+        <label for="safeSalary">T31–50 ($)</label>
+        <input type="number" id="safeSalary" value="105000" min="0" step="5000" />
+      </div>
+    </div>
+    <div class="form-grid two" style="margin-top:14px;">
+      <div class="field">
+        <label for="programCost">Average Program Total Cost ($, 2-yr)</label>
+        <input type="number" id="programCost" value="220000" min="0" step="5000" />
+        <span class="field-hint">Tuition + living, before scholarships. Used for ROI calc.</span>
+      </div>
+      <div class="field">
+        <label for="salaryGrowth">Annual Salary Growth Rate Post-MBA (%)</label>
+        <input type="number" id="salaryGrowth" value="4" min="0" max="20" step="0.5" />
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Optimize Portfolio</button>
+
+  <!-- RESULTS -->
+  <div class="results-section" id="resultsSection">
+
+    <div class="verdict-banner" id="verdictBanner">
+      <div class="verdict-icon" id="verdictIcon"></div>
+      <div class="verdict-text" id="verdictText"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Portfolio Summary</div>
+      <div class="metrics-grid" id="metricsGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Per-Tier Breakdown</div>
+      <table class="portfolio-table" id="tierTable"></table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Marginal Value of Adding One More School</div>
+      <table class="portfolio-table" id="marginalTable"></table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Portfolio Analysis &amp; Recommendations</div>
+      <div class="insight-box" id="insightBox"></div>
+    </div>
+
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+    </div>
+  </div>
+
+  <div class="mcp-section">
+    <button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">▸ Developer / Agent Integration (manifest.json)</button>
+    <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+      <pre class="mcp-pre" id="mcpManifestPre"></pre>
+    </div>
+  </div>
+
+  <footer class="tool-footer">
+    <p>AL-52 · ApexLogics.org · <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> · <a href="https://apexadvisory.site" target="_blank" rel="noopener">ApexAdvisory.site</a> · CC-BY-4.0</p>
+  </footer>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let _inputs = null, _results = null;
+
+function fmt(n)    { return '$' + Math.round(n).toLocaleString('en-US'); }
+function fmtPct(n) { return n.toFixed(1) + '%'; }
+function pv(annual, rate, years) {
+  if (rate === 0) return annual * years;
+  return annual * (1 - Math.pow(1 + rate, -years)) / rate;
+}
+
+function calculate() {
+  const curSalary   = parseFloat($('currentSalary').value)  || 0;
+  const hoursPerApp = parseFloat($('hoursPerApp').value)     || 40;
+  const dr          = parseFloat($('discountRate').value)    / 100;
+  const horizon     = parseFloat($('postMBAHorizon').value)  || 10;
+  const programCost = parseFloat($('programCost').value)     || 220000;
+  const salaryGrowth= parseFloat($('salaryGrowth').value)    / 100;
+  const hourlyRate  = curSalary / 2080;
+
+  const tiers = [
+    { id:'m7',   name:'M7 / Elite', count:+$('m7Count').value, admit:+$('m7Admit').value/100, fee:+$('m7Fee').value, scholar:+$('m7Scholar').value, salary:+$('m7Salary').value },
+    { id:'t15',  name:'T8–15',      count:+$('t15Count').value,admit:+$('t15Admit').value/100,fee:+$('t15Fee').value,scholar:+$('t15Scholar').value,salary:+$('t15Salary').value },
+    { id:'t30',  name:'T16–30',     count:+$('t30Count').value,admit:+$('t30Admit').value/100,fee:+$('t30Fee').value,scholar:+$('t30Scholar').value,salary:+$('t30Salary').value },
+    { id:'safe', name:'T31–50',     count:+$('safeCount').value,admit:+$('safeAdmit').value/100,fee:+$('safeFee').value,scholar:+$('safeScholar').value,salary:+$('safeSalary').value },
+  ].filter(t => t.count > 0);
+
+  const totalSchools = tiers.reduce((s,t) => s + t.count, 0);
+  const timeCostPerApp = hoursPerApp * hourlyRate;
+
+  // P(reject from all schools in each tier)
+  let pNoOffer = 1;
+  tiers.forEach(t => { pNoOffer *= Math.pow(1 - t.admit, t.count); });
+  const pAtLeastOne = 1 - pNoOffer;
+
+  // Total application cost
+  let totalAppCost = 0;
+  tiers.forEach(t => { totalAppCost += t.count * (t.fee + timeCostPerApp); });
+
+  // Expected best outcome — model: probability of getting into each tier as "best offer"
+  // P(best offer = tier i) = P(admit at tier i) × P(no admit at any tier above i)
+  // Build expected salary lift and expected scholarship
+  let expSalary = 0, expScholar = 0;
+  let pNoAdmitAbove = 1;
+  for (let i = 0; i < tiers.length; i++) {
+    const t = tiers[i];
+    const pAdmitTier = 1 - Math.pow(1 - t.admit, t.count);
+    const pBestIsTier = pAdmitTier * pNoAdmitAbove;
+    const salaryLift = Math.max(0, t.salary - curSalary);
+    const scholarTotal = t.scholar * 2; // 2-year program
+    expSalary   += pBestIsTier * salaryLift;
+    expScholar  += pBestIsTier * scholarTotal;
+    pNoAdmitAbove *= (1 - pAdmitTier);
+  }
+
+  // PV of salary lift over horizon (growing annuity)
+  const pvSalaryLift = salaryGrowth !== dr
+    ? expSalary * (1 - Math.pow((1+salaryGrowth)/(1+dr), horizon)) / (dr - salaryGrowth)
+    : expSalary * horizon / (1 + dr);
+
+  const netProgramCost = programCost - expScholar;
+  const portfolioEV = pvSalaryLift - netProgramCost - totalAppCost;
+  const evPerDollarSpent = totalAppCost > 0 ? portfolioEV / totalAppCost : 0;
+  const costPerExpectedAccept = pAtLeastOne > 0 ? totalAppCost / pAtLeastOne : 0;
+
+  // Marginal value of one more school per tier
+  const marginals = tiers.map(t => {
+    const pNoOfferBase = pNoOffer;
+    const pNoOfferWith = pNoOfferBase * (1 - t.admit) / Math.pow(1 - t.admit, t.count) * Math.pow(1 - t.admit, t.count + 1);
+    // Δ P(at least one offer) from adding one more school to this tier
+    const deltaP = Math.pow(1-t.admit, t.count) - Math.pow(1-t.admit, t.count+1);
+    const marginalAcceptProb = deltaP;
+    const marginalCost = t.fee + timeCostPerApp;
+    const marginalValue = marginalAcceptProb * (pvSalaryLift + t.scholar * 2) / pAtLeastOne - marginalCost;
+    return { name: t.name, marginalCost, marginalAcceptProb, marginalValue };
+  });
+
+  _inputs = { totalSchools, tiers, hoursPerApp, curSalary, programCost, horizon, dr, salaryGrowth };
+  _results = { pAtLeastOne, pNoOffer, totalAppCost, expSalary, expScholar, pvSalaryLift,
+               netProgramCost, portfolioEV, evPerDollarSpent, costPerExpectedAccept, marginals };
+
+  renderResults();
+  $('resultsSection').classList.add('visible');
+}
+
+function renderResults() {
+  const r = _results, i = _inputs;
+
+  // Verdict
+  const vb = $('verdictBanner');
+  $('verdictIcon').textContent = r.portfolioEV > 0 ? '✅' : '⚠️';
+  $('verdictText').innerHTML = r.portfolioEV > 0
+    ? `<strong>${i.totalSchools}-School Portfolio — Positive Expected Value</strong>P(at least one offer): ${fmtPct(r.pAtLeastOne*100)} · Expected best-tier salary lift PV: ${fmt(r.pvSalaryLift)} · Portfolio EV: ${fmt(r.portfolioEV)}`
+    : `<strong>${i.totalSchools}-School Portfolio — Negative Expected Value</strong>Application costs and program cost exceed expected salary gains at these admit probabilities. Consider revising school list or salary targets.`;
+  vb.style.background = r.portfolioEV > 0 ? 'rgba(52,211,153,0.08)' : 'rgba(251,191,36,0.08)';
+  vb.style.border = r.portfolioEV > 0 ? '1px solid rgba(52,211,153,0.3)' : '1px solid rgba(251,191,36,0.3)';
+
+  // Metrics
+  $('metricsGrid').innerHTML = [
+    { label:'P(≥1 Offer)',      val:fmtPct(r.pAtLeastOne*100), cls:'green',  note:'Probability of at least one admit' },
+    { label:'App Portfolio Cost', val:fmt(r.totalAppCost),    cls:'amber',  note:'Fees + time opportunity cost' },
+    { label:'Expected Scholarship', val:fmt(r.expScholar),   cls:'teal',   note:'Probability-weighted 2-yr total' },
+    { label:'Portfolio EV',     val:fmt(r.portfolioEV),      cls: r.portfolioEV > 0 ? 'green' : 'red', note:'PV salary lift − program cost − app cost' },
+    { label:'Cost / Expected Admit', val:fmt(r.costPerExpectedAccept), cls:'blue', note:'App cost ÷ P(at least one offer)' },
+    { label:'EV per App $',     val:'×' + (r.evPerDollarSpent > 0 ? r.evPerDollarSpent.toFixed(1) : r.evPerDollarSpent.toFixed(1)), cls: r.evPerDollarSpent > 1 ? 'green' : 'amber', note:'Return per dollar of app spend' },
+    { label:'P(Zero Offers)',   val:fmtPct(r.pNoOffer*100),  cls: r.pNoOffer < 0.1 ? 'green' : r.pNoOffer < 0.3 ? 'amber' : 'red', note:'Risk of no admissions' },
+    { label:'Exp. PV Salary Lift', val:fmt(r.pvSalaryLift), cls:'accent',  note:`Over ${_inputs.horizon}-yr horizon vs. current salary` },
+  ].map(m => `<div class="metric-card"><div class="metric-label">${m.label}</div><div class="metric-val ${m.cls}">${m.val}</div><div class="metric-note">${m.note}</div></div>`).join('');
+
+  // Per-tier table
+  let tierRows = '';
+  i.tiers.forEach(t => {
+    const pAdmit = 1 - Math.pow(1-t.admit, t.count);
+    const cost = t.count * (t.fee + (_inputs.curSalary/2080 * _inputs.hoursPerApp));
+    const scholar = t.scholar * 2;
+    tierRows += `<tr>
+      <td>${t.name}</td>
+      <td>${t.count}</td>
+      <td>${fmtPct(t.admit*100)} ea</td>
+      <td>${fmtPct(pAdmit*100)}</td>
+      <td>${fmt(cost)}</td>
+      <td>${fmt(scholar)}/offer</td>
+    </tr>`;
+  });
+  $('tierTable').innerHTML = `<thead><tr>
+    <th>Tier</th><th># Schools</th><th>Admit / School</th><th>P(≥1 Admit)</th><th>Tier App Cost</th><th>Expected Scholarship</th>
+  </tr></thead><tbody>${tierRows}</tbody>`;
+
+  // Marginal table
+  let margRows = '';
+  r.marginals.forEach(m => {
+    const cls = m.marginalValue > 0 ? 'color:var(--green)' : 'color:var(--amber)';
+    margRows += `<tr>
+      <td>+1 ${m.name}</td>
+      <td>${fmtPct(m.marginalAcceptProb*100)}</td>
+      <td>${fmt(m.marginalCost)}</td>
+      <td style="${cls}">${fmt(m.marginalValue)}</td>
+    </tr>`;
+  });
+  $('marginalTable').innerHTML = `<thead><tr>
+    <th>Add One More School To</th><th>Δ P(Admit)</th><th>Marginal Cost</th><th>Marginal EV</th>
+  </tr></thead><tbody>${margRows}</tbody>`;
+
+  // Insight
+  const optMarginal = r.marginals.filter(m => m.marginalValue > 0).map(m => m.name).join(', ');
+  $('insightBox').innerHTML = `<strong>Portfolio Strategy:</strong> With ${i.totalSchools} schools, your probability of receiving at least one offer is <strong>${fmtPct(r.pAtLeastOne*100)}</strong>.
+  ${r.pNoOffer > 0.25 ? `<strong>Risk alert:</strong> ${fmtPct(r.pNoOffer*100)} chance of zero offers — consider adding safety schools or raising admit probability estimates. ` : ''}
+  ${optMarginal ? `Positive marginal EV from adding one more: <strong>${optMarginal}</strong>. ` : 'All tiers show negative marginal EV — your current portfolio size is near-optimal. '}
+  Expected scholarship reduces net program cost by <strong>${fmt(r.expScholar)}</strong>.
+  The ${fmt(r.totalAppCost)} in application costs represents <strong>${fmtPct(r.totalAppCost/(r.totalAppCost+r.netProgramCost)*100)}</strong> of total investment in the MBA process.`;
+}
+
+function exportMarkdown() {
+  if (!_inputs) return;
+  const i = _inputs, r = _results;
+  const d = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  const tierRows = i.tiers.map(t => `| ${t.name} | ${t.count} | ${fmtPct(t.admit*100)} | ${fmt(t.fee)} | ${fmt(t.scholar)}/yr |`).join('\n');
+  const lines = [
+    '# MBA Application Portfolio Analysis',
+    `\n_Generated ${d} · AL-52 · apexlogics.org_\n`,
+    '## Portfolio Summary',
+    `- **Schools:** ${i.totalSchools} total`,
+    `- **P(≥1 Offer):** ${fmtPct(r.pAtLeastOne*100)}`,
+    `- **P(Zero Offers):** ${fmtPct(r.pNoOffer*100)}`,
+    `- **Total Application Cost:** ${fmt(r.totalAppCost)}`,
+    `- **Expected Scholarship (2-yr):** ${fmt(r.expScholar)}`,
+    `- **Portfolio EV:** ${fmt(r.portfolioEV)}`,
+    `- **Cost per Expected Admit:** ${fmt(r.costPerExpectedAccept)}`,
+    '\n## School Tiers',
+    '| Tier | Count | Admit % | App Fee | Scholarship/yr |',
+    '|---|---|---|---|---|',
+    tierRows,
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'mba-portfolio-analysis.md'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function exportAP2() {
+  if (!_inputs) { alert('Run the optimizer first.'); return; }
+  const i = _inputs, r = _results;
+  const validMandateTypes = [
+    'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+    'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+    'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+    'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+    'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+    'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+    'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+    'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+    'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+    'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+    'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+    'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+    'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+    'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record'
+  ];
+  const payload = {
+    ap2_version: '2.0',
+    mandate_type: 'mba_portfolio_record',
+    source_tool: 'AL-52',
+    source_url: 'https://apexlogics.org/tools/47-mba-application-portfolio-optimizer/',
+    generated_at: new Date().toISOString(),
+    schema_version: '1.0',
+    inputs: {
+      total_schools: i.totalSchools,
+      current_salary: i.curSalary,
+      hours_per_application: i.hoursPerApp,
+      program_cost: i.programCost,
+      career_horizon_years: i.horizon,
+      discount_rate_pct: +(i.dr*100).toFixed(1),
+      salary_growth_rate_pct: +(i.salaryGrowth*100).toFixed(1),
+      tiers: i.tiers.map(t => ({ name:t.name, count:t.count, admit_pct:+(t.admit*100).toFixed(1), app_fee:t.fee, scholarship_per_yr:t.scholar, post_mba_salary:t.salary }))
+    },
+    results: {
+      prob_at_least_one_offer_pct: +(r.pAtLeastOne*100).toFixed(1),
+      prob_zero_offers_pct: +(r.pNoOffer*100).toFixed(1),
+      total_application_cost: Math.round(r.totalAppCost),
+      expected_scholarship_2yr: Math.round(r.expScholar),
+      pv_salary_lift: Math.round(r.pvSalaryLift),
+      net_program_cost: Math.round(r.netProgramCost),
+      portfolio_ev: Math.round(r.portfolioEV),
+      cost_per_expected_admit: Math.round(r.costPerExpectedAccept),
+      ev_per_app_dollar: +r.evPerDollarSpent.toFixed(2)
+    },
+    downstream_handoff_candidates: ['AL-26','AL-22','AL-13'],
+    advisory_cta: { text:'Get personalized MBA school list strategy', url:'https://apexadvisory.site' }
+  };
+  if (!validMandateTypes.includes(payload.mandate_type)) {
+    alert('AP2 validation failed: ' + payload.mandate_type); return;
+  }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'mba-portfolio-ap2.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function toggleMCP() {
+  const panel = $('mcpPanel'), btn = $('mcpToggleBtn');
+  const open = panel.classList.toggle('open');
+  btn.textContent = (open ? '▾ ' : '▸ ') + 'Developer / Agent Integration (manifest.json)';
+  btn.setAttribute('aria-expanded', open);
+  if (open && !$('mcpManifestPre').textContent) {
+    $('mcpManifestPre').textContent = JSON.stringify({
+      al_id:'AL-52', version:'1.0.0', title:'MBA Application Portfolio Optimizer',
+      slug:'47-mba-application-portfolio-optimizer',
+      file_path:'tools/47-mba-application-portfolio-optimizer/index.html',
+      description:'Expected-value optimizer for MBA application school list. Models probability of ≥1 offer, expected scholarship, portfolio EV, and marginal value of each additional school by tier.',
+      category:'education_path_roi', journeys:['education_path'],
+      personas:['student','working_professional','counselor'],
+      tags:['mba','application','portfolio','school-list','expected-value','admit-probability','scholarship'],
+      status:'shipped', maintenance:'zero',
+      ap2_export:true, ap2_mandate_types:['mba_portfolio_record'],
+      downstream_handoff_candidates:['AL-26','AL-22','AL-13'],
+      sister_suite:'https://ainumbers.co', consulting_site:'https://apexadvisory.site', license:'CC-BY-4.0'
+    }, null, 2);
+  }
+}
+
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function() {
+  const s = sessionStorage.getItem('apex_lang');
+  setLang(s || ({en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'})[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+</script>
+</body>
+</html>
