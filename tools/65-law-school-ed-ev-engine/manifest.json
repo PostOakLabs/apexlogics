@@ -1,0 +1,56 @@
+{
+  "al_id": "AL-72",
+  "tool_id": "65-law-school-ed-ev-engine",
+  "version": "1.0.0",
+  "title": "Law School Early Decision EV Engine",
+  "slug": "65-law-school-ed-ev-engine",
+  "file_path": "tools/65-law-school-ed-ev-engine/index.html",
+  "description": "Computes the expected value of binding Early Decision vs. a Regular Decision portfolio for law school: ED admission boost by median position (splitter logic), forfeited scholarship negotiation leverage, break-even ED boost, ED guarantee programs, and debt/payment impact.",
+  "category": "education_path_roi",
+  "journeys": ["education_path"],
+  "personas": ["student", "counselor"],
+  "tags": ["law-school", "early-decision", "ed-vs-rd", "expected-value", "scholarship-negotiation", "splitter", "lsat", "jd", "admissions"],
+  "status": "shipped",
+  "maintenance": "very_low",
+  "data_vintage": "LSAC 2024 median LSAT by school tier · NALP 2024 BigLaw salary data · ABA 509 data 2024 scholarship rates · LSAC ED policy survey 2024",
+  "frozen_baseline": false,
+  "regulatory_citations": [
+    "ABA 509 data 2024 scholarship disclosure rates",
+    "LSAC 2024 binding Early Decision program policies",
+    "NALP 2024 associate salary survey",
+    "LSAC 2024 median LSAT scores by school tier"
+  ],
+  "ap2_export": true,
+  "ap2_mandate_types": ["law_ed_record"],
+  "downstream_handoff_candidates": ["AL-55", "AL-62", "AL-13"],
+  "mcp_tool_definition": {
+    "name": "evaluate_law_ed_tradeoff",
+    "description": "Evaluate binding Early Decision vs. Regular Decision for a law school applicant: returns EV of each path, ED admit-probability boost by median position (above/splitter/below), forfeited scholarship negotiation leverage in dollars, break-even ED boost, net cost and monthly payment under each path, and a sensitivity strip across boost assumptions.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "lsat_score": { "type": "integer", "minimum": 120, "maximum": 180, "description": "Applicant LSAT score" },
+        "gpa": { "type": "number", "minimum": 2.0, "maximum": 4.33, "description": "Undergraduate GPA" },
+        "ed_target_tier": { "type": "string", "enum": ["t14", "t1550", "regional"], "description": "Tier of the single binding ED target school" },
+        "career_track": { "type": "string", "enum": ["biglaw", "inhouse", "gov", "pi"], "description": "Intended post-JD career track" },
+        "rd_portfolio_size": { "type": "integer", "minimum": 1, "maximum": 20, "description": "Number of same-tier schools in the Regular Decision portfolio" },
+        "risk_tolerance": { "type": "string", "enum": ["conservative", "neutral", "aggressive"], "description": "Risk profile applied to the verdict (certainty premium vs. leverage weighting)" },
+        "loan_rate_pct": { "type": "number", "minimum": 0, "maximum": 15, "description": "Expected student loan interest rate, percent (Grad PLUS 2024-25: 9.08%)" },
+        "ed_guarantee": { "type": "boolean", "description": "Whether the ED target offers a scholarship guarantee program (e.g., NYU / Chicago-style full-tuition ED guarantee)" },
+        "ed_guarantee_amount": { "type": "number", "minimum": 0, "description": "Guaranteed ED scholarship, total dollars over 3 years (used only if ed_guarantee is true)" }
+      },
+      "required": ["lsat_score", "gpa", "ed_target_tier", "career_track", "rd_portfolio_size"]
+    },
+    "execution": {
+      "type": "browser-javascript",
+      "entry": "index.html",
+      "function": "calculate",
+      "timeout_ms": 5000
+    }
+  },
+  "input_schema_summary": "LSAT score, GPA, ED target tier (T14/T15-50/Regional), career track (BigLaw/in-house/government/public interest), RD portfolio size, risk tolerance, loan rate, optional ED scholarship guarantee amount",
+  "output_schema_summary": "EV(ED) and EV(RD) in 10-yr NPV dollars, EV gap and verdict, P(admit) RD vs ED with boost in pp by median position, forfeited negotiation leverage, break-even ED boost, net cost and 10-yr monthly payment per path, fallback-tier odds and NPV, sensitivity strip at +5/10/15/20pp boosts",
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+}

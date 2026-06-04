@@ -1,0 +1,69 @@
+{
+  "al_id": "AL-71",
+  "version": "1.0.0",
+  "title": "One-Year vs. Two-Year MBA Global Comparator",
+  "slug": "64-one-vs-two-year-mba-comparator",
+  "tool_id": "64-one-vs-two-year-mba-comparator",
+  "file_path": "tools/64-one-vs-two-year-mba-comparator/index.html",
+  "description": "Three-path NPV comparator (1-yr international MBA, 2-yr US MBA, no MBA) modeling the three mechanics generic calculators miss: opportunity-cost asymmetry (10 vs 21 months out), career-switch feasibility gates (no-internship double switch ×0.60), and geo-placement gates (e.g., INSEAD <10% US placement). Embedded 12-program table, visa hard-stop logic, payback year, geo-fit scoring.",
+  "category": "education_path_roi",
+  "journeys": ["education_path"],
+  "personas": ["student", "career_changer", "working_professional"],
+  "tags": ["one-year-mba", "two-year-mba", "insead", "international-mba", "npv", "opportunity-cost", "geo-placement", "career-switch", "visa", "opt"],
+  "status": "shipped",
+  "maintenance": "very_low",
+  "data_vintage": "2025–26 class profiles & published fees · school employment reports 2024–25 · GMAC application trends",
+  "frozen_baseline": false,
+  "regulatory_citations": [
+    "2025–26 class profiles & published fees (INSEAD, LBS, IESE, HEC, Oxford, Cambridge, Kellogg, Columbia, Cornell)",
+    "School employment reports 2024–25 (placement geography: INSEAD, LBS, US M7/T15 composites)",
+    "GMAC Prospective Students Survey & Application Trends Survey 2024–25",
+    "8 CFR 214.2(f) F-1 OPT / STEM OPT regulations"
+  ],
+  "ap2_export": true,
+  "ap2_mandate_types": ["mba_format_geo_record"],
+  "downstream_handoff_candidates": ["AL-29", "AL-31", "AL-59", "AL-65"],
+  "mcp_tool_definition": {
+    "name": "compare_mba_format_geography",
+    "description": "Compare 1-year international vs 2-year US MBA vs no-MBA paths with opportunity-cost, switch-feasibility, and geo-placement gates. Returns 10-yr NPV per path, payback year, geo-fit score, switch-gate multipliers, expected gated year-1 salary, and visa hard-stop warnings.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "current_salary": { "type": "number", "description": "Current annual salary in USD — drives opportunity cost" },
+        "target_geography": { "type": "string", "enum": ["us", "europe", "asia", "flexible"], "description": "Target post-MBA geography; placement-share gate scales expected salary realization" },
+        "career_goal": { "type": "string", "enum": ["accelerate", "single", "double"], "description": "accelerate = same track; single = switch industry OR function; double = switch both (×0.60 gate without internship)" },
+        "citizenship": { "type": "string", "enum": ["us", "nonus"], "description": "Non-US + US target + non-US program = visa hard stop (no F-1 OPT pathway)" },
+        "program_a": { "type": "string", "description": "1-year/accelerated program id: insead, lbs, iese, hec, oxford, cambridge, kellogg1y, cbsjterm, cornell1y" },
+        "program_b": { "type": "string", "description": "2-year US program id: usm7, ust15, ust25" },
+        "discount_rate": { "type": "number", "description": "Annual discount rate as decimal (default 0.05, real terms)" },
+        "horizon_years": { "type": "number", "description": "Analysis horizon in years (default 10, range 5–20)" }
+      },
+      "required": ["current_salary", "target_geography", "career_goal", "citizenship"]
+    },
+    "execution": {
+      "type": "browser-javascript",
+      "entry": "index.html",
+      "function_name": "calculate",
+      "timeout_ms": 5000
+    }
+  },
+  "input_schema": {
+    "current_salary": "number (USD/yr)",
+    "target_geography": "us | europe | asia | flexible",
+    "career_goal": "accelerate | single | double",
+    "citizenship": "us | nonus",
+    "program_a": "1-yr program id from embedded 12-program table",
+    "program_b": "2-yr US program id (usm7 | ust15 | ust25)",
+    "discount_rate": "decimal (default 0.05)",
+    "horizon_years": "integer (default 10)"
+  },
+  "output_schema": {
+    "best_path": "string — highest-NPV path name",
+    "paths": "array of {path, program, npv, opportunity_cost, tuition_fees, payback_year, geo_fit_score, switch_gate, expected_year1_salary}",
+    "visa_blocked_path_a": "boolean — non-US citizen targeting US via program with no OPT pathway",
+    "warnings": "array — e.g. no_us_opt_pathway_path_a"
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+}

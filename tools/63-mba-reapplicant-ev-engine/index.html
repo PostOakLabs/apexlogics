@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MBA Reapplicant EV Engine · ApexLogics #63</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/63-mba-reapplicant-ev-engine/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: #E8A838; } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 28px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; padding: 10px 18px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .check-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .check-row:last-child { border-bottom: none; }
+    .check-row input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; margin-top: 4px; flex-shrink: 0; cursor: pointer; }
+    .check-row .check-label { font-size: 0.85rem; color: var(--text); cursor: pointer; }
+    .check-row .check-sub { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); } .metric-val.amber { color: var(--amber); }
+    .metric-val.accent { color: var(--accent); } .metric-val.red { color: var(--red); }
+    .metric-val.teal { color: var(--teal); } .metric-val.blue { color: var(--blue); }
+    .metric-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
+    .score-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    .score-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.67rem; text-transform: uppercase; color: var(--text-dim); padding: 8px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+    .score-table td { padding: 9px 14px; border-bottom: 1px solid rgba(167,139,250,0.06); font-size: 0.83rem; }
+    .score-table tr.highlight td { background: var(--accent-low); }
+    .bar-row { display: grid; grid-template-columns: 240px 1fr 110px; align-items: center; gap: 12px; padding: 7px 0; }
+    .bar-name { font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; color: var(--text-muted); }
+    .bar-track { background: var(--surface); border-radius: 5px; height: 22px; position: relative; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 5px; transition: width 0.4s; }
+    .bar-val { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; text-align: right; }
+    .insight-box { background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.2); border-radius: 8px; padding: 16px 20px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; }
+    .insight-box strong { color: var(--text); }
+    .verdict-banner { border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.3); }
+    .verdict-icon { font-size: 1.8rem; }
+    .verdict-text strong { color: var(--text); font-size: 1rem; display: block; margin-bottom: 2px; }
+    .verdict-text { font-size: 0.92rem; color: var(--text-muted); }
+    .cite-list { font-size: 0.74rem; color: var(--text-dim); line-height: 1.8; }
+    .cite-list li { margin-left: 18px; }
+    .cite-list a { color: var(--text-dim); }
+    .cite-list a:hover { color: var(--accent); }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(167,139,250,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--red); color: #000; padding: 12px 24px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; z-index: 999; display: none; }
+    .toast.show { display: block; }
+    .mcp-section { max-width: 680px; margin: 24px auto 0; }
+    .mcp-toggle { background: none; border: 1px dashed var(--border); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 8px 14px; border-radius: 6px; cursor: pointer; width: 100%; text-align: left; margin-top: 24px; }
+    .mcp-panel { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 8px; }
+    .mcp-panel.open { display: block; }
+    .mcp-pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    @media (max-width: 700px) {
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid.two { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .bar-row { grid-template-columns: 130px 1fr 90px; }
+      .results-export-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="../../index.html" class="nav-pill accent">← All Tools</a>
+  </div>
+</nav>
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+  <div class="tool-eyebrow">AL-70 · Education Path &amp; ROI</div>
+  <h1 class="tool-title">MBA Reapplicant<br>EV Engine</h1>
+  <p class="tool-desc">Dinged this cycle? Roughly 10% of HBS's entering class are reapplicants, and several M7 programs report reapplicant admit rates at or above their overall average — but only when the profile actually changed. This engine prices your four paths: reapply to the same schools, restructure the portfolio, take the admit in hand, or skip the MBA — then ranks which profile improvements buy the most admit probability per dollar and per hour.</p>
+  <div class="tool-vintage">Data vintage: School reapplicant statements + class profiles, 2025–26 · tier salary premium NPVs from 2024 employment reports. All embedded; see citations below.</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">Path EV</button>
+    <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">Improvement Portfolio</button>
+  </div>
+
+  <!-- ============ TAB 1: PATH EV ============ -->
+  <div class="tab-pane active" id="tabPane1">
+    <div class="card">
+      <div class="card-title">Your Situation <span class="badge">Reapplicant Decision Model</span></div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="admitInHand">Admit in Hand (this cycle)</label>
+          <select id="admitInHand" onchange="toggleAdmitFields()">
+            <option value="none" selected>None — dinged everywhere</option>
+            <option value="m7">M7 admit</option>
+            <option value="t15">T8–15 admit</option>
+            <option value="t25">T16–25 admit</option>
+            <option value="t50">T26–50 admit</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="scholarshipInHand">Scholarship on the Admit in Hand ($, total)</label>
+          <input type="number" id="scholarshipInHand" value="0" min="0" max="250000" step="5000" disabled />
+          <span class="field-hint">Enabled only if you hold an admit</span>
+        </div>
+        <div class="field">
+          <label for="targetTier">Target Tier for Reapplication</label>
+          <select id="targetTier">
+            <option value="m7" selected>M7</option>
+            <option value="t15">T8–15</option>
+            <option value="t25">T16–25</option>
+            <option value="t50">T26–50</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="curSalary">Current Annual Salary ($)</label>
+          <input type="number" id="curSalary" value="95000" min="0" max="500000" step="5000" />
+        </div>
+        <div class="field">
+          <label for="age">Your Age</label>
+          <input type="number" id="age" value="27" min="21" max="45" step="1" />
+          <span class="field-hint">Reapplying past ~30 shifts the calculus toward EMBA formats (AL-57)</span>
+        </div>
+        <div class="field">
+          <label for="yrsExp">Years of Full-Time Work Experience</label>
+          <input type="number" id="yrsExp" value="4" min="0" max="20" step="1" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Profile Changes Before Reapplying <span class="badge">Admit-Probability Uplifts</span></div>
+      <div class="check-row">
+        <input type="checkbox" id="upTest" checked onchange="syncUnchanged()" />
+        <div><label class="check-label" for="upTest">Retake test, +50 points (or GRE equivalent)</label>
+        <div class="check-sub">+4pp admit probability · the single largest controllable lever (see AL-51)</div></div>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="upPromo" onchange="syncUnchanged()" />
+        <div><label class="check-label" for="upPromo">Promotion / title change</label>
+        <div class="check-sub">+3pp · demonstrated trajectory is what reapplicant readers look for first</div></div>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="upLead" onchange="syncUnchanged()" />
+        <div><label class="check-label" for="upLead">New leadership role outside work</label>
+        <div class="check-sub">+2pp · board seat, nonprofit founding, community initiative</div></div>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="upEssay" checked onchange="syncUnchanged()" />
+        <div><label class="check-label" for="upEssay">Goals / essay rewrite from scratch</label>
+        <div class="check-sub">+2pp · most dings trace to unconvincing "why MBA, why now"</div></div>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="upRecs" onchange="syncUnchanged()" />
+        <div><label class="check-label" for="upRecs">New recommenders</label>
+        <div class="check-sub">+1pp · fresh letters that speak to growth since last cycle</div></div>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="upNone" onchange="uncheckOthers()" />
+        <div><label class="check-label" for="upNone">Unchanged profile — resubmit as-is</label>
+        <div class="check-sub">0pp uplift, ×1.0 multiplier — schools explicitly discourage this; it usually re-dings</div></div>
+      </div>
+    </div>
+
+    <button class="run-btn" onclick="calculate()">Compute Path EVs</button>
+
+    <div class="results-section" id="resultsSection">
+      <div class="verdict-banner">
+        <div class="verdict-icon">🔁</div>
+        <div class="verdict-text" id="verdictText"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Expected Value by Path</div>
+        <div id="pathBars"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Key Metrics</div>
+        <div class="metrics-grid" id="metricsGrid"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Sensitivity — Reapply EV vs. Total Uplift</div>
+        <table class="score-table" id="sensTable"></table>
+      </div>
+      <div class="card">
+        <div class="card-title">Analysis &amp; Caveats</div>
+        <div class="insight-box" id="insightBox"></div>
+      </div>
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB 2: IMPROVEMENT PORTFOLIO ============ -->
+  <div class="tab-pane" id="tabPane2">
+    <div class="card">
+      <div class="card-title">Improvement Costs <span class="badge">Efficiency Ranker</span></div>
+      <p class="tool-desc" style="font-size:0.82rem; margin-bottom:16px;">Each profile change has a dollar cost, an hours cost, and an admit-probability uplift. This tab ranks them by pp-per-$1K and pp-per-100hrs so you spend the off-cycle year on the highest-leverage moves. Adjust costs to your situation.</p>
+      <div class="form-grid two">
+        <div class="field"><label for="cTestD">Test retake — cost ($)</label><input type="number" id="cTestD" value="1200" min="0" max="20000" step="100" /><span class="field-hint">Registration + prep materials; tutor-heavy plans run higher (AL-45, AL-51)</span></div>
+        <div class="field"><label for="cTestH">Test retake — hours</label><input type="number" id="cTestH" value="120" min="0" max="1000" step="10" /></div>
+        <div class="field"><label for="cPromoD">Promotion push — cost ($)</label><input type="number" id="cPromoD" value="0" min="0" max="20000" step="100" /></div>
+        <div class="field"><label for="cPromoH">Promotion push — hours</label><input type="number" id="cPromoH" value="300" min="0" max="2000" step="10" /><span class="field-hint">Extra scope, visibility projects, manager conversations</span></div>
+        <div class="field"><label for="cLeadD">Outside leadership — cost ($)</label><input type="number" id="cLeadD" value="500" min="0" max="20000" step="100" /></div>
+        <div class="field"><label for="cLeadH">Outside leadership — hours</label><input type="number" id="cLeadH" value="150" min="0" max="2000" step="10" /></div>
+        <div class="field"><label for="cEssayD">Essay rewrite — cost ($)</label><input type="number" id="cEssayD" value="300" min="0" max="20000" step="100" /><span class="field-hint">$0 DIY; admissions consultants charge $5–8K for full-package review (AL-64)</span></div>
+        <div class="field"><label for="cEssayH">Essay rewrite — hours</label><input type="number" id="cEssayH" value="60" min="0" max="500" step="5" /></div>
+        <div class="field"><label for="cRecsD">New recommenders — cost ($)</label><input type="number" id="cRecsD" value="0" min="0" max="5000" step="50" /></div>
+        <div class="field"><label for="cRecsH">New recommenders — hours</label><input type="number" id="cRecsH" value="20" min="0" max="200" step="5" /></div>
+      </div>
+    </div>
+
+    <button class="run-btn" onclick="calculatePortfolio()">Rank Improvement Efficiency</button>
+
+    <div class="results-section" id="portfolioSection">
+      <div class="card">
+        <div class="card-title">Efficiency Ranking</div>
+        <table class="score-table" id="effTable"></table>
+      </div>
+      <div class="card">
+        <div class="card-title">Reading the Table</div>
+        <div class="insight-box" id="portfolioInsight"></div>
+      </div>
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportPortfolioMarkdown()">⬇ Markdown</button>
+        <button class="export-btn ap2" onclick="exportPortfolioAP2()">⬇ AP2 JSON</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:32px;">
+    <div class="card-title">Reference Data &amp; Citations</div>
+    <ol class="cite-list">
+      <li>Harvard Business School admissions: reapplicants consistently make up roughly 10% of each entering class; HBS requires a complete new application each cycle. <a href="https://www.hbs.edu/mba/admissions" rel="noopener">hbs.edu/mba/admissions</a></li>
+      <li>MIT Sloan admissions blog: reapplicant admit rates have historically run a few percentage points above the overall applicant pool average — reapplicants who show concrete change are advantaged. <a href="https://mitsloan.mit.edu/mba/admissions" rel="noopener">mitsloan.mit.edu/mba/admissions</a></li>
+      <li>Most M7 programs (HBS, Stanford GSB, Wharton, Booth, Kellogg, Columbia, MIT Sloan) treat any application after one full cycle as a fresh application: new essays, new letters, updated scores — no carryover file review. School admissions policy pages, 2025–26 cycle.</li>
+      <li>Tier admit-rate baselines: M7 ≈ 12%, T8–15 ≈ 22%, T16–25 ≈ 32%, T26–50 ≈ 45% — consistent with the tier conventions used in AL-52 (Portfolio Optimizer) and AL-68 (Waitlist EV Engine), 2024–25 published class profiles.</li>
+      <li>Tier salary-premium NPVs (15-yr, excess over no-MBA baseline): M7 $650K, T8–15 $480K, T16–25 $340K, T26–50 $220K — same table as AL-69 (Deferred Enrollment Engine), 2024 employment report basis.</li>
+      <li>GMAC Application Trends Survey 2024: reapplicants represent a meaningful single-digit share of total MBA application volume. <a href="https://www.gmac.com/market-intelligence-and-research" rel="noopener">gmac.com/market-intelligence-and-research</a></li>
+    </ol>
+  </div>
+
+  <div class="mcp-section">
+    <button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">▸ Developer / Agent Integration (manifest.json)</button>
+    <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+      <pre class="mcp-pre" id="mcpManifestPre"></pre>
+    </div>
+  </div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-70 · Data: Reapplicant statements 2025–26
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let _inputs = null, _results = null, _pInputs = null, _pResults = null, _activeTab = 1;
+function fmt(n) { return (n < 0 ? '−$' : '$') + Math.abs(Math.round(n)).toLocaleString('en-US'); }
+
+// Tier economics — same table as AL-69 / consistent with AL-68 conventions
+// 15-yr NPV of attending each tier (excess over no-MBA baseline), 2024 employment report basis
+const TIER_VALUE = { m7: 650000, t15: 480000, t25: 340000, t50: 220000 };
+// Base first-time admit rates by tier — AL-52 / AL-68 conventions, 2024–25 class profiles
+const BASE_ADMIT = { m7: 0.12, t15: 0.22, t25: 0.32, t50: 0.45 };
+const TIER_NAME = { m7:'M7', t15:'T8–15', t25:'T16–25', t50:'T26–50' };
+// Reapplicant multiplier on base rate: changed profile ≈ slight edge (MIT Sloan statement);
+// unchanged profile is heavily discounted — schools explicitly discourage resubmission as-is.
+const REAPP_MULT_CHANGED = 1.1, REAPP_MULT_UNCHANGED = 1.0;
+const UNCHANGED_PENALTY = 0.5; // unchanged-profile resubmission halves effective odds
+// Profile-change uplifts in percentage points
+const UPLIFTS = { upTest: 4, upPromo: 3, upLead: 2, upEssay: 2, upRecs: 1 };
+const UPLIFT_NAMES = { upTest:'Test retake (+50 pts)', upPromo:'Promotion / title change', upLead:'Outside leadership', upEssay:'Essay rewrite', upRecs:'New recommenders' };
+// Application costs
+const COST_SAME_SCHOOL = 1500, COST_NEW_PORTFOLIO = 4000;
+const DISCOUNT_RATE = 0.05;
+// Post-MBA salary delta proxy by tier (annual, yr-1 over current salary baseline of ~$95K class avg)
+// Cycle-delay cost = 1 yr of forgone post-MBA delta, discounted to the back end of the NPV window.
+function cycleDelayCost(tier, curSalary) {
+  const postMBA = { m7: 175000, t15: 155000, t25: 135000, t50: 118000 }[tier];
+  const delta = Math.max(0, postMBA - curSalary);
+  return delta / Math.pow(1 + DISCOUNT_RATE, 3); // delta realized ~3 yrs out (1-yr delay + 2-yr program)
+}
+
+function clamp01(p) { return Math.min(0.95, Math.max(0.01, p)); }
+
+function getUpliftPP() {
+  if ($('upNone').checked) return 0;
+  let pp = 0;
+  for (const k in UPLIFTS) if ($(k).checked) pp += UPLIFTS[k];
+  return pp;
+}
+
+function pAdmitReapply(tier, upliftPP, unchanged) {
+  const base = BASE_ADMIT[tier];
+  const mult = unchanged ? REAPP_MULT_UNCHANGED * UNCHANGED_PENALTY : REAPP_MULT_CHANGED;
+  return clamp01(base * mult + upliftPP / 100);
+}
+
+function toggleAdmitFields() {
+  const has = $('admitInHand').value !== 'none';
+  $('scholarshipInHand').disabled = !has;
+  if (!has) $('scholarshipInHand').value = 0;
+}
+function uncheckOthers() {
+  if ($('upNone').checked) for (const k in UPLIFTS) $(k).checked = false;
+}
+function syncUnchanged() {
+  let any = false;
+  for (const k in UPLIFTS) if ($(k).checked) any = true;
+  if (any) $('upNone').checked = false;
+}
+
+function calculate() {
+  const checks = {};
+  for (const k in UPLIFTS) checks[k] = $(k).checked;
+  const unchanged = $('upNone').checked;
+  const inputs = {
+    admitInHand: $('admitInHand').value,
+    scholarship: parseInt($('scholarshipInHand').value) || 0,
+    targetTier: $('targetTier').value,
+    curSalary: parseInt($('curSalary').value) || 95000,
+    age: parseInt($('age').value) || 27,
+    yrsExp: parseInt($('yrsExp').value) || 4,
+    checks, unchanged,
+  };
+  const upliftPP = getUpliftPP();
+  const pReapply = pAdmitReapply(inputs.targetTier, upliftPP, unchanged);
+  const targetVal = TIER_VALUE[inputs.targetTier];
+  const delayCost = cycleDelayCost(inputs.targetTier, inputs.curSalary);
+
+  // Path A — reapply same school(s), next cycle
+  const evA = pReapply * targetVal - delayCost - COST_SAME_SCHOOL;
+  // Path B — restructured portfolio: broader list lifts odds (~1.25× capped), costs more
+  const pPortfolio = clamp01(pReapply * 1.25);
+  const evB = pPortfolio * targetVal - delayCost - COST_NEW_PORTFOLIO;
+  // Path C — matriculate at admit in hand: certain tier NPV + scholarship, no delay
+  const hasAdmit = inputs.admitInHand !== 'none';
+  const evC = hasAdmit ? TIER_VALUE[inputs.admitInHand] + inputs.scholarship : null;
+  // Path D — no MBA: 0 baseline
+  const evD = 0;
+
+  const paths = [
+    { id:'A', name:'Reapply same school(s)', ev: evA, p: pReapply },
+    { id:'B', name:'Reapply restructured portfolio', ev: evB, p: pPortfolio },
+    ...(hasAdmit ? [{ id:'C', name:`Matriculate ${TIER_NAME[inputs.admitInHand]} admit in hand`, ev: evC, p: 1 }] : []),
+    { id:'D', name:'No MBA (baseline)', ev: evD, p: null },
+  ];
+  const best = paths.reduce((a, b) => b.ev > a.ev ? b : a);
+
+  // Break-even uplift: pp at which the better reapply path beats the best non-reapply alternative
+  const bestAlt = Math.max(evD, hasAdmit ? evC : -Infinity);
+  let breakEvenPP = null;
+  for (let pp = 0; pp <= 40; pp++) {
+    const p1 = pAdmitReapply(inputs.targetTier, pp, false);
+    const e1 = p1 * targetVal - delayCost - COST_SAME_SCHOOL;
+    const e2 = clamp01(p1 * 1.25) * targetVal - delayCost - COST_NEW_PORTFOLIO;
+    if (Math.max(e1, e2) >= bestAlt) { breakEvenPP = pp; break; }
+  }
+
+  // Sensitivity strip: reapply EVs at +2/+4/+6/+8/+10pp uplift
+  const sens = [2, 4, 6, 8, 10].map(pp => {
+    const p = pAdmitReapply(inputs.targetTier, pp, false);
+    return { pp, p, evSame: p * targetVal - delayCost - COST_SAME_SCHOOL,
+             evPort: clamp01(p * 1.25) * targetVal - delayCost - COST_NEW_PORTFOLIO };
+  });
+
+  _inputs = inputs;
+  _results = { upliftPP, pReapply, pPortfolio, targetVal, delayCost, evA, evB, evC, evD, paths, best, bestAlt, breakEvenPP, sens, hasAdmit };
+  renderResults();
+  $('resultsSection').classList.add('visible');
+}
+
+function renderResults() {
+  const r = _results, i = _inputs;
+  const bestName = r.best.name;
+  $('verdictText').innerHTML = `<strong>${bestName} — EV ${fmt(r.best.ev)}</strong>` +
+    (r.best.id === 'A' || r.best.id === 'B'
+      ? `At ${r.upliftPP}pp of profile uplift, P(${TIER_NAME[i.targetTier]} admit) ≈ ${Math.round((r.best.id==='B'?r.pPortfolio:r.pReapply)*100)}%. ${r.breakEvenPP !== null ? 'Break-even uplift vs. best alternative: ' + r.breakEvenPP + 'pp.' : ''}`
+      : r.best.id === 'C'
+        ? `The admit in hand (${TIER_NAME[i.admitInHand]} + ${fmt(i.scholarship)} scholarship, no cycle delay) beats reapplying at your current uplift. ${r.breakEvenPP !== null ? 'You would need ≥' + r.breakEvenPP + 'pp of uplift for reapplying to win.' : 'No achievable uplift (≤40pp) flips this.'}`
+        : `At ${r.upliftPP}pp of uplift, no MBA path clears the zero baseline — admit odds × tier value don't cover delay and application costs.`);
+
+  const maxEV = Math.max(...r.paths.map(p => Math.abs(p.ev)), 1);
+  const colors = { A:'var(--blue)', B:'var(--teal)', C:'var(--amber)', D:'var(--text-dim)' };
+  $('pathBars').innerHTML = r.paths.map(p => {
+    const w = Math.max(2, Math.abs(p.ev) / maxEV * 100);
+    const isBest = p.id === r.best.id;
+    return `<div class="bar-row">
+      <div class="bar-name">${p.id} · ${p.name}${isBest ? ' ★' : ''}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${w}%; background:${isBest ? 'var(--green)' : colors[p.id]}; opacity:${p.ev < 0 ? 0.45 : 1}"></div></div>
+      <div class="bar-val" style="color:${isBest ? 'var(--green)' : 'var(--text-muted)'}">${fmt(p.ev)}</div>
+    </div>`;
+  }).join('');
+
+  $('metricsGrid').innerHTML = [
+    { label:'Total Uplift Selected', val: r.upliftPP + 'pp', cls:'accent', note: i.unchanged ? 'Unchanged profile — ×0.5 penalty applied' : 'Σ of checked profile changes' },
+    { label:'P(Admit | Reapply)', val: Math.round(r.pReapply*100) + '%', cls: r.pReapply >= BASE_ADMIT[i.targetTier] ? 'green' : 'amber', note: `vs. ${Math.round(BASE_ADMIT[i.targetTier]*100)}% first-time base at ${TIER_NAME[i.targetTier]}` },
+    { label:'Cycle Delay Cost', val: fmt(r.delayCost), cls:'red', note:'1 yr of forgone post-MBA delta, discounted' },
+    { label:'Break-Even Uplift', val: r.breakEvenPP !== null ? r.breakEvenPP + 'pp' : '>40pp', cls: r.breakEvenPP !== null && r.upliftPP >= r.breakEvenPP ? 'green' : 'amber', note:'Min. uplift for reapply to beat best alternative' },
+  ].map(m => `<div class="metric-card"><div class="metric-label">${m.label}</div><div class="metric-val ${m.cls}">${m.val}</div><div class="metric-note">${m.note}</div></div>`).join('');
+
+  $('sensTable').innerHTML = `<thead><tr><th>Uplift</th><th>P(Admit)</th><th>Same-School EV</th><th>Portfolio EV</th><th>Beats Best Alt?</th></tr></thead><tbody>` +
+    r.sens.map(s => {
+      const beats = Math.max(s.evSame, s.evPort) >= r.bestAlt;
+      const hl = s.pp === r.upliftPP ? ' class="highlight"' : '';
+      return `<tr${hl}><td>+${s.pp}pp</td><td>${Math.round(s.p*100)}%</td><td>${fmt(s.evSame)}</td><td>${fmt(s.evPort)}</td><td style="color:${beats?'var(--green)':'var(--red)'}">${beats?'Yes':'No'}</td></tr>`;
+    }).join('') + `</tbody>`;
+
+  $('insightBox').innerHTML = `<strong>What reapplicant readers actually look for:</strong> evidence of change, not persistence. HBS seats ~10% reapplicants every year and MIT Sloan reports reapplicant admit rates a few points above average — but those numbers are conditioned on visibly improved files. An unchanged resubmission signals the opposite and typically re-dings. ` +
+    `${i.unchanged ? '<strong>You selected "unchanged profile" — the model halves your effective odds.</strong> Check at least the essay rewrite before spending another cycle. ' : ''}` +
+    `<strong>The delay cost is real:</strong> reapplying pushes your post-MBA earnings a full year out — ${fmt(r.delayCost)} at your salary against the ${TIER_NAME[i.targetTier]} outcome. That is why a decent admit in hand often dominates a marginal reapplication. ` +
+    `${i.age >= 30 ? '<strong>Age note:</strong> at ' + i.age + ', full-time two-year programs start competing with EMBA formats — compare via AL-57 before committing another cycle. ' : ''}` +
+    `<strong>Portfolio restructuring (Path B)</strong> models a broader, better-balanced school list at ~1.25× the same-school odds for ~${fmt(COST_NEW_PORTFOLIO)} in fees and prep — build the actual list in AL-52. ` +
+    `<strong>Caveats:</strong> uplift percentage points are central estimates from consultant-reported outcome deltas, not school-published figures; tier NPVs are 15-yr central estimates and individual variance within a tier exceeds the gap between adjacent tiers. Scholarship leverage usually improves on reapplication with a stronger file — model it in AL-63.`;
+}
+
+// ===== Tab 2: Improvement Portfolio =====
+function calculatePortfolio() {
+  const items = [
+    { key:'upTest',  d:+$('cTestD').value || 0,  h:+$('cTestH').value || 0 },
+    { key:'upPromo', d:+$('cPromoD').value || 0, h:+$('cPromoH').value || 0 },
+    { key:'upLead',  d:+$('cLeadD').value || 0,  h:+$('cLeadH').value || 0 },
+    { key:'upEssay', d:+$('cEssayD').value || 0, h:+$('cEssayH').value || 0 },
+    { key:'upRecs',  d:+$('cRecsD').value || 0,  h:+$('cRecsH').value || 0 },
+  ].map(it => {
+    const pp = UPLIFTS[it.key];
+    return { ...it, name: UPLIFT_NAMES[it.key], pp,
+      ppPerK: it.d > 0 ? pp / (it.d / 1000) : Infinity,
+      ppPer100h: it.h > 0 ? pp / (it.h / 100) : Infinity };
+  });
+  // Composite efficiency: rank by pp-per-$1K primarily (free items first), tie-break pp/100h
+  const ranked = [...items].sort((a, b) => {
+    if (a.ppPerK !== b.ppPerK) return b.ppPerK - a.ppPerK;
+    return b.ppPer100h - a.ppPer100h;
+  });
+  _pInputs = items;
+  _pResults = { ranked };
+  renderPortfolio();
+  $('portfolioSection').classList.add('visible');
+}
+
+function renderPortfolio() {
+  const r = _pResults;
+  const fin = v => v === Infinity ? '∞ (free)' : v.toFixed(1);
+  $('effTable').innerHTML = `<thead><tr><th>#</th><th>Improvement</th><th>Uplift</th><th>Cost</th><th>Hours</th><th>pp / $1K</th><th>pp / 100hrs</th></tr></thead><tbody>` +
+    r.ranked.map((it, idx) => `<tr${idx === 0 ? ' class="highlight"' : ''}>
+      <td>${idx + 1}${idx === 0 ? ' ★' : ''}</td><td>${it.name}</td><td>+${it.pp}pp</td>
+      <td>${fmt(it.d)}</td><td>${it.h}</td><td>${fin(it.ppPerK)}</td><td>${fin(it.ppPer100h)}</td>
+    </tr>`).join('') + `</tbody>`;
+
+  const top = r.ranked[0];
+  $('portfolioInsight').innerHTML = `<strong>Highest-leverage move: ${top.name}</strong> at ${top.ppPerK === Infinity ? 'zero dollar cost' : top.ppPerK.toFixed(1) + 'pp per $1K'} and ${top.ppPer100h === Infinity ? 'negligible hours' : top.ppPer100h.toFixed(1) + 'pp per 100hrs'}. ` +
+    `<strong>Test retake cross-check:</strong> before sinking 100+ hours into prep, run the retake's standalone EV in AL-51 (Test Retake Decision Engine) — a +50-point gain is realistic from a sub-700 base, much harder above 720. ` +
+    `<strong>Consulting comparison:</strong> admissions consultants charge roughly $5–8K for full-package reapplication review and claim +2–5pp outcomes — that prices out to ~0.3–0.8pp per $1K, below most of the DIY moves above. Run the consulting decision separately in AL-64. ` +
+    `<strong>Sequencing:</strong> promotion and outside-leadership uplifts need 6–12 months of runway to be credible by the next R1 deadline — start those now; essays and recommenders can wait until summer. ` +
+    `<strong>Caveat:</strong> uplifts are not strictly additive in reality — adcoms read the file holistically; treat the Σ as an upper bound and the individual ranks as the reliable signal.`;
+}
+
+// ===== Tabs =====
+function switchTab(n) {
+  _activeTab = n;
+  $('tabBtn1').classList.toggle('active', n === 1);
+  $('tabBtn2').classList.toggle('active', n === 2);
+  $('tabPane1').classList.toggle('active', n === 1);
+  $('tabPane2').classList.toggle('active', n === 2);
+}
+
+// ===== Exports =====
+function showToast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+function tsStamp() {
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  return '' + d.getFullYear() + p(d.getMonth()+1) + p(d.getDate()) + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+}
+
+function exportMarkdown() {
+  if (!_results) { showToast('Run the Path EV analysis first.'); return; }
+  const d = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  const lines = [
+    '# MBA Reapplicant EV Analysis', `\n_Generated ${d} · AL-70 · apexlogics.org_\n`,
+    `## Recommendation: ${_results.best.name}`,
+    ..._results.paths.map(p => `- ${p.id} ${p.name}: EV ${fmt(p.ev)}${p.p !== null && p.p !== 1 ? ' (P admit ' + Math.round(p.p*100) + '%)' : ''}`),
+    `\n- Total uplift selected: ${_results.upliftPP}pp · P(admit | reapply): ${Math.round(_results.pReapply*100)}%`,
+    `- Cycle delay cost: ${fmt(_results.delayCost)}`,
+    `- Break-even uplift: ${_results.breakEvenPP !== null ? _results.breakEvenPP + 'pp' : '>40pp'}`,
+  ];
+  const blob = new Blob([lines.join('\n')], { type:'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'mba-reapplicant-ev.md'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function exportPortfolioMarkdown() {
+  if (!_pResults) { showToast('Run the Improvement Portfolio ranking first.'); return; }
+  const d = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  const fin = v => v === Infinity ? 'inf' : v.toFixed(1);
+  const lines = [
+    '# MBA Reapplicant Improvement Portfolio', `\n_Generated ${d} · AL-70 · apexlogics.org_\n`,
+    '| # | Improvement | Uplift | Cost | Hours | pp/$1K | pp/100hrs |', '|---|---|---|---|---|---|---|',
+    ..._pResults.ranked.map((it, idx) => `| ${idx+1} | ${it.name} | +${it.pp}pp | ${fmt(it.d)} | ${it.h} | ${fin(it.ppPerK)} | ${fin(it.ppPer100h)} |`),
+  ];
+  const blob = new Blob([lines.join('\n')], { type:'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'mba-reapplicant-portfolio.md'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+const validMandateTypes = [
+  'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+  'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+  'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+  'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+  'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+  'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+  'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+  'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+  'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+  'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+  'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+  'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+  'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+  'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
+  'english_test_choice_record','lsat_tier_record','mba_scholarship_record',
+  'consulting_roi_record','mba_yield_record','dual_degree_record',
+  'online_mba_record','mba_waitlist_record','deferred_mba_record',
+  'mba_reapplicant_record'
+];
+
+function validateAP2(payload) {
+  if (payload.ap2_version !== '2.0') return 'ap2_version must be "2.0"';
+  if (!payload.mandate_type) return 'missing mandate_type';
+  if (!payload.generated_at) return 'missing generated_at';
+  if (!payload.inputs || typeof payload.inputs !== 'object') return 'missing inputs';
+  if (!validMandateTypes.includes(payload.mandate_type)) return 'unknown mandate_type: ' + payload.mandate_type;
+  return null;
+}
+
+function downloadAP2(payload) {
+  const err = validateAP2(payload);
+  if (err) { showToast('AP2 validation failed: ' + err); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `AL-70_63-mba-reapplicant-ev-engine_${tsStamp()}.ap2.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function exportAP2() {
+  if (!_results) { showToast('Run the Path EV analysis first.'); return; }
+  const payload = {
+    ap2_version:'2.0', mandate_type:'mba_reapplicant_record',
+    source_tool:'AL-70',
+    source_url:'https://apexlogics.org/tools/63-mba-reapplicant-ev-engine/',
+    generated_at: new Date().toISOString(), schema_version:'1.0',
+    tab: 'path_ev',
+    inputs: {
+      admit_in_hand: _inputs.admitInHand,
+      scholarship_in_hand: _inputs.scholarship,
+      target_tier: _inputs.targetTier,
+      current_salary: _inputs.curSalary,
+      age: _inputs.age,
+      years_experience: _inputs.yrsExp,
+      profile_changes: Object.keys(UPLIFTS).filter(k => _inputs.checks[k]),
+      unchanged_profile: _inputs.unchanged
+    },
+    results: {
+      recommendation: _results.best.name,
+      recommended_path: _results.best.id,
+      total_uplift_pp: _results.upliftPP,
+      p_admit_reapply: +_results.pReapply.toFixed(3),
+      p_admit_portfolio: +_results.pPortfolio.toFixed(3),
+      ev_reapply_same: Math.round(_results.evA),
+      ev_reapply_portfolio: Math.round(_results.evB),
+      ev_matriculate_admit: _results.evC !== null ? Math.round(_results.evC) : null,
+      ev_no_mba: 0,
+      cycle_delay_cost: Math.round(_results.delayCost),
+      breakeven_uplift_pp: _results.breakEvenPP
+    },
+    downstream_handoff_candidates: ['AL-51','AL-52','AL-56','AL-63'],
+    advisory_cta: { text:'Get reapplication strategy guidance', url:'https://apexadvisory.site' }
+  };
+  downloadAP2(payload);
+}
+
+function exportPortfolioAP2() {
+  if (!_pResults) { showToast('Run the Improvement Portfolio ranking first.'); return; }
+  const payload = {
+    ap2_version:'2.0', mandate_type:'mba_reapplicant_record',
+    source_tool:'AL-70',
+    source_url:'https://apexlogics.org/tools/63-mba-reapplicant-ev-engine/',
+    generated_at: new Date().toISOString(), schema_version:'1.0',
+    tab: 'improvement_portfolio',
+    inputs: {
+      improvements: _pInputs.map(it => ({ key: it.key, cost_usd: it.d, hours: it.h, uplift_pp: UPLIFTS[it.key] }))
+    },
+    results: {
+      ranking: _pResults.ranked.map((it, idx) => ({
+        rank: idx + 1, improvement: it.name, uplift_pp: it.pp,
+        cost_usd: it.d, hours: it.h,
+        pp_per_1k_usd: it.ppPerK === Infinity ? null : +it.ppPerK.toFixed(2),
+        pp_per_100hrs: it.ppPer100h === Infinity ? null : +it.ppPer100h.toFixed(2)
+      })),
+      highest_leverage: _pResults.ranked[0].name
+    },
+    downstream_handoff_candidates: ['AL-51','AL-52','AL-56','AL-63'],
+    advisory_cta: { text:'Get reapplication strategy guidance', url:'https://apexadvisory.site' }
+  };
+  downloadAP2(payload);
+}
+
+function toggleMCP() {
+  const panel = $('mcpPanel'), btn = $('mcpToggleBtn');
+  const open = panel.classList.toggle('open');
+  btn.textContent = (open ? '▾ ' : '▸ ') + 'Developer / Agent Integration (manifest.json)';
+  btn.setAttribute('aria-expanded', open);
+  if (open && !$('mcpManifestPre').textContent) {
+    $('mcpManifestPre').textContent = JSON.stringify({
+      al_id:'AL-70', version:'1.0.0', title:'MBA Reapplicant EV Engine',
+      slug:'63-mba-reapplicant-ev-engine',
+      description:'Expected-value engine for dinged MBA applicants: reapply same schools, restructure the portfolio, take the admit in hand, or skip the MBA. Models reapplicant admit probability from profile-change uplifts, prices the cycle-delay cost, and ranks improvement moves by pp-per-dollar and pp-per-hour efficiency.',
+      category:'education_path_roi', journeys:['education_path'],
+      personas:['student','career_changer','working_professional'],
+      tags:['mba','reapplication','ding-analysis','expected-value','admit-probability','profile-improvement'],
+      status:'shipped', maintenance:'very_low',
+      regulatory_citations:['School reapplicant statements + class profiles, 2025–26 (HBS ~10% reapplicant class share; MIT Sloan reapplicant admit-rate statements)','Tier salary premium NPVs from 2024 employment reports (shared with AL-68/AL-69)'],
+      ap2_export:true, ap2_mandate_types:['mba_reapplicant_record'],
+      downstream_handoff_candidates:['AL-51','AL-52','AL-56','AL-63'],
+      sister_suite:'https://ainumbers.co', consulting_site:'https://apexadvisory.site', license:'CC-BY-4.0'
+    }, null, 2);
+  }
+}
+
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function() {
+  const s = sessionStorage.getItem('apex_lang');
+  setLang(s || ({en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'})[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+</script>
+</body>
+</html>

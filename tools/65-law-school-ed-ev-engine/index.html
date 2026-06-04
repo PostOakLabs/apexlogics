@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Law School Early Decision EV Engine · ApexLogics #65</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/65-law-school-ed-ev-engine/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: #E8A838; } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 36px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 10px 18px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .check-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+    .check-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+    .check-row label { cursor: pointer; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); } .metric-val.amber { color: var(--amber); }
+    .metric-val.accent { color: var(--accent); } .metric-val.red { color: var(--red); }
+    .metric-val.teal { color: var(--teal); } .metric-val.blue { color: var(--blue); }
+    .metric-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
+    .fin-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    .fin-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.67rem; text-transform: uppercase; color: var(--text-dim); padding: 8px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+    .fin-table td { padding: 9px 14px; border-bottom: 1px solid rgba(167,139,250,0.06); }
+    .fin-table td:not(:first-child) { text-align: right; font-family: 'JetBrains Mono', monospace; }
+    .fin-table tr.hl td { background: rgba(52,211,153,0.04); }
+    .insight-box { background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.2); border-radius: 8px; padding: 16px 20px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; }
+    .insight-box strong { color: var(--text); }
+    .warn-box { background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.3); border-radius: 8px; padding: 16px 20px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 16px; }
+    .warn-box strong { color: var(--amber); }
+    .verdict-banner { border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.3); }
+    .verdict-icon { font-size: 1.8rem; }
+    .verdict-text strong { color: var(--text); font-size: 1rem; display: block; margin-bottom: 2px; }
+    .verdict-text { font-size: 0.92rem; color: var(--text-muted); }
+    .sens-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .sens-cell { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; text-align: center; }
+    .sens-boost { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
+    .sens-gap { font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 500; }
+    .sens-tag { font-size: 0.66rem; color: var(--text-dim); margin-top: 3px; font-family: 'JetBrains Mono', monospace; }
+    .cite-list { font-size: 0.74rem; color: var(--text-dim); line-height: 1.8; }
+    .cite-list a { color: var(--text-muted); }
+    .cite-list a:hover { color: var(--accent); }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(167,139,250,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--red); color: #000; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; padding: 10px 20px; border-radius: 8px; display: none; z-index: 200; }
+    .toast.show { display: block; }
+    .mcp-section { max-width: 680px; margin: 24px auto 0; }
+    .mcp-toggle { background: none; border: 1px dashed var(--border); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 8px 14px; border-radius: 6px; cursor: pointer; width: 100%; text-align: left; margin-top: 24px; }
+    .mcp-panel { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 8px; }
+    .mcp-panel.open { display: block; }
+    .mcp-pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    @media (max-width: 700px) {
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .sens-strip { grid-template-columns: 1fr 1fr; }
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="../../index.html" class="nav-pill accent">← All Tools</a>
+  </div>
+</nav>
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+  <div class="tool-eyebrow">AL-72 · Education Path &amp; ROI</div>
+  <h1 class="tool-title">Law School Early Decision<br>EV Engine</h1>
+  <p class="tool-desc">Binding Early Decision trades an admission-probability boost (~10–20pp) for the right to negotiate scholarships against competing offers. This engine computes the expected value of both paths — ED to one target school vs. a Regular Decision portfolio — and puts a dollar figure on the negotiation leverage you forfeit by committing early. Splitters take note: below-both-medians applicants who get the biggest ED boost also forfeit the most leverage.</p>
+  <div class="tool-vintage">Data vintage: LSAC 2024 median LSAT by school tier · NALP 2024 BigLaw salary data · ABA 509 data 2024 scholarship rates · LSAC ED policy survey 2024. All embedded.</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">① ED vs RD EV</button>
+    <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">② Forfeiture Detail</button>
+  </div>
+
+  <!-- ============ TAB 1 ============ -->
+  <div class="tab-pane active" id="tabPane1">
+    <div class="card">
+      <div class="card-title">Your Profile &amp; ED Target <span class="badge">Inputs</span></div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="lsatScore">Your LSAT Score (120–180)</label>
+          <input type="number" id="lsatScore" value="168" min="120" max="180" step="1" />
+          <span class="field-hint">170+ → T14 competitive · 165–169 → T15–30 strong · 160–164 → T31–50 · &lt;160 → Regional</span>
+        </div>
+        <div class="field">
+          <label for="gpa">Undergraduate GPA (2.0–4.33)</label>
+          <input type="number" id="gpa" value="3.6" min="2.0" max="4.33" step="0.01" />
+          <span class="field-hint">T14 median GPA: 3.7–3.96. Splitter status auto-derived below.</span>
+        </div>
+        <div class="field">
+          <label for="edTier">ED Target School Tier</label>
+          <select id="edTier">
+            <option value="t14" selected>T14</option>
+            <option value="t1550">T15–50</option>
+            <option value="regional">Regional</option>
+          </select>
+          <span class="field-hint">The single school where you'd apply binding ED</span>
+        </div>
+        <div class="field">
+          <label for="careerTrack">Intended Career Track</label>
+          <select id="careerTrack">
+            <option value="biglaw" selected>BigLaw (Am Law 100 firms)</option>
+            <option value="inhouse">In-House / Mid-Market</option>
+            <option value="gov">Government / DA / AUSA</option>
+            <option value="pi">Public Interest / Nonprofit</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid three" style="margin-top:14px">
+        <div class="field">
+          <label for="rdPortfolio">RD Portfolio Size (# schools at same tier)</label>
+          <input type="number" id="rdPortfolio" value="6" min="1" max="20" step="1" />
+          <span class="field-hint">Schools at the ED target's tier you'd apply to under RD</span>
+        </div>
+        <div class="field">
+          <label for="riskTol">Risk Tolerance</label>
+          <select id="riskTol">
+            <option value="conservative">Conservative — certainty premium</option>
+            <option value="neutral" selected>Neutral — pure EV</option>
+            <option value="aggressive">Aggressive — leverage maximizer</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="loanRate">Expected Loan Rate (%)</label>
+          <input type="number" id="loanRate" value="7.5" min="0" max="15" step="0.1" />
+          <span class="field-hint">Grad PLUS 2024–25: 9.08%</span>
+        </div>
+      </div>
+      <div class="check-row" style="margin-top:14px">
+        <input type="checkbox" id="edGuarantee" onchange="document.getElementById('edGuaranteeAmt').disabled = !this.checked" />
+        <label for="edGuarantee">ED scholarship guarantee program (e.g., NYU / Chicago-style full-tuition ED guarantee)</label>
+      </div>
+      <div class="form-grid three">
+        <div class="field">
+          <label for="edGuaranteeAmt">Guaranteed ED Scholarship ($ total, 3 yr)</label>
+          <input type="number" id="edGuaranteeAmt" value="220000" min="0" step="5000" disabled />
+          <span class="field-hint">Full tuition ≈ $210–230k at T14 over 3 years</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="run-btn" onclick="calculate()">Compute ED vs RD Expected Value</button>
+
+    <div class="results-section" id="resultsSection1">
+      <div class="verdict-banner">
+        <div class="verdict-icon">⚖️</div>
+        <div class="verdict-text" id="verdictText"></div>
+      </div>
+
+      <div class="warn-box" id="splitterWarn" style="display:none"></div>
+
+      <div class="card">
+        <div class="card-title">Key Metrics</div>
+        <div class="metrics-grid" id="metricsGrid"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">EV Breakdown — ED vs RD</div>
+        <table class="fin-table" id="evTable"></table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Sensitivity — EV Gap Across ED Boost Assumptions</div>
+        <div class="sens-strip" id="sensStrip"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Analysis &amp; Recommendations</div>
+        <div class="insight-box" id="insightBox"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB 2 ============ -->
+  <div class="tab-pane" id="tabPane2">
+    <div class="card">
+      <div class="card-title">Forfeiture Detail <span class="badge">Run Tab 1 first</span></div>
+      <p style="font-size:0.84rem;color:var(--text-muted)" id="tab2Empty">Run the EV analysis on Tab ① to populate the itemized forfeiture breakdown.</p>
+    </div>
+    <div class="results-section" id="resultsSection2">
+      <div class="card">
+        <div class="card-title">Expected RD Scholarship Distribution by Tier (3-yr totals, ABA 509 aggregates)</div>
+        <table class="fin-table" id="scholarTable"></table>
+        <p style="font-size:0.72rem;color:var(--text-dim);margin-top:10px">25th/50th/75th percentile conditional award sizes scaled from each tier's median discount rate; expected value weights by award probability for an at/above-median applicant. RD column adds the negotiation uplift available when holding peer offers.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Itemized Forfeiture — What Binding ED Costs You</div>
+        <table class="fin-table" id="forfeitTable"></table>
+      </div>
+      <div class="card">
+        <div class="card-title">Debt &amp; Payment Impact at Graduation</div>
+        <div class="metrics-grid" id="debtGrid"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Forfeiture Analysis</div>
+        <div class="insight-box" id="insightBox2"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="results-export-row">
+    <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown</button>
+    <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+  </div>
+
+  <div class="card" style="margin-top:24px">
+    <div class="card-title">Sources &amp; Citations</div>
+    <div class="cite-list">
+      [1] ABA Required Disclosures (Standard 509) — 2024 scholarship/grant rates and conditional award aggregates by tier. <a href="https://www.abarequireddisclosures.org/" target="_blank" rel="noopener">abarequireddisclosures.org</a><br>
+      [2] LSAC — binding Early Decision program policies and admit-rate differentials, 2024 cycle. <a href="https://www.lsac.org/" target="_blank" rel="noopener">lsac.org</a><br>
+      [3] NALP — 2024 associate salary survey (BigLaw market scale $225,000). <a href="https://www.nalp.org/" target="_blank" rel="noopener">nalp.org</a><br>
+      [4] LSAC 2024 median LSAT/GPA by school tier (T14 medians LSAT 171 / GPA 3.5+; T15–50 LSAT 167; Regional LSAT 155).<br>
+      [5] Published full-tuition ED guarantee programs (e.g., NYU Law ED scholarship, UChicago early-commitment awards) — verify current terms with each school.
+    </div>
+  </div>
+
+  <div class="mcp-section">
+    <button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">▸ Developer / Agent Integration (manifest.json)</button>
+    <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+      <pre class="mcp-pre" id="mcpManifestPre"></pre>
+    </div>
+  </div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-72 · Data: ABA 509 2024 · LSAC 2024 · NALP 2024
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let _inputs = null, _results = null;
+function fmt(n) { return (n < 0 ? '-$' : '$') + Math.abs(Math.round(n)).toLocaleString('en-US'); }
+function fmtPct(n) { return n.toFixed(1) + '%'; }
+function showToast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+function switchTab(n) {
+  [1,2].forEach(i => {
+    $('tabBtn'+i).classList.toggle('active', i===n);
+    $('tabPane'+i).classList.toggle('active', i===n);
+  });
+}
+
+// ===== Tier model — LIFTED from AL-62 (55-lsat-tier-match-planner) so the two tools agree numerically =====
+// [lsatMin, lsatMed, gpaMin(≈GPA median floor), gpaWeight, avgDebt(sticker debt), scholarPct(% receiving aid), track salaries]
+const TIERS = [
+  { id:'t14',     name:'T14',      lsatMin:166, lsatMed:171, gpaMin:3.5, gpaWeight:2,   avgDebt:195000, scholarPct:25,
+    biglaw:225000, inhouse:130000, gov:80000, pi:62000, label:'Harvard, Yale, Columbia, Chicago…' },
+  { id:'t1550',   name:'T15–50',   lsatMin:160, lsatMed:165, gpaMin:3.15, gpaWeight:1.25, avgDebt:152500, scholarPct:47.5,
+    biglaw:165000, inhouse:100000, gov:71000, pi:55000, label:'Fordham, BU, Emory, regional flagships…' },
+  { id:'regional', name:'Regional', lsatMin:145, lsatMed:155, gpaMin:2.7, gpaWeight:0.8, avgDebt:115000, scholarPct:65,
+    biglaw:100000, inhouse:75000, gov:62000, pi:48000, label:'State schools, lower-ranked programs' },
+];
+// Note: AL-72 collapses AL-62's T15–30 + T31–50 into a single T15–50 band (parameter midpoints) per the ED decision frame;
+// T14 and Regional rows are numerically identical to AL-62.
+
+// AL-62 admit-probability model, verbatim
+function calcAdmitProb(lsat, gpa, tier) {
+  const lsatGap = lsat - tier.lsatMed;
+  const gpaGap  = gpa - tier.gpaMin;
+  const lsatFactor = Math.tanh(lsatGap / 5) * 30;
+  const gpaFactor  = Math.tanh(gpaGap / 0.4) * 15 * tier.gpaWeight;
+  const base = lsat >= tier.lsatMin ? 35 : 10;
+  return Math.min(95, Math.max(2, base + lsatFactor + gpaFactor));
+}
+
+// Median position vs ED target school medians (school medians ≈ tier medians; GPA median ≈ gpaMin + 0.2)
+function medianPosition(lsat, gpa, tier) {
+  const gpaMed = tier.gpaMin + 0.2;
+  const aboveL = lsat >= tier.lsatMed, aboveG = gpa >= gpaMed;
+  if (aboveL && aboveG) return 'above';   // above both medians
+  if (!aboveL && !aboveG) return 'below'; // below both
+  return 'split';                          // splitter / reverse-splitter
+}
+
+// ED boost in percentage points, by median position
+const ED_BOOST = { above: 10, split: 15, below: 18 };
+
+// 10-yr standard repayment monthly payment
+function monthlyPmt(debt, ratePct) {
+  const r = ratePct/100/12, n = 120;
+  return r === 0 ? debt/n : debt*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
+}
+
+// Track NPV proxy over 10 yrs (consistent with AL-62 framing): salary stream minus debt service, 6% discount, 4% growth, 3-yr school delay
+function trackNPV(salary, netDebt, loanRate) {
+  const growth = 0.04, dr = 0.06, horizon = 10;
+  const annualPayment = monthlyPmt(netDebt, loanRate) * 12;
+  let npv = 0;
+  for (let yr = 1; yr <= horizon; yr++) {
+    const sal = salary * Math.pow(1+growth, yr-1);
+    npv += (sal - annualPayment) / Math.pow(1+dr, yr+3);
+  }
+  return npv;
+}
+
+// Scholarship model — AL-62-consistent: tier.scholarPct = share receiving aid; conditional median award = 55% of (sticker debt) tuition share
+// Sticker-discount baseline (no negotiation): expected scholarship = P(award)*medianAward, where award sizing keys off avgDebt*(scholarPct/200) identity from AL-62
+function scholarshipModel(tier, admitProb) {
+  // AL-62's netDebt = avgDebt*(1 - scholarPct/200) → implied expected scholarship = avgDebt*scholarPct/200
+  const expectedBase = tier.avgDebt * tier.scholarPct / 200; // sticker-discount baseline (ED case)
+  // Conditional award distribution (25/50/75th), scaled around the conditional median = expectedBase / (scholarPct/100)
+  const condMedian = expectedBase / (tier.scholarPct/100);
+  const dist = { p25: condMedian*0.5, p50: condMedian, p75: condMedian*1.6 };
+  // Stronger applicants (higher admit prob at tier) skew toward upper percentiles under RD
+  const strengthShift = Math.min(0.25, Math.max(0, (admitProb - 35) / 200)); // 0–0.25 blend toward p75
+  const expectedRDAward = expectedBase * (1 - strengthShift) + (tier.avgDebt * tier.scholarPct/100 * 0.8) * strengthShift;
+  return { expectedBase, condMedian, dist, expectedRDAward };
+}
+
+const NEG_UPLIFT = 0.15; // negotiation uplift: 15% of expected award when holding peer offers (10–20% range midpoint)
+
+function calculate() {
+  const lsat  = Math.min(180, Math.max(120, parseInt($('lsatScore').value) || 168));
+  const gpa   = Math.min(4.33, Math.max(2.0, parseFloat($('gpa').value) || 3.6));
+  const edTierId = $('edTier').value;
+  const track = $('careerTrack').value;
+  const nRD   = Math.min(20, Math.max(1, parseInt($('rdPortfolio').value) || 6));
+  const risk  = $('riskTol').value;
+  const loanR = parseFloat($('loanRate').value) || 7.5;
+  const edGuar = $('edGuarantee').checked;
+  const edGuarAmt = edGuar ? Math.max(0, parseFloat($('edGuaranteeAmt').value) || 0) : 0;
+
+  const tierIdx = TIERS.findIndex(t => t.id === edTierId);
+  const tier = TIERS[tierIdx];
+  const fallback = TIERS[Math.min(tierIdx+1, TIERS.length-1)]; // next tier down (Regional falls back to Regional)
+
+  // RD admit probability at the ED target school
+  const pRD = calcAdmitProb(lsat, gpa, tier) / 100;
+  const pos = medianPosition(lsat, gpa, tier);
+  const boostPP = ED_BOOST[pos];
+  const pED = Math.min(0.95, pRD + boostPP/100);
+
+  const salary = tier[track];
+  const fbSalary = fallback[track];
+
+  // --- ED path costs ---
+  const sm = scholarshipModel(tier, pRD*100);
+  const edScholarship = edGuar ? Math.max(edGuarAmt, sm.expectedBase) : sm.expectedBase;
+  const netCostED = Math.max(0, tier.avgDebt - edScholarship);
+
+  // --- RD path costs (with negotiation uplift; uplift only meaningful with ≥2 schools in portfolio) ---
+  const negUplift = nRD >= 2 ? sm.expectedRDAward * NEG_UPLIFT : 0;
+  const rdScholarship = sm.expectedRDAward + negUplift;
+  const netCostRD = Math.max(0, tier.avgDebt - rdScholarship);
+
+  // --- Fallback (RD at next tier down, post-ED-rejection) ---
+  const smFB = scholarshipModel(fallback, calcAdmitProb(lsat, gpa, fallback));
+  const fbNegUplift = smFB.expectedRDAward * NEG_UPLIFT;
+  const netCostFB = Math.max(0, fallback.avgDebt - (smFB.expectedRDAward + fbNegUplift));
+  const pFB = Math.min(0.98, 1 - Math.pow(1 - calcAdmitProb(lsat, gpa, fallback)/100, Math.max(3, nRD))); // fallback portfolio, ≥3 schools
+  const npvFB = trackNPV(fbSalary, netCostFB, loanR);
+  const evFallback = pFB * (npvFB - 0) ; // netCost already inside trackNPV debt service; outcome value below
+
+  // --- Outcome values (track NPV net of cost differences) ---
+  const npvED = trackNPV(salary, netCostED, loanR);
+  const npvRD = trackNPV(salary, netCostRD, loanR);
+
+  // EV(ED) = pED × NPV(target at ED cost) + (1−pED) × pFB × NPV(fallback)
+  const evED = pED * npvED + (1 - pED) * pFB * npvFB;
+  // EV(RD) = P(≥1 admit across portfolio) × NPV(target at RD cost) + miss → fallback
+  const p1 = 1 - Math.pow(1 - pRD, nRD); // binomial: at least one admit at tier
+  const evRD = p1 * npvRD + (1 - p1) * pFB * npvFB;
+
+  const evGap = evED - evRD; // positive → ED wins
+  const leverageValue = (rdScholarship - edScholarship); // dollar value of forfeited negotiation leverage (expected)
+
+  // Break-even ED boost: smallest boost (pp) where EV(ED) ≥ EV(RD)
+  let breakEvenPP = null;
+  for (let pp = 0; pp <= 40; pp += 0.5) {
+    const p = Math.min(0.95, pRD + pp/100);
+    const ev = p * npvED + (1 - p) * pFB * npvFB;
+    if (ev >= evRD) { breakEvenPP = pp; break; }
+  }
+
+  // Sensitivity strip at boosts 5/10/15/20
+  const sens = [5,10,15,20].map(pp => {
+    const p = Math.min(0.95, pRD + pp/100);
+    const ev = p * npvED + (1 - p) * pFB * npvFB;
+    return { pp, gap: ev - evRD };
+  });
+
+  // Verdict by risk profile
+  // conservative: weight admit certainty — ED wins if pED−p1 gap small penalty; aggressive: weight leverage
+  const riskAdj = { conservative: evGap + (pED - p1) * 40000, neutral: evGap, aggressive: evGap - leverageValue * 0.5 };
+  const verdictED = riskAdj[risk] > 0;
+
+  // Debt & payment impact (Tab 2)
+  const debtED = netCostED, debtRD = netCostRD;
+  const pmtED = monthlyPmt(debtED, loanR), pmtRD = monthlyPmt(debtRD, loanR);
+
+  _inputs = { lsat, gpa, edTier: edTierId, track, nRD, risk, loanR, edGuar, edGuarAmt };
+  _results = { tier, fallback, pRD, pos, boostPP, pED, p1, pFB, sm, smFB,
+    edScholarship, rdScholarship, negUplift, netCostED, netCostRD, netCostFB,
+    npvED, npvRD, npvFB, evED, evRD, evGap, leverageValue, breakEvenPP, sens,
+    verdictED, debtED, debtRD, pmtED, pmtRD, salary };
+
+  renderTab1();
+  renderTab2();
+  $('resultsSection1').classList.add('visible');
+  $('resultsSection2').classList.add('visible');
+  $('tab2Empty').style.display = 'none';
+}
+
+function renderTab1() {
+  const r = _results, i = _inputs;
+  const trackLabel = {biglaw:'BigLaw',inhouse:'In-House',gov:'Government',pi:'Public Interest'}[i.track];
+  const posLabel = {above:'above both medians', split:'splitter (one above, one below)', below:'below both medians'}[r.pos];
+
+  $('verdictText').innerHTML = r.verdictED
+    ? `<strong>ED to ${r.tier.name} is +EV under your ${i.risk} risk profile (gap ${fmt(r.evGap)})</strong>P(admit) jumps ${fmtPct(r.pRD*100)} → ${fmtPct(r.pED*100)} (+${r.boostPP}pp, ${posLabel}). You forfeit ~${fmt(r.leverageValue)} of expected scholarship/negotiation value${i.edGuar ? ', partially offset by the ED guarantee' : ''} — the admission boost outweighs it.`
+    : `<strong>RD portfolio is +EV under your ${i.risk} risk profile (gap ${fmt(-r.evGap)})</strong>The ED boost (+${r.boostPP}pp, ${posLabel}) does not cover the ~${fmt(r.leverageValue)} of expected scholarship and negotiation leverage you'd forfeit by binding early. ${i.nRD} RD applications at ${r.tier.name} give ${fmtPct(r.p1*100)} odds of at least one admit — with full negotiating power.`;
+
+  // Splitter / below-median warning
+  if (r.pos !== 'above') {
+    $('splitterWarn').style.display = 'block';
+    $('splitterWarn').innerHTML = r.pos === 'below'
+      ? `<strong>⚠ Below-median ED warning:</strong> Below-both-medians applicants get the largest ED boost (+18pp) precisely because they're the admits ED programs most want to lock in. But they also forfeit the most: a below-median admit who got in RD with peer offers in hand would have had <strong>maximum negotiating leverage</strong> — schools pay to protect their medians. Binding ED surrenders that entirely.`
+      : `<strong>⚠ Splitter notice:</strong> One credential above median, one below (+15pp ED boost). Splitters are exactly the profiles schools bid for with merit money in RD — your forfeited negotiation value (${fmt(r.leverageValue)}) is real, not theoretical. Below-median ED admits forfeit the most — they'd have had max leverage.`;
+  } else {
+    $('splitterWarn').style.display = 'none';
+  }
+
+  $('metricsGrid').innerHTML = [
+    { label:'EV Gap (ED − RD)', val:fmt(r.evGap), cls: r.evGap >= 0 ? 'green' : 'red', note: r.evGap >= 0 ? 'ED ahead' : 'RD ahead' },
+    { label:'P(admit) RD → ED', val:fmtPct(r.pRD*100)+' → '+fmtPct(r.pED*100), cls:'accent', note:'+'+r.boostPP+'pp ED boost ('+r.pos+')' },
+    { label:'Forfeited Leverage', val:fmt(r.leverageValue), cls: r.leverageValue > 0 ? 'amber' : 'green', note:'Expected scholarship + negotiation value lost under ED' },
+    { label:'Break-even ED Boost', val: r.breakEvenPP === null ? '>40pp' : r.breakEvenPP+'pp', cls: r.breakEvenPP !== null && r.breakEvenPP <= r.boostPP ? 'green' : 'red', note:'Boost needed for ED to match RD EV' },
+    { label:'P(≥1 RD admit)', val:fmtPct(r.p1*100), cls:'blue', note:i.nRD+' schools at '+r.tier.name+', binomial' },
+    { label:'Net Cost — ED', val:fmt(r.netCostED), cls:'amber', note:i.edGuar ? 'With ED guarantee scholarship' : 'Sticker-discount baseline only' },
+    { label:'Net Cost — RD', val:fmt(r.netCostRD), cls:'teal', note:'Incl. '+fmt(r.negUplift)+' negotiation uplift' },
+    { label:'Fallback Tier', val:r.fallback.name, cls:'blue', note:fmtPct(r.pFB*100)+' admit · NPV '+fmt(r.npvFB) },
+  ].map(m => `<div class="metric-card"><div class="metric-label">${m.label}</div><div class="metric-val ${m.cls}">${m.val}</div><div class="metric-note">${m.note}</div></div>`).join('');
+
+  $('evTable').innerHTML = `<thead><tr><th>Path</th><th>P(admit)</th><th>Expected Scholarship</th><th>Net Cost (3 yr)</th><th>${'10-yr NPV if admitted'}</th><th>Expected Value</th></tr></thead><tbody>
+    <tr class="${r.verdictED?'hl':''}"><td>ED → ${r.tier.name}${i.edGuar?' (guarantee)':''}</td><td>${fmtPct(r.pED*100)}</td><td>${fmt(r.edScholarship)}</td><td>${fmt(r.netCostED)}</td><td>${fmt(r.npvED)}</td><td style="color:${r.verdictED?'var(--green)':'inherit'}">${fmt(r.evED)}</td></tr>
+    <tr class="${!r.verdictED?'hl':''}"><td>RD × ${i.nRD} → ${r.tier.name}</td><td>${fmtPct(r.p1*100)}</td><td>${fmt(r.rdScholarship)}</td><td>${fmt(r.netCostRD)}</td><td>${fmt(r.npvRD)}</td><td style="color:${!r.verdictED?'var(--green)':'inherit'}">${fmt(r.evRD)}</td></tr>
+    <tr><td>Fallback → ${r.fallback.name} (either path misses)</td><td>${fmtPct(r.pFB*100)}</td><td>${fmt(r.smFB.expectedRDAward * (1+NEG_UPLIFT))}</td><td>${fmt(r.netCostFB)}</td><td>${fmt(r.npvFB)}</td><td>—</td></tr>
+  </tbody>`;
+
+  $('sensStrip').innerHTML = r.sens.map(s => `<div class="sens-cell">
+    <div class="sens-boost">+${s.pp}pp boost</div>
+    <div class="sens-gap" style="color:${s.gap>=0?'var(--green)':'var(--red)'}">${fmt(s.gap)}</div>
+    <div class="sens-tag">${s.gap>=0?'ED wins':'RD wins'}</div>
+  </div>`).join('');
+
+  $('insightBox').innerHTML = `<strong>Decision frame:</strong> ED is worth it when the admission-probability boost (×${trackLabel} NPV at ${r.tier.name}: ${fmt(r.npvED)}) exceeds the forfeited leverage (${fmt(r.leverageValue)}) plus the option value of comparing offers. Your modeled boost is <strong>+${r.boostPP}pp</strong> (${posLabel}); break-even is <strong>${r.breakEvenPP === null ? 'above 40pp — ED cannot win on these numbers' : r.breakEvenPP + 'pp'}</strong>.
+  ${i.edGuar ? `<strong>ED guarantee:</strong> The ${fmt(i.edGuarAmt)} guarantee neutralizes most of the forfeiture argument — guarantee-style ED programs (NYU, Chicago) are the major exception to "never bind early." ` : ''}
+  ${i.risk === 'conservative' ? 'Your conservative profile adds a certainty premium to the higher single-shot admit probability. ' : i.risk === 'aggressive' ? 'Your aggressive profile discounts the ED certainty and weights the forfeited leverage more heavily. ' : ''}
+  See Tab ② for the itemized forfeiture detail. Run AL-55 to compare tier-level NPVs and AL-62 to map your score across all tiers.
+  <em>Educational use only — not legal or admissions advice. ED policies are school-specific and binding; verify current terms in each school's ED agreement and ABA 509 disclosure.</em>`;
+}
+
+function renderTab2() {
+  const r = _results, i = _inputs;
+
+  // Scholarship distribution table by tier
+  $('scholarTable').innerHTML = `<thead><tr><th>Tier</th><th>% Receiving Aid</th><th>25th pct</th><th>Median</th><th>75th pct</th><th>Expected (RD, w/ negotiation)</th></tr></thead><tbody>
+    ${TIERS.map(t => {
+      const s = scholarshipModel(t, calcAdmitProb(i.lsat, i.gpa, t));
+      const exp = s.expectedRDAward * (1 + (i.nRD >= 2 ? NEG_UPLIFT : 0));
+      return `<tr class="${t.id===i.edTier?'hl':''}"><td>${t.name}</td><td>${t.scholarPct}%</td><td>${fmt(s.dist.p25)}</td><td>${fmt(s.dist.p50)}</td><td>${fmt(s.dist.p75)}</td><td>${fmt(exp)}</td></tr>`;
+    }).join('')}
+  </tbody>`;
+
+  // Itemized forfeiture
+  const baseGap = r.sm.expectedRDAward - r.edScholarship;
+  $('forfeitTable').innerHTML = `<thead><tr><th>Component</th><th>ED Path</th><th>RD Path</th><th>Forfeited Under ED</th></tr></thead><tbody>
+    <tr><td>Expected scholarship (before negotiation)</td><td>${fmt(r.edScholarship)}</td><td>${fmt(r.sm.expectedRDAward)}</td><td>${fmt(Math.max(0, baseGap))}</td></tr>
+    <tr><td>Negotiation uplift (peer offers in hand, ~${Math.round(NEG_UPLIFT*100)}%)</td><td>$0</td><td>${fmt(r.negUplift)}</td><td>${fmt(r.negUplift)}</td></tr>
+    <tr class="hl"><td><strong>Total expected scholarship</strong></td><td>${fmt(r.edScholarship)}</td><td>${fmt(r.rdScholarship)}</td><td style="color:var(--amber)"><strong>${fmt(r.leverageValue)}</strong></td></tr>
+    <tr><td>3-yr net cost of attendance</td><td>${fmt(r.netCostED)}</td><td>${fmt(r.netCostRD)}</td><td>${fmt(r.netCostED - r.netCostRD)}</td></tr>
+  </tbody>`;
+
+  // Debt & payment impact
+  const pmtDelta = r.pmtED - r.pmtRD;
+  const interest10ED = r.pmtED*120 - r.debtED, interest10RD = r.pmtRD*120 - r.debtRD;
+  $('debtGrid').innerHTML = [
+    { label:'Debt at Graduation — ED', val:fmt(r.debtED), cls:'amber', note:'3-yr net cost financed' },
+    { label:'Debt at Graduation — RD', val:fmt(r.debtRD), cls:'teal', note:'With negotiation uplift' },
+    { label:'Monthly Payment — ED', val:fmt(r.pmtED), cls:'amber', note:'10-yr standard @ '+i.loanR+'%' },
+    { label:'Monthly Payment — RD', val:fmt(r.pmtRD), cls:'teal', note:'10-yr standard @ '+i.loanR+'%' },
+    { label:'Monthly Payment Δ', val:fmt(pmtDelta), cls: pmtDelta > 0 ? 'red' : 'green', note:'Extra/mo for 120 months under ED' },
+    { label:'10-yr Interest — ED', val:fmt(interest10ED), cls:'red', note:'Total interest over repayment' },
+    { label:'10-yr Interest — RD', val:fmt(interest10RD), cls:'blue', note:'Total interest over repayment' },
+    { label:'Lifetime Cost Δ (P&I)', val:fmt(r.pmtED*120 - r.pmtRD*120), cls: pmtDelta > 0 ? 'red' : 'green', note:'Full repayment delta, ED vs RD' },
+  ].map(m => `<div class="metric-card"><div class="metric-label">${m.label}</div><div class="metric-val ${m.cls}">${m.val}</div><div class="metric-note">${m.note}</div></div>`).join('');
+
+  $('insightBox2').innerHTML = `<strong>Where the forfeiture lives:</strong> Binding ED removes you from the merit-aid market at exactly the moment you'd have the most pricing power — admitted, with competing offers. The ${fmt(r.leverageValue)} expected forfeiture compounds through loan interest: at ${i.loanR}%, the ED path costs ${fmt(Math.max(0,(r.pmtED - r.pmtRD)*120))} more in total principal-and-interest over a 10-year repayment.
+  ${i.edGuar ? 'Your ED guarantee program flips this: the locked scholarship exceeds the expected RD award, making ED the financially dominant path if admitted. ' : ''}
+  <strong>Negotiation mechanics [1][2]:</strong> Schools below your top admit routinely match or beat peer offers to protect yield and medians — the ~${Math.round(NEG_UPLIFT*100)}% uplift modeled here is conservative for above-median applicants holding 2+ offers. Hand off to AL-13 to model repayment plans on the resulting debt.
+  <em>Educational use only — not legal or financial advice. Verify scholarship terms and ED agreements with each school's ABA 509 disclosure and admissions office.</em>`;
+}
+
+function exportMarkdown() {
+  if (!_inputs) { showToast('Run the analysis first.'); return; }
+  const r = _results, i = _inputs;
+  const d = new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Law School Early Decision EV Analysis',
+    `\n_Generated ${d} · AL-72 · apexlogics.org_\n`,
+    `- **LSAT / GPA:** ${i.lsat} / ${i.gpa} (${r.pos} vs ${r.tier.name} medians)`,
+    `- **ED Target:** ${r.tier.name} · **RD Portfolio:** ${i.nRD} schools · **Track:** ${i.track} · **Risk:** ${i.risk}`,
+    `- **ED Guarantee:** ${i.edGuar ? 'Yes — ' + fmt(i.edGuarAmt) : 'No'}`,
+    '\n## Expected Value',
+    `- **P(admit) RD → ED:** ${fmtPct(r.pRD*100)} → ${fmtPct(r.pED*100)} (+${r.boostPP}pp)`,
+    `- **EV(ED):** ${fmt(r.evED)} · **EV(RD):** ${fmt(r.evRD)} · **Gap:** ${fmt(r.evGap)} → **${r.verdictED ? 'ED' : 'RD'} favored**`,
+    `- **Forfeited negotiation leverage:** ${fmt(r.leverageValue)}`,
+    `- **Break-even ED boost:** ${r.breakEvenPP === null ? '>40pp' : r.breakEvenPP + 'pp'}`,
+    '\n## Costs',
+    `- **Net cost ED:** ${fmt(r.netCostED)} · **Net cost RD:** ${fmt(r.netCostRD)}`,
+    `- **Monthly payment ED/RD:** ${fmt(r.pmtED)} / ${fmt(r.pmtRD)} (10-yr @ ${i.loanR}%)`,
+    '\n## Sensitivity (EV gap by ED boost)',
+    ...r.sens.map(s => `- **+${s.pp}pp:** ${fmt(s.gap)} (${s.gap>=0?'ED':'RD'} wins)`),
+    '\n_Sources: ABA 509 2024 aggregates · LSAC ED policies 2024 · NALP 2024. Educational use only._'
+  ];
+  const blob = new Blob([lines.join('\n')], {type:'text/plain'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'law-school-ed-ev.md'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+// ===== AP2 v2.0 flat export with validate-before-emit =====
+const AP2Schema = {
+  validMandateTypes: [
+    'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+    'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+    'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+    'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+    'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+    'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+    'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+    'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+    'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+    'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+    'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+    'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+    'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+    'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
+    'english_test_choice_record','lsat_tier_record','mba_scholarship_record',
+    'consulting_roi_record','mba_yield_record','dual_degree_record',
+    'online_mba_record','mba_waitlist_record','deferred_mba_record',
+    'law_ed_record'
+  ],
+  validate(payload) {
+    if (!payload || payload.ap2_version !== '2.0') return 'ap2_version must be "2.0"';
+    if (!payload.mandate_type) return 'mandate_type missing';
+    if (!this.validMandateTypes.includes(payload.mandate_type)) return 'unknown mandate_type: ' + payload.mandate_type;
+    if (!payload.generated_at) return 'generated_at missing';
+    if (!payload.inputs || typeof payload.inputs !== 'object') return 'inputs missing';
+    return null;
+  }
+};
+
+function ap2Timestamp() {
+  const d = new Date(), p = n => String(n).padStart(2,'0');
+  return '' + d.getFullYear() + p(d.getMonth()+1) + p(d.getDate()) + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+}
+
+function exportAP2() {
+  if (!_inputs) { showToast('Run the analysis first.'); return; }
+  const r = _results, i = _inputs;
+  const payload = {
+    ap2_version: '2.0',
+    mandate_type: 'law_ed_record',
+    source_tool: 'AL-72',
+    source_url: 'https://apexlogics.org/tools/65-law-school-ed-ev-engine/',
+    generated_at: new Date().toISOString(),
+    schema_version: '1.0',
+    inputs: {
+      lsat_score: i.lsat, gpa: i.gpa, ed_target_tier: i.edTier, career_track: i.track,
+      rd_portfolio_size: i.nRD, risk_tolerance: i.risk, loan_rate_pct: i.loanR,
+      ed_guarantee: i.edGuar, ed_guarantee_amount: i.edGuarAmt
+    },
+    results: {
+      median_position: r.pos,
+      ed_boost_pp: r.boostPP,
+      p_admit_rd_pct: +(r.pRD*100).toFixed(1),
+      p_admit_ed_pct: +(r.pED*100).toFixed(1),
+      p_one_plus_rd_admit_pct: +(r.p1*100).toFixed(1),
+      ev_ed: Math.round(r.evED),
+      ev_rd: Math.round(r.evRD),
+      ev_gap: Math.round(r.evGap),
+      forfeited_leverage: Math.round(r.leverageValue),
+      break_even_ed_boost_pp: r.breakEvenPP,
+      net_cost_ed: Math.round(r.netCostED),
+      net_cost_rd: Math.round(r.netCostRD),
+      monthly_payment_ed: Math.round(r.pmtED),
+      monthly_payment_rd: Math.round(r.pmtRD),
+      verdict: r.verdictED ? 'ED' : 'RD',
+      sensitivity: r.sens.map(s => ({ boost_pp: s.pp, ev_gap: Math.round(s.gap) }))
+    },
+    downstream_handoff_candidates: ['AL-55','AL-62','AL-13'],
+    advisory_cta: { text:'Get law school admissions and scholarship negotiation guidance', url:'https://apexadvisory.site' }
+  };
+  const err = AP2Schema.validate(payload);
+  if (err) { showToast('AP2 validation failed: ' + err); return; }
+  const blob = new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'AL-72_65-law-school-ed-ev-engine_' + ap2Timestamp() + '.ap2.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function toggleMCP() {
+  const panel = $('mcpPanel'), btn = $('mcpToggleBtn');
+  const open = panel.classList.toggle('open');
+  btn.textContent = (open?'▾ ':'▸ ')+'Developer / Agent Integration (manifest.json)';
+  btn.setAttribute('aria-expanded', open);
+  if (open && !$('mcpManifestPre').textContent) {
+    $('mcpManifestPre').textContent = JSON.stringify({
+      al_id:'AL-72', version:'1.0.0', title:'Law School Early Decision EV Engine',
+      slug:'65-law-school-ed-ev-engine',
+      description:'Computes the expected value of binding Early Decision vs. a Regular Decision portfolio for law school: ED admission boost by median position (splitter logic), forfeited scholarship negotiation leverage, break-even ED boost, ED guarantee programs, and debt/payment impact.',
+      category:'education_path_roi', journeys:['education_path'],
+      personas:['student','counselor'],
+      tags:['law-school','early-decision','ed-vs-rd','expected-value','scholarship-negotiation','splitter','lsat','jd','admissions'],
+      status:'shipped', maintenance:'very_low',
+      regulatory_citations:['ABA 509 data 2024 scholarship disclosure rates','LSAC 2024 binding Early Decision program policies','NALP 2024 associate salary survey','LSAC 2024 median LSAT scores by school tier'],
+      ap2_export:true, ap2_mandate_types:['law_ed_record'],
+      downstream_handoff_candidates:['AL-55','AL-62','AL-13'],
+      mcp_tool_definition:{ name:'evaluate_law_ed_tradeoff' },
+      sister_suite:'https://ainumbers.co', consulting_site:'https://apexadvisory.site', license:'CC-BY-4.0'
+    }, null, 2);
+  }
+}
+
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function() {
+  const s = sessionStorage.getItem('apex_lang');
+  setLang(s || ({en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'})[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+</script>
+</body>
+</html>

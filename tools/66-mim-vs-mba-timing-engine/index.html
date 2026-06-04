@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiM vs. MBA Timing Engine · ApexLogics #66</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/66-mim-vs-mba-timing-engine/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: #E8A838; } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 28px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 10px 18px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .range-val { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--accent); }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .path-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+    .path-card { border-radius: 12px; padding: 20px 22px; }
+    .path-card.winner { background: rgba(52,211,153,0.06); border: 2px solid var(--green); }
+    .path-card.runner { background: var(--surface); border: 1px solid rgba(167,139,250,0.3); }
+    .path-card.baseline { background: var(--surface); border: 1px solid var(--border); opacity: 0.75; }
+    .path-name { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+    .path-npv { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; margin: 4px 0; }
+    .path-row { display: flex; justify-content: space-between; font-size: 0.82rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .path-row:last-child { border-bottom: none; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); } .metric-val.amber { color: var(--amber); }
+    .metric-val.accent { color: var(--accent); } .metric-val.red { color: var(--red); }
+    .metric-val.teal { color: var(--teal); } .metric-val.blue { color: var(--blue); }
+    .metric-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
+    .yr-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    .yr-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.67rem; text-transform: uppercase; color: var(--text-dim); padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: right; }
+    .yr-table th:first-child { text-align: left; }
+    .yr-table td { padding: 8px 12px; border-bottom: 1px solid rgba(167,139,250,0.06); text-align: right; font-family: 'JetBrains Mono', monospace; }
+    .yr-table td:first-child { text-align: left; font-family: 'Sora', sans-serif; }
+    .yr-table tr.hl td { background: var(--accent-low); }
+    .insight-box { background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.2); border-radius: 8px; padding: 16px 20px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; }
+    .insight-box strong { color: var(--text); }
+    .warn-box { background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.3); border-radius: 8px; padding: 14px 18px; font-size: 0.82rem; color: var(--text-muted); line-height: 1.65; margin-bottom: 16px; }
+    .warn-box strong { color: var(--amber); }
+    .verdict-banner { border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.3); }
+    .verdict-icon { font-size: 1.8rem; }
+    .verdict-text strong { color: var(--text); font-size: 1rem; display: block; margin-bottom: 2px; }
+    .verdict-text { font-size: 0.92rem; color: var(--text-muted); }
+    .dr-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .dr-cell { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .dr-rate { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 6px; }
+    .dr-win { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; margin-bottom: 4px; }
+    .dr-detail { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; line-height: 1.7; }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(167,139,250,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #7f1d1d; border: 1px solid var(--red); color: #fecaca; padding: 12px 22px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; z-index: 200; display: none; }
+    .toast.show { display: block; }
+    .cite { font-size: 0.7rem; color: var(--text-dim); vertical-align: super; }
+    .cite-list { font-size: 0.74rem; color: var(--text-dim); line-height: 1.8; margin-top: 8px; }
+    .cite-list a { color: var(--text-muted); }
+    .mcp-section { max-width: 680px; margin: 24px auto 0; }
+    .mcp-toggle { background: none; border: 1px dashed var(--border); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 8px 14px; border-radius: 6px; cursor: pointer; width: 100%; text-align: left; margin-top: 24px; }
+    .mcp-panel { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 8px; }
+    .mcp-panel.open { display: block; }
+    .mcp-pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    @media (max-width: 700px) {
+      .path-grid, .metrics-grid, .dr-strip { grid-template-columns: 1fr; }
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="../../index.html" class="nav-pill accent">← All Tools</a>
+  </div>
+</nav>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <div class="tool-eyebrow">AL-73 · Education Path &amp; ROI</div>
+  <h1 class="tool-title">MiM vs. MBA Timing Engine</h1>
+  <p class="tool-desc">You're 21–24 with under two years of experience. Do a Master in Management <strong>now</strong> (1 year, lower cost, smaller uplift that compounds early) — or work 3–5 years and do a full-time MBA later (2 years, bigger uplift, but on a higher forgone salary)? This engine models lifetime NPV to age 35 and 45 for three paths, computes the crossover salary above which waiting for the MBA wins, and stress-tests the "MiM now, MBA later" double-degree trap.</p>
+  <div class="tool-vintage">Data vintage: GMAC + school employment reports, 2025–26 (outcome bands embedded; all engine math runs on your inputs)</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">Lifetime NPV</button>
+    <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">Region &amp; Career Detail</button>
+  </div>
+
+  <!-- ============ TAB 1: LIFETIME NPV ============ -->
+  <div class="tab-pane active" id="tabPane1">
+
+    <div class="card">
+      <div class="card-title">Your Profile <span class="badge">Decision Point: Age 21–24</span></div>
+      <div class="form-grid three">
+        <div class="field">
+          <label for="age">Current Age</label>
+          <input type="number" id="age" value="22" min="20" max="27" step="1" />
+          <span class="field-hint">MiM programs target 0–2 yrs experience; median entrant ~23.<span class="cite">[1]</span></span>
+        </div>
+        <div class="field">
+          <label for="currentSalary">Current / Offer Salary ($/yr)</label>
+          <input type="number" id="currentSalary" value="65000" min="0" step="5000" />
+          <span class="field-hint">What you earn (or would earn) without a graduate degree now.</span>
+        </div>
+        <div class="field">
+          <label for="region">Region</label>
+          <select id="region">
+            <option value="us">United States</option>
+            <option value="europe" selected>Europe</option>
+            <option value="asia">Asia</option>
+          </select>
+          <span class="field-hint">MiM is Europe-centric — the US MiM market is much thinner.<span class="cite">[1]</span></span>
+        </div>
+      </div>
+      <div class="form-grid two" style="margin-top:14px;">
+        <div class="field">
+          <label for="career">Target Career Track</label>
+          <select id="career">
+            <option value="consulting" selected>Consulting</option>
+            <option value="finance">Finance</option>
+            <option value="genmgmt">General Management</option>
+            <option value="tech">Tech</option>
+          </select>
+          <span class="field-hint">Drives default uplift bands (Tab 2 has the full table).</span>
+        </div>
+        <div class="field">
+          <label for="waitYears">Years to Work Before MBA: <span class="range-val" id="waitYearsVal">4</span></label>
+          <input type="range" id="waitYears" min="3" max="5" step="1" value="4" oninput="document.getElementById('waitYearsVal').textContent=this.value" />
+          <span class="field-hint">Top MBA programs admit at 3–6 yrs experience (median ~5).<span class="cite">[2]</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Path A — MiM Now (1 Year)</div>
+      <div class="form-grid three">
+        <div class="field">
+          <label for="mimCost">MiM Total Cost ($, tuition + living)</label>
+          <input type="number" id="mimCost" value="55000" min="0" step="5000" />
+          <span class="field-hint">Top MiM all-in: $40–70K (e.g., HEC, LBS, ESADE ≈ €35–55K tuition).<span class="cite">[1]</span></span>
+        </div>
+        <div class="field">
+          <label for="mimUplift">MiM Salary Uplift (%)</label>
+          <input type="number" id="mimUplift" value="25" min="0" max="100" step="5" />
+          <span class="field-hint">Applied to your pre-degree base at graduation. Typical: 20–35%; payback 1.5–3 yrs.<span class="cite">[1]</span></span>
+        </div>
+        <div class="field">
+          <label for="mimGrowthBonus">MiM Extra Growth (pp/yr)</label>
+          <input type="number" id="mimGrowthBonus" value="0.5" min="0" max="5" step="0.25" />
+          <span class="field-hint">Faster early-career ladder vs. baseline (percentage points added).</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Path B — Work, Then Full-Time MBA (2 Years)</div>
+      <div class="form-grid three">
+        <div class="field">
+          <label for="mbaCost">MBA Total Cost ($, 2-yr, net of aid)</label>
+          <input type="number" id="mbaCost" value="210000" min="0" step="5000" />
+          <span class="field-hint">T10 all-in: ~$220–260K; T25: ~$170–200K (consistent with AL-57).<span class="cite">[2]</span></span>
+        </div>
+        <div class="field">
+          <label for="mbaSalary">Post-MBA Year-1 Salary ($)</label>
+          <input type="number" id="mbaSalary" value="175000" min="0" step="5000" />
+          <span class="field-hint">Consulting/finance MBA: $175–200K. Tech: $160–180K. Other: $120–150K.<span class="cite">[2]</span></span>
+        </div>
+        <div class="field">
+          <label for="mbaGrowth">Post-MBA Salary Growth (%/yr)</label>
+          <input type="number" id="mbaGrowth" value="5" min="0" max="20" step="0.5" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Path C — No Graduate Degree (Baseline) + Engine Settings</div>
+      <div class="form-grid three">
+        <div class="field">
+          <label for="baseGrowth">Baseline Salary Growth (%/yr)</label>
+          <input type="number" id="baseGrowth" value="4" min="0" max="15" step="0.5" />
+          <span class="field-hint">Early-career growth without any graduate degree.</span>
+        </div>
+        <div class="field">
+          <label for="discountRate">Primary Discount Rate (%)</label>
+          <input type="number" id="discountRate" value="5" min="1" max="15" step="0.5" />
+          <span class="field-hint">Results also shown at 3 / 5 / 8% in the sensitivity strip.</span>
+        </div>
+        <div class="field">
+          <label for="mimPostGrowth">Post-MiM Career Growth (%/yr)</label>
+          <input type="number" id="mimPostGrowth" value="4.5" min="0" max="15" step="0.5" />
+          <span class="field-hint">Underlying growth on the uplifted MiM base (before extra-growth pp).</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="run-btn" onclick="calculateTiming()">Model All Three Paths</button>
+
+    <div class="results-section" id="resultsSection">
+
+      <div class="verdict-banner">
+        <div class="verdict-icon" id="verdictIcon"></div>
+        <div class="verdict-text" id="verdictText"></div>
+      </div>
+
+      <div class="warn-box" id="regionWarn"></div>
+
+      <div class="card">
+        <div class="card-title">Lifetime NPV to Age 45 — Three Paths</div>
+        <div class="path-grid" id="pathGrid"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Key Metrics</div>
+        <div class="metrics-grid" id="metricsGrid"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Discount-Rate Sensitivity — NPV to 45 at 3 / 5 / 8%</div>
+        <div class="dr-strip" id="drStrip"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Cumulative Net Earnings by Age (Undiscounted)</div>
+        <table class="yr-table" id="yrTable"></table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">"MiM Then MBA Later" Trap Check</div>
+        <div class="insight-box" id="trapBox"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Decision Analysis</div>
+        <div class="insight-box" id="insightBox"></div>
+      </div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB 2: REGION & CAREER DETAIL ============ -->
+  <div class="tab-pane" id="tabPane2">
+
+    <div class="card">
+      <div class="card-title">MiM Outcome Bands by Region <span class="badge">GMAC + school reports, 2025–26</span></div>
+      <table class="yr-table">
+        <thead><tr><th>Region</th><th>Starting Salary</th><th>3 Years Out</th><th>Payback</th><th>Market Depth</th></tr></thead>
+        <tbody>
+          <tr><td>Europe (top schools: HEC, LBS, St. Gallen, ESSEC, ESADE)</td><td>€60–100K</td><td>€85–130K</td><td>1.5–3 yrs</td><td>Deep — MiM is the standard pre-experience credential<span class="cite">[1]</span></td></tr>
+          <tr><td>United States (Duke MMS, Michigan MM, Northwestern MSMS)</td><td>$70–95K</td><td>$100–130K</td><td>1.5–3 yrs</td><td>Thin — few programs, weaker employer recognition<span class="cite">[3]</span></td></tr>
+          <tr><td>Asia (HKUST, NUS, CEIBS-adjacent programs)</td><td>$45–75K eq.</td><td>$70–110K eq.</td><td>2–3.5 yrs</td><td>Growing — strongest for regional consulting/finance entry</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">MBA Outcome Bands by Career Track (Full-Time, Post-Experience)</div>
+      <table class="yr-table">
+        <thead><tr><th>Track</th><th>Post-MBA Year-1 Base</th><th>Typical Uplift vs. Pre-MBA</th><th>Entry Level</th></tr></thead>
+        <tbody>
+          <tr><td>Consulting</td><td>$175–200K + bonus</td><td>70–110%</td><td>Associate / Consultant<span class="cite">[2]</span></td></tr>
+          <tr><td>Finance (IB / PE / AM)</td><td>$175–200K + bonus</td><td>70–120%</td><td>Associate<span class="cite">[2]</span></td></tr>
+          <tr><td>General Management (LDP)</td><td>$130–160K</td><td>40–70%</td><td>Senior analyst / manager-track</td></tr>
+          <tr><td>Tech (PM / strategy)</td><td>$160–180K + equity</td><td>50–80%</td><td>Product manager / senior PM<span class="cite">[2]</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Recruiting-Channel Reality</div>
+      <div class="insight-box">
+        <strong>MiM → analyst-level entry.</strong> MiM graduates enter the same pipelines as top undergraduates — analyst/junior consultant roles at MBB, Big 4, banks, and corporates. The degree buys access and a brand reset, not seniority. In Europe, MBB and bulge-bracket banks recruit MiM cohorts directly; in the US, MiM grads mostly compete in undergraduate-adjacent recruiting.<span class="cite">[1][3]</span>
+        <br><br>
+        <strong>MBA → associate/manager-level entry.</strong> Full-time MBA recruiting feeds associate-level consulting and finance roles and manager-track LDPs — typically 2–3 rungs above MiM entry, reflecting the 3–5 years of pre-MBA experience. This is why the MBA uplift is larger in absolute dollars but arrives later and on a much larger opportunity-cost base.<span class="cite">[2]</span>
+        <br><br>
+        <strong>You cannot trade one for the other.</strong> A MiM does not grant associate-level entry, and waiting for an MBA forfeits the early compounding years. That timing asymmetry — small uplift early vs. large uplift late — is exactly what Tab 1 prices.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">International Candidates — STEM &amp; Visa Notes</div>
+      <div class="insight-box">
+        <strong>US:</strong> Many US MiM/MSM programs carry STEM designation, qualifying international graduates for the 24-month STEM OPT extension (36 months total work authorization vs. 12 for non-STEM).<span class="cite">[4]</span> Check the program's CIP code before applying — it changes the H-1B lottery math materially (≈3 lottery attempts vs. 1). Most top US MBA programs now also offer STEM tracks. Model your post-graduation runway in <a href="../53-stem-opt-financial-runway-planner/index.html" style="color:var(--accent);">AL-59 STEM OPT Runway Planner</a>.
+        <br><br>
+        <strong>Europe:</strong> Post-study work visas are generally more accessible (e.g., 2-year UK Graduate Route, French APS, German job-seeker visa), which is part of why the European MiM market is deep — international students can actually convert the degree into local employment.
+        <br><br>
+        <strong>Asia:</strong> Work-visa conversion varies widely; Singapore and Hong Kong are the most tractable for international MiM graduates.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Sources</div>
+      <div class="cite-list">
+        [1] GMAC Application Trends Survey &amp; Prospective Students Survey, 2025 — MiM demand concentrated in Europe; pre-experience admit profile. <a href="https://www.gmac.com/market-intelligence-and-research" rel="noopener">gmac.com</a><br>
+        [2] School employment reports, Class of 2025 (Harvard, Wharton, Booth, Kellogg, INSEAD, LBS) — post-MBA base salary and tier premiums. Aggregated bands; see each school's published report.<br>
+        [3] US MiM/MSM program employment reports, 2025–26 (Duke Fuqua MMS, Michigan Ross MM, Northwestern MSMS) — US MiM placement and salary bands.<br>
+        [4] U.S. Department of Homeland Security — STEM OPT extension rules. <a href="https://www.dhs.gov/" rel="noopener">dhs.gov</a> / <a href="https://studyinthestates.dhs.gov/" rel="noopener">studyinthestates.dhs.gov</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="mcp-section">
+    <button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">▸ Developer / Agent Integration (manifest.json)</button>
+    <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+      <pre class="mcp-pre" id="mcpManifestPre"></pre>
+    </div>
+  </div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-73 · Data: GMAC + school reports 2025–26
+  </footer>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let _inputs = null, _results = null;
+function fmt(n) { return (n < 0 ? '-$' : '$') + Math.abs(Math.round(n)).toLocaleString('en-US'); }
+function fmtPct(n) { return n.toFixed(1) + '%'; }
+function showToast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+function switchTab(n) {
+  [1,2].forEach(i => {
+    $('tabBtn'+i).classList.toggle('active', i === n);
+    $('tabPane'+i).classList.toggle('active', i === n);
+  });
+}
+
+// ---------- Core engine ----------
+// Builds per-path annual cash flows from current age to a horizon age.
+// Year index t = 0 is the year starting at `age` (cash received at end of year t, discounted by (1+dr)^(t+1)).
+function buildStreams(p, horizonAge) {
+  const years = horizonAge - p.age;          // number of earning years modeled
+  const mim = [], mba = [], base = [];
+  for (let t = 0; t < years; t++) {
+    // PATH C — baseline: current salary growing at baseGrowth
+    base.push(p.curSal * Math.pow(1 + p.baseGrowth, t));
+
+    // PATH A — MiM now: year 0 in school (no salary, pay cost up front);
+    // from year 1: uplifted base growing at (mimPostGrowth + mimGrowthBonus)
+    if (t === 0) {
+      mim.push(0);
+    } else {
+      mim.push(p.curSal * (1 + p.mimUplift) * Math.pow(1 + p.mimPostGrowth + p.mimGrowthBonus, t - 1));
+    }
+
+    // PATH B — work waitYears at baseline growth, 2 yrs in school (no salary),
+    // then post-MBA salary growing at mbaGrowth
+    if (t < p.waitYears) {
+      mba.push(p.curSal * Math.pow(1 + p.baseGrowth, t));
+    } else if (t < p.waitYears + 2) {
+      mba.push(0);
+    } else {
+      mba.push(p.mbaSalary * Math.pow(1 + p.mbaGrowth, t - p.waitYears - 2));
+    }
+  }
+  return { mim, mba, base, years };
+}
+
+function npvOfPath(stream, cost, costYear, dr) {
+  // cost paid at start of costYear (discounted by (1+dr)^costYear);
+  // salaries received end-of-year: year t discounted by (1+dr)^(t+1)
+  let npv = -cost / Math.pow(1 + dr, costYear);
+  for (let t = 0; t < stream.length; t++) npv += stream[t] / Math.pow(1 + dr, t + 1);
+  return npv;
+}
+
+function pathNPVs(p, horizonAge, dr) {
+  const s = buildStreams(p, horizonAge);
+  return {
+    mim:  npvOfPath(s.mim,  p.mimCost, 0, dr),
+    mba:  npvOfPath(s.mba,  p.mbaCost, p.waitYears, dr),
+    base: npvOfPath(s.base, 0, 0, dr),
+    streams: s
+  };
+}
+
+// Crossover salary: current-salary threshold above which Path B (wait for MBA) beats Path A (MiM now), NPV to 45.
+// MiM NPV scales with curSal (uplift applied to base); MBA path's pre-school earnings scale with curSal but
+// post-MBA salary is fixed — so higher curSal raises B's pre-MBA earnings AND raises A's whole stream.
+// Solve by bisection on curSal.
+function crossoverSalary(p, dr) {
+  const diff = (sal) => {
+    const q = Object.assign({}, p, { curSal: sal });
+    const n = pathNPVs(q, 45, dr);
+    return n.mba - n.mim;
+  };
+  let lo = 10000, hi = 400000;
+  const dLo = diff(lo), dHi = diff(hi);
+  if (dLo > 0 && dHi > 0) return { sal: null, dir: 'mba_always' };
+  if (dLo < 0 && dHi < 0) return { sal: null, dir: 'mim_always' };
+  const rising = dHi > dLo; // does MBA advantage rise or fall with salary?
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2, d = diff(mid);
+    if ((d > 0) === rising) hi = mid; else lo = mid;
+  }
+  return { sal: (lo + hi) / 2, dir: rising ? 'mba_above' : 'mim_above' };
+}
+
+// MiM payback: years post-MiM until cumulative (MiM earnings − cost) ≥ cumulative baseline earnings
+function mimPayback(p) {
+  const s = buildStreams(p, p.age + 24); // long window
+  let cumM = -p.mimCost, cumB = 0;
+  for (let t = 0; t < s.years; t++) {
+    cumM += s.mim[t]; cumB += s.base[t];
+    if (cumM >= cumB) return t + 1; // years from decision point
+  }
+  return null;
+}
+function mbaPayback(p) {
+  const s = buildStreams(p, p.age + 24);
+  let cumM = 0, cumB = 0;
+  for (let t = 0; t < s.years; t++) {
+    cumM += s.mba[t] - (t === p.waitYears ? p.mbaCost : 0);
+    cumB += s.base[t];
+    if (t >= p.waitYears && cumM >= cumB) return t + 1;
+  }
+  return null;
+}
+
+// "MiM then MBA later" trap: marginal NPV of adding an MBA on top of the MiM path.
+// Stacked path: MiM yr 0, MiM-uplifted work to waitYears+1, then 2 yrs school (second tuition,
+// second opportunity window now on the HIGHER MiM salary), then post-MBA salary with
+// incremental uplift haircut ×0.5 — the MiM already captured part of the premium.
+function stackedTrap(p, dr) {
+  const horizonAge = 45;
+  const years = horizonAge - p.age;
+  const stacked = [];
+  const mbaStart = p.waitYears + 1; // 1 MiM year + waitYears of work, MBA starts after
+  // Post-MiM salary trajectory function
+  const mimSalAt = t => p.curSal * (1 + p.mimUplift) * Math.pow(1 + p.mimPostGrowth + p.mimGrowthBonus, t - 1);
+  for (let t = 0; t < years; t++) {
+    if (t === 0) stacked.push(0);                       // MiM year
+    else if (t < mbaStart) stacked.push(mimSalAt(t));   // working post-MiM
+    else if (t < mbaStart + 2) stacked.push(0);         // MBA years
+    else {
+      // Post-MBA: pre-MBA (MiM) salary at point of entry + 0.5 × the incremental jump to mbaSalary
+      const preMbaSal = mimSalAt(mbaStart); // salary in final working year before MBA (approx. forgone base)
+      const inc = Math.max(0, p.mbaSalary - preMbaSal) * 0.5;
+      stacked.push((preMbaSal + inc) * Math.pow(1 + p.mbaGrowth, t - mbaStart - 2));
+    }
+  }
+  let npv = -p.mimCost; // MiM cost at t=0
+  npv -= p.mbaCost / Math.pow(1 + dr, mbaStart);
+  for (let t = 0; t < years; t++) npv += stacked[t] / Math.pow(1 + dr, t + 1);
+  return npv;
+}
+
+const REGION_NOTES = {
+  us: '<strong>US note:</strong> The US MiM market is thin — only a handful of programs (Duke MMS, Michigan Ross MM, Northwestern MSMS) with weaker employer recognition than European MiMs. Sanity-check your uplift assumption against US placement reports, and verify STEM designation if you are an international candidate (24-month OPT extension).',
+  europe: '<strong>Europe note:</strong> MiM is the standard pre-experience credential here — deep recruiting pipelines at MBB, banks, and corporates (HEC, LBS, St. Gallen, ESSEC, ESADE). Top-school starting bands €60–100K. Your uplift assumption is most defensible in this market.',
+  asia: '<strong>Asia note:</strong> The MiM market is growing but regional — strongest for consulting/finance entry in Singapore and Hong Kong. Salary bands are lower in USD terms; make sure your inputs are in consistent currency. Work-visa conversion varies widely by country.'
+};
+
+function calculateTiming() {
+  const p = {
+    age:           parseInt($('age').value) || 22,
+    curSal:        parseFloat($('currentSalary').value) || 0,
+    region:        $('region').value,
+    career:        $('career').value,
+    waitYears:     parseInt($('waitYears').value) || 4,
+    mimCost:       parseFloat($('mimCost').value) || 0,
+    mimUplift:     (parseFloat($('mimUplift').value) || 0) / 100,
+    mimGrowthBonus:(parseFloat($('mimGrowthBonus').value) || 0) / 100,
+    mimPostGrowth: (parseFloat($('mimPostGrowth').value) || 0) / 100,
+    mbaCost:       parseFloat($('mbaCost').value) || 0,
+    mbaSalary:     parseFloat($('mbaSalary').value) || 0,
+    mbaGrowth:     (parseFloat($('mbaGrowth').value) || 0) / 100,
+    baseGrowth:    (parseFloat($('baseGrowth').value) || 0) / 100,
+    dr:            (parseFloat($('discountRate').value) || 5) / 100
+  };
+
+  const n45 = pathNPVs(p, 45, p.dr);
+  const n35 = pathNPVs(p, 35, p.dr);
+  const cross = crossoverSalary(p, p.dr);
+  const payM = mimPayback(p);
+  const payB = mbaPayback(p);
+  const trapNPV = stackedTrap(p, p.dr);
+  const drStrip = [0.03, 0.05, 0.08].map(r => {
+    const n = pathNPVs(p, 45, r);
+    const best = n.mim >= n.mba && n.mim >= n.base ? 'MiM Now' : n.mba >= n.base ? 'Wait → MBA' : 'No Degree';
+    return { rate: r, mim: n.mim, mba: n.mba, base: n.base, best };
+  });
+
+  const paths45 = [
+    { key:'mim',  label:'A · MiM Now',      npv: n45.mim,  npv35: n35.mim,  cost: p.mimCost, payback: payM },
+    { key:'mba',  label:'B · Wait → MBA',   npv: n45.mba,  npv35: n35.mba,  cost: p.mbaCost, payback: payB },
+    { key:'base', label:'C · No Degree',    npv: n45.base, npv35: n35.base, cost: 0,         payback: 0 }
+  ];
+  const best = paths45.reduce((a,b) => b.npv > a.npv ? b : a);
+
+  _inputs = p;
+  _results = { n45, n35, cross, payM, payB, trapNPV, drStrip, paths45, best, streams: n45.streams };
+  renderResults();
+  $('resultsSection').classList.add('visible');
+}
+
+function renderResults() {
+  const p = _inputs, r = _results;
+
+  $('verdictIcon').textContent = r.best.key === 'base' ? '🤔' : '🎓';
+  $('verdictText').innerHTML = `<strong>Highest NPV to 45: ${r.best.label} (${fmt(r.best.npv)})</strong>` +
+    `MiM now: ${fmt(r.n45.mim)} · Wait → MBA: ${fmt(r.n45.mba)} · No degree: ${fmt(r.n45.base)} — at ${fmtPct(p.dr*100)} discount rate`;
+
+  $('regionWarn').innerHTML = REGION_NOTES[p.region];
+
+  const colors = { mim:'var(--teal)', mba:'var(--accent)', base:'var(--text-dim)' };
+  $('pathGrid').innerHTML = r.paths45.map(path => {
+    const cls = path.key === r.best.key ? 'winner' : path.key === 'base' ? 'baseline' : 'runner';
+    return `<div class="path-card ${cls}">
+      <div class="path-name" style="color:${colors[path.key]}">${path.label}${path.key===r.best.key?' ✓':''}</div>
+      <div class="path-npv" style="color:${colors[path.key]}">${fmt(path.npv)}</div>
+      <div style="font-size:0.68rem;color:var(--text-dim);margin-bottom:8px;">NPV to age 45</div>
+      <div class="path-row"><span>NPV to age 35</span><span>${fmt(path.npv35)}</span></div>
+      ${path.key !== 'base' ? `<div class="path-row"><span>Program cost</span><span>${fmt(path.cost)}</span></div>` : ''}
+      ${path.key !== 'base' ? `<div class="path-row"><span>Payback vs. baseline</span><span>${path.payback ? path.payback + ' yrs' : '>24 yrs'}</span></div>` : ''}
+    </div>`;
+  }).join('');
+
+  const crossTxt = r.cross.sal === null
+    ? (r.cross.dir === 'mba_always' ? 'MBA wins at all salaries' : 'MiM wins at all salaries')
+    : fmt(r.cross.sal);
+  const crossNote = r.cross.sal === null ? 'within $10K–$400K range'
+    : (r.cross.dir === 'mba_above' ? 'Above this, waiting for MBA wins' : 'Below this, waiting for MBA wins');
+
+  $('metricsGrid').innerHTML = [
+    { label:'Crossover Salary', val: crossTxt, cls:'accent', note: crossNote },
+    { label:'MiM Payback', val: r.payM ? r.payM + ' yrs' : '>24 yrs', cls: r.payM && r.payM <= 3 ? 'green' : 'amber', note:'From decision point, vs. no-degree' },
+    { label:'MBA Payback', val: r.payB ? r.payB + ' yrs' : '>24 yrs', cls: r.payB && r.payB <= 10 ? 'green' : 'amber', note:'Incl. ' + p.waitYears + '-yr wait + 2 in school' },
+    { label:'MBA Opp. Cost', val: fmt(p.curSal * Math.pow(1 + p.baseGrowth, p.waitYears) * 2), cls:'red', note:'≈2 yrs forgone salary at entry' },
+    { label:'MiM vs. MBA Gap', val: fmt(r.n45.mim - r.n45.mba), cls: r.n45.mim >= r.n45.mba ? 'teal' : 'blue', note:'NPV-to-45 difference (A − B)' },
+    { label:'MiM Premium @35', val: fmt(r.n35.mim - r.n35.base), cls: r.n35.mim >= r.n35.base ? 'green' : 'red', note:'MiM vs. no-degree by 35' },
+    { label:'MBA Premium @35', val: fmt(r.n35.mba - r.n35.base), cls: r.n35.mba >= r.n35.base ? 'green' : 'red', note:'MBA vs. no-degree by 35' },
+    { label:'Stacked MiM+MBA', val: fmt(r.trapNPV), cls: r.trapNPV > r.best.npv ? 'green' : 'amber', note:'Both degrees, haircut applied' },
+  ].map(m => `<div class="metric-card"><div class="metric-label">${m.label}</div><div class="metric-val ${m.cls}">${m.val}</div><div class="metric-note">${m.note}</div></div>`).join('');
+
+  $('drStrip').innerHTML = r.drStrip.map(d => `<div class="dr-cell">
+    <div class="dr-rate">@ ${(d.rate*100).toFixed(0)}% discount</div>
+    <div class="dr-win" style="color:${d.best==='MiM Now'?'var(--teal)':d.best==='Wait → MBA'?'var(--accent)':'var(--text-dim)'}">${d.best} ✓</div>
+    <div class="dr-detail">MiM ${fmt(d.mim)}<br>MBA ${fmt(d.mba)}<br>None ${fmt(d.base)}</div>
+  </div>`).join('');
+
+  // Cumulative table by age (sample every year to 45, net of program costs when paid)
+  const s = r.streams;
+  let cumM = 0, cumB = 0, cumN = 0, rows = '';
+  for (let t = 0; t < s.years; t++) {
+    if (t === 0) cumM -= p.mimCost;
+    if (t === p.waitYears) cumB -= p.mbaCost;
+    cumM += s.mim[t]; cumB += s.mba[t]; cumN += s.base[t];
+    const ageAt = p.age + t + 1;
+    const show = ageAt % 2 === 1 || ageAt === 45 || t === 0;
+    if (show) {
+      const hl = (cumM >= cumN && cumM - s.mim[t] + p.mimCost * (t===0?1:0) < cumN) || (cumB >= cumN && t >= p.waitYears + 2 && ageAt <= p.age + p.waitYears + 6);
+      rows += `<tr${cumB >= cumN && cumM >= cumN && ageAt < 45 ? ' class="hl"' : ''}><td>Age ${ageAt}</td><td>${fmt(cumM)}</td><td>${fmt(cumB)}</td><td>${fmt(cumN)}</td></tr>`;
+    }
+  }
+  $('yrTable').innerHTML = `<thead><tr><th>Age</th><th>A · MiM Cum.</th><th>B · MBA Cum.</th><th>C · None Cum.</th></tr></thead><tbody>${rows}</tbody>`;
+
+  const marginalVsMim = r.trapNPV - r.n45.mim;
+  $('trapBox').innerHTML = `<strong>Stacked path (MiM now → MBA at ${p.age + p.waitYears + 1}):</strong> NPV to 45 = <strong>${fmt(r.trapNPV)}</strong> — marginal value of adding the MBA on top of the MiM: <strong>${fmt(marginalVsMim)}</strong>.
+  <br><br>
+  This applies a <strong>×0.5 haircut</strong> to the incremental MBA uplift, because the MiM has already captured part of the brand/network/access premium — admissions committees and employers price the second degree against your already-elevated base, and you pay tuition twice plus a second 2-year opportunity-cost window on the <em>higher</em> post-MiM salary.
+  ${marginalVsMim < 0 ? '<br><br><strong style="color:var(--amber)">⚠ Trap confirmed at these inputs:</strong> stacking an MBA on the MiM destroys value vs. stopping after the MiM. Pick one timing, not both.' : '<br><br>At these inputs the stacked path adds value over MiM-alone — but compare it against Path B (single MBA), which avoids the double tuition.'}
+  <br><br>For the full double-degree model (JD/MBA, MD/MBA, MiM/MBA), see <a href="../59-dual-degree-roi-calculator/index.html" style="color:var(--accent);">AL-66 Dual Degree ROI Calculator</a>.`;
+
+  const careerNote = {
+    consulting: 'Consulting hires at both gates: MiM → junior consultant (Europe-heavy), MBA → associate. The associate gate pays roughly 2× the junior gate, which is why high current salaries push toward waiting.',
+    finance: 'Finance is the most level-sensitive track: MiM enters at analyst, MBA at associate. If your target is IB/PE associate, the MBA gate is close to mandatory — the MiM rarely substitutes.',
+    genmgmt: 'General management LDPs recruit at both levels, with a smaller MBA premium than consulting/finance — which compresses the crossover salary downward (MiM-now wins more often).',
+    tech: 'Tech values demonstrated output over credentials; both degrees carry smaller, noisier premiums here. Treat the uplift inputs conservatively.'
+  }[p.career];
+  $('insightBox').innerHTML = `<strong>Timing economics:</strong> The MiM applies a ${fmtPct(p.mimUplift*100)} uplift to a ${fmt(p.curSal)} base starting at age ${p.age + 1} — small, but it compounds for ${45 - p.age - 1} years. The MBA jumps you to ${fmt(p.mbaSalary)} at age ${p.age + p.waitYears + 2}, but costs ${fmt(p.mbaCost)} plus ~2 years of a salary that has grown to ${fmt(p.curSal * Math.pow(1 + p.baseGrowth, p.waitYears))} by then.
+  <br><br>
+  <strong>Crossover:</strong> ${r.cross.sal === null ? (r.cross.dir === 'mba_always' ? 'At these uplift assumptions the MBA path dominates across the whole $10K–$400K salary range.' : 'At these uplift assumptions the MiM path dominates across the whole $10K–$400K salary range.') : `At a current salary of ${fmt(r.cross.sal)}, the two paths break even on NPV-to-45. ${r.cross.dir === 'mba_above' ? 'Above it, your forgone-salary base grows but the fixed post-MBA salary target represents a bigger absolute jump from a lower relative position — waiting wins. Below it, the MiM\'s early compounding wins.' : 'Below it, waiting for the MBA wins; above it, the MiM\'s early compounding on the larger base wins.'}`}
+  <br><br>
+  <strong>Career track (${p.career}):</strong> ${careerNote}
+  <br><br>
+  <strong>By age 35</strong> the picture is ${r.n35.mim > r.n35.mba ? 'MiM-favorable (' + fmt(r.n35.mim) + ' vs. ' + fmt(r.n35.mba) + ') — the MBA path is still digesting its opportunity cost' : 'already MBA-favorable (' + fmt(r.n35.mba) + ' vs. ' + fmt(r.n35.mim) + ')'}; <strong>by 45</strong> it is ${r.best.label}. If you discount the future heavily (8% column), early money matters more and the MiM/no-degree paths gain ground.`;
+}
+
+// ---------- Exports ----------
+function exportMarkdown() {
+  if (!_inputs) { showToast('Run the model first.'); return; }
+  const p = _inputs, r = _results;
+  const d = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  const lines = [
+    '# MiM vs. MBA Timing Analysis',
+    `\n_Generated ${d} · AL-73 · apexlogics.org_\n`,
+    `## Best Path: ${r.best.label} (${fmt(r.best.npv)} NPV to age 45)`,
+    `\nProfile: age ${p.age}, current salary ${fmt(p.curSal)}, region ${p.region}, career ${p.career}, MBA wait ${p.waitYears} yrs, discount rate ${fmtPct(p.dr*100)}\n`,
+    '## Path Comparison',
+    '| Path | NPV to 45 | NPV to 35 | Cost | Payback |',
+    '|---|---|---|---|---|',
+    ...r.paths45.map(x => `| ${x.label} | ${fmt(x.npv)} | ${fmt(x.npv35)} | ${x.cost > 0 ? fmt(x.cost) : '—'} | ${x.payback ? x.payback + ' yrs' : x.key === 'base' ? '—' : '>24 yrs'} |`),
+    '\n## Crossover Salary',
+    r.cross.sal === null ? (r.cross.dir === 'mba_always' ? 'MBA path dominates at all salaries ($10K–$400K).' : 'MiM path dominates at all salaries ($10K–$400K).')
+      : `${fmt(r.cross.sal)} — ${r.cross.dir === 'mba_above' ? 'above this, wait-for-MBA wins' : 'below this, wait-for-MBA wins'} (NPV to 45).`,
+    '\n## Discount-Rate Sensitivity (NPV to 45)',
+    '| Rate | MiM Now | Wait → MBA | No Degree | Winner |',
+    '|---|---|---|---|---|',
+    ...r.drStrip.map(x => `| ${(x.rate*100).toFixed(0)}% | ${fmt(x.mim)} | ${fmt(x.mba)} | ${fmt(x.base)} | ${x.best} |`),
+    '\n## MiM→MBA Stacking Check',
+    `Stacked path NPV to 45: ${fmt(r.trapNPV)} (marginal vs. MiM-alone: ${fmt(r.trapNPV - r.n45.mim)}; incremental MBA uplift haircut ×0.5 applied).`,
+    '\n_Data vintage: GMAC + school employment reports, 2025–26._'
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'mim-vs-mba-timing.md'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+const AP2Schema = {
+  validMandateTypes: [
+    'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+    'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+    'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+    'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+    'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+    'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+    'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+    'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+    'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+    'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+    'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+    'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+    'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+    'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
+    'english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record',
+    'mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record',
+    'mim_mba_timing_record'
+  ],
+  validate(payload) {
+    if (!payload || payload.ap2_version !== '2.0') return 'ap2_version must be "2.0"';
+    if (!payload.mandate_type) return 'missing mandate_type';
+    if (!this.validMandateTypes.includes(payload.mandate_type)) return 'unknown mandate_type: ' + payload.mandate_type;
+    if (!payload.generated_at) return 'missing generated_at';
+    if (!payload.inputs || typeof payload.inputs !== 'object') return 'missing inputs';
+    return null;
+  }
+};
+
+function exportAP2() {
+  if (!_inputs) { showToast('Run the model first.'); return; }
+  const p = _inputs, r = _results;
+  const now = new Date();
+  const payload = {
+    ap2_version: '2.0',
+    mandate_type: 'mim_mba_timing_record',
+    source_tool: 'AL-73',
+    source_url: 'https://apexlogics.org/tools/66-mim-vs-mba-timing-engine/',
+    generated_at: now.toISOString(),
+    schema_version: '1.0',
+    inputs: {
+      age: p.age, current_salary: p.curSal, region: p.region, career_track: p.career,
+      mba_wait_years: p.waitYears, mim_cost: p.mimCost,
+      mim_uplift_pct: +(p.mimUplift*100).toFixed(1),
+      mba_cost: p.mbaCost, post_mba_salary: p.mbaSalary,
+      baseline_growth_pct: +(p.baseGrowth*100).toFixed(1),
+      discount_rate_pct: +(p.dr*100).toFixed(1)
+    },
+    results: {
+      best_path: r.best.label,
+      mim_npv_45: Math.round(r.n45.mim),
+      mba_npv_45: Math.round(r.n45.mba),
+      no_degree_npv_45: Math.round(r.n45.base),
+      mim_npv_35: Math.round(r.n35.mim),
+      mba_npv_35: Math.round(r.n35.mba),
+      no_degree_npv_35: Math.round(r.n35.base),
+      crossover_salary: r.cross.sal === null ? null : Math.round(r.cross.sal),
+      crossover_direction: r.cross.dir,
+      mim_payback_yrs: r.payM,
+      mba_payback_yrs: r.payB,
+      stacked_mim_mba_npv_45: Math.round(r.trapNPV)
+    },
+    downstream_handoff_candidates: ['AL-26', 'AL-29', 'AL-66'],
+    advisory_cta: { text:'Get MiM vs. MBA timing strategy guidance', url:'https://apexadvisory.site' }
+  };
+  const err = AP2Schema.validate(payload);
+  if (err) { showToast('AP2 validation failed: ' + err); return; }
+  const pad = n => String(n).padStart(2, '0');
+  const ts = now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate()) + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'AL-73_66-mim-vs-mba-timing-engine_' + ts + '.ap2.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function toggleMCP() {
+  const panel = $('mcpPanel'), btn = $('mcpToggleBtn');
+  const open = panel.classList.toggle('open');
+  btn.textContent = (open ? '▾ ' : '▸ ') + 'Developer / Agent Integration (manifest.json)';
+  btn.setAttribute('aria-expanded', open);
+  if (open && !$('mcpManifestPre').textContent) {
+    $('mcpManifestPre').textContent = JSON.stringify({
+      al_id:'AL-73', version:'1.0.0', title:'MiM vs. MBA Timing Engine',
+      slug:'66-mim-vs-mba-timing-engine',
+      description:'Lifetime NPV (to age 35 and 45) of three paths for early-career candidates: MiM now (1 yr, smaller early uplift compounding from ~23), work 3-5 yrs then full-time MBA (2 yrs, larger uplift later, higher forgone salary), or no graduate degree. Computes the crossover salary above which waiting for the MBA wins, payback years, discount-rate sensitivity (3/5/8%), and the MiM-then-MBA double-degree trap with a 0.5 incremental-uplift haircut.',
+      category:'education_path_roi', journeys:['education_path'], personas:['student'],
+      tags:['mim','master-in-management','mba','timing','npv','crossover-salary','early-career','europe','gmac'],
+      status:'shipped', maintenance:'very_low',
+      ap2_export:true, ap2_mandate_types:['mim_mba_timing_record'],
+      downstream_handoff_candidates:['AL-26','AL-29','AL-66'],
+      mcp_tool: 'compare_mim_mba_timing',
+      sister_suite:'https://ainumbers.co', consulting_site:'https://apexadvisory.site', license:'CC-BY-4.0'
+    }, null, 2);
+  }
+}
+
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function() {
+  const s = sessionStorage.getItem('apex_lang');
+  setLang(s || ({en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'})[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+</script>
+</body>
+</html>
