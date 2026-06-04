@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MBA Waitlist Expected Value Engine · ApexLogics #61</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/61-mba-waitlist-ev-engine/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: var(--accent); } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 36px; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .compare-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+    .compare-card { border-radius: 12px; padding: 20px 22px; }
+    .compare-card.winner { background: rgba(52,211,153,0.06); border: 2px solid var(--green); }
+    .compare-card.ok { background: var(--surface); border: 1px solid var(--border); }
+    .compare-title { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 500; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .winner-badge { background: rgba(52,211,153,0.2); color: var(--green); border-radius: 4px; padding: 2px 8px; font-size: 0.65rem; }
+    .compare-score { font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; margin: 8px 0 4px; }
+    .compare-row { display: flex; justify-content: space-between; font-size: 0.82rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .compare-row:last-child { border-bottom: none; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); } .metric-val.amber { color: var(--amber); }
+    .metric-val.accent { color: var(--accent); } .metric-val.red { color: var(--red); }
+    .metric-val.teal { color: var(--teal); } .metric-val.blue { color: var(--blue); }
+    .metric-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
+    .score-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    .score-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.67rem; text-transform: uppercase; color: var(--text-dim); padding: 8px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+    .score-table td { padding: 9px 14px; border-bottom: 1px solid rgba(167,139,250,0.06); font-size: 0.83rem; }
+    .score-table tr.highlight td { background: var(--accent-low); }
+    .insight-box { background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.2); border-radius: 8px; padding: 16px 20px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; }
+    .insight-box strong { color: var(--text); }
+    .verdict-banner { border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.3); }
+    .verdict-icon { font-size: 1.8rem; }
+    .verdict-text strong { color: var(--text); font-size: 1rem; display: block; margin-bottom: 2px; }
+    .verdict-text { font-size: 0.92rem; color: var(--text-muted); }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(167,139,250,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .mcp-section { max-width: 680px; margin: 24px auto 0; }
+    .mcp-toggle { background: none; border: 1px dashed var(--border); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 8px 14px; border-radius: 6px; cursor: pointer; width: 100%; text-align: left; margin-top: 24px; }
+    .mcp-panel { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 8px; }
+    .mcp-panel.open { display: block; }
+    .mcp-pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    @media (max-width: 700px) {
+      .compare-grid { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid.two { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="28" height="28" rx="6" fill="#A78BFA" fill-opacity="0.15"/>
+          <path d="M7 21L14 7L21 21" stroke="#A78BFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9.5 16.5H18.5" stroke="#A78BFA" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-name"><span class="logo-apex">Apex</span><span class="logo-org">Logics</span></div>
+        <div class="logo-tag">apexlogics.org</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="https://apexadvisory.site" class="nav-pill accent" target="_blank" rel="noopener">Advisory</a>
+    <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    <a href="../../index.html" class="nav-pill">← All Tools</a>
+  </div>
+</nav>
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+  <div class="tool-eyebrow">AL-68 · Education Path &amp; ROI</div>
+  <h1 class="tool-title">MBA Waitlist<br>Expected Value Engine</h1>
+  <p class="tool-desc">Roughly 10–15% of MBA applicants land on a waitlist. Your three options — stay on the list (hedged with a safety deposit), withdraw and commit to your admit, or decline everything and reapply next year — have very different expected values depending on the waitlist school's yield. High-yield schools (HBS, Stanford at 80%+) admit almost no one off the list; Kellogg-class yields (~40%) move dozens. This engine prices all three.</p>
+  <div class="tool-vintage">Data vintage: 2024–25 published yield rates and waitlist movement estimates by school class · tier salary premiums from 2024 employment reports. All embedded.</div>
+
+  <div class="card">
+    <div class="card-title">Your Waitlist Situation <span class="badge">3-Option EV</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="wlSchool">Waitlist School Class</label>
+        <select id="wlSchool">
+          <option value="ultra">Ultra-high yield (HBS, Stanford — 80–85% yield)</option>
+          <option value="m7" selected>Other M7 (Wharton, Booth, Kellogg — 50–65% yield)</option>
+          <option value="t15">T8–15 (35–50% yield — most waitlist movement)</option>
+          <option value="t25">T16–25 (25–40% yield)</option>
+        </select>
+        <span class="field-hint">Lower yield = more waitlist admits. This sets baseline P(off waitlist)</span>
+      </div>
+      <div class="field">
+        <label for="wlStrength">Your Waitlist Position Strength</label>
+        <select id="wlStrength">
+          <option value="strong">Strong — feedback invited, interview went well, new material to add</option>
+          <option value="avg" selected>Average — standard waitlist letter</option>
+          <option value="weak">Weak — borderline stats for this school, nothing new to add</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="haveAdmit">Do You Hold an Admit Elsewhere?</label>
+        <select id="haveAdmit">
+          <option value="yes" selected>Yes — admitted at a safety/match school</option>
+          <option value="no">No — the waitlist is my only live option</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="admitTierGap">Tier Gap: Waitlist School vs. Your Admit</label>
+        <select id="admitTierGap">
+          <option value="2">Two+ tiers better (e.g., M7 vs. T26–50)</option>
+          <option value="1" selected>One tier better (e.g., M7 vs. T8–15)</option>
+          <option value="0">Same tier (marginal upgrade)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="deposit">Safety School Deposit ($, non-refundable)</label>
+        <input type="number" id="deposit" value="2500" min="0" max="20000" step="500" />
+        <span class="field-hint">Paid to hold your admit seat while you wait</span>
+      </div>
+      <div class="field">
+        <label for="salary">Current Annual Salary ($)</label>
+        <input type="number" id="salary" value="100000" min="0" max="500000" step="5000" />
+        <span class="field-hint">Opportunity cost basis for a reapplication gap year</span>
+      </div>
+      <div class="field">
+        <label for="reapplyProb">Self-Assessed P(Admit on Reapplication) — %</label>
+        <input type="number" id="reapplyProb" value="30" min="1" max="90" step="1" />
+        <span class="field-hint">Reapplicants with materially improved profiles fare ~as well as first-timers</span>
+      </div>
+      <div class="field">
+        <label for="horizon">Career Horizon (years)</label>
+        <input type="number" id="horizon" value="10" min="5" max="25" step="1" />
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Compute the Three EVs</button>
+
+  <div class="results-section" id="resultsSection">
+    <div class="verdict-banner">
+      <div class="verdict-icon">⏳</div>
+      <div class="verdict-text" id="verdictText"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Option Comparison</div>
+      <div class="compare-grid" id="compareGrid"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Key Metrics</div>
+      <div class="metrics-grid" id="metricsGrid"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Waitlist Movement by School Class (2024–25)</div>
+      <table class="score-table" id="moveTable"></table>
+    </div>
+    <div class="card">
+      <div class="card-title">Analysis &amp; Playbook</div>
+      <div class="insight-box" id="insightBox"></div>
+    </div>
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+    </div>
+  </div>
+
+  <div class="mcp-section">
+    <button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">▸ Developer / Agent Integration (manifest.json)</button>
+    <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+      <pre class="mcp-pre" id="mcpManifestPre"></pre>
+    </div>
+  </div>
+
+  <footer class="tool-footer">
+    <p>AL-68 · ApexLogics.org · <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> · <a href="https://apexadvisory.site" target="_blank" rel="noopener">ApexAdvisory.site</a> · CC-BY-4.0</p>
+  </footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let _inputs = null, _results = null;
+function fmt(n) { return (n < 0 ? '−$' : '$') + Math.abs(Math.round(n)).toLocaleString('en-US'); }
+
+// P(off waitlist) baseline by school class, strength multiplier
+const WL = {
+  ultra: { name:'HBS/Stanford class', pBase: 0.03, yield:'80–85%' },
+  m7:    { name:'Other M7',           pBase: 0.10, yield:'50–65%' },
+  t15:   { name:'T8–15',              pBase: 0.20, yield:'35–50%' },
+  t25:   { name:'T16–25',             pBase: 0.28, yield:'25–40%' },
+};
+const STRENGTH = { strong: 1.6, avg: 1.0, weak: 0.5 };
+// Tier-gap value: 10-yr NPV premium of attending the waitlist school over the admit in hand
+const GAP_VALUE = { '2': 450000, '1': 280000, '0': 80000 };
+
+function calculate() {
+  const inputs = {
+    wlSchool: $('wlSchool').value,
+    strength: $('wlStrength').value,
+    haveAdmit: $('haveAdmit').value,
+    gap: $('admitTierGap').value,
+    deposit: parseInt($('deposit').value) || 0,
+    salary: parseInt($('salary').value) || 100000,
+    reapplyProb: (parseFloat($('reapplyProb').value) || 30) / 100,
+    horizon: parseInt($('horizon').value) || 10,
+  };
+  const wl = WL[inputs.wlSchool];
+  const pOff = Math.min(0.6, wl.pBase * STRENGTH[inputs.strength]);
+  const gapValue = GAP_VALUE[inputs.gap] * (inputs.horizon / 10);
+  const hasAdmit = inputs.haveAdmit === 'yes';
+
+  // Option 1: Stay on waitlist, hedge with safety deposit (if admit exists)
+  // EV = P(off) × gapValue − deposit (forfeited if you move) − stress/uncertainty (non-dollar)
+  const evStay = hasAdmit
+    ? pOff * (gapValue - inputs.deposit) - (1 - pOff) * 0  - inputs.deposit * pOff // deposit lost only if you switch
+    : pOff * gapValue;
+  // More precisely: deposit is sunk when paid; lost regardless if you switch schools
+  const evStayPrecise = (hasAdmit ? -inputs.deposit : 0) + pOff * gapValue;
+
+  // Option 2: Withdraw, commit to admit (baseline 0 reference) — keeps deposit but it converts to enrollment
+  const evCommit = 0; // reference point: attend the school you're admitted to
+
+  // Option 3: Gap year + reapply: forgo MBA start by 1 yr; pay opportunity costs; uncertain better outcome
+  const reapplyCosts = 1200 + 3000; // app fees + prep refresh
+  const delayCost = inputs.salary * 0.08; // one year's career-progression drag (heuristic 8%)
+  const evReapply = inputs.reapplyProb * gapValue - reapplyCosts - delayCost
+    - (hasAdmit ? 0.35 * gapValue * 0.3 : 0); // risk: forfeit current admit; 35% chance of striking out entirely costs option value
+
+  const options = [
+    { id:'stay', name: hasAdmit ? 'Stay on list (hedged)' : 'Stay on list', ev: evStayPrecise, note: hasAdmit ? 'Deposit paid at safety; switch if called' : 'No fallback — risky if list never moves' },
+    { id:'commit', name:'Withdraw & commit', ev: evCommit, note:'Reference point — attend your admit' },
+    { id:'reapply', name:'Gap year & reapply', ev: evReapply, note:'Decline everything, strengthen profile, retry' },
+  ];
+  const best = options.reduce((a,b) => b.ev > a.ev ? b : a);
+  _inputs = inputs;
+  _results = { options, best, pOff, gapValue, wl, delayCost };
+  renderResults();
+  $('resultsSection').classList.add('visible');
+}
+
+function renderResults() {
+  const { options, best, pOff, gapValue, wl, delayCost } = _results;
+  const i = _inputs;
+  $('verdictText').innerHTML = `<strong>${best.name} — EV ${fmt(best.ev)} vs. committing to your admit</strong>` +
+    `P(off waitlist) ≈ ${(pOff*100).toFixed(1)}% at a ${wl.name} school with ${i.strength} positioning. The tier upgrade is worth ≈ ${fmt(gapValue)} over ${i.horizon} years if it lands.`;
+
+  $('compareGrid').innerHTML = options.map(o => `
+    <div class="compare-card ${o.id===best.id?'winner':'ok'}">
+      <div class="compare-title" style="color:${o.id===best.id?'var(--green)':'var(--blue)'}">${o.name}${o.id===best.id?' <span class="winner-badge">Best EV</span>':''}</div>
+      <div class="compare-score" style="color:${o.ev>0?'var(--green)':o.ev<0?'var(--red)':'var(--text)'}">${fmt(o.ev)}</div>
+      <div style="font-size:0.68rem;color:var(--text-dim);margin-bottom:8px">EV vs. committing now</div>
+      <div style="font-size:0.78rem;color:var(--text-muted)">${o.note}</div>
+    </div>`).join('');
+
+  $('metricsGrid').innerHTML = [
+    { label:'P(Off Waitlist)', val:(pOff*100).toFixed(1)+'%', cls:pOff>=0.15?'green':'amber', note:`${wl.name} base × ${i.strength} position` },
+    { label:'Tier Upgrade Value', val:fmt(gapValue), cls:'blue', note:`${i.horizon}-yr NPV if admitted` },
+    { label:'Hedge Cost', val:fmt(i.deposit), cls:'teal', note:'Deposit to hold your safety seat' },
+    { label:'Gap-Year Drag', val:fmt(delayCost), cls:'red', note:'1-yr career delay cost (reapply path)' },
+  ].map(m => `<div class="metric-card"><div class="metric-label">${m.label}</div><div class="metric-val ${m.cls}">${m.val}</div><div class="metric-note">${m.note}</div></div>`).join('');
+
+  $('moveTable').innerHTML = `<thead><tr><th>School Class</th><th>Yield</th><th>Typical Waitlist Admit Rate</th><th>Why</th></tr></thead><tbody>
+    <tr class="${i.wlSchool==='ultra'?'highlight':''}"><td>HBS / Stanford</td><td>80–85%</td><td>~2–5%</td><td>Nearly everyone admitted enrolls — almost no seats open</td></tr>
+    <tr class="${i.wlSchool==='m7'?'highlight':''}"><td>Other M7</td><td>50–65%</td><td>~5–15%</td><td>Cross-admit losses to HBS/Stanford open some seats</td></tr>
+    <tr class="${i.wlSchool==='t15'?'highlight':''}"><td>T8–15</td><td>35–50%</td><td>~15–30%</td><td>Heavy cross-admit attrition — most waitlist movement here</td></tr>
+    <tr class="${i.wlSchool==='t25'?'highlight':''}"><td>T16–25</td><td>25–40%</td><td>~20–35%</td><td>Yield management leans on waitlist heavily</td></tr>
+  </tbody>`;
+
+  $('insightBox').innerHTML = `<strong>The structure of this decision:</strong> staying on a waitlist while holding a deposited safety seat is a cheap call option — you pay ${fmt(i.deposit)} for a ${(pOff*100).toFixed(1)}% shot at ${fmt(gapValue)} of tier value. That option is ${pOff * gapValue > i.deposit ? '<strong>clearly worth buying</strong>' : 'marginal at your numbers'}. ` +
+    `${i.haveAdmit === 'no' ? '<strong>No admit in hand:</strong> your downside is unbounded — if the list never moves you have nothing. Treat the reapply path seriously and apply to safety schools in the current cycle if any deadlines remain. ' : ''}` +
+    `${i.wlSchool === 'ultra' ? '<strong>HBS/Stanford reality check:</strong> at 80%+ yield these schools admit single-digit numbers off the waitlist in most years. Do not restructure your life around a ~3% event — commit to your admit and let the waitlist be a lottery ticket. ' : ''}` +
+    `<strong>Improving P(off):</strong> send one substantive update letter (new promotion, score improvement, certification), secure one new recommender if invited, and signal unambiguous intent to enroll ("I will attend if admitted" — yield protection is the waitlist's whole purpose). Schools rank waitlists partly by enrollment certainty. ` +
+    `<strong>Reapply math:</strong> the gap year costs ~${fmt(delayCost + 4200)} all-in and risks ${i.haveAdmit === 'yes' ? 'the seat you already hold' : 'another shutout'}; it only beats the hedge when your profile improvement is large and specific (new title, 30+ point score gain, category-changing accomplishment). <strong>Caveat:</strong> waitlist admit rates vary wildly year to year with yield surprises — these are central estimates, not promises.`;
+}
+
+function exportMarkdown() {
+  if (!_results) return;
+  const d = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  const lines = [
+    '# MBA Waitlist EV Report', `\n_Generated ${d} · AL-68 · apexlogics.org_\n`,
+    `## Recommendation: ${_results.best.name} (EV ${fmt(_results.best.ev)})`,
+    `- P(off waitlist): ${(_results.pOff*100).toFixed(1)}%`,
+    `- Tier upgrade value: ${fmt(_results.gapValue)} (${_inputs.horizon}-yr)`,
+    '', '| Option | EV vs. committing |', '|---|---|',
+    ..._results.options.map(o => `| ${o.name} | ${fmt(o.ev)} |`),
+  ];
+  const blob = new Blob([lines.join('\n')], { type:'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'mba-waitlist-ev.md'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function exportAP2() {
+  if (!_results) { alert('Run the analysis first.'); return; }
+  const validMandateTypes = [
+    'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+    'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+    'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+    'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+    'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+    'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+    'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+    'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+    'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+    'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+    'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+    'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+    'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+    'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
+    'english_test_choice_record','lsat_tier_record','mba_scholarship_record',
+    'consulting_roi_record','mba_yield_record','dual_degree_record',
+    'online_mba_record','mba_waitlist_record','deferred_mba_record'
+  ];
+  const payload = {
+    ap2_version:'2.0', mandate_type:'mba_waitlist_record',
+    source_tool:'AL-68',
+    source_url:'https://apexlogics.org/tools/61-mba-waitlist-ev-engine/',
+    generated_at: new Date().toISOString(), schema_version:'1.0',
+    inputs: {
+      waitlist_school_class: _inputs.wlSchool, position_strength: _inputs.strength,
+      holds_admit: _inputs.haveAdmit === 'yes', tier_gap: _inputs.gap,
+      deposit: _inputs.deposit, salary: _inputs.salary,
+      reapply_prob: _inputs.reapplyProb, horizon_years: _inputs.horizon
+    },
+    results: {
+      recommendation: _results.best.name,
+      p_off_waitlist: +_results.pOff.toFixed(3),
+      tier_upgrade_value: Math.round(_results.gapValue),
+      options: _results.options.map(o => ({ option:o.name, ev:Math.round(o.ev) }))
+    },
+    downstream_handoff_candidates: ['AL-65','AL-63','AL-52','AL-69'],
+    advisory_cta: { text:'Get waitlist strategy guidance', url:'https://apexadvisory.site' }
+  };
+  if (!validMandateTypes.includes(payload.mandate_type)) { alert('AP2 validation failed: ' + payload.mandate_type); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'mba-waitlist-ev-ap2.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function toggleMCP() {
+  const panel = $('mcpPanel'), btn = $('mcpToggleBtn');
+  const open = panel.classList.toggle('open');
+  btn.textContent = (open ? '▾ ' : '▸ ') + 'Developer / Agent Integration (manifest.json)';
+  btn.setAttribute('aria-expanded', open);
+  if (open && !$('mcpManifestPre').textContent) {
+    $('mcpManifestPre').textContent = JSON.stringify({
+      al_id:'AL-68', version:'1.0.0', title:'MBA Waitlist Expected Value Engine',
+      slug:'61-mba-waitlist-ev-engine',
+      description:'Three-option EV model for waitlisted MBA applicants: stay on list (hedged with safety deposit), withdraw and commit, or gap-year and reapply. Uses school-class yield rates to estimate P(off waitlist) and tier premium NPVs for upgrade value.',
+      category:'education_path_roi', journeys:['education_path'],
+      personas:['student','working_professional'],
+      tags:['mba','waitlist','expected-value','yield','admissions','reapplication'],
+      status:'shipped', maintenance:'low',
+      regulatory_citations:['2024–25 published yield rates by school','Waitlist movement estimates from admissions consultant aggregates'],
+      ap2_export:true, ap2_mandate_types:['mba_waitlist_record'],
+      downstream_handoff_candidates:['AL-65','AL-63','AL-52','AL-69'],
+      sister_suite:'https://ainumbers.co', consulting_site:'https://apexadvisory.site', license:'CC-BY-4.0'
+    }, null, 2);
+  }
+}
+
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function() {
+  const s = sessionStorage.getItem('apex_lang');
+  setLang(s || ({en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'})[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TOEFL vs. IELTS vs. Duolingo Choice Engine · ApexLogics #54</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/54-toefl-ielts-duolingo-choice-engine/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: var(--accent); } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 36px; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .compare-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+    .compare-card { border-radius: 12px; padding: 20px 22px; }
+    .compare-card.winner { background: rgba(52,211,153,0.06); border: 2px solid var(--green); }
+    .compare-card.ok { background: var(--surface); border: 1px solid var(--border); }
+    .compare-card.caution { background: rgba(248,113,113,0.05); border: 1px solid rgba(248,113,113,0.3); opacity: 0.85; }
+    .compare-title { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 500; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .winner-badge { background: rgba(52,211,153,0.2); color: var(--green); border-radius: 4px; padding: 2px 8px; font-size: 0.65rem; }
+    .compare-score { font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; margin: 8px 0 4px; }
+    .compare-row { display: flex; justify-content: space-between; font-size: 0.82rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .compare-row:last-child { border-bottom: none; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); } .metric-val.amber { color: var(--amber); }
+    .metric-val.accent { color: var(--accent); } .metric-val.red { color: var(--red); }
+    .metric-val.teal { color: var(--teal); } .metric-val.blue { color: var(--blue); }
+    .metric-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
+    .score-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    .score-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.67rem; text-transform: uppercase; color: var(--text-dim); padding: 8px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+    .score-table td { padding: 9px 14px; border-bottom: 1px solid rgba(167,139,250,0.06); font-size: 0.83rem; }
+    .score-table tr.highlight td { background: var(--accent-low); }
+    .insight-box { background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.2); border-radius: 8px; padding: 16px 20px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; }
+    .insight-box strong { color: var(--text); }
+    .verdict-banner { border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; }
+    .verdict-icon { font-size: 1.8rem; }
+    .verdict-text strong { color: var(--text); font-size: 1rem; display: block; margin-bottom: 2px; }
+    .verdict-text { font-size: 0.92rem; color: var(--text-muted); }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(167,139,250,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .mcp-section { max-width: 680px; margin: 24px auto 0; }
+    .mcp-toggle { background: none; border: 1px dashed var(--border); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 8px 14px; border-radius: 6px; cursor: pointer; width: 100%; text-align: left; margin-top: 24px; }
+    .mcp-panel { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 8px; }
+    .mcp-panel.open { display: block; }
+    .mcp-pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    .alert-box { border-radius: 8px; padding: 12px 16px; font-size: 0.82rem; margin-bottom: 16px; }
+    .alert-box.info { background: rgba(96,165,250,0.08); border: 1px solid rgba(96,165,250,0.3); color: var(--blue); }
+    @media (max-width: 700px) {
+      .compare-grid { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="28" height="28" rx="6" fill="#A78BFA" fill-opacity="0.15"/>
+          <path d="M7 21L14 7L21 21" stroke="#A78BFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9.5 16.5H18.5" stroke="#A78BFA" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-name"><span class="logo-apex">Apex</span><span class="logo-org">Logics</span></div>
+        <div class="logo-tag">apexlogics.org</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="https://apexadvisory.site" class="nav-pill accent" target="_blank" rel="noopener">Advisory</a>
+    <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    <a href="../../index.html" class="nav-pill">← All Tools</a>
+  </div>
+</nav>
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+  <div class="tool-eyebrow">AL-61 · Education Path &amp; ROI</div>
+  <h1 class="tool-title">TOEFL vs. IELTS vs.<br>Duolingo Choice Engine</h1>
+  <p class="tool-desc">Which English proficiency test should you take? In 2026, Wharton now accepts Duolingo (130+) and policies are mid-transition across M7 schools. Score seven profile dimensions — target schools, test-center access, timeline, format preference, budget — and get a scored recommendation with target score ranges and cost comparison.</p>
+  <div class="tool-vintage">Data vintage: 2026 school acceptance policies (Wharton/Duolingo 2026) · TOEFL $220–250, IELTS $230–260, Duolingo $59 · Score validity 2 years. All embedded.</div>
+
+  <div class="card">
+    <div class="card-title">Your Profile <span class="badge">7 Dimensions</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="targetRegion">Primary Target Programs</label>
+        <select id="targetRegion">
+          <option value="us_m7">US MBA — M7 / Elite only</option>
+          <option value="us_broad" selected>US MBA — broad list (T7–50)</option>
+          <option value="us_ms">US MS / PhD programs</option>
+          <option value="europe">European programs (LBS, INSEAD, IE…)</option>
+          <option value="mixed">Mixed US + European</option>
+        </select>
+        <span class="field-hint">Duolingo acceptance varies — M7 still prefer TOEFL/IELTS</span>
+      </div>
+      <div class="field">
+        <label for="nativeCountry">Country of Citizenship</label>
+        <select id="nativeCountry">
+          <option value="exempt">Native English speaking country (US/UK/Canada/Australia/NZ/Ireland)</option>
+          <option value="india" selected>India</option>
+          <option value="china">China</option>
+          <option value="korea">South Korea / Japan</option>
+          <option value="latam">Latin America</option>
+          <option value="europe_non_eng">Continental Europe</option>
+          <option value="other">Other</option>
+        </select>
+        <span class="field-hint">Native-language-country applicants are often exempt from English tests</span>
+      </div>
+      <div class="field">
+        <label for="testCenterAccess">Test Center Access</label>
+        <select id="testCenterAccess">
+          <option value="easy" selected>Easy — major city, multiple centers nearby</option>
+          <option value="limited">Limited — few centers, may need to travel</option>
+          <option value="none">None available — online-only preferred</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="timeline">Weeks Until First Application Deadline</label>
+        <input type="number" id="timeline" value="12" min="1" max="52" step="1" />
+        <span class="field-hint">TOEFL/IELTS: score delivery 6–13 days · Duolingo: 2 days</span>
+      </div>
+      <div class="field">
+        <label for="budgetSensitive">Budget Sensitivity</label>
+        <select id="budgetSensitive">
+          <option value="low">Low — happy to pay for best-accepted test</option>
+          <option value="medium" selected>Medium — cost matters at the margin</option>
+          <option value="high">High — minimize test fees</option>
+        </select>
+        <span class="field-hint">Duolingo $59 vs. TOEFL $220–250 vs. IELTS $230–260</span>
+      </div>
+      <div class="field">
+        <label for="speakingComfort">Speaking Section Preference</label>
+        <select id="speakingComfort">
+          <option value="person">Prefer speaking with a person (IELTS in-person)</option>
+          <option value="computer" selected>Fine speaking into a computer (TOEFL / Duolingo)</option>
+          <option value="no_pref">No preference</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="priorExp">Prior Test Experience</label>
+        <select id="priorExp">
+          <option value="none" selected>No prior English proficiency test</option>
+          <option value="toefl">Took TOEFL before</option>
+          <option value="ielts">Took IELTS before</option>
+          <option value="duolingo">Took Duolingo before</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="retakeWilling">Willing to Retake if Needed?</label>
+        <select id="retakeWilling">
+          <option value="yes" selected>Yes — will retake once</option>
+          <option value="no">No — one shot only</option>
+        </select>
+        <span class="field-hint">Duolingo allows retake in 21 days; TOEFL/IELTS in 3 days</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Get My Recommendation</button>
+
+  <div class="results-section" id="resultsSection">
+    <div id="exemptAlert" class="alert-box info" style="display:none">
+      ℹ️ <strong>Likely Exempt:</strong> Applicants from native English-speaking countries (US, UK, Canada, Australia, NZ, Ireland) are typically exempt from English proficiency tests at US MBA programs. Verify with each school's admissions office before registering for any test.
+    </div>
+
+    <div class="verdict-banner" id="verdictBanner">
+      <div class="verdict-icon" id="verdictIcon">🎯</div>
+      <div class="verdict-text" id="verdictText"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Three-Test Comparison</div>
+      <div class="compare-grid" id="compareGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Target Score Ranges by Program Tier (2026)</div>
+      <table class="score-table" id="scoreTable"></table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Key Metrics</div>
+      <div class="metrics-grid" id="metricsGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Full Analysis &amp; Caveats</div>
+      <div class="insight-box" id="insightBox"></div>
+    </div>
+
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+    </div>
+  </div>
+
+  <div class="mcp-section">
+    <button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">▸ Developer / Agent Integration (manifest.json)</button>
+    <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+      <pre class="mcp-pre" id="mcpManifestPre"></pre>
+    </div>
+  </div>
+
+  <footer class="tool-footer">
+    <p>AL-61 · ApexLogics.org · <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> · <a href="https://apexadvisory.site" target="_blank" rel="noopener">ApexAdvisory.site</a> · CC-BY-4.0</p>
+  </footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let _inputs = null, _results = null;
+function fmt(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+
+// School acceptance by test (2026 data)
+// Score: positive = TOEFL, negative = IELTS, zero = Duolingo competitive
+// We use a 3-dimensional scoring: [toefl, ielts, duolingo] 0–100 each
+function getTestScores(inputs) {
+  let toefl = 50, ielts = 50, duo = 50;
+  const { targetRegion, nativeCountry, testCenterAccess, timeline, budgetSensitive, speakingComfort, priorExp, retakeWilling } = inputs;
+
+  // Target programs
+  if (targetRegion === 'us_m7') { toefl += 20; ielts += 10; duo -= 10; }
+  else if (targetRegion === 'europe') { toefl -= 5; ielts += 25; duo -= 15; }
+  else if (targetRegion === 'mixed') { toefl += 5; ielts += 15; duo -= 5; }
+  else if (targetRegion === 'us_ms') { toefl += 10; ielts += 5; duo -= 5; }
+  else { toefl += 10; ielts += 5; duo += 5; } // us_broad
+
+  // Test center access
+  if (testCenterAccess === 'none') { duo += 30; toefl -= 10; ielts -= 20; }
+  else if (testCenterAccess === 'limited') { duo += 15; toefl -= 5; ielts -= 5; }
+
+  // Timeline
+  if (timeline <= 3) { duo += 20; } // Duolingo 2-day score delivery
+  else if (timeline <= 6) { duo += 10; toefl += 5; }
+
+  // Budget
+  if (budgetSensitive === 'high') { duo += 25; toefl -= 10; ielts -= 10; }
+  else if (budgetSensitive === 'medium') { duo += 8; }
+
+  // Speaking preference
+  if (speakingComfort === 'person') { ielts += 15; duo -= 5; toefl -= 5; }
+  else if (speakingComfort === 'computer') { toefl += 5; duo += 5; }
+
+  // Prior experience
+  if (priorExp === 'toefl') { toefl += 15; }
+  else if (priorExp === 'ielts') { ielts += 15; }
+  else if (priorExp === 'duolingo') { duo += 15; }
+
+  // Retake willingness
+  if (retakeWilling === 'no') { duo += 5; } // Fastest retake
+
+  return { toefl: Math.min(100, Math.max(0, toefl)), ielts: Math.min(100, Math.max(0, ielts)), duo: Math.min(100, Math.max(0, duo)) };
+}
+
+function calculate() {
+  const inputs = {
+    targetRegion: $('targetRegion').value,
+    nativeCountry: $('nativeCountry').value,
+    testCenterAccess: $('testCenterAccess').value,
+    timeline: parseInt($('timeline').value) || 12,
+    budgetSensitive: $('budgetSensitive').value,
+    speakingComfort: $('speakingComfort').value,
+    priorExp: $('priorExp').value,
+    retakeWilling: $('retakeWilling').value,
+  };
+
+  const isExempt = inputs.nativeCountry === 'exempt';
+  const scores = getTestScores(inputs);
+  const tests = [
+    { id:'toefl', name:'TOEFL iBT', score:scores.toefl, fee:235, scoreRange:'0–120 (iBT)', duration:'3h', delivery:'6–10 days', retakeDays:3, note:'Most widely required. At-home or test center. M7 standard.' },
+    { id:'ielts', name:'IELTS Academic', score:scores.ielts, fee:250, scoreRange:'0–9 band', duration:'2h 45m', delivery:'13 days (paper) / 3–5 (computer)', retakeDays:3, note:'In-person speaking with examiner. Preferred for European programs.' },
+    { id:'duolingo', name:'Duolingo English Test', score:scores.duo, fee:59, scoreRange:'10–160', duration:'~1h', delivery:'2 days', retakeDays:21, note:'2026: Wharton, Tuck, Yale SOM accept. M7 still transitioning. At-home only.' },
+  ];
+  const best = tests.reduce((a, b) => b.score > a.score ? b : a);
+
+  _inputs = inputs;
+  _results = { tests, best, scores, isExempt };
+  renderResults();
+  $('resultsSection').classList.add('visible');
+}
+
+function renderResults() {
+  const { tests, best, isExempt, scores } = _results;
+  const i = _inputs;
+
+  $('exemptAlert').style.display = isExempt ? 'block' : 'none';
+
+  // Verdict
+  const vb = $('verdictBanner');
+  $('verdictIcon').textContent = isExempt ? 'ℹ️' : '🎯';
+  $('verdictText').innerHTML = isExempt
+    ? `<strong>Likely Test-Exempt (verify with each school)</strong>Native English-speaking country applicants are typically waived from English proficiency requirements at US MBA programs.`
+    : `<strong>Recommended: ${best.name} (score: ${best.score}/100)</strong>Profile score: TOEFL ${scores.toefl} · IELTS ${scores.ielts} · Duolingo ${scores.duo}`;
+  vb.style.background = 'rgba(167,139,250,0.08)';
+  vb.style.border = '1px solid rgba(167,139,250,0.3)';
+
+  // Compare cards
+  const colors = { toefl:'var(--blue)', ielts:'var(--teal)', duolingo:'var(--amber)' };
+  $('compareGrid').innerHTML = tests.map(t => `
+    <div class="compare-card ${t.id===best.id?'winner':'ok'}">
+      <div class="compare-title" style="color:${colors[t.id]}">${t.name}${t.id===best.id?' <span class="winner-badge">Recommended</span>':''}</div>
+      <div class="compare-score" style="color:${colors[t.id]}">${t.score}/100</div>
+      <div style="font-size:0.68rem;color:var(--text-dim);margin-bottom:8px">Profile fit score</div>
+      <div class="compare-row"><span>Fee</span><span>${fmt(t.fee)}</span></div>
+      <div class="compare-row"><span>Score scale</span><span>${t.scoreRange}</span></div>
+      <div class="compare-row"><span>Duration</span><span>${t.duration}</span></div>
+      <div class="compare-row"><span>Score delivery</span><span>${t.delivery}</span></div>
+      <div class="compare-row"><span>Retake wait</span><span>${t.retakeDays} days</span></div>
+      <div style="font-size:0.72rem;color:var(--text-muted);margin-top:10px">${t.note}</div>
+    </div>`).join('');
+
+  // Score table
+  const tiers = [
+    { tier:'M7 MBA (HBS, Stanford, Wharton…)', toefl:'109–120', ielts:'7.5+', duo:'125–135*', note:'*Duolingo: Wharton accepts 130+; HBS/Stanford TBD for 2026–27 cycle' },
+    { tier:'T8–25 MBA (Tuck, Ross, Yale SOM…)', toefl:'100–109', ielts:'7.0–7.5', duo:'120–130', note:'Most now accept Duolingo — verify each program' },
+    { tier:'T26–50 MBA', toefl:'90–100', ielts:'6.5–7.0', duo:'110–120', note:'' },
+    { tier:'Top MS (STEM, Finance, MiM)', toefl:'90–105', ielts:'6.5–7.5', duo:'115–125', note:'MS programs vary widely — check individual requirements' },
+    { tier:'European MBA (LBS, INSEAD, IE)', toefl:'100–110', ielts:'7.0–7.5', duo:'Limited acceptance*', note:'*INSEAD, LBS currently prefer TOEFL or IELTS' },
+  ];
+  $('scoreTable').innerHTML = `<thead><tr><th>Program Tier</th><th>TOEFL iBT Target</th><th>IELTS Target</th><th>Duolingo Target</th><th>Notes</th></tr></thead><tbody>
+    ${tiers.map(r => `<tr><td>${r.tier}</td><td>${r.toefl}</td><td>${r.ielts}</td><td>${r.duo}</td><td style="font-size:0.72rem;color:var(--text-dim)">${r.note}</td></tr>`).join('')}
+  </tbody>`;
+
+  // Metrics
+  const cheapest = tests.reduce((a,b) => b.fee < a.fee ? b : a);
+  const fastest = [...tests].sort((a,b) => parseInt(a.delivery) - parseInt(b.delivery))[0]; // rough sort
+  $('metricsGrid').innerHTML = [
+    { label:'Recommendation', val:best.name, cls:'accent', note:'Best profile match' },
+    { label:'Cost Savings vs. IELTS', val:fmt(250 - best.fee), cls:best.fee < 250 ? 'green' : 'blue', note:'vs. most expensive option' },
+    { label:'Score Delivery', val:best.delivery, cls:'teal', note:best.name + ' delivery time' },
+    { label:'Retake Wait', val:best.retakeDays + ' days', cls:'blue', note:'Minimum between attempts' },
+  ].map(m => `<div class="metric-card"><div class="metric-label">${m.label}</div><div class="metric-val ${m.cls}">${m.val}</div><div class="metric-note">${m.note}</div></div>`).join('');
+
+  // Insight
+  const regionNote = i.targetRegion === 'europe' ? 'European programs strongly prefer IELTS — it is the de facto standard in the UK and EU admissions landscape. ' :
+    i.targetRegion === 'us_m7' ? 'M7 programs all accept TOEFL and IELTS; Duolingo acceptance is expanding (Wharton 2026) but not universal. When in doubt, TOEFL eliminates any acceptance uncertainty. ' :
+    'Your target programs broadly accept all three tests. ';
+  const duoNote = scores.duo >= 65 ? 'Duolingo\'s $59 fee and 2-day score delivery make it attractive if your target programs accept it. Always verify acceptance at each specific program before registering — policies are updating mid-cycle in 2026. ' : '';
+  $('insightBox').innerHTML = `<strong>Analysis:</strong> ${regionNote}${duoNote}
+  ${i.testCenterAccess === 'none' ? '<strong>No test center access:</strong> Duolingo (fully at-home) or TOEFL at-home are your only options — IELTS in-person speaking cannot be skipped. ' : ''}
+  ${i.priorExp !== 'none' ? `You have prior ${i.priorExp.toUpperCase()} experience — leveraging existing familiarity reduces prep time and retake uncertainty. ` : ''}
+  <strong>2026 policy note:</strong> Duolingo acceptance is expanding but policies differ by school and even by application round. Always confirm acceptance directly with the admissions office before registering. Score validity is 2 years for all three tests.`;
+}
+
+function exportMarkdown() {
+  if (!_inputs) return;
+  const { best, scores } = _results;
+  const d = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  const lines = [
+    '# English Proficiency Test Recommendation',
+    `\n_Generated ${d} · AL-61 · apexlogics.org_\n`,
+    `## Recommendation: ${best.name}`,
+    `Profile scores: TOEFL ${scores.toefl} · IELTS ${scores.ielts} · Duolingo ${scores.duo}`,
+    '\n## Profile',
+    `- Target programs: ${_inputs.targetRegion}`,
+    `- Test center access: ${_inputs.testCenterAccess}`,
+    `- Timeline: ${_inputs.timeline} weeks`,
+    `- Budget sensitivity: ${_inputs.budgetSensitive}`,
+    '\n## Cost Summary',
+    `- TOEFL: $235 | IELTS: $250 | Duolingo: $59`,
+    `- Recommended fee: $${best.fee}`,
+  ];
+  const blob = new Blob([lines.join('\n')], { type:'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'english-test-choice.md'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function exportAP2() {
+  if (!_inputs) { alert('Run the analysis first.'); return; }
+  const { best, scores } = _results;
+  const validMandateTypes = [
+    'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+    'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+    'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+    'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+    'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+    'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+    'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+    'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+    'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+    'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+    'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+    'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+    'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+    'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
+    'english_test_choice_record','lsat_tier_record','mba_scholarship_record',
+    'consulting_roi_record','mba_yield_record','dual_degree_record',
+    'online_mba_record','mba_waitlist_record','deferred_mba_record'
+  ];
+  const payload = {
+    ap2_version:'2.0', mandate_type:'english_test_choice_record',
+    source_tool:'AL-61',
+    source_url:'https://apexlogics.org/tools/54-toefl-ielts-duolingo-choice-engine/',
+    generated_at: new Date().toISOString(), schema_version:'1.0',
+    inputs: {
+      target_region: _inputs.targetRegion, native_country: _inputs.nativeCountry,
+      test_center_access: _inputs.testCenterAccess, timeline_weeks: _inputs.timeline,
+      budget_sensitivity: _inputs.budgetSensitive, speaking_preference: _inputs.speakingComfort,
+      prior_experience: _inputs.priorExp
+    },
+    results: {
+      recommendation: best.name, recommended_test_id: best.id,
+      profile_scores: { toefl: scores.toefl, ielts: scores.ielts, duolingo: scores.duo },
+      recommended_fee: best.fee, score_range: best.scoreRange, delivery_time: best.delivery,
+      likely_exempt: _results.isExempt
+    },
+    downstream_handoff_candidates: ['AL-30','AL-51','AL-52','AL-31'],
+    advisory_cta: { text:'Get international MBA admissions guidance', url:'https://apexadvisory.site' }
+  };
+  if (!validMandateTypes.includes(payload.mandate_type)) { alert('AP2 validation failed: ' + payload.mandate_type); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'english-test-choice-ap2.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function toggleMCP() {
+  const panel = $('mcpPanel'), btn = $('mcpToggleBtn');
+  const open = panel.classList.toggle('open');
+  btn.textContent = (open ? '▾ ' : '▸ ') + 'Developer / Agent Integration (manifest.json)';
+  btn.setAttribute('aria-expanded', open);
+  if (open && !$('mcpManifestPre').textContent) {
+    $('mcpManifestPre').textContent = JSON.stringify({
+      al_id:'AL-61', version:'1.0.0', title:'TOEFL vs. IELTS vs. Duolingo Choice Engine',
+      slug:'54-toefl-ielts-duolingo-choice-engine',
+      description:'Profile-based scoring engine recommending TOEFL, IELTS, or Duolingo for international MBA and graduate applicants. Scores 8 dimensions, produces target score tables by program tier, cost comparison, and 2026 acceptance policy notes including Wharton\'s new Duolingo acceptance.',
+      category:'education_path_roi', journeys:['education_path'],
+      personas:['student','working_professional','counselor'],
+      tags:['toefl','ielts','duolingo','english-proficiency','mba','international','test-choice','2026'],
+      status:'shipped', maintenance:'low',
+      regulatory_citations:['TOEFL iBT fee 2026 ($220–250)','IELTS Academic fee 2026 ($230–260)','Duolingo English Test fee 2026 ($59)','Wharton 2026 Duolingo acceptance announcement'],
+      ap2_export:true, ap2_mandate_types:['english_test_choice_record'],
+      downstream_handoff_candidates:['AL-30','AL-51','AL-52','AL-31'],
+      sister_suite:'https://ainumbers.co', consulting_site:'https://apexadvisory.site', license:'CC-BY-4.0'
+    }, null, 2);
+  }
+}
+
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function() {
+  const s = sessionStorage.getItem('apex_lang');
+  setLang(s || ({en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'})[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+</script>
+</body>
+</html>

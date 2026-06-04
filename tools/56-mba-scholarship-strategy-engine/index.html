@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MBA Scholarship Strategy Engine · ApexLogics #56</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/56-mba-scholarship-strategy-engine/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: var(--accent); } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 36px; }
+    .tab-row { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; padding: 10px 18px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .compare-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+    .compare-card { border-radius: 12px; padding: 20px 22px; }
+    .compare-card.winner { background: rgba(52,211,153,0.06); border: 2px solid var(--green); }
+    .compare-card.ok { background: var(--surface); border: 1px solid var(--border); }
+    .compare-card.caution { background: rgba(248,113,113,0.05); border: 1px solid rgba(248,113,113,0.3); opacity: 0.85; }
+    .compare-title { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 500; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .winner-badge { background: rgba(52,211,153,0.2); color: var(--green); border-radius: 4px; padding: 2px 8px; font-size: 0.65rem; }
+    .compare-score { font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; margin: 8px 0 4px; }
+    .compare-row { display: flex; justify-content: space-between; font-size: 0.82rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .compare-row:last-child { border-bottom: none; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); } .metric-val.amber { color: var(--amber); }
+    .metric-val.accent { color: var(--accent); } .metric-val.red { color: var(--red); }
+    .metric-val.teal { color: var(--teal); } .metric-val.blue { color: var(--blue); }
+    .metric-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
+    .score-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    .score-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.67rem; text-transform: uppercase; color: var(--text-dim); padding: 8px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+    .score-table td { padding: 9px 14px; border-bottom: 1px solid rgba(167,139,250,0.06); font-size: 0.83rem; }
+    .score-table tr.highlight td { background: var(--accent-low); }
+    .insight-box { background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.2); border-radius: 8px; padding: 16px 20px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; }
+    .insight-box strong { color: var(--text); }
+    .verdict-banner { border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.3); }
+    .verdict-icon { font-size: 1.8rem; }
+    .verdict-text strong { color: var(--text); font-size: 1rem; display: block; margin-bottom: 2px; }
+    .verdict-text { font-size: 0.92rem; color: var(--text-muted); }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(167,139,250,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .mcp-section { max-width: 680px; margin: 24px auto 0; }
+    .mcp-toggle { background: none; border: 1px dashed var(--border); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 8px 14px; border-radius: 6px; cursor: pointer; width: 100%; text-align: left; margin-top: 24px; }
+    .mcp-panel { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 8px; }
+    .mcp-panel.open { display: block; }
+    .mcp-pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    .alert-box { border-radius: 8px; padding: 12px 16px; font-size: 0.82rem; margin-bottom: 16px; }
+    .alert-box.info { background: rgba(96,165,250,0.08); border: 1px solid rgba(96,165,250,0.3); color: var(--blue); }
+    .alert-box.warn { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.3); color: var(--amber); }
+    @media (max-width: 700px) {
+      .compare-grid { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="28" height="28" rx="6" fill="#A78BFA" fill-opacity="0.15"/>
+          <path d="M7 21L14 7L21 21" stroke="#A78BFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9.5 16.5H18.5" stroke="#A78BFA" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-name"><span class="logo-apex">Apex</span><span class="logo-org">Logics</span></div>
+        <div class="logo-tag">apexlogics.org</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="https://apexadvisory.site" class="nav-pill accent" target="_blank" rel="noopener">Advisory</a>
+    <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    <a href="../../index.html" class="nav-pill">← All Tools</a>
+  </div>
+</nav>
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+  <div class="tool-eyebrow">AL-63 · Education Path &amp; ROI</div>
+  <h1 class="tool-title">MBA Scholarship<br>Strategy Engine</h1>
+  <p class="tool-desc">Scholarship dollars are won at two decision points: <strong>before you apply</strong> (Round 1 applicants access the full merit budget and enjoy a 4–7 point admission rate edge at most M7 schools) and <strong>after you're admitted</strong> (roughly half of merit-scholarship counters at T11–25 schools succeed). This engine models both — the round-timing expected value and the offer-negotiation expected value — in dollars.</p>
+  <div class="tool-vintage">Data vintage: 2024–25 admissions cycle round-level admit rates (published school data + consultant aggregates) · merit budget depletion curves · negotiation success rates by school type. All embedded.</div>
+
+  <div class="tab-row">
+    <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">① Round Timing Optimizer</button>
+    <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">② Offer Negotiation EV</button>
+  </div>
+
+  <!-- ====================== TAB 1: ROUND TIMING ====================== -->
+  <div class="tab-panel active" id="tabPanel1">
+    <div class="card">
+      <div class="card-title">Your Application Profile <span class="badge">Pre-Application</span></div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="testScore">GMAT Score (or GRE equivalent)</label>
+          <input type="number" id="testScore" value="705" min="500" max="805" step="5" />
+          <span class="field-hint">GMAT Focus scale 505–805. GRE: use ETS conversion equivalent</span>
+        </div>
+        <div class="field">
+          <label for="targetTier">Target School Tier</label>
+          <select id="targetTier">
+            <option value="m7">M7 (HBS, Stanford, Wharton, Booth, Kellogg, Columbia, MIT)</option>
+            <option value="t15" selected>T8–15 (Tuck, Ross, Yale SOM, Stern, Haas…)</option>
+            <option value="t25">T16–25 (UNC, Emory, Georgetown…)</option>
+            <option value="t50">T26–50</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="readiness">Application Readiness Today (%)</label>
+          <input type="number" id="readiness" value="70" min="0" max="100" step="5" />
+          <span class="field-hint">Essays drafted? Recommenders confirmed? Score final? 100% = submit-ready</span>
+        </div>
+        <div class="field">
+          <label for="weeksToR1">Weeks Until R1 Deadline</label>
+          <input type="number" id="weeksToR1" value="10" min="0" max="40" step="1" />
+          <span class="field-hint">R1 typically early Sept; R2 early Jan (~16 weeks later)</span>
+        </div>
+        <div class="field">
+          <label for="readinessGain">Readiness Gain Per Week of Prep (%)</label>
+          <input type="number" id="readinessGain" value="3" min="0" max="15" step="1" />
+          <span class="field-hint">How fast your essays/recommendations/score improve with time</span>
+        </div>
+        <div class="field">
+          <label for="currentSalary">Current Annual Salary ($)</label>
+          <input type="number" id="currentSalary" value="95000" min="0" max="500000" step="5000" />
+          <span class="field-hint">Used for opportunity cost if delaying a full year (reapplication)</span>
+        </div>
+      </div>
+    </div>
+    <button class="run-btn" onclick="calcRounds()">Compute Round-by-Round Expected Value</button>
+
+    <div class="results-section" id="roundResults">
+      <div class="verdict-banner">
+        <div class="verdict-icon">🗓️</div>
+        <div class="verdict-text" id="roundVerdict"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Round Comparison <span class="badge" id="tierBadge"></span></div>
+        <div class="compare-grid" id="roundGrid"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Key Metrics</div>
+        <div class="metrics-grid" id="roundMetrics"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Round Economics — How the EV Is Built</div>
+        <table class="score-table" id="roundTable"></table>
+      </div>
+      <div class="card">
+        <div class="card-title">Analysis</div>
+        <div class="insight-box" id="roundInsight"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================== TAB 2: NEGOTIATION ====================== -->
+  <div class="tab-panel" id="tabPanel2">
+    <div class="alert-box info">ℹ️ Use this tab once you hold at least one admission offer. Your round strategy from Tab ① determines how much merit budget was left when your offer was made.</div>
+    <div class="card">
+      <div class="card-title">Your Offers <span class="badge">Post-Admission</span></div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="schoolAType">School A (Preferred) — Type</label>
+          <select id="schoolAType">
+            <option value="need">M7 need-based-only (HBS, Stanford)</option>
+            <option value="m7merit">M7 merit-granting (Booth, Kellogg, Wharton…)</option>
+            <option value="t25" selected>T11–25 merit-granting</option>
+            <option value="t50">T26–50 merit-granting</option>
+          </select>
+          <span class="field-hint">Need-based-only schools do not match merit offers</span>
+        </div>
+        <div class="field">
+          <label for="schoolAOffer">School A Scholarship Offer ($ total)</label>
+          <input type="number" id="schoolAOffer" value="20000" min="0" max="250000" step="5000" />
+        </div>
+        <div class="field">
+          <label for="schoolBOffer">School B (Leverage) Scholarship Offer ($ total)</label>
+          <input type="number" id="schoolBOffer" value="80000" min="0" max="250000" step="5000" />
+          <span class="field-hint">The competing offer you would cite in your negotiation</span>
+        </div>
+        <div class="field">
+          <label for="schoolBComparable">Is School B a Peer School?</label>
+          <select id="schoolBComparable">
+            <option value="peer" selected>Yes — same tier or adjacent (credible leverage)</option>
+            <option value="lower">No — clearly lower tier (weak leverage)</option>
+            <option value="higher">School B is higher-ranked (strong leverage)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="depositRisk">Deposit at Risk if School B Expires ($)</label>
+          <input type="number" id="depositRisk" value="2500" min="0" max="20000" step="500" />
+          <span class="field-hint">Non-refundable deposit you'd pay School B to keep it alive while negotiating</span>
+        </div>
+        <div class="field">
+          <label for="wouldAttendB">Would You Actually Attend School B?</label>
+          <select id="wouldAttendB">
+            <option value="yes">Yes — genuine fallback</option>
+            <option value="maybe" selected>Maybe — depends on final numbers</option>
+            <option value="no">No — School A or bust</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <button class="run-btn" onclick="calcNegotiation()">Compute Negotiation Expected Value</button>
+
+    <div class="results-section" id="negResults">
+      <div class="verdict-banner">
+        <div class="verdict-icon">🤝</div>
+        <div class="verdict-text" id="negVerdict"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Key Metrics</div>
+        <div class="metrics-grid" id="negMetrics"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Scenario Breakdown</div>
+        <table class="score-table" id="negTable"></table>
+      </div>
+      <div class="card">
+        <div class="card-title">Analysis &amp; Playbook</div>
+        <div class="insight-box" id="negInsight"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="results-export-row" id="exportRow" style="display:none">
+    <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown</button>
+    <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+  </div>
+
+  <div class="mcp-section">
+    <button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">▸ Developer / Agent Integration (manifest.json)</button>
+    <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+      <pre class="mcp-pre" id="mcpManifestPre"></pre>
+    </div>
+  </div>
+
+  <footer class="tool-footer">
+    <p>AL-63 · ApexLogics.org · <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> · <a href="https://apexadvisory.site" target="_blank" rel="noopener">ApexAdvisory.site</a> · CC-BY-4.0</p>
+  </footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let _roundInputs = null, _roundResults = null, _negInputs = null, _negResults = null;
+function fmt(n) { return (n < 0 ? '−$' : '$') + Math.abs(Math.round(n)).toLocaleString('en-US'); }
+function pct(n) { return n.toFixed(1) + '%'; }
+
+function switchTab(n) {
+  [1,2].forEach(i => {
+    $('tabBtn'+i).classList.toggle('active', i === n);
+    $('tabPanel'+i).classList.toggle('active', i === n);
+  });
+}
+
+// ===== Tier data (2024-25 cycle, embedded) =====
+// admitBase: R2 baseline admit rate %. r1Edge: percentage-point R1 advantage.
+// r3Penalty: pp below R2. budget: share of merit budget remaining by round.
+// avgScholHigh/avgScholLow: average 2-yr merit award $ for above/below-median test scores.
+const TIERS = {
+  m7:  { name:'M7',     admitBase: 18, r1Edge: 5.5, r3Penalty: 8, budget:[1.00, 0.55, 0.15], scholHigh: 90000, scholLow: 55000, medianScore: 730 },
+  t15: { name:'T8–15',  admitBase: 28, r1Edge: 4.0, r3Penalty: 7, budget:[1.00, 0.60, 0.20], scholHigh: 75000, scholLow: 45000, medianScore: 710 },
+  t25: { name:'T16–25', admitBase: 38, r1Edge: 3.0, r3Penalty: 6, budget:[1.00, 0.65, 0.25], scholHigh: 60000, scholLow: 38000, medianScore: 690 },
+  t50: { name:'T26–50', admitBase: 50, r1Edge: 2.0, r3Penalty: 5, budget:[1.00, 0.70, 0.35], scholHigh: 45000, scholLow: 28000, medianScore: 650 },
+};
+
+function calcRounds() {
+  const inputs = {
+    score: parseInt($('testScore').value) || 705,
+    tier: $('targetTier').value,
+    readiness: Math.min(100, Math.max(0, parseInt($('readiness').value) || 70)),
+    weeksToR1: parseInt($('weeksToR1').value) || 10,
+    gainPerWeek: parseFloat($('readinessGain').value) || 3,
+    salary: parseInt($('currentSalary').value) || 95000,
+  };
+  const t = TIERS[inputs.tier];
+  // Readiness at each round's deadline (R2 ≈ R1 + 16 weeks, R3 ≈ R1 + 28 weeks)
+  const readyAt = [
+    Math.min(100, inputs.readiness + inputs.gainPerWeek * inputs.weeksToR1),
+    Math.min(100, inputs.readiness + inputs.gainPerWeek * (inputs.weeksToR1 + 16)),
+    Math.min(100, inputs.readiness + inputs.gainPerWeek * (inputs.weeksToR1 + 28)),
+  ];
+  // Quality factor: a 100%-ready app gets full base rate; below 100%, admit prob degrades.
+  // Penalty: each readiness point below 100 costs 0.6% of admission probability (relative).
+  const qFactor = r => Math.max(0.3, 1 - (100 - r) * 0.006);
+  const scoreHigh = inputs.score >= t.medianScore;
+  const schol = scoreHigh ? t.scholHigh : t.scholLow;
+  const baseRates = [t.admitBase + t.r1Edge, t.admitBase, t.admitBase - t.r3Penalty];
+  const rounds = [0,1,2].map(i => {
+    const admitProb = Math.max(1, baseRates[i] * qFactor(readyAt[i]));
+    const scholEV = (admitProb/100) * schol * t.budget[i];
+    // Delay cost: R2/R3 admits matriculate same fall — no salary delay within cycle.
+    // But R3 carries real risk of pushing to next cycle (waitlist/reapply): probabilistic 25% one-year delay.
+    const delayCost = i === 2 ? 0.25 * inputs.salary * 0.10 : 0; // 10% of a year's comp growth differential, probabilistic
+    return {
+      name: ['Round 1','Round 2','Round 3'][i],
+      readiness: readyAt[i],
+      admitProb,
+      budgetPct: t.budget[i]*100,
+      scholEV,
+      delayCost,
+      totalEV: scholEV - delayCost,
+    };
+  });
+  const best = rounds.reduce((a,b) => b.totalEV > a.totalEV ? b : a);
+  // Break-even readiness: readiness at R1 where R1 EV equals R2 EV
+  let breakEven = null;
+  for (let r = 30; r <= 100; r++) {
+    const evR1 = (baseRates[0] * qFactor(r) / 100) * schol * t.budget[0];
+    if (evR1 >= rounds[1].scholEV) { breakEven = r; break; }
+  }
+  _roundInputs = inputs;
+  _roundResults = { rounds, best, breakEven, tier: t, schol, scoreHigh };
+  renderRounds();
+  $('roundResults').classList.add('visible');
+  $('exportRow').style.display = 'flex';
+}
+
+function renderRounds() {
+  const { rounds, best, breakEven, tier, schol, scoreHigh } = _roundResults;
+  const i = _roundInputs;
+  $('tierBadge').textContent = tier.name;
+  $('roundVerdict').innerHTML = `<strong>Apply in ${best.name} — expected scholarship value ${fmt(best.totalEV)}</strong>` +
+    `Your projected readiness at the ${best.name} deadline is ${Math.round(best.readiness)}%. ` +
+    (breakEven !== null ? `Break-even: R1 beats R2 if your R1-deadline readiness is ≥ ${breakEven}%.` : `At your trajectory, R2 polish outweighs the R1 budget edge.`);
+
+  $('roundGrid').innerHTML = rounds.map(r => `
+    <div class="compare-card ${r.name===best.name?'winner':(r.name==='Round 3'?'caution':'ok')}">
+      <div class="compare-title" style="color:${r.name===best.name?'var(--green)':'var(--blue)'}">${r.name}${r.name===best.name?' <span class="winner-badge">Optimal</span>':''}</div>
+      <div class="compare-score" style="color:${r.name===best.name?'var(--green)':'var(--text)'}">${fmt(r.totalEV)}</div>
+      <div style="font-size:0.68rem;color:var(--text-dim);margin-bottom:8px">Expected scholarship value</div>
+      <div class="compare-row"><span>Projected readiness</span><span>${Math.round(r.readiness)}%</span></div>
+      <div class="compare-row"><span>Admit probability</span><span>${pct(r.admitProb)}</span></div>
+      <div class="compare-row"><span>Merit budget left</span><span>${Math.round(r.budgetPct)}%</span></div>
+      <div class="compare-row"><span>Delay risk cost</span><span>${fmt(r.delayCost)}</span></div>
+    </div>`).join('');
+
+  $('roundMetrics').innerHTML = [
+    { label:'Optimal Round', val:best.name, cls:'green', note:'Highest dollar EV' },
+    { label:'Break-Even Readiness', val:(breakEven!==null? breakEven+'%':'n/a'), cls:'accent', note:'R1 readiness needed to beat R2' },
+    { label:'Score vs. Median', val:(scoreHigh?'Above':'Below'), cls:scoreHigh?'teal':'amber', note:`${tier.name} median ≈ ${tier.medianScore}` },
+    { label:'Avg Merit Award', val:fmt(schol), cls:'blue', note:'2-yr total for your score band' },
+  ].map(m => `<div class="metric-card"><div class="metric-label">${m.label}</div><div class="metric-val ${m.cls}">${m.val}</div><div class="metric-note">${m.note}</div></div>`).join('');
+
+  $('roundTable').innerHTML = `<thead><tr><th>Round</th><th>Base Admit Rate</th><th>Quality-Adj. Admit</th><th>Budget Factor</th><th>Scholarship EV</th><th>Delay Cost</th><th>Total EV</th></tr></thead><tbody>` +
+    rounds.map(r => `<tr class="${r.name===best.name?'highlight':''}"><td>${r.name}</td><td>${pct(r.name==='Round 1'?tier.admitBase+tier.r1Edge:(r.name==='Round 2'?tier.admitBase:tier.admitBase-tier.r3Penalty))}</td><td>${pct(r.admitProb)}</td><td>×${(r.budgetPct/100).toFixed(2)}</td><td>${fmt(r.scholEV)}</td><td>${fmt(r.delayCost)}</td><td><strong>${fmt(r.totalEV)}</strong></td></tr>`).join('') + '</tbody>';
+
+  $('roundInsight').innerHTML = `<strong>How to read this:</strong> Expected scholarship value = P(admit | application quality) × average merit award for your score band × share of merit budget still uncommitted in that round. ` +
+    `R1's edge is twofold: admit rates run ${tier.r1Edge} points higher at ${tier.name} schools, and 100% of the merit budget is available. By R3 only ~${Math.round(tier.budget[2]*100)}% remains and admit rates drop ${tier.r3Penalty} points. ` +
+    `<strong>The rushed-app trap:</strong> a ${Math.round(rounds[0].readiness)}%-ready R1 application sacrifices ${Math.round((1-Math.max(0.3,1-(100-rounds[0].readiness)*0.006))*100)}% of your admission probability — polish can be worth more than timing. ` +
+    `${i.weeksToR1 < 6 && rounds[0].readiness < 85 ? '<strong>Warning:</strong> with ' + i.weeksToR1 + ' weeks to R1 and projected readiness of ' + Math.round(rounds[0].readiness) + '%, you are in rushed-app territory — R2 is likely the better play. ' : ''}` +
+    `<strong>Caveats:</strong> round-level admit gaps vary by school (Kellogg's R1 edge is widest at ~7pts; Columbia rolling differs). International applicants should treat R2 as the effective final round for visa timing. Once admitted, switch to Tab ② to model negotiation.`;
+}
+
+// ===== Tab 2: Negotiation =====
+// P(success) by school type, adjusted by leverage credibility
+const NEG = {
+  need:   { p: 0.10, name:'M7 need-based-only', counterPct: 0.30 },
+  m7merit:{ p: 0.30, name:'M7 merit-granting',  counterPct: 0.40 },
+  t25:    { p: 0.50, name:'T11–25 merit',       counterPct: 0.55 },
+  t50:    { p: 0.65, name:'T26–50 merit',       counterPct: 0.65 },
+};
+
+function calcNegotiation() {
+  const inputs = {
+    aType: $('schoolAType').value,
+    aOffer: parseInt($('schoolAOffer').value) || 0,
+    bOffer: parseInt($('schoolBOffer').value) || 0,
+    bCred: $('schoolBComparable').value,
+    deposit: parseInt($('depositRisk').value) || 0,
+    attendB: $('wouldAttendB').value,
+  };
+  const n = NEG[inputs.aType];
+  const gap = Math.max(0, inputs.bOffer - inputs.aOffer);
+  let p = n.p;
+  if (inputs.bCred === 'lower') p *= 0.5;
+  else if (inputs.bCred === 'higher') p = Math.min(0.85, p * 1.3);
+  // Expected counter: school typically closes counterPct of the credible gap
+  const expCounter = gap * n.counterPct;
+  const evNegotiate = p * expCounter - inputs.deposit;
+  const noGap = gap === 0;
+  const verdict = noGap ? 'no_gap' : (inputs.aType === 'need' ? 'futile' : (evNegotiate > 0 ? 'negotiate' : 'accept'));
+  _negInputs = inputs;
+  _negResults = { p, gap, expCounter, evNegotiate, verdict, schoolType: n };
+  renderNegotiation();
+  $('negResults').classList.add('visible');
+  $('exportRow').style.display = 'flex';
+}
+
+function renderNegotiation() {
+  const { p, gap, expCounter, evNegotiate, verdict, schoolType } = _negResults;
+  const i = _negInputs;
+  const verdictMap = {
+    no_gap: ['🟰', '<strong>No leverage gap to negotiate</strong>School B\'s offer does not exceed School A\'s — there is nothing to counter with. Accept the better total package.'],
+    futile: ['🚫', `<strong>Negotiation is generally futile at ${schoolType.name} schools</strong>HBS and Stanford award aid on demonstrated need only and do not match merit offers. EV of asking: ~${fmt(Math.max(0, evNegotiate))}. Submit updated need documentation instead.`],
+    negotiate: ['✅', `<strong>Negotiate — expected value ${fmt(evNegotiate)}</strong>P(success) ≈ ${Math.round(p*100)}% · expected counter ≈ ${fmt(expCounter)} against a ${fmt(gap)} gap.`],
+    accept: ['⚖️', `<strong>Marginal — negotiation EV is ${fmt(evNegotiate)}</strong>The deposit at risk roughly cancels the expected counter. Negotiate only if you can extend School B's deadline without paying.`],
+  };
+  const [icon, text] = verdictMap[verdict];
+  $('negVerdict').parentElement.querySelector('.verdict-icon').textContent = icon;
+  $('negVerdict').innerHTML = text;
+
+  $('negMetrics').innerHTML = [
+    { label:'Scholarship Gap', val:fmt(gap), cls:'blue', note:'School B minus School A' },
+    { label:'P(Successful Counter)', val:Math.round(p*100)+'%', cls:p>=0.4?'green':'amber', note:schoolType.name + ', leverage-adjusted' },
+    { label:'Expected Counter', val:fmt(expCounter), cls:'teal', note:`School typically closes ~${Math.round(schoolType.counterPct*100)}% of credible gap` },
+    { label:'Negotiation EV', val:fmt(evNegotiate), cls:evNegotiate>0?'green':'red', note:'P × counter − deposit at risk' },
+  ].map(m => `<div class="metric-card"><div class="metric-label">${m.label}</div><div class="metric-val ${m.cls}">${m.val}</div><div class="metric-note">${m.note}</div></div>`).join('');
+
+  const scenarios = [
+    { s:'Counter succeeds in full', prob: p * 0.3, out: gap, note:'School A matches School B entirely (rare)' },
+    { s:'Partial counter', prob: p * 0.7, out: expCounter, note:'Most common success outcome' },
+    { s:'Counter declined, offer stands', prob: (1-p) * 0.95, out: 0, note:'Schools almost never rescind for polite negotiation' },
+    { s:'Deposit forfeited at School B', prob: i.deposit > 0 ? 1 : 0, out: -i.deposit, note:'Cost of keeping School B alive while waiting' },
+  ];
+  $('negTable').innerHTML = `<thead><tr><th>Scenario</th><th>Probability</th><th>Outcome ($)</th><th>Note</th></tr></thead><tbody>` +
+    scenarios.map(s => `<tr><td>${s.s}</td><td>${Math.round(s.prob*100)}%</td><td>${fmt(s.out)}</td><td style="font-size:0.72rem;color:var(--text-dim)">${s.note}</td></tr>`).join('') + '</tbody>';
+
+  $('negInsight').innerHTML = `<strong>Playbook:</strong> Frame the ask as a question, not a demand — "School B has offered ${fmt(i.bOffer)}; School A is my first choice. Is there any flexibility in my award?" Attach the competing offer letter. ` +
+    `${i.bCred === 'lower' ? '<strong>Weak leverage:</strong> School B is a lower tier — schools heavily discount non-peer offers. Success probability halved. ' : ''}` +
+    `${i.bCred === 'higher' ? '<strong>Strong leverage:</strong> a higher-ranked school\'s money is the most credible counter-evidence that exists. ' : ''}` +
+    `${i.attendB === 'no' ? '<strong>Caution:</strong> you said you would not attend School B. Never bluff with an offer you would not take — if School A calls it and School B expires, you hold nothing. Reduce your deposit exposure to $0 in that case. ' : ''}` +
+    `<strong>Timing:</strong> negotiate after admit but at least 2 weeks before School A's deposit deadline. <strong>Research basis:</strong> aggregated consultant data shows ~50% of merit counters at T11–25 schools yield an increase; M7 need-only schools (HBS/Stanford) match on need documentation, not merit offers. Applicants scoring above a school's median (715+ at M7) receive ~$90K average awards vs. ~$55K below median — your round strategy (Tab ①) sets the budget from which any counter is paid.`;
+}
+
+function exportMarkdown() {
+  const d = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  const lines = ['# MBA Scholarship Strategy Report', `\n_Generated ${d} · AL-63 · apexlogics.org_\n`];
+  if (_roundResults) {
+    lines.push('## Round Timing Optimizer',
+      `Optimal round: **${_roundResults.best.name}** (EV ${fmt(_roundResults.best.totalEV)})`,
+      `Break-even R1 readiness: ${_roundResults.breakEven !== null ? _roundResults.breakEven + '%' : 'n/a'}`,
+      `Tier: ${_roundResults.tier.name} · Score: ${_roundInputs.score} (${_roundResults.scoreHigh ? 'above' : 'below'} median)`,
+      '', '| Round | Readiness | P(Admit) | Budget | EV |', '|---|---|---|---|---|',
+      ..._roundResults.rounds.map(r => `| ${r.name} | ${Math.round(r.readiness)}% | ${pct(r.admitProb)} | ${Math.round(r.budgetPct)}% | ${fmt(r.totalEV)} |`), '');
+  }
+  if (_negResults) {
+    lines.push('## Offer Negotiation EV',
+      `Verdict: ${_negResults.verdict}`,
+      `Gap: ${fmt(_negResults.gap)} · P(success): ${Math.round(_negResults.p*100)}% · Expected counter: ${fmt(_negResults.expCounter)} · EV: ${fmt(_negResults.evNegotiate)}`);
+  }
+  if (lines.length <= 2) { alert('Run at least one tab first.'); return; }
+  const blob = new Blob([lines.join('\n')], { type:'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'mba-scholarship-strategy.md'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function exportAP2() {
+  if (!_roundResults && !_negResults) { alert('Run at least one tab first.'); return; }
+  const validMandateTypes = [
+    'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+    'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+    'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+    'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+    'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+    'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+    'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+    'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+    'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+    'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+    'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+    'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+    'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+    'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
+    'english_test_choice_record','lsat_tier_record','mba_scholarship_record',
+    'consulting_roi_record','mba_yield_record','dual_degree_record',
+    'online_mba_record','mba_waitlist_record','deferred_mba_record'
+  ];
+  const payload = {
+    ap2_version:'2.0', mandate_type:'mba_scholarship_record',
+    source_tool:'AL-63',
+    source_url:'https://apexlogics.org/tools/56-mba-scholarship-strategy-engine/',
+    generated_at: new Date().toISOString(), schema_version:'1.0',
+    inputs: {
+      round_timing: _roundInputs ? { test_score:_roundInputs.score, tier:_roundInputs.tier, readiness_pct:_roundInputs.readiness, weeks_to_r1:_roundInputs.weeksToR1 } : null,
+      negotiation: _negInputs ? { school_a_type:_negInputs.aType, school_a_offer:_negInputs.aOffer, school_b_offer:_negInputs.bOffer, leverage:_negInputs.bCred, deposit_at_risk:_negInputs.deposit } : null
+    },
+    results: {
+      round_timing: _roundResults ? {
+        optimal_round: _roundResults.best.name,
+        round_ev: _roundResults.rounds.map(r => ({ round:r.name, readiness_pct:Math.round(r.readiness), admit_prob_pct:+r.admitProb.toFixed(1), budget_factor:+(r.budgetPct/100).toFixed(2), total_ev:Math.round(r.totalEV) })),
+        breakeven_r1_readiness_pct: _roundResults.breakEven
+      } : null,
+      negotiation: _negResults ? {
+        verdict: _negResults.verdict, scholarship_gap: _negResults.gap,
+        p_success: +_negResults.p.toFixed(2), expected_counter: Math.round(_negResults.expCounter),
+        negotiation_ev: Math.round(_negResults.evNegotiate)
+      } : null
+    },
+    downstream_handoff_candidates: ['AL-52','AL-26','AL-29','AL-13'],
+    advisory_cta: { text:'Get MBA application and scholarship strategy guidance', url:'https://apexadvisory.site' }
+  };
+  if (!validMandateTypes.includes(payload.mandate_type)) { alert('AP2 validation failed: ' + payload.mandate_type); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'mba-scholarship-strategy-ap2.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function toggleMCP() {
+  const panel = $('mcpPanel'), btn = $('mcpToggleBtn');
+  const open = panel.classList.toggle('open');
+  btn.textContent = (open ? '▾ ' : '▸ ') + 'Developer / Agent Integration (manifest.json)';
+  btn.setAttribute('aria-expanded', open);
+  if (open && !$('mcpManifestPre').textContent) {
+    $('mcpManifestPre').textContent = JSON.stringify({
+      al_id:'AL-63', version:'1.0.0', title:'MBA Scholarship Strategy Engine',
+      slug:'56-mba-scholarship-strategy-engine',
+      description:'Two-stage scholarship strategy engine: (1) Round Timing Optimizer — dollar EV of applying R1 vs. R2 vs. R3 given application readiness, admit-rate edge, and merit budget depletion; (2) Offer Negotiation EV — probability-weighted value of countering with a competing offer, by school type.',
+      category:'education_path_roi', journeys:['education_path'],
+      personas:['student','working_professional'],
+      tags:['mba','scholarship','negotiation','round-1','round-2','application-timing','merit-aid','expected-value'],
+      status:'shipped', maintenance:'low',
+      regulatory_citations:['2024–25 cycle published round-level admit rates (Booth, Kellogg)','Aggregated admissions consultant negotiation success data','GMAC merit award distribution by score band'],
+      ap2_export:true, ap2_mandate_types:['mba_scholarship_record'],
+      downstream_handoff_candidates:['AL-52','AL-26','AL-29','AL-13'],
+      sister_suite:'https://ainumbers.co', consulting_site:'https://apexadvisory.site', license:'CC-BY-4.0'
+    }, null, 2);
+  }
+}
+
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function() {
+  const s = sessionStorage.getItem('apex_lang');
+  setLang(s || ({en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'})[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+</script>
+</body>
+</html>

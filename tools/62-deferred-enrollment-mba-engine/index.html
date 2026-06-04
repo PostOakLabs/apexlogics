@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deferred Enrollment MBA Decision Engine · ApexLogics #62</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/62-deferred-enrollment-mba-engine/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: var(--accent); } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 36px; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .compare-card { border-radius: 12px; padding: 20px 22px; }
+    .compare-card.winner { background: rgba(52,211,153,0.06); border: 2px solid var(--green); }
+    .compare-card.ok { background: var(--surface); border: 1px solid var(--border); }
+    .compare-title { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 500; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .winner-badge { background: rgba(52,211,153,0.2); color: var(--green); border-radius: 4px; padding: 2px 8px; font-size: 0.65rem; }
+    .compare-score { font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; margin: 8px 0 4px; }
+    .compare-row { display: flex; justify-content: space-between; font-size: 0.82rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .compare-row:last-child { border-bottom: none; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); } .metric-val.amber { color: var(--amber); }
+    .metric-val.accent { color: var(--accent); } .metric-val.red { color: var(--red); }
+    .metric-val.teal { color: var(--teal); } .metric-val.blue { color: var(--blue); }
+    .metric-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
+    .score-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    .score-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.67rem; text-transform: uppercase; color: var(--text-dim); padding: 8px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+    .score-table td { padding: 9px 14px; border-bottom: 1px solid rgba(167,139,250,0.06); font-size: 0.83rem; }
+    .score-table tr.highlight td { background: var(--accent-low); }
+    .insight-box { background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.2); border-radius: 8px; padding: 16px 20px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; }
+    .insight-box strong { color: var(--text); }
+    .verdict-banner { border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.3); }
+    .verdict-icon { font-size: 1.8rem; }
+    .verdict-text strong { color: var(--text); font-size: 1rem; display: block; margin-bottom: 2px; }
+    .verdict-text { font-size: 0.92rem; color: var(--text-muted); }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(167,139,250,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .mcp-section { max-width: 680px; margin: 24px auto 0; }
+    .mcp-toggle { background: none; border: 1px dashed var(--border); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 8px 14px; border-radius: 6px; cursor: pointer; width: 100%; text-align: left; margin-top: 24px; }
+    .mcp-panel { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 8px; }
+    .mcp-panel.open { display: block; }
+    .mcp-pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    @media (max-width: 700px) {
+      .compare-grid { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid.two { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="28" height="28" rx="6" fill="#A78BFA" fill-opacity="0.15"/>
+          <path d="M7 21L14 7L21 21" stroke="#A78BFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9.5 16.5H18.5" stroke="#A78BFA" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-name"><span class="logo-apex">Apex</span><span class="logo-org">Logics</span></div>
+        <div class="logo-tag">apexlogics.org</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="https://apexadvisory.site" class="nav-pill accent" target="_blank" rel="noopener">Advisory</a>
+    <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    <a href="../../index.html" class="nav-pill">← All Tools</a>
+  </div>
+</nav>
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+  <div class="tool-eyebrow">AL-69 · Education Path &amp; ROI</div>
+  <h1 class="tool-title">Deferred Enrollment MBA<br>Decision Engine</h1>
+  <p class="tool-desc">Deferred-admission programs (HBS 2+2, Stanford Deferred, Wharton Moelis, Yale Silver Scholars, and the T15 equivalents) offer a guaranteed seat 2–5 years out. The dilemma: accept a guaranteed seat at the school that admitted you, or decline and apply later to a better school when your profile is stronger? This engine prices the guaranteed seat as an option against the uncertain upgrade.</p>
+  <div class="tool-vintage">Data vintage: 2024–25 deferred program structures (HBS 2+2, Stanford, Wharton, Columbia, Yale, Darden, Kellogg) · tier salary premiums from 2024 employment reports. All embedded.</div>
+
+  <div class="card">
+    <div class="card-title">Your Decision <span class="badge">Option Value Model</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="seatTier">Tier of Your Guaranteed (Deferred) Seat</label>
+        <select id="seatTier">
+          <option value="m7">M7</option>
+          <option value="t15" selected>T8–15</option>
+          <option value="t25">T16–25</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="targetTier">Tier You'd Aim for Later</label>
+        <select id="targetTier">
+          <option value="m7" selected>M7</option>
+          <option value="t15">T8–15</option>
+        </select>
+        <span class="field-hint">Must be above the seat tier for "decline and retry" to make sense</span>
+      </div>
+      <div class="field">
+        <label for="pUpgrade">Your P(Target Admit) When Reapplying — %</label>
+        <input type="number" id="pUpgrade" value="25" min="1" max="90" step="1" />
+        <span class="field-hint">M7 admit rates ≈ 10–20% overall; strong WE trajectory can double your baseline</span>
+      </div>
+      <div class="field">
+        <label for="pSeatClass">P(Seat-Class Admit Again) if Target Rejects You — %</label>
+        <input type="number" id="pSeatClass" value="55" min="1" max="95" step="1" />
+        <span class="field-hint">No guarantee second time. You may also be seen as a decliner</span>
+      </div>
+      <div class="field">
+        <label for="yearsDefer">Years Until Matriculation (either path)</label>
+        <input type="number" id="yearsDefer" value="2" min="1" max="5" step="1" />
+        <span class="field-hint">Deferred programs typically allow 2–4 years of work first</span>
+      </div>
+      <div class="field">
+        <label for="salary">Expected Salary During Work Years ($)</label>
+        <input type="number" id="salary" value="90000" min="0" max="400000" step="5000" />
+      </div>
+      <div class="field">
+        <label for="horizon">Career Horizon (years from today)</label>
+        <input type="number" id="horizon" value="15" min="8" max="30" step="1" />
+      </div>
+      <div class="field">
+        <label for="riskTol">Risk Tolerance</label>
+        <select id="riskTol">
+          <option value="averse">Risk-averse — certainty is worth a lot to me</option>
+          <option value="neutral" selected>Risk-neutral — pure EV</option>
+          <option value="seeking">Risk-seeking — I'll bet on myself</option>
+        </select>
+        <span class="field-hint">Applies a certainty premium/discount to the guaranteed seat</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Price the Guaranteed Seat</button>
+
+  <div class="results-section" id="resultsSection">
+    <div class="verdict-banner">
+      <div class="verdict-icon">🎟️</div>
+      <div class="verdict-text" id="verdictText"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Two Paths</div>
+      <div class="compare-grid" id="compareGrid"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Key Metrics</div>
+      <div class="metrics-grid" id="metricsGrid"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Decline-Path Outcome Tree</div>
+      <table class="score-table" id="treeTable"></table>
+    </div>
+    <div class="card">
+      <div class="card-title">Analysis &amp; Caveats</div>
+      <div class="insight-box" id="insightBox"></div>
+    </div>
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+    </div>
+  </div>
+
+  <div class="mcp-section">
+    <button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">▸ Developer / Agent Integration (manifest.json)</button>
+    <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+      <pre class="mcp-pre" id="mcpManifestPre"></pre>
+    </div>
+  </div>
+
+  <footer class="tool-footer">
+    <p>AL-69 · ApexLogics.org · <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> · <a href="https://apexadvisory.site" target="_blank" rel="noopener">ApexAdvisory.site</a> · CC-BY-4.0</p>
+  </footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let _inputs = null, _results = null;
+function fmt(n) { return (n < 0 ? '−$' : '$') + Math.abs(Math.round(n)).toLocaleString('en-US'); }
+
+// 15-yr NPV of attending each tier (excess over no-MBA baseline), 2024 employment report basis
+const TIER_VALUE = { m7: 650000, t15: 480000, t25: 340000 };
+const TIER_NAME = { m7:'M7', t15:'T8–15', t25:'T16–25' };
+const RISK_ADJ = { averse: 1.15, neutral: 1.0, seeking: 0.9 }; // certainty premium multiplier on guaranteed path
+
+function calculate() {
+  const inputs = {
+    seatTier: $('seatTier').value,
+    targetTier: $('targetTier').value,
+    pUpgrade: (parseFloat($('pUpgrade').value) || 25) / 100,
+    pSeatClass: (parseFloat($('pSeatClass').value) || 55) / 100,
+    yearsDefer: parseInt($('yearsDefer').value) || 2,
+    salary: parseInt($('salary').value) || 90000,
+    horizon: parseInt($('horizon').value) || 15,
+    riskTol: $('riskTol').value,
+  };
+  const hScale = inputs.horizon / 15;
+  const seatVal = TIER_VALUE[inputs.seatTier] * hScale;
+  const targetVal = TIER_VALUE[inputs.targetTier] * hScale;
+
+  // Path A: Accept guaranteed seat — certain seat value, risk-adjusted
+  const evAccept = seatVal * RISK_ADJ[inputs.riskTol];
+
+  // Path B: Decline, reapply later
+  // Outcomes: target admit (pUpgrade) → targetVal
+  //           target reject, seat-class admit (1−pU)×pSeat → seatVal − reapp friction
+  //           strike out (1−pU)×(1−pSeat) → delayed/no MBA: 25% of seatVal (later cycles, lower-tier fallback)
+  const reapplyFriction = 5000 + inputs.salary * 0.05; // fees, prep, half-cycle career drag
+  const pStrike = (1 - inputs.pUpgrade) * (1 - inputs.pSeatClass);
+  const pSeatAgain = (1 - inputs.pUpgrade) * inputs.pSeatClass;
+  const evDecline = inputs.pUpgrade * targetVal + pSeatAgain * (seatVal - reapplyFriction) + pStrike * (0.25 * seatVal) - reapplyFriction;
+
+  const optionValue = evAccept - evDecline; // what the guarantee is worth vs. betting
+  // Break-even P(upgrade) where decline ≥ accept
+  let breakEvenP = null;
+  for (let p = 1; p <= 95; p++) {
+    const pu = p / 100;
+    const ev = pu * targetVal + (1 - pu) * inputs.pSeatClass * (seatVal - reapplyFriction) + (1 - pu) * (1 - inputs.pSeatClass) * 0.25 * seatVal - reapplyFriction;
+    if (ev >= evAccept) { breakEvenP = p; break; }
+  }
+  const best = evAccept >= evDecline ? 'accept' : 'decline';
+  _inputs = inputs;
+  _results = { evAccept, evDecline, seatVal, targetVal, optionValue, breakEvenP, best, pStrike, pSeatAgain, reapplyFriction };
+  renderResults();
+  $('resultsSection').classList.add('visible');
+}
+
+function renderResults() {
+  const r = _results, i = _inputs;
+  $('verdictText').innerHTML = r.best === 'accept'
+    ? `<strong>Accept the guaranteed ${TIER_NAME[i.seatTier]} seat — EV ${fmt(r.evAccept)} vs. ${fmt(r.evDecline)} for declining</strong>You would need P(${TIER_NAME[i.targetTier]} admit) ≥ ${r.breakEvenP !== null ? r.breakEvenP + '%' : '>95%'} to justify betting; you estimated ${Math.round(i.pUpgrade*100)}%.`
+    : `<strong>Decline and reapply — EV ${fmt(r.evDecline)} vs. ${fmt(r.evAccept)} for the guaranteed seat</strong>Your ${Math.round(i.pUpgrade*100)}% upgrade probability clears the ${r.breakEvenP !== null ? r.breakEvenP + '%' : 'n/a'} break-even. Be sure that estimate is honest.`;
+
+  $('compareGrid').innerHTML = [
+    { id:'accept', name:`Accept guaranteed ${TIER_NAME[i.seatTier]} seat`, ev:r.evAccept,
+      rows:[['Seat value ('+i.horizon+'-yr)', fmt(r.seatVal)], ['Certainty adjustment', '×'+RISK_ADJ[i.riskTol].toFixed(2)], ['Admission risk', 'None — locked']] },
+    { id:'decline', name:`Decline, aim for ${TIER_NAME[i.targetTier]}`, ev:r.evDecline,
+      rows:[['P(upgrade)', Math.round(i.pUpgrade*100)+'%'], ['P(strike out)', Math.round(r.pStrike*100)+'%'], ['Reapply friction', fmt(r.reapplyFriction)]] },
+  ].map(p => `
+    <div class="compare-card ${p.id===r.best?'winner':'ok'}">
+      <div class="compare-title" style="color:${p.id===r.best?'var(--green)':'var(--blue)'}">${p.name}${p.id===r.best?' <span class="winner-badge">Higher EV</span>':''}</div>
+      <div class="compare-score" style="color:${p.id===r.best?'var(--green)':'var(--text)'}">${fmt(p.ev)}</div>
+      <div style="font-size:0.68rem;color:var(--text-dim);margin-bottom:8px">Risk-adjusted EV</div>
+      ${p.rows.map(row => `<div class="compare-row"><span>${row[0]}</span><span>${row[1]}</span></div>`).join('')}
+    </div>`).join('');
+
+  $('metricsGrid').innerHTML = [
+    { label:'Option Value of Guarantee', val:fmt(Math.abs(r.optionValue)), cls:r.optionValue>0?'green':'amber', note:r.optionValue>0?'What certainty is worth at your odds':'Negative — the bet is worth more' },
+    { label:'Break-Even P(Upgrade)', val:(r.breakEvenP!==null? r.breakEvenP+'%':'>95%'), cls:'accent', note:'Min. upgrade odds to justify declining' },
+    { label:'Tier Value Gap', val:fmt(r.targetVal - r.seatVal), cls:'blue', note:`${TIER_NAME[i.targetTier]} vs. ${TIER_NAME[i.seatTier]}, ${i.horizon}-yr` },
+    { label:'P(Strike Out)', val:Math.round(r.pStrike*100)+'%', cls:r.pStrike>0.3?'red':'teal', note:'Decline path: no admit anywhere' },
+  ].map(m => `<div class="metric-card"><div class="metric-label">${m.label}</div><div class="metric-val ${m.cls}">${m.val}</div><div class="metric-note">${m.note}</div></div>`).join('');
+
+  $('treeTable').innerHTML = `<thead><tr><th>Decline-Path Outcome</th><th>Probability</th><th>Value</th><th>Weighted</th></tr></thead><tbody>
+    <tr><td>Admitted to ${TIER_NAME[i.targetTier]} target</td><td>${Math.round(i.pUpgrade*100)}%</td><td>${fmt(r.targetVal)}</td><td>${fmt(i.pUpgrade * r.targetVal)}</td></tr>
+    <tr><td>Target rejects; re-admitted at ${TIER_NAME[i.seatTier]} class</td><td>${Math.round(r.pSeatAgain*100)}%</td><td>${fmt(r.seatVal - r.reapplyFriction)}</td><td>${fmt(r.pSeatAgain * (r.seatVal - r.reapplyFriction))}</td></tr>
+    <tr><td>Strike out — delayed / lower-tier fallback</td><td>${Math.round(r.pStrike*100)}%</td><td>${fmt(0.25 * r.seatVal)}</td><td>${fmt(r.pStrike * 0.25 * r.seatVal)}</td></tr>
+    <tr class="highlight"><td><strong>Decline-path EV (less friction)</strong></td><td>100%</td><td>—</td><td><strong>${fmt(r.evDecline)}</strong></td></tr>
+  </tbody>`;
+
+  $('insightBox').innerHTML = `<strong>The decision in one sentence:</strong> a guaranteed seat is a free option on your future self's risk tolerance — declining one converts certain value into a bet whose odds you control less than you think. ` +
+    `<strong>Why people overestimate P(upgrade):</strong> deferred admits are by construction strong candidates, but M7 reapplication pools are full of equally strong candidates, and admissions outcomes at the margin are close to random. The honest base rate for "strong T15 deferred admit reapplying to M7 in 2 years" is 20–35%, not the 50%+ that confidence suggests. ` +
+    `${i.pUpgrade > 0.4 ? '<strong>Your estimate (' + Math.round(i.pUpgrade*100) + '%) is above the credible base-rate band</strong> — re-run at 25% before deciding. ' : ''}` +
+    `<strong>What the model omits:</strong> some deferred programs allow you to apply elsewhere and walk away cleanly (Wharton Moelis) while others expect a binding commitment with deposit — read your offer's terms; a clean walk-away makes "accept now, reassess later" dominant. Scholarship timing also differs: deferred admits often negotiate aid at matriculation, not admission. ` +
+    `<strong>Strategic alternative:</strong> accept the seat, then if your profile explodes (IPO, promotion to manager, published work), some schools entertain a one-time reapplication release — ask admissions before assuming the door is closed. <strong>Caveat:</strong> tier values are 15-yr NPV central estimates scaled to your horizon; individual variance within a tier exceeds the gap between adjacent tiers.`;
+}
+
+function exportMarkdown() {
+  if (!_results) return;
+  const d = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  const lines = [
+    '# Deferred Enrollment MBA Decision', `\n_Generated ${d} · AL-69 · apexlogics.org_\n`,
+    `## Recommendation: ${_results.best === 'accept' ? 'Accept the guaranteed seat' : 'Decline and reapply'}`,
+    `- Accept EV: ${fmt(_results.evAccept)} · Decline EV: ${fmt(_results.evDecline)}`,
+    `- Option value of guarantee: ${fmt(_results.optionValue)}`,
+    `- Break-even P(upgrade): ${_results.breakEvenP !== null ? _results.breakEvenP + '%' : '>95%'}`,
+    `- Your estimate: ${Math.round(_inputs.pUpgrade*100)}%`,
+  ];
+  const blob = new Blob([lines.join('\n')], { type:'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'deferred-mba-decision.md'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function exportAP2() {
+  if (!_results) { alert('Run the analysis first.'); return; }
+  const validMandateTypes = [
+    'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+    'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+    'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+    'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+    'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+    'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+    'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+    'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+    'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+    'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+    'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+    'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+    'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+    'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
+    'english_test_choice_record','lsat_tier_record','mba_scholarship_record',
+    'consulting_roi_record','mba_yield_record','dual_degree_record',
+    'online_mba_record','mba_waitlist_record','deferred_mba_record'
+  ];
+  const payload = {
+    ap2_version:'2.0', mandate_type:'deferred_mba_record',
+    source_tool:'AL-69',
+    source_url:'https://apexlogics.org/tools/62-deferred-enrollment-mba-engine/',
+    generated_at: new Date().toISOString(), schema_version:'1.0',
+    inputs: {
+      seat_tier: _inputs.seatTier, target_tier: _inputs.targetTier,
+      p_upgrade: _inputs.pUpgrade, p_seat_class_again: _inputs.pSeatClass,
+      years_deferred: _inputs.yearsDefer, salary: _inputs.salary,
+      horizon_years: _inputs.horizon, risk_tolerance: _inputs.riskTol
+    },
+    results: {
+      recommendation: _results.best,
+      ev_accept: Math.round(_results.evAccept),
+      ev_decline: Math.round(_results.evDecline),
+      option_value_of_guarantee: Math.round(_results.optionValue),
+      breakeven_p_upgrade_pct: _results.breakEvenP,
+      p_strike_out: +_results.pStrike.toFixed(3)
+    },
+    downstream_handoff_candidates: ['AL-52','AL-68','AL-26','AL-43'],
+    advisory_cta: { text:'Get deferred admission strategy guidance', url:'https://apexadvisory.site' }
+  };
+  if (!validMandateTypes.includes(payload.mandate_type)) { alert('AP2 validation failed: ' + payload.mandate_type); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'deferred-mba-decision-ap2.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function toggleMCP() {
+  const panel = $('mcpPanel'), btn = $('mcpToggleBtn');
+  const open = panel.classList.toggle('open');
+  btn.textContent = (open ? '▾ ' : '▸ ') + 'Developer / Agent Integration (manifest.json)';
+  btn.setAttribute('aria-expanded', open);
+  if (open && !$('mcpManifestPre').textContent) {
+    $('mcpManifestPre').textContent = JSON.stringify({
+      al_id:'AL-69', version:'1.0.0', title:'Deferred Enrollment MBA Decision Engine',
+      slug:'62-deferred-enrollment-mba-engine',
+      description:'Option-value model for deferred MBA admits: accept a guaranteed seat now vs. decline and reapply to a higher tier later. Computes risk-adjusted EVs, break-even upgrade probability, and the dollar value of the guarantee.',
+      category:'education_path_roi', journeys:['education_path'],
+      personas:['student'],
+      tags:['mba','deferred-admission','2+2','option-value','expected-value','reapplication'],
+      status:'shipped', maintenance:'low',
+      regulatory_citations:['2024–25 deferred program structures (HBS 2+2, Stanford, Wharton Moelis, Yale Silver Scholars)','Tier salary premiums from 2024 employment reports'],
+      ap2_export:true, ap2_mandate_types:['deferred_mba_record'],
+      downstream_handoff_candidates:['AL-52','AL-68','AL-26','AL-43'],
+      sister_suite:'https://ainumbers.co', consulting_site:'https://apexadvisory.site', license:'CC-BY-4.0'
+    }, null, 2);
+  }
+}
+
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function() {
+  const s = sessionStorage.getItem('apex_lang');
+  setLang(s || ({en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'})[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+</script>
+</body>
+</html>

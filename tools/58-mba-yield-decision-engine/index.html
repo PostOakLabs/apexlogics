@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MBA Yield Decision Engine · ApexLogics #58</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/58-mba-yield-decision-engine/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: var(--accent); } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 36px; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], input[type="text"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .compare-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+    .compare-card { border-radius: 12px; padding: 20px 22px; }
+    .compare-card.winner { background: rgba(52,211,153,0.06); border: 2px solid var(--green); }
+    .compare-card.ok { background: var(--surface); border: 1px solid var(--border); }
+    .compare-title { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 500; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .winner-badge { background: rgba(52,211,153,0.2); color: var(--green); border-radius: 4px; padding: 2px 8px; font-size: 0.65rem; }
+    .compare-score { font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; margin: 8px 0 4px; }
+    .compare-row { display: flex; justify-content: space-between; font-size: 0.82rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .compare-row:last-child { border-bottom: none; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); } .metric-val.amber { color: var(--amber); }
+    .metric-val.accent { color: var(--accent); } .metric-val.red { color: var(--red); }
+    .metric-val.teal { color: var(--teal); } .metric-val.blue { color: var(--blue); }
+    .metric-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
+    .score-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    .score-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.67rem; text-transform: uppercase; color: var(--text-dim); padding: 8px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+    .score-table td { padding: 9px 14px; border-bottom: 1px solid rgba(167,139,250,0.06); font-size: 0.83rem; }
+    .score-table tr.highlight td { background: var(--accent-low); }
+    .insight-box { background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.2); border-radius: 8px; padding: 16px 20px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; }
+    .insight-box strong { color: var(--text); }
+    .verdict-banner { border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.3); }
+    .verdict-icon { font-size: 1.8rem; }
+    .verdict-text strong { color: var(--text); font-size: 1rem; display: block; margin-bottom: 2px; }
+    .verdict-text { font-size: 0.92rem; color: var(--text-muted); }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(167,139,250,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .mcp-section { max-width: 680px; margin: 24px auto 0; }
+    .mcp-toggle { background: none; border: 1px dashed var(--border); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 8px 14px; border-radius: 6px; cursor: pointer; width: 100%; text-align: left; margin-top: 24px; }
+    .mcp-panel { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 8px; }
+    .mcp-panel.open { display: block; }
+    .mcp-pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    .offer-block { border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 14px; background: var(--surface); }
+    .offer-head { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent); margin-bottom: 14px; }
+    @media (max-width: 700px) {
+      .compare-grid { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="28" height="28" rx="6" fill="#A78BFA" fill-opacity="0.15"/>
+          <path d="M7 21L14 7L21 21" stroke="#A78BFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9.5 16.5H18.5" stroke="#A78BFA" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-name"><span class="logo-apex">Apex</span><span class="logo-org">Logics</span></div>
+        <div class="logo-tag">apexlogics.org</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="https://apexadvisory.site" class="nav-pill accent" target="_blank" rel="noopener">Advisory</a>
+    <a href="https://ainumbers.co" class="nav-pill" target="_blank" rel="noopener">AINumbers.co</a>
+    <a href="../../index.html" class="nav-pill">← All Tools</a>
+  </div>
+</nav>
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+  <div class="tool-eyebrow">AL-65 · Education Path &amp; ROI</div>
+  <h1 class="tool-title">MBA Yield<br>Decision Engine</h1>
+  <p class="tool-desc">You hold two or three admission offers. Which do you accept? This engine scores each offer on five weighted criteria — 10-year salary outcome by tier, scholarship money, cost of living, career-pivot access, and network strength — then runs a sensitivity pass showing which school wins under different priority weightings, so you can see exactly which value judgment your decision hinges on.</p>
+  <div class="tool-vintage">Data vintage: tier salary trajectories from 2024 employment reports · metro cost-of-living indices 2025 · network/pivot scores by tier (heuristic, editable assumptions shown). All embedded.</div>
+
+  <div class="card">
+    <div class="card-title">Your Offers <span class="badge">Up to 3</span></div>
+    <div id="offerBlocks">
+      <div class="offer-block">
+        <div class="offer-head">School A</div>
+        <div class="form-grid three">
+          <div class="field"><label>Name</label><input type="text" id="name0" value="School A" maxlength="40" /></div>
+          <div class="field"><label>Tier</label><select id="tier0"><option value="m7">M7</option><option value="t15" selected>T8–15</option><option value="t25">T16–25</option><option value="t50">T26–50</option></select></div>
+          <div class="field"><label>Scholarship ($ total)</label><input type="number" id="schol0" value="40000" min="0" max="300000" step="5000" /></div>
+          <div class="field"><label>Tuition + Fees ($ total)</label><input type="number" id="cost0" value="160000" min="0" max="300000" step="5000" /></div>
+          <div class="field"><label>Location Cost of Living</label><select id="col0"><option value="1.35">Very high (NYC, SF, Boston)</option><option value="1.15" selected>High (Chicago, LA, DC)</option><option value="1.0">Average (Austin, Atlanta…)</option><option value="0.85">Low (Midwest, South)</option></select></div>
+          <div class="field"><label>Career Goal Fit (1–10)</label><input type="number" id="fit0" value="8" min="1" max="10" step="1" /><span class="field-hint">Does this school place well into YOUR target industry/function?</span></div>
+        </div>
+      </div>
+      <div class="offer-block">
+        <div class="offer-head">School B</div>
+        <div class="form-grid three">
+          <div class="field"><label>Name</label><input type="text" id="name1" value="School B" maxlength="40" /></div>
+          <div class="field"><label>Tier</label><select id="tier1"><option value="m7">M7</option><option value="t15">T8–15</option><option value="t25" selected>T16–25</option><option value="t50">T26–50</option></select></div>
+          <div class="field"><label>Scholarship ($ total)</label><input type="number" id="schol1" value="100000" min="0" max="300000" step="5000" /></div>
+          <div class="field"><label>Tuition + Fees ($ total)</label><input type="number" id="cost1" value="140000" min="0" max="300000" step="5000" /></div>
+          <div class="field"><label>Location Cost of Living</label><select id="col1"><option value="1.35">Very high (NYC, SF, Boston)</option><option value="1.15">High (Chicago, LA, DC)</option><option value="1.0" selected>Average (Austin, Atlanta…)</option><option value="0.85">Low (Midwest, South)</option></select></div>
+          <div class="field"><label>Career Goal Fit (1–10)</label><input type="number" id="fit1" value="6" min="1" max="10" step="1" /></div>
+        </div>
+      </div>
+      <div class="offer-block">
+        <div class="offer-head">School C (optional — leave name blank to skip)</div>
+        <div class="form-grid three">
+          <div class="field"><label>Name</label><input type="text" id="name2" value="" maxlength="40" placeholder="Leave blank to skip" /></div>
+          <div class="field"><label>Tier</label><select id="tier2"><option value="m7">M7</option><option value="t15">T8–15</option><option value="t25" selected>T16–25</option><option value="t50">T26–50</option></select></div>
+          <div class="field"><label>Scholarship ($ total)</label><input type="number" id="schol2" value="0" min="0" max="300000" step="5000" /></div>
+          <div class="field"><label>Tuition + Fees ($ total)</label><input type="number" id="cost2" value="150000" min="0" max="300000" step="5000" /></div>
+          <div class="field"><label>Location Cost of Living</label><select id="col2"><option value="1.35">Very high (NYC, SF, Boston)</option><option value="1.15">High (Chicago, LA, DC)</option><option value="1.0" selected>Average (Austin, Atlanta…)</option><option value="0.85">Low (Midwest, South)</option></select></div>
+          <div class="field"><label>Career Goal Fit (1–10)</label><input type="number" id="fit2" value="5" min="1" max="10" step="1" /></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Your Priorities <span class="badge">Weights must total 100</span></div>
+    <div class="form-grid three">
+      <div class="field"><label for="wSalary">10-Yr Salary Outcome (%)</label><input type="number" id="wSalary" value="35" min="0" max="100" step="5" /></div>
+      <div class="field"><label for="wMoney">Net Cost / Scholarship (%)</label><input type="number" id="wMoney" value="25" min="0" max="100" step="5" /></div>
+      <div class="field"><label for="wFit">Career Goal Fit (%)</label><input type="number" id="wFit" value="20" min="0" max="100" step="5" /></div>
+      <div class="field"><label for="wNetwork">Network Strength (%)</label><input type="number" id="wNetwork" value="15" min="0" max="100" step="5" /></div>
+      <div class="field"><label for="wCol">Cost of Living (%)</label><input type="number" id="wCol" value="5" min="0" max="100" step="5" /></div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Rank My Offers</button>
+
+  <div class="results-section" id="resultsSection">
+    <div class="verdict-banner">
+      <div class="verdict-icon">🏆</div>
+      <div class="verdict-text" id="verdictText"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Offer Ranking</div>
+      <div class="compare-grid" id="compareGrid"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Criterion Scores (0–100, weighted)</div>
+      <table class="score-table" id="scoreTable"></table>
+    </div>
+    <div class="card">
+      <div class="card-title">Sensitivity — Who Wins Under Different Priorities?</div>
+      <table class="score-table" id="sensTable"></table>
+    </div>
+    <div class="card">
+      <div class="card-title">Analysis</div>
+      <div class="insight-box" id="insightBox"></div>
+    </div>
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+    </div>
+  </div>
+
+  <div class="mcp-section">
+    <button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">▸ Developer / Agent Integration (manifest.json)</button>
+    <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+      <pre class="mcp-pre" id="mcpManifestPre"></pre>
+    </div>
+  </div>
+
+  <footer class="tool-footer">
+    <p>AL-65 · ApexLogics.org · <a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co</a> · <a href="https://apexadvisory.site" target="_blank" rel="noopener">ApexAdvisory.site</a> · CC-BY-4.0</p>
+  </footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let _inputs = null, _results = null;
+function fmt(n) { return (n < 0 ? '−$' : '$') + Math.abs(Math.round(n)).toLocaleString('en-US'); }
+
+// Tier economics: 10-yr cumulative comp (nominal, 2024 employment report basis) + network score
+const TIER_DATA = {
+  m7:  { name:'M7',     salary10: 2450000, network: 95, pivot: 95 },
+  t15: { name:'T8–15',  salary10: 2100000, network: 85, pivot: 85 },
+  t25: { name:'T16–25', salary10: 1800000, network: 70, pivot: 70 },
+  t50: { name:'T26–50', salary10: 1500000, network: 55, pivot: 55 },
+};
+
+function readOffers() {
+  const offers = [];
+  for (let k = 0; k < 3; k++) {
+    const name = $('name'+k).value.trim();
+    if (k === 2 && !name) continue;
+    offers.push({
+      name: name || ('School ' + 'ABC'[k]),
+      tier: $('tier'+k).value,
+      schol: parseInt($('schol'+k).value) || 0,
+      cost: parseInt($('cost'+k).value) || 0,
+      col: parseFloat($('col'+k).value) || 1,
+      fit: Math.min(10, Math.max(1, parseInt($('fit'+k).value) || 5)),
+    });
+  }
+  return offers;
+}
+
+function scoreOffers(offers, w) {
+  // Normalize each criterion to 0–100 across the offer set
+  const netCosts = offers.map(o => o.cost - o.schol);
+  const minNet = Math.min(...netCosts), maxNet = Math.max(...netCosts);
+  const sal = offers.map(o => TIER_DATA[o.tier].salary10);
+  const minSal = Math.min(...sal), maxSal = Math.max(...sal);
+  return offers.map((o, idx) => {
+    const sSalary = maxSal === minSal ? 100 : ((sal[idx] - minSal) / (maxSal - minSal)) * 100;
+    const sMoney = maxNet === minNet ? 100 : ((maxNet - netCosts[idx]) / (maxNet - minNet)) * 100;
+    const sFit = o.fit * 10;
+    const sNetwork = TIER_DATA[o.tier].network;
+    const sCol = ((1.35 - o.col) / 0.5) * 100;
+    const total = (w.salary*sSalary + w.money*sMoney + w.fit*sFit + w.network*sNetwork + w.col*sCol) / 100;
+    return { ...o, netCost: netCosts[idx], salary10: sal[idx], scores: { salary:sSalary, money:sMoney, fit:sFit, network:sNetwork, col:sCol }, total };
+  }).sort((a,b) => b.total - a.total);
+}
+
+function calculate() {
+  const w = {
+    salary: parseInt($('wSalary').value) || 0,
+    money: parseInt($('wMoney').value) || 0,
+    fit: parseInt($('wFit').value) || 0,
+    network: parseInt($('wNetwork').value) || 0,
+    col: parseInt($('wCol').value) || 0,
+  };
+  const wSum = w.salary + w.money + w.fit + w.network + w.col;
+  if (wSum !== 100) { alert('Weights must total 100 (currently ' + wSum + ').'); return; }
+  const offers = readOffers();
+  if (offers.length < 2) { alert('Enter at least two offers.'); return; }
+  const ranked = scoreOffers(offers, w);
+  // Sensitivity: alternative weight profiles
+  const profiles = [
+    { name:'Salary-maximizer', w:{ salary:60, money:10, fit:10, network:15, col:5 } },
+    { name:'Debt-minimizer', w:{ salary:15, money:55, fit:10, network:10, col:10 } },
+    { name:'Career-pivoter', w:{ salary:15, money:10, fit:50, network:20, col:5 } },
+    { name:'Network-builder', w:{ salary:20, money:10, fit:15, network:50, col:5 } },
+    { name:'Your weights', w },
+  ];
+  const sens = profiles.map(p => ({ profile: p.name, winner: scoreOffers(offers, p.w)[0].name }));
+  _inputs = { offers, weights: w };
+  _results = { ranked, sens };
+  renderResults();
+  $('resultsSection').classList.add('visible');
+}
+
+function renderResults() {
+  const { ranked, sens } = _results;
+  const w = _inputs.weights;
+  const best = ranked[0], second = ranked[1];
+  const margin = best.total - second.total;
+  const unanimous = _results.sens.every(s => s.winner === best.name);
+
+  $('verdictText').innerHTML = `<strong>Accept ${best.name} — weighted score ${best.total.toFixed(1)} vs. ${second.total.toFixed(1)} for ${second.name}</strong>` +
+    (unanimous ? 'This result is robust: it wins under every priority profile tested.' :
+      margin < 5 ? `Thin margin (${margin.toFixed(1)} pts) — your decision hinges on the weights. Check the sensitivity table.` :
+      `Margin of ${margin.toFixed(1)} pts under your weights, but the winner flips under some priority profiles — see sensitivity.`);
+
+  $('compareGrid').innerHTML = ranked.map((o, idx) => `
+    <div class="compare-card ${idx===0?'winner':'ok'}">
+      <div class="compare-title" style="color:${idx===0?'var(--green)':'var(--blue)'}">${o.name}${idx===0?' <span class="winner-badge">#1</span>':''}</div>
+      <div class="compare-score" style="color:${idx===0?'var(--green)':'var(--text)'}">${o.total.toFixed(1)}</div>
+      <div style="font-size:0.68rem;color:var(--text-dim);margin-bottom:8px">Weighted score / 100</div>
+      <div class="compare-row"><span>Tier</span><span>${TIER_DATA[o.tier].name}</span></div>
+      <div class="compare-row"><span>Net cost</span><span>${fmt(o.netCost)}</span></div>
+      <div class="compare-row"><span>10-yr comp (tier avg)</span><span>${fmt(o.salary10)}</span></div>
+      <div class="compare-row"><span>Goal fit</span><span>${o.fit}/10</span></div>
+      <div class="compare-row"><span>CoL index</span><span>×${o.col.toFixed(2)}</span></div>
+    </div>`).join('');
+
+  $('scoreTable').innerHTML = `<thead><tr><th>School</th><th>Salary (${w.salary}%)</th><th>Money (${w.money}%)</th><th>Fit (${w.fit}%)</th><th>Network (${w.network}%)</th><th>CoL (${w.col}%)</th><th>Total</th></tr></thead><tbody>` +
+    ranked.map((o, idx) => `<tr class="${idx===0?'highlight':''}"><td>${o.name}</td><td>${o.scores.salary.toFixed(0)}</td><td>${o.scores.money.toFixed(0)}</td><td>${o.scores.fit.toFixed(0)}</td><td>${o.scores.network.toFixed(0)}</td><td>${o.scores.col.toFixed(0)}</td><td><strong>${o.total.toFixed(1)}</strong></td></tr>`).join('') + '</tbody>';
+
+  $('sensTable').innerHTML = `<thead><tr><th>Priority Profile</th><th>Winner</th></tr></thead><tbody>` +
+    sens.map(s => `<tr class="${s.profile==='Your weights'?'highlight':''}"><td>${s.profile}</td><td style="color:${s.winner===best.name?'var(--green)':'var(--amber)'}">${s.winner}</td></tr>`).join('') + '</tbody>';
+
+  const flips = sens.filter(s => s.winner !== best.name);
+  $('insightBox').innerHTML = `<strong>How to read this:</strong> each criterion is normalized 0–100 across your offer set, then weighted by your priorities. Salary outcomes use tier-average 10-year cumulative compensation — your individual outcome depends far more on function and industry than these averages capture. ` +
+    (flips.length ? `<strong>Decision hinge:</strong> ${flips.map(f => `under "${f.profile}" the winner flips to ${f.winner}`).join('; ')}. If one of those profiles describes you better than your stated weights, trust the profile. ` : `<strong>Robust result:</strong> ${best.name} wins under every tested weighting — this is as close to a clear answer as a model can give. `) +
+    `<strong>What the model can't see:</strong> partner/family constraints, specific employer relationships (one company recruiting only at one of your schools can outweigh everything), visa sponsorship pipelines for international students, and culture fit from your visits. Use the score as a structured prior, not a verdict. <strong>Before accepting:</strong> run the lower-ranked school's scholarship through the negotiation tab of the MBA Scholarship Strategy Engine (#56) — a successful counter at your top choice changes this ranking.`;
+}
+
+function exportMarkdown() {
+  if (!_results) return;
+  const d = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  const lines = [
+    '# MBA Yield Decision Report', `\n_Generated ${d} · AL-65 · apexlogics.org_\n`,
+    `## Recommendation: ${_results.ranked[0].name} (${_results.ranked[0].total.toFixed(1)}/100)`,
+    '', '| School | Tier | Net Cost | Weighted Score |', '|---|---|---|---|',
+    ..._results.ranked.map(o => `| ${o.name} | ${TIER_DATA[o.tier].name} | ${fmt(o.netCost)} | ${o.total.toFixed(1)} |`),
+    '', '## Sensitivity', '| Profile | Winner |', '|---|---|',
+    ..._results.sens.map(s => `| ${s.profile} | ${s.winner} |`),
+  ];
+  const blob = new Blob([lines.join('\n')], { type:'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'mba-yield-decision.md'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function exportAP2() {
+  if (!_results) { alert('Run the analysis first.'); return; }
+  const validMandateTypes = [
+    'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+    'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+    'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+    'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+    'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+    'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+    'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+    'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+    'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+    'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+    'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+    'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+    'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+    'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
+    'english_test_choice_record','lsat_tier_record','mba_scholarship_record',
+    'consulting_roi_record','mba_yield_record','dual_degree_record',
+    'online_mba_record','mba_waitlist_record','deferred_mba_record'
+  ];
+  const payload = {
+    ap2_version:'2.0', mandate_type:'mba_yield_record',
+    source_tool:'AL-65',
+    source_url:'https://apexlogics.org/tools/58-mba-yield-decision-engine/',
+    generated_at: new Date().toISOString(), schema_version:'1.0',
+    inputs: {
+      offers: _inputs.offers.map(o => ({ name:o.name, tier:o.tier, scholarship:o.schol, tuition:o.cost, col_index:o.col, goal_fit:o.fit })),
+      weights: _inputs.weights
+    },
+    results: {
+      recommendation: _results.ranked[0].name,
+      ranking: _results.ranked.map(o => ({ name:o.name, weighted_score:+o.total.toFixed(1), net_cost:o.netCost })),
+      sensitivity: _results.sens
+    },
+    downstream_handoff_candidates: ['AL-63','AL-26','AL-13','AL-29'],
+    advisory_cta: { text:'Get offer-selection guidance', url:'https://apexadvisory.site' }
+  };
+  if (!validMandateTypes.includes(payload.mandate_type)) { alert('AP2 validation failed: ' + payload.mandate_type); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'mba-yield-decision-ap2.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function toggleMCP() {
+  const panel = $('mcpPanel'), btn = $('mcpToggleBtn');
+  const open = panel.classList.toggle('open');
+  btn.textContent = (open ? '▾ ' : '▸ ') + 'Developer / Agent Integration (manifest.json)';
+  btn.setAttribute('aria-expanded', open);
+  if (open && !$('mcpManifestPre').textContent) {
+    $('mcpManifestPre').textContent = JSON.stringify({
+      al_id:'AL-65', version:'1.0.0', title:'MBA Yield Decision Engine',
+      slug:'58-mba-yield-decision-engine',
+      description:'Weighted multi-criteria decision engine for choosing among 2–3 MBA admission offers: tier salary outcomes, net cost, career goal fit, network strength, cost of living — with sensitivity analysis across five priority profiles.',
+      category:'education_path_roi', journeys:['education_path'],
+      personas:['student','working_professional'],
+      tags:['mba','yield','offer-selection','multi-criteria','decision-engine','sensitivity'],
+      status:'shipped', maintenance:'low',
+      regulatory_citations:['2024 MBA employment report salary data by tier','Metro cost-of-living indices 2025'],
+      ap2_export:true, ap2_mandate_types:['mba_yield_record'],
+      downstream_handoff_candidates:['AL-63','AL-26','AL-13','AL-29'],
+      sister_suite:'https://ainumbers.co', consulting_site:'https://apexadvisory.site', license:'CC-BY-4.0'
+    }, null, 2);
+  }
+}
+
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+}
+(function() {
+  const s = sessionStorage.getItem('apex_lang');
+  setLang(s || ({en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'})[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+</script>
+</body>
+</html>
