@@ -148,7 +148,7 @@
     </a>
     <div class="nav-spacer"></div>
     <div class="nav-right">
-      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+      <a href="../../index.html" class="nav-pill accent" data-i18n="all_tools">&#x2190; All Tools</a>
       <div class="lang-inner" style="justify-content:flex-end;">
         <button class="lang-btn" onclick="setLang('en')">EN</button>
         <button class="lang-btn" onclick="setLang('es')">ES</button>
@@ -167,7 +167,7 @@
   <p class="tool-desc">You have full responsibility for a course — not as a TA, not as a guest lecturer, but as the instructor of record. This toolkit generates your syllabus framework, first-day plan, and grading rubric starter from your course inputs. Anchored by the experience of teaching KINE 199 at Texas A&amp;M for three semesters as instructor of record — not TA.</p>
   <div class="tool-vintage">📊 Syllabus design: Grunert O'Brien et al. (2008), The Course Syllabus; Fink (2003), Creating Significant Learning Experiences</div>
 
-  <div class="pii-banner"><div class="pii-inner"><span>🔒</span> All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div></div>
+  <div class="pii-banner"><div class="pii-inner"><span>🔒</span><span data-i18n="pii">All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span></div></div>
 
 
   <div class="tab-bar">
@@ -391,12 +391,44 @@ const POLICY_TEMPLATES = [
 ];
 
 // ── Lang ───────────────────────────────────────────────────────────────────
-function setLang(code) {
-  sessionStorage.setItem('apex_lang', code);
-  document.documentElement.lang = code;
-  document.documentElement.dir = code === 'ar' ? 'rtl' : 'ltr';
+const I18N_CHROME = {
+  en: {
+    pii: 'All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.',
+    all_tools: '← All Tools',
+  },
+  es: {
+    pii: 'Todas las entradas se procesan localmente en su navegador. Nada se transmite, almacena ni registra. Las entradas desaparecen al cerrar la pestaña.',
+    all_tools: '← Todas las herramientas',
+  },
+  fr: {
+    pii: 'Toutes les données sont traitées localement dans votre navigateur. Rien n’est transmis, stocké ni enregistré. Les données disparaissent à la fermeture de l’onglet.',
+    all_tools: '← Tous les outils',
+  },
+  ar: {
+    pii: 'تتم معالجة جميع المدخلات محليًا في متصفحك. لا يُنقل أي شيء أو يُخزَّن أو يُسجَّل. تختفي المدخلات عند إغلاق علامة التبويب.',
+    all_tools: '← كل الأدوات',
+  },
+  pt: {
+    pii: 'Todas as entradas são processadas localmente no seu navegador. Nada é transmitido, armazenado ou registado. As entradas desaparecem ao fechar este separador.',
+    all_tools: '← Todas as ferramentas',
+  },
+  zh: {
+    pii: '所有输入均在您的浏览器中本地处理。不会传输、存储或记录任何内容。关闭标签页后输入内容即消失。',
+    all_tools: '← 所有工具',
+  },
+};
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   document.querySelectorAll('.lang-btn').forEach(b => {
-    b.classList.toggle('active', b.textContent.toLowerCase() === code || b.textContent === code);
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '中文' && lang === 'zh'));
+  });
+  const s = Object.assign({}, I18N_CHROME.en, I18N_CHROME[lang] || {});
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (s[k] !== undefined) el.textContent = s[k];
   });
 }
 (function() { setLang(sessionStorage.getItem('apex_lang') || 'en'); })();
