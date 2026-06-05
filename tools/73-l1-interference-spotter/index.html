@@ -54,6 +54,10 @@
     .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
     .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
     .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .l1-selector { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+    .l1-btn { background:var(--surface); border:1px solid var(--border); color:var(--text-dim); font-family:'JetBrains Mono',monospace; font-size:0.72rem; padding:8px 18px; border-radius:6px; cursor:pointer; transition:all 0.15s; }
+    .l1-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .l1-btn.active { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); font-weight:600; }
     .cat-card { border-radius: 10px; border: 1px solid var(--border); margin-bottom: 12px; overflow: hidden; }
     .cat-header { background: var(--surface2); padding: 14px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
     .cat-header:hover { background: rgba(45,212,191,0.05); }
@@ -151,12 +155,17 @@
 
 <div class="tool-wrapper">
   <div class="tool-eyebrow">AL-80 · Selected Studies — ESL/TEFL</div>
-  <h1 class="tool-title">L1-Interference Spotter<br><span style="font-size:1.4rem;color:var(--text-muted)">(Mandarin → English)</span></h1>
-  <p class="tool-desc">Teaching English to Mandarin speakers means working with a specific, well-documented set of transfer errors — not random mistakes but systematic patterns that follow directly from how Mandarin works. This reference and self-assessment tool covers the major interference categories: articles, tense vs. aspect, topic-comment word order, classifiers, phonological transfer, and copula omission. For teachers and learners.</p>
-  <div class="tool-vintage">📊 L1 interference: Swan &amp; Smith, Learner English 2nd ed. (2001); Li &amp; Thompson, Mandarin Chinese (1981); contrastive analysis research</div>
+  <h1 class="tool-title">L1-Interference Spotter<br><span style="font-size:1.4rem;color:var(--text-muted)" id="l1SpotterSubtitle">Mandarin → English</span></h1>
+  <p class="tool-desc" id="l1Desc">L1 transfer errors are not random — they are systematic patterns that follow directly from how the learner's first language works. Select a source language to explore documented interference categories, triage a student error, and test your knowledge with a quick quiz. For ESL/EFL teachers and teacher-trainers.</p>
+  <div class="tool-vintage">📊 Swan &amp; Smith, Learner English 2nd ed. (2001); Li &amp; Thompson, Mandarin Chinese (1981); contrastive analysis research; Council of Europe CEFR (2020)</div>
 
   <div class="pii-banner"><div class="pii-inner"><span>🔒</span><span data-i18n="pii">All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span></div></div>
 
+  <div class="l1-selector">
+    <button class="l1-btn active" id="l1BtnMandarin" onclick="switchL1('mandarin')">Mandarin → EN</button>
+    <button class="l1-btn" id="l1BtnSpanish" onclick="switchL1('spanish')">Spanish → EN</button>
+    <button class="l1-btn" id="l1BtnArabic" onclick="switchL1('arabic')">Arabic → EN</button>
+  </div>
 
   <div class="tab-bar">
     <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">Reference</button>
@@ -167,8 +176,8 @@
   <!-- TAB 1: REFERENCE -->
   <div class="tab-pane active" id="tabPane1">
     <div class="card" style="margin-bottom:20px;">
-      <div class="card-title">8 Interference Categories — Mandarin → English</div>
-      <p style="font-size:0.85rem;color:var(--text-muted);line-height:1.7;">Click any category to expand the full explanation, error examples, and teaching tip. Categories are ordered by frequency of occurrence in Mandarin-speaker learner corpora.</p>
+      <div class="card-title" id="refCardTitle">8 Interference Categories — Mandarin → English</div>
+      <p style="font-size:0.85rem;color:var(--text-muted);line-height:1.7;" id="refCardDesc">Click any category to expand the full explanation, error examples, and teaching tip. Categories are ordered by frequency of occurrence in learner corpora.</p>
     </div>
 
     <div id="categoryCards"></div>
@@ -226,7 +235,7 @@
   <!-- TAB 3: QUICK QUIZ -->
   <div class="tab-pane" id="tabPane3">
     <div class="card" style="margin-bottom:16px;">
-      <div class="card-title">Quick Quiz — Mandarin Transfer Patterns <span class="badge">8 Questions</span></div>
+      <div class="card-title" id="quizCardTitle">Quick Quiz — Mandarin Transfer Patterns <span class="badge" id="quizBadge">8 Questions</span></div>
       <p style="font-size:0.85rem;color:var(--text-muted);">Test your knowledge of Mandarin–English interference patterns. Select the best answer for each question.</p>
     </div>
     <div id="quizContainer"></div>
@@ -306,8 +315,40 @@ function switchTab(n) {
   }
 }
 
+// ── L1 state ─────────────────────────────────────────────────────────────
+var currentL1 = 'mandarin';
+
+function switchL1(lang) {
+  currentL1 = lang;
+  CATEGORIES = LANG_CATEGORIES[lang];
+  QUIZ = LANG_QUIZ[lang];
+  // Update selector buttons
+  ['mandarin','spanish','arabic'].forEach(function(l) {
+    var btn = document.getElementById('l1Btn' + l.charAt(0).toUpperCase() + l.slice(1));
+    if (btn) btn.classList.toggle('active', l === lang);
+  });
+  // Update dynamic labels
+  var labels = { mandarin: 'Mandarin → English', spanish: 'Spanish → English', arabic: 'Arabic → English' };
+  document.getElementById('l1SpotterSubtitle').textContent = labels[lang];
+  document.getElementById('refCardTitle').textContent = '8 Interference Categories — ' + labels[lang];
+  document.getElementById('quizCardTitle').innerHTML = 'Quick Quiz — ' + labels[lang].split(' → ')[0] + ' Transfer Patterns <span class="badge" id="quizBadge">8 Questions</span>';
+  // Update triage category select
+  var triageSelect = document.getElementById('triageCat');
+  if (triageSelect) {
+    var opts = TRIAGE_OPTS[lang];
+    triageSelect.innerHTML = '<option value="auto">Auto-detect</option>' +
+      opts.map(function(o){ return '<option value="' + o.id + '">' + o.label + '</option>'; }).join('');
+  }
+  renderCats();
+  renderQuiz();
+  // Reset triage result
+  var tr = document.getElementById('triageResult');
+  if (tr) tr.classList.remove('visible');
+  triageState = { category: null, error: '' };
+}
+
 // ── Category data ─────────────────────────────────────────────────────────
-var CATEGORIES = [
+var LANG_CATEGORIES = { mandarin: [
   {
     id: 'articles',
     title: 'Articles (a / an / the / zero)',
@@ -380,7 +421,181 @@ var CATEGORIES = [
     correction: '"I don\'t understand." "She doesn\'t like spicy food." "We didn\'t go yesterday." "He hasn\'t finished his homework." Do-support (do/does/did) must be inserted in simple tense negation. With modal verbs and "be," negation is preverbal without do-support: "She can\'t speak French." "He isn\'t ready."',
     tip: 'Teach do-support as a separate grammatical category, not just a rule attached to negation. Present positive and negative forms together in paradigm tables. The most common error is in simple present/past — focus there first before addressing modal and perfect constructions.'
   }
-];
+], // end mandarin
+
+spanish: [
+  {
+    id: 'falsecognates_es',
+    title: 'False Cognates (False Friends)',
+    subtitle: "'Embarazada' ≠ embarrassed — 500+ misleading cognate pairs",
+    why: 'Spanish and English share roughly 40% of vocabulary through Latin and French borrowings, which creates confident but wrong word choices. Learners apply cognate strategy correctly most of the time, then blindly extend it to pairs where meaning has diverged. The errors are particularly hard to catch because the student feels certain.',
+    errors: '"I am very embarrassed." (meaning pregnant)\n"The librería is closed." (meaning bookstore)\n"I am very sensible." (meaning sensitive)\n"He is actually the president." (meaning currently)\n"She is constipated." (meaning she has a cold)',
+    correction: 'Key pairs: embarrassed (avergonzado) ≠ embarazada (pregnant) · library ≠ librería (bookstore) · sensible ≠ sensible/sensitivo (sensitive) · actual/actually (truly) ≠ actual/actualmente (current/currently) · constipated ≠ constipado (having a cold) · realize ≠ realizar (to carry out)',
+    tip: 'Build a personal false-cognate watchlist. The most dangerous false cognates are those the student feels confident about — that confidence is the signal to double-check. Have students collect real instances from native-speaker English and flag any word that looks Spanish.'
+  },
+  {
+    id: 'estar_es',
+    title: 'Ser/Estar → "Be" Ambiguity',
+    subtitle: "'I am boring' vs. 'I am bored' — one English verb covers two Spanish ones",
+    why: 'Spanish has two "to be" verbs: ser (permanent/inherent characteristics) and estar (temporary states, feelings, locations). Some adjectives change meaning depending on which verb they follow: ser aburrido = boring, estar aburrido = bored. English uses one verb for all cases. Learners must re-code these adjective categories, and they frequently select the wrong English adjective.',
+    errors: '"I am boring in this class." (= I am bored)\n"She is very nervous — she is always nervous." (conflating both uses)\n"The food is bad today." (confused with evil/rotten)\n"He is listo." (carrying over Spanish word for clever)',
+    correction: 'Adjective pairs to teach explicitly: bored (estar aburrido) vs. boring (ser aburrido) · ready (estar listo) vs. clever (ser listo) · sick today (estar malo) vs. evil/bad (ser malo). The English form does not change; only context resolves the meaning.',
+    tip: 'Teach "I am bored/boring" as a minimal pair from day one — it is the most frequent ser/estar error. Use picture prompts: student yawning = bored; a dull movie description = boring. The distinction requires re-coding adjective categories, not just memorizing vocabulary.'
+  },
+  {
+    id: 'negation_es',
+    title: 'Double Negation (Negative Concord)',
+    subtitle: "'I don't have nothing' — Spanish requires negation on every negative element",
+    why: "Spanish uses negative concord: when a sentence is negated, every indefinite element must also take a negative form. 'No sé nada' (Not know nothing) is grammatical Spanish. Learners transfer this agreement system to English, producing double negatives that are non-standard in formal written English.",
+    errors: '"I don\'t have nothing to do.\nShe didn\'t go nowhere.\nHe doesn\'t know nobody here.\nI haven\'t done nothing wrong."',
+    correction: '"I don\'t have anything to do." / "She didn\'t go anywhere." / "He doesn\'t know anybody here." English standard formal register uses negative + positive indefinite: don\'t + anything, didn\'t + anywhere, doesn\'t + anybody.',
+    tip: 'Double negation is grammatical in AAVE and many regional dialects, so frame this as a register issue, not simply an error. Learners need to know it will be understood but marked as non-standard in formal writing. The rule: replace nada/nadie/ninguno with anything/anyone/any.'
+  },
+  {
+    id: 'prepositions_es',
+    title: 'Preposition Substitution',
+    subtitle: "'Married with', 'depend of' — Spanish prepositions rarely map 1:1 to English",
+    why: "Preposition systems across languages rarely correspond one-to-one. Spanish 'con' sometimes maps to English 'with' (coffee with milk) and sometimes to 'to' (married to). 'De' covers 'of', 'from', 'about', and more. Learners apply the Spanish preposition directly, producing collocational errors that are hard to catch because the sentence is nearly correct.",
+    errors: '"She is married with an engineer.\nThis depends of many factors.\nHe arrived to the airport late.\nI dream with you every night.\nI am agree with you."',
+    correction: '"Married to" · "Depend on" · "Arrive at/in" (not to) · "Dream of/about" · "I agree" (agree is a verb, not an adjective — "I am agree" treats it as an adjective on the Spanish model).',
+    tip: 'Preposition errors are collocation problems, not grammatical errors. They are best learned through exposure to fixed phrases rather than rules. Build a verb + preposition collocation list: depend on, arrive at, dream of, result in, consist of, belong to, interested in.'
+  },
+  {
+    id: 'perfect_es',
+    title: 'Present Perfect vs. Simple Past',
+    subtitle: "Spanish present perfect is used with specific time references — English forbids this",
+    why: "In Peninsular Spanish, the present perfect (pretérito perfecto) is used for events in a recent time frame, including today or this week, even with specific time references. Learners overextend the English present perfect with specific past-time references like 'yesterday' or 'last night' — which English grammar forbids.",
+    errors: '"I have eaten yesterday.\nShe has called me last night.\nWe have visited France two years ago.\nHe has arrived at 3pm."',
+    correction: '"I ate yesterday." / "She called me last night." / "We visited France two years ago." The English present perfect cannot co-occur with specific past-time expressions (yesterday, last night, two years ago, in 2020, at 3pm). Those contexts always require simple past.',
+    tip: 'Focus on the time-reference constraint rather than the abstract "present relevance" rule. The rule is simple: specific past time marker (yesterday, last night, two years ago, in 2020) → always simple past. No exceptions. This single constraint fixes most errors.'
+  },
+  {
+    id: 'indirect_es',
+    title: 'Indirect Question Word Order',
+    subtitle: "'I asked where was he' — Spanish doesn't invert in embedded questions",
+    why: "In Spanish, the word order in embedded (indirect) questions is the same as in direct questions. English requires non-inverted (statement) word order in indirect questions: 'Do you know where he is?' (not 'where is he'). Learners transfer Spanish syntax and either apply inversion where it doesn't belong or omit the auxiliary.",
+    errors: '"I don\'t know where is the station.\nCould you tell me what time is it?\nShe asked me where did I live.\nHe wondered what would happen."',
+    correction: '"I don\'t know where the station is." / "Could you tell me what time it is?" / "She asked me where I lived." In embedded questions, word order reverts to statement order — subject before verb. Do-support is dropped.',
+    tip: 'Frame this as "question inside a statement — it becomes a statement again." Minimal pairs: "Where is he?" (direct) vs. "I don\'t know where he is." (indirect). This error is most common in writing and formal speech.'
+  },
+  {
+    id: 'progressive_es',
+    title: 'Progressive Aspect Overextension',
+    subtitle: "'I am knowing the answer' — stative verbs cannot take progressive in English",
+    why: "English distinguishes dynamic verbs (run, eat, write — can take progressive) from stative verbs (know, believe, want, understand, see, hear, own — usually cannot). Spanish has this distinction too, but the boundary differs, and learners transfer L1 behavior to English stative verbs, using progressive where English prohibits it.",
+    errors: '"I am knowing the answer.\nShe is wanting to leave.\nWe are understanding the problem now.\nHe is having a car.\nI am seeing what you mean."',
+    correction: '"I know the answer." / "She wants to leave." / "We understand the problem." / "He has a car." Stative verbs (know, want, understand, have [possession], see [perceive], hear, believe, prefer, mean, belong) rarely take progressive. Exceptions: "I\'m having a great time" (have = experience); "I\'m seeing a doctor" (see = meet).',
+    tip: 'Teach stative verbs as a named category with a core list. The test: "Is this a state (existing condition) or an activity (ongoing action)?" States don\'t take progressive. Focus first on: know, want, understand, have (possession) — these account for the majority of errors.'
+  },
+  {
+    id: 'tags_es',
+    title: 'Question Tags',
+    subtitle: "'You are coming, true?' — Spanish uses invariant ¿verdad? where English uses complex tags",
+    why: "Spanish uses invariant question tags: '¿verdad?' or '¿no?' at the end of a statement. English question tags are complex: they require an auxiliary verb matching the main clause, polarity reversal, and a pronoun matching the subject ('She\'s coming, isn\'t she?'). Learners simplify by using 'right?', 'true?', or 'no?' as invariant tags.",
+    errors: '"She is coming, true?\nYou like coffee, no?\nWe should go, isn\'t it?\nThey won the game, no?"',
+    correction: '"She\'s coming, isn\'t she?" / "You like coffee, don\'t you?" / "We should go, shouldn\'t we?" / "They won, didn\'t they?" English tags require: (1) same auxiliary as main clause, (2) reversed polarity, (3) subject pronoun. "Right?" is acceptable informal speech.',
+    tip: 'Question tags are late acquisition — don\'t prioritize them for beginners. The pattern for intermediate/advanced learners: positive clause → negative tag; negative clause → positive tag. The auxiliary must match: is → isn\'t; did → didn\'t; will → won\'t; can → can\'t.'
+  }
+], // end spanish
+
+arabic: [
+  {
+    id: 'article_ar',
+    title: 'Definite Article Overuse',
+    subtitle: "Arabic uses 'al-' before generic nouns — 'The life is beautiful' is correct Arabic",
+    why: "Arabic uses the definite article 'al-' (ال) before nouns in generic statements, a pattern English doesn't allow. In Arabic: 'al-ḥayāt jamīla' (The-life beautiful) = 'Life is beautiful' — the article is obligatory with generics. Learners transfer this to English, adding 'the' before abstract and mass nouns that English uses with zero article.",
+    errors: '"The life is beautiful.\nThe friendship is important.\nThe knowledge is power.\nI love the nature.\nThe success requires hard work."',
+    correction: '"Life is beautiful." / "Friendship is important." / "Knowledge is power." / "I love nature." Generic mass nouns and abstract nouns in English take zero article: life, knowledge, success, friendship, education, information, nature (as a general concept).',
+    tip: 'This error is surface-level and quick to fix once students know the rule. Focus on abstract nouns (life, love, truth, justice) and mass nouns (water, information, knowledge) as zero-article generics. The test: is this noun referring to all instances of X in general? → zero article.'
+  },
+  {
+    id: 'copula_ar',
+    title: 'Copula Omission',
+    subtitle: "Arabic has no present-tense copula — 'He doctor' is grammatical in Arabic",
+    why: "Standard Arabic does not use a present-tense copula: 'Huwa ṭabīb' = 'He doctor' is grammatical. The verb 'to be' exists in Arabic but is used primarily in past and future tenses. Learners omit 'be' in English present-tense sentences because L1 grammar licenses this zero-copula pattern.",
+    errors: '"He doctor at the hospital.\nShe very tired today.\nThe problem serious.\nThey students at the university.\nI happy to meet you."',
+    correction: '"He is a doctor at the hospital." / "She is very tired today." / "The problem is serious." English requires the copula in all present-tense sentences. Unlike Arabic, \'be\' cannot be dropped.',
+    tip: 'Quick to fix with pattern practice: identify the subject, then drill "subject + is/are + predicate" until automatic. Note this is similar to the Mandarin copula error but the source is different — Arabic zero copula in present tense vs. Mandarin adjective-specific omission.'
+  },
+  {
+    id: 'prodrop_ar',
+    title: 'Subject Omission (Pro-Drop)',
+    subtitle: "Arabic verb morphology encodes the subject — pronouns are optional",
+    why: "Arabic is a pro-drop language: the subject pronoun can be omitted because verb morphology marks person, number, and gender. 'Yadrusu fī al-jāmiʿa' (studies-3m.sg at the university) = 'He studies at the university' with no pronoun needed. English requires an overt subject in all main clauses.",
+    errors: '"Studies at the university.\nIs very difficult to understand.\nLikes football very much.\nWent to the store and bought bread.\nIs a good idea to start early."',
+    correction: '"He/she studies at the university." / "It is very difficult to understand." English requires an overt subject. Expletive subjects "it" and "there" must be included: "It is raining." "There is a problem."',
+    tip: 'Frame this as a "subject slot" rule: every English sentence has a subject slot that must be filled. Pro-drop errors are most common in narratives (he went... bought... — subject dropped after the first). Teach students to add the pronoun at each new clause boundary.'
+  },
+  {
+    id: 'number_ar',
+    title: 'Number Agreement',
+    subtitle: "Arabic numerals above 10 take singular nouns — 'ten book' follows Arabic grammar",
+    why: "Arabic has a complex number agreement system: numerals above 10 take singular nouns — 'ʿashara kutub' = 'ten book.' English always uses plural after any numeral above one. Learners transfer the Arabic pattern, especially with higher numbers.",
+    errors: '"Ten book on the shelf.\nSix student came early.\nThey has many friend.\nThese kind of mistake are common.\nA few student missed the class."',
+    correction: '"Ten books on the shelf." / "Six students." / "They have many friends." English requires plural -s after any numeral greater than 1. Subject-verb agreement: "They have," not "they has."',
+    tip: 'The numeral + singular noun error is the most systematic and easiest to address — Arabic grammar explicitly requires singular after numbers above 10. State this explicitly: in English, always plural after numbers greater than 1.'
+  },
+  {
+    id: 'phonological_ar',
+    title: 'Phonological Transfer',
+    subtitle: "No /p/ in Arabic — 'parking' becomes 'barking'; vowel length pairs are difficult",
+    why: "Arabic lacks the phoneme /p/ — it exists only in loanwords. Learners substitute /b/. Additionally, Arabic has long vs. short vowel distinctions but fewer vowel qualities than English. The English short/long vowel pairs (ship/sheep, bit/beat, full/fool) map onto Arabic quantity distinctions imperfectly.",
+    errors: '"Barking lot" (parking lot)\n"Bizza" (pizza)\n"Beace" (peace)\n"Beople" (people)\n"Ship/sheep" confusion\n"Bit/beat" confusion',
+    correction: '/p/ is a bilabial plosive, voiceless — identical place and manner to /b/ but unvoiced. Minimal pairs: park/bark, pay/bay, cap/cab. Long/short vowel pairs: ship/sheep, bit/beat, full/fool, pull/pool.',
+    tip: '/p/-/b/ is purely a voicing distinction. Tactile feedback (feel the throat vibration for /b/, no vibration for /p/) helps. The vowel length issue (ship/sheep) is critical for comprehension — build a minimal pair chart and drill it early.'
+  },
+  {
+    id: 'questions_ar',
+    title: 'Question Formation',
+    subtitle: "Arabic uses question particles (هل) without subject-auxiliary inversion",
+    why: "Arabic yes/no questions are formed with the particle هل (hal) before the statement, with no word order change. WH-questions similarly do not require inversion in many contexts. Like Mandarin speakers, Arabic learners may omit subject-auxiliary inversion in English questions.",
+    errors: '"You are coming tomorrow?\nShe is your teacher?\nWhere you are going?\nWhat this means?\nWhy you are late?"',
+    correction: '"Are you coming tomorrow?" / "Is she your teacher?" / "Where are you going?" / "What does this mean?" Subject-auxiliary inversion is required in English yes/no and WH-questions (except when the WH-word is the subject: "Who came?" — no inversion).',
+    tip: 'Same strategy as for Mandarin speakers: direct vs. indirect question drills. Arabic WH-words map well to English — the difficulty is purely the inversion rule. Emphasize the auxiliary swap: "She IS late" → "IS she late?"'
+  },
+  {
+    id: 'vso_ar',
+    title: 'Verb-Subject Order (VSO Transfer)',
+    subtitle: "Arabic allows VSO — 'Went my friend to the store' is grammatical in Arabic",
+    why: "Classical and Modern Standard Arabic have VSO as a common word order option. English requires Subject-Verb-Object in declarative sentences. Verb-fronting is marked in English and occurs only in questions and formal constructions. In writing, Arabic learners may front the verb.",
+    errors: '"Went my friend to the store.\nSaid the teacher that we should study.\nBecame the problem very complicated.\nArrived the students late."',
+    correction: '"My friend went to the store." / "The teacher said that we should study." English requires subject before verb in declarative sentences. Verb-fronting is restricted to questions, conditionals (Had I known...), and formal inversions after negative adverbials.',
+    tip: 'More common in MSA-influenced formal writing than in conversational learner English. For academic prose, flag verb-initial sentences explicitly — they are rare, marked, and literary in English. Drills: present a VSO sentence, have students reorder to SVO.'
+  },
+  {
+    id: 'connectives_ar',
+    title: 'Connective Overuse / Run-On Sentences',
+    subtitle: "'Wa' (and) chains are stylistically valued in Arabic — they create run-ons in English",
+    why: "Arabic prose makes extensive use of coordinating conjunction 'wa' (و, and) to chain clauses — this is stylistically valued in formal and literary Arabic. English academic writing prefers subordination, varied connectives, and shorter sentences. Arabic learners produce very long 'and...and...and' chains or overuse 'so', 'then', 'after that'.",
+    errors: '"I went to the store and I bought milk and I saw my friend and he told me and I was surprised.\nThe experiment was successful and the results were significant and the hypothesis was supported."',
+    correction: 'Use subordination ("After I went to the store, I saw my friend"), relative clauses, and transitional phrases ("Furthermore," "As a result,"). Academic English prizes syntactic variety and concision.',
+    tip: 'This is a rhetorical/discourse-level issue, not a grammatical error. Teach it as an academic writing convention: English academic prose prizes syntactic variety, while Arabic formal prose prizes elaborated coordination. A "connective audit" in peer editing works well.'
+  }
+] }; // end LANG_CATEGORIES
+
+var CATEGORIES = LANG_CATEGORIES.mandarin;
+
+// ── Triage options per language ───────────────────────────────────────────
+var TRIAGE_OPTS = {
+  mandarin: [
+    {id:'articles',label:'Articles'},{id:'tense',label:'Tense vs. Aspect'},
+    {id:'wordorder',label:'Topic-Comment Word Order'},{id:'copula',label:'Copula Omission'},
+    {id:'classifiers',label:'Measure Words / Classifiers'},{id:'phonological',label:'Phonological Transfer'},
+    {id:'questions',label:'Question Formation'},{id:'negation',label:'Negation'}
+  ],
+  spanish: [
+    {id:'falsecognates_es',label:'False Cognates'},{id:'estar_es',label:'Ser/Estar → Be Ambiguity'},
+    {id:'negation_es',label:'Double Negation'},{id:'prepositions_es',label:'Preposition Substitution'},
+    {id:'perfect_es',label:'Present Perfect vs. Simple Past'},{id:'indirect_es',label:'Indirect Question Word Order'},
+    {id:'progressive_es',label:'Progressive Aspect Overextension'},{id:'tags_es',label:'Question Tags'}
+  ],
+  arabic: [
+    {id:'article_ar',label:'Definite Article Overuse'},{id:'copula_ar',label:'Copula Omission'},
+    {id:'prodrop_ar',label:'Subject Omission (Pro-Drop)'},{id:'number_ar',label:'Number Agreement'},
+    {id:'phonological_ar',label:'Phonological Transfer'},{id:'questions_ar',label:'Question Formation'},
+    {id:'vso_ar',label:'Verb-Subject Order'},{id:'connectives_ar',label:'Connective Overuse'}
+  ]
+};
 
 // ── Render reference cards ────────────────────────────────────────────────
 (function renderCats() {
@@ -390,7 +605,7 @@ var CATEGORIES = [
       + '<div class="cat-header" onclick="toggleCat(' + idx + ')">'
       + '<div><div class="cat-title">' + (idx+1) + '. ' + cat.title + '</div>'
       + '<div class="cat-sub">' + cat.subtitle + '</div></div>'
-      + '<div class="cat-toggle" id="catToggle' + idx + '">▶</div>'
+      + '<div class="cat-toggle" id="catToggle' + idx + '">&#9654;</div>'
       + '</div>'
       + '<div class="cat-body" id="catBody' + idx + '">'
       + '<p class="cat-why">' + cat.why + '</p>'
@@ -410,54 +625,91 @@ function toggleCat(idx) {
   var tog = document.getElementById('catToggle' + idx);
   var isOpen = body.classList.contains('open');
   body.classList.toggle('open', !isOpen);
-  tog.textContent = isOpen ? '▶' : '▼';
+  tog.textContent = isOpen ? '&#9654;' : '&#9660;';
 }
 
 // ── Triage ────────────────────────────────────────────────────────────────
 var triageState = { category: null, error: '' };
 
-function autoDetect(text) {
-  var t = text.toLowerCase();
+function autoDetectMandarin(t) {
   if (/\b(yesterday|last week|last year|ago)\b/.test(t) && !/\b(went|was|were|had|did|came|gave|took|said|told|made)\b/.test(t)) return 'tense';
   if (/\b(i not|she not|he not|we not|they not|you not)\b/.test(t)) return 'negation';
   if (/^(this|that|these|those)\s+\w+,/.test(t)) return 'wordorder';
   if (/\b(she|he|it|they|this|that)\s+(very|quite|so|too|more|most)\s+\w+[^s]\b/.test(t) && !/\b(is|are|was|were)\b/.test(t)) return 'copula';
-  if (/\b(three|two|four|five|many|several)\s+\w+[^s]\b/.test(t)) return 'classifiers';
   if (/\b(informations|advices|furnitures|equipments|luggages|knowledges)\b/.test(t)) return 'classifiers';
-  if (/\b(do you|does he|can she|are they)\b/.test(t) === false && /\?/.test(t)) return 'questions';
-  if (/\b(a|an|the)\b/.test(t) === false && t.length > 20) return 'articles';
-  return 'articles'; // default
+  if (/\?/.test(t) && !/\b(do you|does he|can she|are they|are you|did they)\b/.test(t)) return 'questions';
+  return 'articles';
 }
+function autoDetectSpanish(t) {
+  if (/\bdon't\s+(have|know|see|go)\s+no(thing|where|body|one)\b/.test(t)) return 'negation_es';
+  if (/\bi\s+am\s+(boring|interesting|exciting|tiring|confusing|annoying)\b/.test(t)) return 'estar_es';
+  if (/\bmarried\s+with\b|\bdepend\s+of\b|\barrive\s+to\b|\bdream\s+with\b|\bam\s+agree\b/.test(t)) return 'prepositions_es';
+  if (/\bhave\s+\w+ed?\s+(yesterday|last\s+\w+)\b/.test(t)) return 'perfect_es';
+  if (/\bwhere\s+is\s+\w|\bwhat\s+time\s+is\s+it\b/.test(t) && /\bknow\b|\btell\b|\bask\b/.test(t)) return 'indirect_es';
+  if (/\bam\s+(knowing|wanting|understanding|believing|seeing|having)\b/.test(t)) return 'progressive_es';
+  if (/\btrue\?|\bno\?$|\bisn't it\?$/.test(t)) return 'tags_es';
+  return 'falsecognates_es';
+}
+function autoDetectArabic(t) {
+  if (/\bthe\s+(life|love|friendship|knowledge|success|nature|happiness|education|truth)\b/.test(t)) return 'article_ar';
+  if (/^(he|she|they)\s+\w+\b/.test(t) && !/\b(is|are|was|were|has|have|had|do|does|did|will|can)\b/.test(t.split(/[,.]/)[0])) return 'copula_ar';
+  if (/^(went|said|came|arrived|began|started|opened|told)\b/.test(t)) return 'vso_ar';
+  if (/\b(ten|six|seven|eight|nine|eleven|twelve|thirteen)\s+\w+[^s]\b/.test(t)) return 'number_ar';
+  if (/\bbarking\s+lot\b|\bbizza\b|\bbeace\b|\bbeople\b/.test(t)) return 'phonological_ar';
+  if (/\bwhere\s+(you|he|she|they|we)\s+are\b|\bwhat\s+this\b/.test(t)) return 'questions_ar';
+  if (/^(studies|works|lives|goes|likes|wants|is|was)\b/.test(t) && !/^(is|was)\s+(it|there)\b/.test(t)) return 'prodrop_ar';
+  return 'article_ar';
+}
+
+var TRIAGE_TECHNIQUES = {
+  articles: 'Metalinguistic Feedback — "What article do we use for first mention?" followed by Recast if self-correction fails.',
+  tense: 'Elicitation — "Yesterday I ____?" (pause). Or: Metalinguistic prompt: "What tense do we use with \'yesterday\'?"',
+  wordorder: 'Explicit Correction — name the pattern: "In English, the subject comes before the verb." Then model the correct form.',
+  copula: 'Elicitation — "She ___ very beautiful." (pause). This pattern responds well to pattern recognition practice.',
+  classifiers: 'Metalinguistic Feedback — "Is \'information\' countable?" Add to learner\'s personal uncountable noun list.',
+  phonological: 'Explicit drilling — minimal pairs (/r/ vs /l/), recording + playback for self-monitoring.',
+  questions: 'Repetition with rising intonation + explicit correction: "\'She can speak?\'... Do you mean: \'Can she speak?\'"',
+  negation: 'Elicitation — "I ___ understand" (pause). Teach do-support paradigm: do/does/did.',
+  falsecognates_es: 'Metalinguistic — point out the false friend, then build a "false cognate watchlist." Confidence is the warning sign.',
+  estar_es: 'Minimal pair drill — "I am bored" (yawning) vs. "I am boring" (dull speaker). Use images and immediate contrast.',
+  negation_es: 'Metalinguistic Feedback — "In English, one negative per sentence." Replace nada/nadie → anything/anyone.',
+  prepositions_es: 'Collocation focus — teach verb + preposition as fixed phrases: depend on, arrive at, dream of.',
+  perfect_es: 'Metalinguistic — specific time word (yesterday/last night) = simple past. No exceptions. Drill with time-reference cards.',
+  indirect_es: '"Question inside a statement becomes a statement." Minimal pairs: Where is he? vs. I don\'t know where he is.',
+  progressive_es: 'Stative verb list drill — know/want/understand/have(possession) do not take -ing. Test: state or activity?',
+  tags_es: '"Right?" is fine informally. For formal: auxiliary + polarity flip + pronoun. Teach paradigm: is → isn\'t, did → didn\'t.',
+  article_ar: 'Zero-article rule for generics: abstract nouns + mass nouns = no article. Drill: life/the life, knowledge/the knowledge.',
+  copula_ar: 'Subject slot drill — every English sentence has a subject AND a verb. "He [is] doctor" → "He is a doctor."',
+  prodrop_ar: 'Subject slot rule: fill it at every clause boundary. Pronoun chain drills in narrative paragraphs.',
+  number_ar: 'One rule: any number > 1 requires plural -s. No exceptions in English. Contrast with Arabic 11+ + singular.',
+  phonological_ar: '/p/ = /b/ but unvoiced — throat vibration test. Vowel pairs: ship/sheep chart. Drill minimal pairs early.',
+  questions_ar: 'Inversion drill: statement card → question card. "She is late" → "Is she late?" Focus on auxiliary swap.',
+  vso_ar: 'SVO reorder drill. Declarative = subject first. Flag verb-initial sentences in writing as marked/literary.',
+  connectives_ar: 'Connective audit: circle every "and" — is subordination or a transition marker better? Teach varied connectives.'
+};
 
 function triageError() {
   var errorText = document.getElementById('triageError').value.trim();
   if (!errorText) { showToast('Please enter a student error or sentence.'); return; }
   var catId = document.getElementById('triageCat').value;
-  if (catId === 'auto') catId = autoDetect(errorText);
-
+  if (catId === 'auto') {
+    var t = errorText.toLowerCase();
+    if (currentL1 === 'spanish') catId = autoDetectSpanish(t);
+    else if (currentL1 === 'arabic') catId = autoDetectArabic(t);
+    else catId = autoDetectMandarin(t);
+  }
   var cat = CATEGORIES.filter(function(c){ return c.id === catId; })[0] || CATEGORIES[0];
   triageState = { category: cat.id, error: errorText };
-
-  var techniques = {
-    articles: 'Metalinguistic Feedback — "What article do we use for first mention?" followed by Recast if self-correction fails.',
-    tense: 'Elicitation — "Yesterday I ____?" (pause). Or: Metalinguistic prompt: "What tense do we use with \'yesterday\'?"',
-    wordorder: 'Explicit Correction — name the pattern: "In English, the subject comes before the verb." Then model the correct form.',
-    copula: 'Elicitation — "She ___ very beautiful." (pause). This pattern responds well to pattern recognition practice.',
-    classifiers: 'Metalinguistic Feedback — "Is \'information\' countable?" Add to learner\'s personal uncountable noun list.',
-    phonological: 'Explicit drilling — minimal pairs (/r/ vs /l/), recording + playback for self-monitoring.',
-    questions: 'Repetition with rising intonation + explicit correction: "\'She can speak?\'... Do you mean: \'Can she speak?\'"',
-    negation: 'Elicitation — "I ___ understand" (pause). Teach do-support paradigm: do/does/did.'
-  };
-
   document.getElementById('triageDetected').textContent = cat.title;
   document.getElementById('triageWhy').textContent = cat.why;
   document.getElementById('triageCorrection').textContent = cat.correction.substring(0, 300) + (cat.correction.length > 300 ? '...' : '');
-  document.getElementById('triageTechnique').textContent = techniques[catId] || techniques['articles'];
+  document.getElementById('triageTechnique').textContent = TRIAGE_TECHNIQUES[catId] || 'Metalinguistic feedback — name the pattern and ask the student to self-correct.';
   document.getElementById('triageResult').classList.add('visible');
 }
 
 // ── Quiz ──────────────────────────────────────────────────────────────────
-var QUIZ = [
+var LANG_QUIZ = {
+mandarin: [
   { q: 'Which sentence contains a typical article error by a Mandarin speaker?', opts: ['She went to the store yesterday.','I am student at university.','He doesn\'t like spicy food.','Can you speak English?'], correct: 1 },
   { q: '"Yesterday I go to school." — Which interference pattern does this illustrate?', opts: ['Article omission','Tense vs. aspect transfer','Copula omission','Negation error'], correct: 1 },
   { q: 'A student says "She very beautiful." This is an example of:', opts: ['Relative clause overuse','Passive transfer','Copula omission','Article confusion'], correct: 2 },
@@ -466,7 +718,30 @@ var QUIZ = [
   { q: '"This book, I have read it." This sentence shows:', opts: ['Passive voice confusion','Topic-comment word order transfer from Mandarin','Incorrect use of present perfect','Relative clause error'], correct: 1 },
   { q: '"I not understand." The error here is:', opts: ['Aspect marker transfer','Negation without do-support (不 transfer)','Topic fronting','Copula omission'], correct: 1 },
   { q: 'Which Mandarin feature explains why learners say "You like coffee?" as a question?', opts: ['Mandarin lacks question words','Mandarin yes/no questions add 吗 to statements without inversion','Mandarin requires intonation for all questions','Mandarin questions always begin with the verb'], correct: 1 }
-];
+],
+spanish: [
+  { q: 'A student says "I am very embarrassed" but means she is pregnant. This is a:', opts: ['Progressive aspect error','Double negation error','False cognate error (embarazada ≠ embarrassed)','Preposition substitution'], correct: 2 },
+  { q: '"I am boring in this class" — the student means they are bored. The source of this error is:', opts: ['Question tag confusion','Ser/estar → "be" ambiguity: estar aburrido = bored, ser aburrido = boring','Double negation transfer','Indirect question word order'], correct: 1 },
+  { q: '"I don\'t have nothing to do" illustrates:', opts: ['Preposition substitution from Spanish','Negative concord — Spanish requires negation on every negative element','Present perfect overuse','Progressive aspect error'], correct: 1 },
+  { q: '"She is married with an engineer." The error is:', opts: ['False cognate confusion','Progressive aspect overextension','Preposition substitution: casado con → married with, not married to','Double negation'], correct: 2 },
+  { q: '"I have eaten yesterday" shows:', opts: ['Present perfect overextension with a specific past-time reference','Double negation','Stative verb in progressive','Question tag error'], correct: 0 },
+  { q: '"I don\'t know where is the station." The error is:', opts: ['False cognate','Indirect question word order — statement order required after "know"','Double negation','Preposition substitution'], correct: 1 },
+  { q: '"I am knowing the answer." This error comes from:', opts: ['False cognate confusion','Indirect question formation','Progressive aspect overextension — "know" is a stative verb','Negative concord'], correct: 2 },
+  { q: '"You are coming, true?" — Spanish speakers use this pattern because:', opts: ['Spanish uses invariant ¿verdad?/¿no? rather than auxiliary-based question tags','Spanish has no question tags','Spanish requires subject-auxiliary inversion in all questions','False cognate for "true"'], correct: 0 }
+],
+arabic: [
+  { q: '"The life is beautiful" — the definite article error here comes from:', opts: ['VSO word order transfer','Pro-drop transfer','Arabic using al- (الـ) before generic nouns — a pattern English forbids','Connective overuse'], correct: 2 },
+  { q: '"He doctor at the hospital" — this copula omission comes from:', opts: ['Definite article transfer','Number agreement rules','Arabic zero copula in present tense — "to be" is not used in present-tense statements','VSO word order'], correct: 2 },
+  { q: '"Studies at the university" (no subject stated) is an example of:', opts: ['Copula omission','Pro-drop — Arabic verb morphology encodes the subject, so pronoun is optional','VSO transfer','Definite article overuse'], correct: 1 },
+  { q: '"Ten book on the shelf" reflects:', opts: ['Connective overuse','Definite article transfer','Arabic numerals above 10 taking singular nouns — English always uses plural','Copula omission'], correct: 2 },
+  { q: 'Which phonological substitution is most characteristic of Arabic speakers?', opts: ['/m/ for /n/','Substituting /b/ for /p/ — Arabic lacks the /p/ phoneme','/d/ for /t/','Confusion of /f/ and /v/ only at word ends'], correct: 1 },
+  { q: '"Where you are going?" illustrates:', opts: ['Definite article transfer','Connective overuse','Omission of subject-auxiliary inversion in questions','Pro-drop'], correct: 2 },
+  { q: '"Went my friend to the store" reflects:', opts: ['Copula omission','Question formation error','VSO word order transfer from Arabic','Negative concord'], correct: 2 },
+  { q: 'Long "and...and...and" chains in Arabic learner writing come from:', opts: ['A false cognate for "and"','Transfer of Arabic "wa" coordination style — elaborated coordination is stylistically valued in Arabic','Pro-drop patterns','Definite article rules'], correct: 1 }
+]
+};
+
+var QUIZ = LANG_QUIZ.mandarin;
 
 var quizAnswers = [];
 var quizSubmitted = false;
@@ -517,7 +792,8 @@ function submitQuiz() {
   });
   document.getElementById('scoreDisplay').textContent = score + ' / ' + QUIZ.length;
   var pct = Math.round((score / QUIZ.length) * 100);
-  var msg = pct >= 87 ? 'Excellent — strong command of Mandarin transfer patterns.' :
+  var l1Label = {mandarin:'Mandarin',spanish:'Spanish',arabic:'Arabic'}[currentL1];
+  var msg = pct >= 87 ? 'Excellent — strong command of ' + l1Label + ' transfer patterns.' :
             pct >= 62 ? 'Good — review the categories you missed.' :
             'Review the Reference tab — focus on the patterns you found difficult.';
   document.getElementById('scoreSub').textContent = pct + '% — ' + msg;
@@ -542,32 +818,7 @@ function exportTriageMarkdown() {
 
 function exportAP2(mode) {
   var AP2Schema = {
-    validMandateTypes: [
-      'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
-      'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
-      'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
-      'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
-      'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
-      'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
-      'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
-      'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
-      'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
-      'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
-      'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
-      'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
-      'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
-      'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
-      'english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record',
-      'mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record',
-      'mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record',
-      'lesson_design_record','assessment_item_record','classroom_scenario_record',
-      'gt_differentiation_record','instructor_toolkit_record',
-      'cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record',
-      'primary_source_record','historiography_record','anachronism_record','counterfactual_record',
-      'franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record',
-      'micro_theory_record','economic_systems_record','economists_panel_record',
-      'economic_history_record','econ_principles_record'
-    ],
+    validMandateTypes: ['job_transition_record','compensation_package_record','credential_roi_record','education_cost_record','loan_repayment_record','career_break_record','exam_cost_record','scholarship_record','workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record','geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record','test_prep_record','international_student_record','parent_college_record','cpd_tracking_record','job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record','education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record','trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record','professional_degree_record','workforce_pell_record','workforce_pell_credential_rank','net_worth_trajectory_record','signing_bonus_record','gig_income_record','cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record','deferred_comp_457b_record','tutor_roi_record','test_retake_record','mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record','law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record','english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record','mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record','mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record','lesson_design_record','assessment_item_record','classroom_scenario_record','gt_differentiation_record','instructor_toolkit_record','cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record','primary_source_record','historiography_record','anachronism_record','counterfactual_record','franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record','micro_theory_record','economic_systems_record','economists_panel_record','economic_history_record','econ_principles_record'],
     validate: function(p) { return p && p.mandate_type && this.validMandateTypes.indexOf(p.mandate_type) >= 0; }
   };
   var payload = {
@@ -575,7 +826,7 @@ function exportAP2(mode) {
     generated: new Date().toISOString(), tool: 'AL-80 L1-Interference Spotter',
     data: {
       mode_used: mode,
-      l1: 'Mandarin',
+      l1: {mandarin:'Mandarin',spanish:'Spanish',arabic:'Arabic'}[currentL1] || 'Mandarin',
       categories_reviewed: CATEGORIES.map(function(c){ return c.id; }),
       errors_triaged_count: triageState.category ? 1 : 0,
       triage_category: triageState.category || null,

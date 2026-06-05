@@ -97,6 +97,11 @@
     .ff-card p { font-size: 0.85rem; color: var(--text-muted); }
     .insight-box { background: rgba(45,212,191,0.06); border: 1px solid rgba(45,212,191,0.2); border-radius: 8px; padding: 16px 20px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; }
     .insight-box strong { color: var(--text); }
+    .annotated-text { font-size:0.88rem; line-height:2; color:var(--text); word-wrap:break-word; }
+    .ann-vocab { background:rgba(232,168,56,.2); border-bottom:2px solid var(--amber); border-radius:2px; padding:0 2px; }
+    .ann-passive { background:rgba(167,139,250,.12); border-bottom:2px solid var(--lavender); border-radius:2px; padding:0 2px; }
+    .ann-long { background:rgba(248,113,113,.1); border-left:3px solid #f87171; border-radius:0 3px 3px 0; padding:1px 5px; }
+    .ann-legend { font-family:'JetBrains Mono',monospace; font-size:0.62rem; padding:1px 5px; border-radius:3px; white-space:nowrap; }
     .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
     .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
     .export-btn:hover { border-color: var(--accent); color: var(--accent); }
@@ -277,6 +282,12 @@
         <ul class="suggestion-list" id="suggestionList"></ul>
       </div>
 
+      <div class="card">
+        <div class="card-title">Annotated Text <span class="badge" id="annotatedBadge">Run analysis first</span></div>
+        <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:14px;line-height:1.6;">Each flag shown inline: <span class="ann-legend ann-vocab">C-vocab (&gt;8 chars)</span> &nbsp; <span class="ann-legend ann-passive">passive construction</span> &nbsp; <span class="ann-legend ann-long">sentence &gt;20 words</span></p>
+        <div class="annotated-text" id="annotatedText" style="color:var(--text-dim);font-size:0.84rem;">Analyze text in Tab 1 to see annotations.</div>
+      </div>
+
       <div class="results-export-row">
         <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown Report</button>
         <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
@@ -447,11 +458,12 @@ function analyzeText() {
     estCEFR: estCEFR, target: target, l1: l1,
     passiveMatches: passiveMatches, relClauseMatches: relClauseMatches,
     conditionalMatches: conditionalMatches, reportedSpeechMatches: reportedSpeechMatches,
-    cWords: cLevel, words: lower
+    cWords: cLevel, words: lower, rawText: raw
   };
 
   renderResults(lastResult);
   renderVocab(lastResult);
+  renderAnnotatedText(lastResult);
   switchTab(2);
 }
 
@@ -544,6 +556,59 @@ function renderResults(r) {
 
   var sHtml = suggs.map(function(s){ return '<li>' + s + '</li>'; }).join('');
   document.getElementById('suggestionList').innerHTML = sHtml;
+}
+
+function renderAnnotatedText(r) {
+  var raw = r.rawText || '';
+  if (!raw) return;
+
+  // Build set of C-level words (lowercase, >8 chars)
+  var cSet = new Set((r.cWords || []).map(function(w){ return w.toLowerCase(); }));
+
+  // Passive pattern for inline marking
+  var passivePat = /\b(is|are|was|were|be|been|being)\s+(\w+ed)\b/gi;
+
+  // Split into sentences preserving punctuation
+  var sentencePattern = /[^.!?]+[.!?]*/g;
+  var sentenceChunks = raw.match(sentencePattern) || [raw];
+
+  function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  var flaggedSentences = 0;
+  var flaggedVocab = 0;
+  var flaggedPassive = 0;
+
+  var html = sentenceChunks.map(function(sent) {
+    var wds = (sent.match(/\b[a-zA-Z']+\b/g) || []);
+    var isLong = wds.length > 20;
+    if (isLong) flaggedSentences++;
+
+    // Annotate within the sentence: first passive, then vocab
+    var annotated = sent.replace(passivePat, function(match, aux, verb) {
+      flaggedPassive++;
+      return '<span class="ann-passive">' + escapeHtml(aux) + ' ' + escapeHtml(verb) + '</span>';
+    });
+
+    // Annotate C-level vocab (words >8 chars not already inside a span)
+    annotated = annotated.replace(/\b([a-zA-Z]{9,})\b/g, function(match) {
+      if (cSet.has(match.toLowerCase())) {
+        flaggedVocab++;
+        return '<span class="ann-vocab">' + match + '</span>';
+      }
+      return match;
+    });
+
+    if (isLong) {
+      return '<span class="ann-long">' + annotated + '</span>';
+    }
+    return annotated;
+  });
+
+  document.getElementById('annotatedText').innerHTML = html.join('');
+  document.getElementById('annotatedBadge').textContent =
+    flaggedSentences + ' long sent · ' + flaggedVocab + ' C-vocab · ' + flaggedPassive + ' passive';
 }
 
 function renderVocab(r) {
@@ -673,7 +738,7 @@ function download(name, content, type) {
 
 function showToast(msg) {
   var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
-  setTimeout(function(){ t.classList.remove('show'); }, 3500);
+  setTimeout(function(){ t.classList.remove('show'), 3500);
 }
 </script>
 </body>
