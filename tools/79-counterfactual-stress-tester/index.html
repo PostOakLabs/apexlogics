@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Counterfactual Stress-Tester · ApexLogics #79</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/79-counterfactual-stress-tester/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #fbbf24; --accent-dim: rgba(251,191,36,0.18); --accent-low: rgba(251,191,36,0.08);
+      --border: rgba(251,191,36,0.18); --border-focus: #fbbf24;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: #E8A838; } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 28px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 28px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 10px 18px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    select, textarea, input[type="text"], input[type="number"] { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    select:focus, textarea:focus, input:focus { outline: none; border-color: var(--border-focus); }
+    textarea { resize: vertical; line-height: 1.6; }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-style: italic; }
+    .range-val { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--accent); }
+    .step-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 22px; margin-bottom: 16px; }
+    .step-num { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .step-title { font-size: 1rem; font-family: 'DM Serif Display', serif; margin-bottom: 8px; }
+    .step-desc { font-size: 0.84rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.65; }
+    .step-prompt { background: var(--surface2); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; padding: 10px 14px; margin-bottom: 10px; font-size: 0.8rem; color: var(--text-dim); font-style: italic; }
+    .checklist-gate { margin-bottom: 16px; }
+    .checklist-gate .gate-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; }
+    .checklist-gate .gate-item input[type="checkbox"] { margin-top: 3px; accent-color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; }
+    .checklist-gate .gate-label { font-size: 0.87rem; color: var(--text-muted); }
+    .magnitude-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .mag-option { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; cursor: pointer; transition: all 0.2s; }
+    .mag-option:hover { border-color: var(--accent); }
+    .mag-option.selected { border-color: var(--accent); background: var(--accent-low); }
+    .mag-label { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--accent); margin-bottom: 4px; }
+    .mag-desc { font-size: 0.78rem; color: var(--text-dim); }
+    .fallacy-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 14px; }
+    .fallacy-name { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--red); margin-bottom: 6px; }
+    .fallacy-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.65; }
+    .fallacy-check { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+    .fallacy-check input[type="checkbox"] { accent-color: var(--red); width: 15px; height: 15px; }
+    .fallacy-check label { font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; cursor: pointer; }
+    .sample-cf { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 22px; margin-bottom: 14px; }
+    .sample-cf-premise { font-family: 'DM Serif Display', serif; font-size: 1.05rem; margin-bottom: 10px; color: var(--accent); }
+    .sample-cf-section { margin-bottom: 8px; }
+    .sample-cf-label { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 3px; }
+    .sample-cf-text { font-size: 0.83rem; color: var(--text-muted); line-height: 1.65; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 12px 36px; border-radius: 8px; font-size: 0.95rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; margin: 8px 0; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(251,191,36,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #7f1d1d; border: 1px solid var(--red); color: #fecaca; padding: 12px 22px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; z-index: 200; display: none; }
+    .toast.show { display: block; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    .warn-box { background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.25); border-radius: 8px; padding: 12px 16px; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px; }
+    .warn-box strong { color: var(--amber); }
+    @media (max-width: 700px) { .magnitude-options { grid-template-columns: 1fr; } .tool-title { font-size: 1.8rem; } .results-export-row { flex-direction: column; } }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="../../index.html" class="nav-pill accent">← All Tools</a>
+  </div>
+</nav>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <div class="tool-eyebrow">AL-86 · Selected Studies — History</div>
+  <h1 class="tool-title">Counterfactual Stress-Tester</h1>
+  <p class="tool-desc">What if Napoleon had won at Waterloo? What if the South had won the Civil War? Counterfactual history is controversial but analytically valuable when done rigorously. This tool forces evidence-constrained counterfactual reasoning through five structured steps — ensuring your "what if" stays grounded in what was historically possible and what the actual consequences would have been, not just what we wish had happened.</p>
+  <div class="tool-vintage">Data vintage: Counterfactual methodology: Ferguson (1997), Virtual History; Tetlock &amp; Belkin (1996), Counterfactual Thought Experiments in World Politics; Lebow (2010), Forbidden Fruit</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">1 · Your Counterfactual</button>
+    <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">2 · Five-Step Framework</button>
+    <button class="tab-btn" id="tabBtn3" onclick="switchTab(3)">3 · Fallacies</button>
+    <button class="tab-btn" id="tabBtn4" onclick="switchTab(4)">4 · Examples</button>
+  </div>
+
+  <!-- TAB 1: YOUR COUNTERFACTUAL -->
+  <div class="tab-pane active" id="tabPane1">
+    <div class="card">
+      <div class="card-title">Define Your Counterfactual Premise <span class="badge">Ferguson's Rule</span></div>
+      <div class="field">
+        <label for="cfPremise">"What if..." premise</label>
+        <textarea id="cfPremise" rows="3" placeholder="e.g. What if Archduke Franz Ferdinand had NOT been assassinated in 1914?"></textarea>
+      </div>
+      <div class="field">
+        <label for="cfEvent">Base historical event</label>
+        <input type="text" id="cfEvent" placeholder="e.g. Assassination of Archduke Franz Ferdinand, June 28, 1914" />
+      </div>
+      <div class="field">
+        <label for="cfYear">Point of divergence (approximate year)</label>
+        <input type="text" id="cfYear" placeholder="e.g. 1914" />
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Quick-Fail Checklist <span class="badge">All three must be YES to proceed</span></div>
+      <p style="font-size:0.84rem; color:var(--text-muted); margin-bottom:14px;">These are the basic validity conditions for a well-formed counterfactual. If you cannot check all three, the counterfactual may be too speculative to be analytically useful.</p>
+      <div class="checklist-gate">
+        <div class="gate-item">
+          <input type="checkbox" id="gate0" />
+          <div class="gate-label">This event is historically contingent — it could plausibly have gone differently given different actions or circumstances.</div>
+        </div>
+        <div class="gate-item">
+          <input type="checkbox" id="gate1" />
+          <div class="gate-label">The counterfactual is close in time and space to the actual event (not a distant, sweeping alternative history).</div>
+        </div>
+        <div class="gate-item">
+          <input type="checkbox" id="gate2" />
+          <div class="gate-label">I am willing to hold other structural factors constant where possible (minimal rewrite principle).</div>
+        </div>
+      </div>
+      <button class="run-btn" onclick="switchTab(2)">Proceed to Five-Step Framework →</button>
+    </div>
+  </div>
+
+  <!-- TAB 2: FIVE-STEP FRAMEWORK -->
+  <div class="tab-pane" id="tabPane2">
+
+    <div class="step-card">
+      <div class="step-num">Step 1 of 5</div>
+      <div class="step-title">Evidence Constraint Check</div>
+      <div class="step-desc">What actual historical evidence constrains what could have happened? Even in your counterfactual world, structural forces, economic trends, and demographic realities still apply.</div>
+      <div class="step-prompt">What structural forces (economic, demographic, geopolitical) were operating independent of your changed event?</div>
+      <div class="step-prompt">Which outcomes were probably inevitable regardless of your counterfactual?</div>
+      <div class="step-prompt">What was the minimum change needed to produce your counterfactual?</div>
+      <textarea id="step1" rows="4" placeholder="Describe the structural constraints that would still have applied even if your counterfactual had occurred..."></textarea>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">Step 2 of 5</div>
+      <div class="step-title">Nearest Possible World (NMW)</div>
+      <div class="step-desc">Describe the minimal change from the historical record. Ferguson's rule: change as little as possible from the actual to make the counterfactual true.</div>
+      <div class="warn-box">
+        <strong>Bad NMW:</strong> "If the Roman Empire had never existed" — too massive a counterfactual, no specific point of divergence.<br>
+        <strong>Good NMW:</strong> "If Franz Ferdinand's motorcade had taken the planned route and avoided Gavrilo Princip entirely" — minimal, specific, plausible.
+      </div>
+      <textarea id="step2" rows="4" placeholder="Describe the nearest possible world: what is the minimum change needed? What stays the same?"></textarea>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">Step 3 of 5</div>
+      <div class="step-title">First-Order Effects</div>
+      <div class="step-desc">What would immediately and directly result from your changed event, within the next 6–12 months? Stay as close to the evidence as possible.</div>
+      <div class="step-prompt">Staying as close as possible to the evidence, what would have been different in the next 6–12 months?</div>
+      <textarea id="step3" rows="5" placeholder="List 3–5 first-order effects — direct, immediate consequences of your changed event..."></textarea>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">Step 4 of 5</div>
+      <div class="step-title">Second-Order Effects</div>
+      <div class="step-desc">Trace the consequences of your first-order effects. Be honest about confidence levels — the further you project, the more speculative.</div>
+      <div class="warn-box"><strong>Warning:</strong> The further you project, the more speculative. Mark high-confidence vs. low-confidence claims explicitly.</div>
+      <textarea id="step4" rows="5" placeholder="List 3–5 second-order effects. Where possible, note (high confidence) or (low confidence) for each..."></textarea>
+      <div class="field" style="margin-top:14px;">
+        <label for="step4conf">Overall confidence in second-order projections: <span class="range-val" id="step4confVal">3</span> / 5</label>
+        <input type="range" id="step4conf" min="1" max="5" step="1" value="3" oninput="document.getElementById('step4confVal').textContent=this.value" />
+        <span class="field-hint">1 = highly speculative, 5 = well-supported by historical analogy</span>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">Step 5 of 5</div>
+      <div class="step-title">Magnitude &amp; Calibration</div>
+      <div class="step-desc">How big was this event's causal contribution, really? Select the best description of the event's causal role.</div>
+      <div class="magnitude-options" id="magOptions">
+        <div class="mag-option" data-val="essential" onclick="selectMag(this)">
+          <div class="mag-label">Essential</div>
+          <div class="mag-desc">Without this event, nothing else would have caused the same outcome. It was causally irreplaceable.</div>
+        </div>
+        <div class="mag-option" data-val="highly_probable_trigger" onclick="selectMag(this)">
+          <div class="mag-label">Highly Probable Trigger</div>
+          <div class="mag-desc">This event made the outcome ~80% more likely. Without it, the outcome was possible but unlikely.</div>
+        </div>
+        <div class="mag-option" data-val="accelerant" onclick="selectMag(this)">
+          <div class="mag-label">Accelerant</div>
+          <div class="mag-desc">The outcome was likely anyway; this event simply sped it up or determined its specific form.</div>
+        </div>
+        <div class="mag-option" data-val="contingent_trigger" onclick="selectMag(this)">
+          <div class="mag-label">Contingent Trigger</div>
+          <div class="mag-desc">This particular path was one of several equally likely triggers. Another event would have served the same causal role.</div>
+        </div>
+      </div>
+      <div class="field" style="margin-top:16px;">
+        <label for="step5alt">Calibration: If this event hadn't happened, what other path might have led to a similar outcome?</label>
+        <textarea id="step5alt" rows="3" placeholder="Describe the most plausible alternative path to the same (or similar) historical outcome..."></textarea>
+      </div>
+    </div>
+
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">⬇ Export Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">⬇ Export AP2 JSON</button>
+    </div>
+  </div>
+
+  <!-- TAB 3: FALLACIES -->
+  <div class="tab-pane" id="tabPane3">
+    <div class="card">
+      <div class="card-title">Five Counterfactual Fallacies <span class="badge">Flag those present in your argument</span></div>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;">These are the most common errors in counterfactual reasoning. Check any that you detect in your own argument — then go back and address them.</p>
+
+      <div class="fallacy-card">
+        <div class="fallacy-name">1. Inevitable Outcome Fallacy</div>
+        <div class="fallacy-desc">"Even without X, Y would have happened." This is often used to dismiss counterfactuals entirely rather than engage with them. Sometimes it is correct — structural forces really do make certain outcomes nearly inevitable. But it is frequently an evasion that substitutes teleological thinking for genuine causal analysis. The burden of proof is on the person claiming inevitability.</div>
+        <div class="fallacy-check">
+          <input type="checkbox" id="fallacy0" />
+          <label for="fallacy0">Flag: I may be committing this fallacy in my argument</label>
+        </div>
+      </div>
+
+      <div class="fallacy-card">
+        <div class="fallacy-name">2. Great Man Fallacy</div>
+        <div class="fallacy-desc">Overweighting individual decisions and underweighting structural forces. WWI is the classic case: would WWI really not have happened without Gavrilo Princip? The structural tensions — imperial rivalry, arms race, alliance system, mobilization timetables — made major European conflict very likely by 1914. Princip was the trigger, not the cause. Counterfactuals that hinge entirely on individual choices without accounting for structural forces are usually weak.</div>
+        <div class="fallacy-check">
+          <input type="checkbox" id="fallacy1" />
+          <label for="fallacy1">Flag: I may be committing this fallacy in my argument</label>
+        </div>
+      </div>
+
+      <div class="fallacy-card">
+        <div class="fallacy-name">3. Domino Fallacy</div>
+        <div class="fallacy-desc">"If X had happened, everything good/bad today would be different." This overestimates the butterfly effect in history. Historical systems have enormous resilience and self-correcting tendencies. Most single events — even significant ones — do not cascade into total reconfigurations of history. Second- and third-order effects become increasingly uncertain, and intellectual honesty requires acknowledging this uncertainty rather than projecting confident chains of consequences indefinitely into the future.</div>
+        <div class="fallacy-check">
+          <input type="checkbox" id="fallacy2" />
+          <label for="fallacy2">Flag: I may be committing this fallacy in my argument</label>
+        </div>
+      </div>
+
+      <div class="fallacy-card">
+        <div class="fallacy-name">4. Anacyclosis Fallacy</div>
+        <div class="fallacy-desc">Using the counterfactual to confirm a pre-existing ideological view, regardless of the evidence. Example: "Of course the South would have freed the slaves eventually even without the Civil War" — an argument that serves a particular political purpose (minimizing the war's necessity) without engaging rigorously with the actual historical evidence (which strongly suggests the opposite). When a counterfactual conveniently confirms your priors, that is a warning sign.</div>
+        <div class="fallacy-check">
+          <input type="checkbox" id="fallacy3" />
+          <label for="fallacy3">Flag: I may be committing this fallacy in my argument</label>
+        </div>
+      </div>
+
+      <div class="fallacy-card">
+        <div class="fallacy-name">5. Nearest Possible World Inflation</div>
+        <div class="fallacy-desc">Changing too many variables at once, making the counterfactual untethered from any actual historical moment. Good counterfactuals change one specific thing and hold as much else as possible constant. When a counterfactual requires imagining a fundamentally different world — different technology, different culture, different institutions — it has moved from historical counterfactual into alternative universe fiction. That can be fun, but it is not historical reasoning.</div>
+        <div class="fallacy-check">
+          <input type="checkbox" id="fallacy4" />
+          <label for="fallacy4">Flag: I may be committing this fallacy in my argument</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: EXAMPLES -->
+  <div class="tab-pane" id="tabPane4">
+    <div class="card">
+      <div class="card-title">Three Well-Formed Counterfactuals <span class="badge">Ferguson 1997</span></div>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:20px;">These examples show how to construct a rigorous counterfactual: minimal change, explicit evidence constraints, graduated confidence, and honest calibration about magnitude.</p>
+
+      <div class="sample-cf">
+        <div class="sample-cf-premise">"What if the Spanish Armada had succeeded in 1588?"</div>
+        <div class="sample-cf-section">
+          <div class="sample-cf-label">Evidence Constraints</div>
+          <div class="sample-cf-text">Spain had military superiority on paper but serious logistical weaknesses: the plan required perfect coordination between Parma's land army and the Armada, which was never achieved. English gunnery technology was competitive. The storm that dispersed the fleet was historically contingent — but weather in the English Channel in August is structurally unfavorable. NMW: calm weather and Parma's army makes the rendezvous.</div>
+        </div>
+        <div class="sample-cf-section">
+          <div class="sample-cf-label">First-Order Effects</div>
+          <div class="sample-cf-text">Spanish/Catholic army lands in England; Elizabeth I's government collapses or is captured; English Protestant establishment faces immediate existential threat.</div>
+        </div>
+        <div class="sample-cf-section">
+          <div class="sample-cf-label">Second-Order Effects (moderate confidence)</div>
+          <div class="sample-cf-text">Spanish control of England would have been difficult to maintain — Protestant resistance movements, financial strain, over-extension of Spanish Empire. Long-term Spanish hegemony over England is unlikely. More plausible: a negotiated Catholic restoration under a Spanish client king, Protestant exile communities organizing resistance. The Dutch revolt would have been affected. English colonization of America would have been delayed but not necessarily eliminated.</div>
+        </div>
+        <div class="sample-cf-section">
+          <div class="sample-cf-label">Magnitude Assessment</div>
+          <div class="sample-cf-text"><em>Accelerant / Contingent Trigger</em>: The structural forces driving Atlantic trade, Protestant-Catholic conflict, and eventual English colonial expansion were real and would have found expression through other channels. The Armada's failure was decisive for the specific timing and form of English dominance, not necessarily its ultimate occurrence.</div>
+        </div>
+      </div>
+
+      <div class="sample-cf">
+        <div class="sample-cf-premise">"What if Lincoln had survived to oversee Reconstruction?"</div>
+        <div class="sample-cf-section">
+          <div class="sample-cf-label">Evidence Constraints</div>
+          <div class="sample-cf-text">Lincoln's second inaugural ("with malice toward none") signals a moderate Reconstruction policy. But structural constraints were severe: Southern white resistance, Northern war fatigue, the limits of federal administrative capacity in the 1860s. NMW: Booth fails at Ford's Theatre on April 14, 1865.</div>
+        </div>
+        <div class="sample-cf-section">
+          <div class="sample-cf-label">First-Order Effects</div>
+          <div class="sample-cf-text">Lincoln oversees readmission of Southern states under his Ten Percent Plan rather than the Radical Republicans' more stringent Wade-Davis conditions. Johnson's catastrophic vetoes of Civil Rights legislation don't happen. The Freedmen's Bureau receives more executive support.</div>
+        </div>
+        <div class="sample-cf-section">
+          <div class="sample-cf-label">Second-Order Effects (lower confidence)</div>
+          <div class="sample-cf-text">The structural forces underpinning white supremacy in the South — land ownership patterns, Black Codes' logic, Northern business interests — were powerful and not dependent on Johnson. A Lincoln Reconstruction might have been more successful than Johnson's but still faced enormous resistance. The 14th and 15th Amendments might have been more robustly enforced. But the "Redemption" movement's eventual triumph reflects structural realities that Lincoln's presence would not necessarily have overcome.</div>
+        </div>
+        <div class="sample-cf-section">
+          <div class="sample-cf-label">Magnitude Assessment</div>
+          <div class="sample-cf-text"><em>Highly Probable Trigger for improved short-term outcomes</em>, but likely <em>Accelerant/Contingent</em> for the long-term failure of Reconstruction. Johnson made a bad situation catastrophically worse; Lincoln would have done better; but whether Lincoln could have overcome structural Southern resistance is genuinely uncertain.</div>
+        </div>
+      </div>
+
+      <div class="sample-cf">
+        <div class="sample-cf-premise">"What if Stalin had died in 1941?"</div>
+        <div class="sample-cf-section">
+          <div class="sample-cf-label">Evidence Constraints</div>
+          <div class="sample-cf-text">In 1941, Germany invaded the Soviet Union (Operation Barbarossa, June 22). Stalin was briefly paralyzed by the invasion. The Soviet state was genuinely in crisis. NMW: Stalin dies of a stroke in early July 1941, when the military situation was catastrophic. Structural constraint: the Soviet military-industrial base and the Red Army's organizational capacity existed independent of Stalin's personal control, though Stalin had created the conditions for the 1941 disasters through his purges.</div>
+        </div>
+        <div class="sample-cf-section">
+          <div class="sample-cf-label">First-Order Effects</div>
+          <div class="sample-cf-text">Succession crisis in Moscow during the worst military catastrophe in Soviet history. Most likely successor: Molotov, Beria, or Zhukov gaining emergency powers. Possible German-Soviet armistice negotiations (Hitler had not yet committed to full extermination policy in all cases). Or: new Soviet leadership actually performs better — the purged officers had been the most competent.</div>
+        </div>
+        <div class="sample-cf-section">
+          <div class="sample-cf-label">Second-Order Effects (low confidence)</div>
+          <div class="sample-cf-text">This is a genuine fork point. A separate peace would have freed Germany to focus on Britain and potentially the Atlantic; it might have prolonged the war in the West dramatically. Alternatively, a collective Soviet leadership might have been more militarily rational (no Stalinist interference in military decisions), potentially accelerating the eventual German defeat. The Holocaust's scale might have been different; Soviet territorial arrangements post-war would certainly have differed. This is low-confidence territory — the range of plausible outcomes is genuinely wide.</div>
+        </div>
+        <div class="sample-cf-section">
+          <div class="sample-cf-label">Magnitude Assessment</div>
+          <div class="sample-cf-text"><em>Essential to near-essential</em> for certain outcomes: Stalin's personal decisions (rejecting early warnings, refusing retreats in 1941, the pact with Hitler) were causally critical in ways that structural analysis alone cannot capture. This is one of the cases where individual leadership genuinely mattered at the margin.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-86 · Data: Ferguson 1997; Tetlock &amp; Belkin 1996; Lebow 2010
+</footer>
+
+<script>
+  let selectedMag = null;
+
+  function switchTab(n) {
+    for (let i = 1; i <= 4; i++) {
+      document.getElementById('tabPane' + i).classList.toggle('active', i === n);
+      document.getElementById('tabBtn' + i).classList.toggle('active', i === n);
+    }
+  }
+
+  function selectMag(el) {
+    document.querySelectorAll('.mag-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedMag = el.dataset.val;
+  }
+
+  function getFallacies() {
+    const labels = ['Inevitable Outcome Fallacy','Great Man Fallacy','Domino Fallacy','Anacyclosis Fallacy','Nearest Possible World Inflation'];
+    return Array.from({length: 5}, (_, i) => document.getElementById('fallacy' + i).checked ? labels[i] : null).filter(Boolean);
+  }
+
+  function exportMarkdown() {
+    const premise = document.getElementById('cfPremise').value || '(not entered)';
+    const event = document.getElementById('cfEvent').value || '';
+    const year = document.getElementById('cfYear').value || '';
+    const s1 = document.getElementById('step1').value || '(not completed)';
+    const s2 = document.getElementById('step2').value || '(not completed)';
+    const s3 = document.getElementById('step3').value || '(not completed)';
+    const s4 = document.getElementById('step4').value || '(not completed)';
+    const s5 = document.getElementById('step5alt').value || '(not completed)';
+    const fallacies = getFallacies();
+    const mag = selectedMag || '(not selected)';
+
+    const md = `# Counterfactual Analysis\n\n**Premise:** ${premise}\n**Base Event:** ${event}\n**Point of Divergence:** ${year}\n\n## Step 1: Evidence Constraints\n${s1}\n\n## Step 2: Nearest Possible World\n${s2}\n\n## Step 3: First-Order Effects\n${s3}\n\n## Step 4: Second-Order Effects\n${s4}\n\n## Step 5: Magnitude\n**Rating:** ${mag}\n**Alternative path:** ${s5}\n\n## Fallacies Flagged\n${fallacies.length ? fallacies.map(f => `- ${f}`).join('\n') : '- None flagged'}\n\n*Generated by ApexLogics Counterfactual Stress-Tester — AL-86*\n`;
+    download(md, 'counterfactual-analysis.md', 'text/markdown');
+  }
+
+  function exportAP2() {
+    const step3text = document.getElementById('step3').value;
+    const step4text = document.getElementById('step4').value;
+    const firstEffects = step3text ? step3text.split('\n').filter(l => l.trim()) : [];
+    const secondEffects = step4text ? step4text.split('\n').filter(l => l.trim()) : [];
+
+    const payload = {
+      mandate_type: 'counterfactual_record',
+      schema_version: '2.0',
+      generated_at: new Date().toISOString(),
+      counterfactual_premise: document.getElementById('cfPremise').value || null,
+      point_of_divergence_year: document.getElementById('cfYear').value || null,
+      nw_description: document.getElementById('step2').value || null,
+      first_order_effects: firstEffects,
+      second_order_effects: secondEffects,
+      magnitude_rating: selectedMag || null,
+      fallacies_identified: getFallacies()
+    };
+
+    const AP2Schema = {
+      validMandateTypes: ['job_transition_record','compensation_package_record','credential_roi_record','education_cost_record','loan_repayment_record','career_break_record','exam_cost_record','scholarship_record','workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record','geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record','test_prep_record','international_student_record','parent_college_record','cpd_tracking_record','job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record','education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record','trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record','professional_degree_record','workforce_pell_record','workforce_pell_credential_rank','net_worth_trajectory_record','signing_bonus_record','gig_income_record','cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record','deferred_comp_457b_record','tutor_roi_record','test_retake_record','mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record','law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record','english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record','mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record','mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record','lesson_design_record','assessment_item_record','classroom_scenario_record','gt_differentiation_record','instructor_toolkit_record','cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record','primary_source_record','historiography_record','anachronism_record','counterfactual_record','franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record','micro_theory_record','economic_systems_record','economists_panel_record','economic_history_record','econ_principles_record'],
+      validate(p) { return this.validMandateTypes.includes(p.mandate_type); }
+    };
+    if (!AP2Schema.validate(payload)) { showToast('AP2 validation failed'); return; }
+    download(JSON.stringify(payload, null, 2), 'counterfactual-ap2.json', 'application/json');
+  }
+
+  function download(content, filename, mime) {
+    const blob = new Blob([content], {type: mime});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function setLang(lang) {
+    try { sessionStorage.setItem('apex_lang', lang); } catch(e) {}
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang || (lang === 'zh' && b.textContent === '中文')));
+  }
+
+  (function init() {
+    try {
+      const lang = sessionStorage.getItem('apex_lang') || 'en';
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang || (lang === 'zh' && b.textContent === '中文')));
+    } catch(e) {}
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assessment Item Writer + Distractor Analyzer · ApexLogics #68</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/68-assessment-item-writer/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #60a5fa; --accent-dim: rgba(96,165,250,0.18); --accent-low: rgba(96,165,250,0.08);
+      --border: rgba(96,165,250,0.18); --border-focus: #60a5fa;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: #E8A838; } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(96,165,250,0.07); border: 1px solid rgba(96,165,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 28px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 28px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 10px 18px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="text"], select, textarea {
+      background: var(--surface); border: 1px solid var(--border); color: var(--text);
+      padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem;
+      width: 100%; transition: border-color 0.2s;
+    }
+    textarea { resize: vertical; min-height: 80px; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .add-btn { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); padding: 7px 16px; border-radius: 6px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all 0.15s; }
+    .add-btn:hover { background: var(--accent); color: #000; }
+    .remove-btn { background: none; border: 1px solid rgba(248,113,113,0.3); color: var(--red); padding: 4px 10px; border-radius: 5px; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; }
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    /* Item builder */
+    .item-frame { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 22px; margin-bottom: 14px; }
+    .item-stem-label { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; }
+    .option-row { display: grid; grid-template-columns: 36px 1fr 200px; gap: 10px; align-items: start; margin-bottom: 10px; }
+    .option-letter { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; font-weight: 600; padding-top: 10px; }
+    .option-letter.correct { color: var(--green); }
+    .option-letter.distractor { color: var(--text-dim); }
+    .distractor-type-label { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 4px 0; }
+    .distractor-analysis { background: rgba(96,165,250,0.05); border: 1px solid rgba(96,165,250,0.15); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
+    .distractor-analysis-title { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--accent); margin-bottom: 4px; }
+    .distractor-analysis-text { font-size: 0.82rem; color: var(--text-muted); }
+    /* Bloom verb bank */
+    .verb-bank { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-top: 10px; display: none; }
+    .verb-bank.open { display: block; }
+    .verb-bank-title { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); margin-bottom: 8px; }
+    .verb-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .verb-chip { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 3px 9px; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid transparent; }
+    .verb-chip:hover { border-color: var(--accent); }
+    /* Item bank */
+    .bank-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
+    .bank-item-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px; }
+    .bank-item-meta { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); }
+    .bank-item-stem { font-size: 0.88rem; color: var(--text); margin-bottom: 6px; }
+    .bank-item-options { font-size: 0.8rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(96,165,250,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #7f1d1d; border: 1px solid var(--red); color: #fecaca; padding: 12px 22px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; z-index: 200; display: none; }
+    .toast.show { display: block; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    .info-box { background: rgba(96,165,250,0.06); border: 1px solid rgba(96,165,250,0.2); border-radius: 8px; padding: 14px 18px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.65; margin-bottom: 14px; }
+    @media (max-width: 700px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .option-row { grid-template-columns: 28px 1fr; }
+      .option-row .distractor-type-select { grid-column: 2; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="../../index.html" class="nav-pill accent">← All Tools</a>
+  </div>
+</nav>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <div class="tool-eyebrow">AL-75 · Selected Studies — Education</div>
+  <h1 class="tool-title">Assessment Item Writer + Distractor Analyzer</h1>
+  <p class="tool-desc">Write multiple-choice items that actually measure what you intend to measure. Grounded in Bloom's taxonomy and best practices from educational measurement, this tool generates MC stems and four options, then classifies each distractor by error type — so every wrong answer teaches something about what students don't yet know.</p>
+  <div class="tool-vintage">Data vintage: Bloom's Revised Taxonomy (Anderson &amp; Krathwohl, 2001); MC item-writing guidelines (Haladyna, Downing &amp; Rodriguez, 2002)</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">Item Builder</button>
+    <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">Item Bank</button>
+    <button class="tab-btn" id="tabBtn3" onclick="switchTab(3)">Export</button>
+  </div>
+
+  <!-- ============ TAB 1: ITEM BUILDER ============ -->
+  <div class="tab-pane active" id="tabPane1">
+
+    <div class="card">
+      <div class="card-title">Item Parameters</div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="objective">Learning Objective</label>
+          <textarea id="objective" style="min-height:70px;" placeholder="e.g. Students will be able to explain how removing a keystone species affects food web stability."></textarea>
+          <span class="field-hint">Write as: 'Students will be able to [verb] [content]'</span>
+        </div>
+        <div>
+          <div class="form-grid two">
+            <div class="field">
+              <label for="bloomsLevel">Bloom's Level</label>
+              <select id="bloomsLevel" onchange="onBloomsChange()">
+                <option value="remember">Remember</option>
+                <option value="understand" selected>Understand</option>
+                <option value="apply">Apply</option>
+                <option value="analyze">Analyze</option>
+                <option value="evaluate">Evaluate</option>
+                <option value="create">Create</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="cogContext">Cognitive Context</label>
+              <select id="cogContext">
+                <option value="factual">Factual</option>
+                <option value="conceptual" selected>Conceptual</option>
+                <option value="procedural">Procedural</option>
+                <option value="metacognitive">Metacognitive</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="itemSubject">Subject Area</label>
+              <input type="text" id="itemSubject" placeholder="e.g. Biology" />
+            </div>
+            <div class="field">
+              <label for="itemGrade">Grade / Level</label>
+              <input type="text" id="itemGrade" placeholder="e.g. Grade 8 / Intro undergrad" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="verb-bank" id="verbBank">
+        <div class="verb-bank-title">Bloom's Verb Bank — <span id="verbBankLevel"></span></div>
+        <div class="verb-chips" id="verbChips"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Item Stem</div>
+      <div class="field">
+        <label for="stemText">Stem (the question or incomplete statement)</label>
+        <textarea id="stemText" style="min-height:80px;" placeholder="e.g. A wildlife biologist removes all wolves from a forested ecosystem. Based on trophic cascade research, which of the following is the MOST likely long-term consequence?"></textarea>
+        <span class="field-hint">Best practice: stem should be a complete question or clear incomplete statement. Avoid negatives ('Which is NOT…') unless the negative is bold/uppercase.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Answer Options &amp; Distractor Classification</div>
+      <div class="info-box">For each option: write the text, then select its distractor type. Option A is always the correct answer in this builder — shuffle order before using in an actual assessment.</div>
+
+      <div id="optionsArea"></div>
+
+      <div id="distractorAnalysis" style="margin-top:16px;"></div>
+    </div>
+
+    <button class="run-btn" onclick="addToBank()">Add to Item Bank →</button>
+  </div>
+
+  <!-- ============ TAB 2: ITEM BANK ============ -->
+  <div class="tab-pane" id="tabPane2">
+    <div class="card">
+      <div class="card-title">Saved Items <span class="badge" id="bankCountBadge">0 / 10</span></div>
+      <div id="bankContainer">
+        <p style="color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:0.85rem;">No items saved yet. Build an item in the Item Builder tab and click "Add to Item Bank."</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB 3: EXPORT ============ -->
+  <div class="tab-pane" id="tabPane3">
+    <div class="card">
+      <div class="card-title">Export Item Bank</div>
+      <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:20px;">Export all saved items from your bank. The Markdown export produces a formatted item set suitable for pasting into a document. The AP2 export captures the last item built (current state of the Item Builder).</p>
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown (All Items)</button>
+        <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON (Current Item)</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end tool-wrapper -->
+
+<div class="toast" id="toast"></div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-75 · Data: Bloom's Taxonomy 2001 + item-writing research 2002
+</footer>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const itemBank = [];
+
+// Bloom's verb banks
+const bloomsVerbs = {
+  remember:   ['define','list','recall','identify','name','state','recognize','match','label','reproduce'],
+  understand: ['explain','describe','summarize','paraphrase','classify','compare','illustrate','interpret','predict','infer'],
+  apply:      ['solve','use','demonstrate','calculate','execute','implement','show','apply','construct','perform'],
+  analyze:    ['differentiate','distinguish','examine','deconstruct','compare','contrast','infer','attribute','organize','integrate'],
+  evaluate:   ['judge','critique','justify','defend','assess','appraise','rate','argue','prioritize','recommend'],
+  create:     ['design','construct','develop','formulate','produce','compose','plan','invent','generate','synthesize']
+};
+
+// Distractor type diagnostics
+const distractorDiagnostics = {
+  'correct':        { label: 'Correct Answer', color: 'var(--green)', diagnostic: 'Students selecting this demonstrate mastery of the intended learning outcome.' },
+  'misconception':  { label: 'Common Misconception', color: 'var(--red)', diagnostic: 'Students selecting this hold a specific, predictable false belief about the concept. Use this response to identify which students need targeted reteaching of the misconception.' },
+  'partial':        { label: 'Partially Correct — Incomplete Understanding', color: 'var(--amber)', diagnostic: 'Students selecting this understand part of the concept but have a gap in their reasoning. Often indicates surface-level learning without deep understanding.' },
+  'offscope':       { label: 'Plausible but Off-Scope', color: 'var(--teal)', diagnostic: 'Students selecting this may be drawing on irrelevant prior knowledge or confusing the topic with a related but distinct concept. Investigate whether your instruction adequately distinguished these.' },
+  'opposite':       { label: 'Opposite Error', color: 'var(--accent)', diagnostic: 'Students selecting this have inverted the direction of a relationship or process. Common in causal reasoning, inverse functions, or direction-sensitive concepts.' }
+};
+
+// ── Lang ───────────────────────────────────────────────────────────────────
+function setLang(code) {
+  sessionStorage.setItem('apex_lang', code);
+  document.documentElement.lang = code;
+  document.documentElement.dir = code === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.toLowerCase() === code || b.textContent === code);
+  });
+}
+(function() { setLang(sessionStorage.getItem('apex_lang') || 'en'); })();
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function switchTab(n) {
+  for (let i = 1; i <= 3; i++) {
+    document.getElementById('tabBtn' + i).classList.toggle('active', i === n);
+    document.getElementById('tabPane' + i).classList.toggle('active', i === n);
+  }
+}
+
+// ── Bloom's change ─────────────────────────────────────────────────────────
+function onBloomsChange() {
+  const level = document.getElementById('bloomsLevel').value;
+  const verbs = bloomsVerbs[level];
+  const bank = document.getElementById('verbBank');
+  const chips = document.getElementById('verbChips');
+  document.getElementById('verbBankLevel').textContent = level.charAt(0).toUpperCase() + level.slice(1);
+  chips.innerHTML = verbs.map(v => `<span class="verb-chip" onclick="insertVerb('${v}')">${v}</span>`).join('');
+  bank.classList.add('open');
+}
+
+function insertVerb(v) {
+  const stem = document.getElementById('stemText');
+  const obj = document.getElementById('objective');
+  // Insert verb into objective at cursor or end
+  const el = document.activeElement === obj ? obj : stem;
+  const pos = el.selectionStart;
+  el.value = el.value.slice(0, pos) + v + el.value.slice(pos);
+  el.focus();
+  el.setSelectionRange(pos + v.length, pos + v.length);
+  renderDistractorAnalysis();
+}
+
+// ── Options Area ───────────────────────────────────────────────────────────
+const optionTypes = ['correct', 'misconception', 'partial', 'offscope'];
+const optionLabels = ['A', 'B', 'C', 'D'];
+
+function renderOptionsArea() {
+  const container = document.getElementById('optionsArea');
+  container.innerHTML = optionLabels.map((letter, i) => `
+    <div class="option-row">
+      <div class="option-letter ${i === 0 ? 'correct' : 'distractor'}">${letter}.</div>
+      <div class="field">
+        <textarea id="optText${i}" style="min-height:60px;"
+          placeholder="${i === 0 ? 'Correct answer — write the accurate, complete response' : `Distractor ${letter} — write a plausible but incorrect option`}"
+          oninput="renderDistractorAnalysis()"></textarea>
+      </div>
+      <div class="field distractor-type-select">
+        <label>Type</label>
+        <select id="optType${i}" onchange="renderDistractorAnalysis()">
+          ${Object.entries(distractorDiagnostics).map(([k,v]) =>
+            `<option value="${k}" ${k === optionTypes[i] ? 'selected' : ''}>${v.label}</option>`
+          ).join('')}
+        </select>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderDistractorAnalysis() {
+  const container = document.getElementById('distractorAnalysis');
+  let html = '<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.72rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Distractor Analysis</div>';
+  for (let i = 0; i < 4; i++) {
+    const type = document.getElementById('optType' + i) ? document.getElementById('optType' + i).value : optionTypes[i];
+    const diag = distractorDiagnostics[type];
+    const text = document.getElementById('optText' + i) ? document.getElementById('optText' + i).value.trim() : '';
+    if (!diag) continue;
+    html += `
+      <div class="distractor-analysis">
+        <div class="distractor-analysis-title" style="color:${diag.color};">${optionLabels[i]}. ${diag.label}</div>
+        <div class="distractor-analysis-text">${diag.diagnostic}</div>
+        ${text ? `<div style="margin-top:6px;font-size:0.75rem;color:var(--text-dim);font-family:'JetBrains Mono',monospace;">Option text: "${text.length > 80 ? text.slice(0,80) + '…' : text}"</div>` : ''}
+      </div>
+    `;
+  }
+  container.innerHTML = html;
+}
+
+// ── Item Bank ──────────────────────────────────────────────────────────────
+function addToBank() {
+  const objective = document.getElementById('objective').value.trim();
+  const stem = document.getElementById('stemText').value.trim();
+  if (!objective || !stem) { showToast('Please fill in the learning objective and item stem.'); return; }
+  if (itemBank.length >= 10) { showToast('Item bank is full (10 items max). Export and clear before adding more.'); return; }
+
+  const blooms = document.getElementById('bloomsLevel').value;
+  const cogContext = document.getElementById('cogContext').value;
+  const subject = document.getElementById('itemSubject').value.trim();
+  const grade = document.getElementById('itemGrade').value.trim();
+  const options = optionLabels.map((letter, i) => ({
+    letter,
+    text: document.getElementById('optText' + i).value.trim(),
+    type: document.getElementById('optType' + i).value,
+    diagnostic: distractorDiagnostics[document.getElementById('optType' + i).value].diagnostic
+  }));
+
+  const item = { id: itemBank.length + 1, objective, stem, blooms, cogContext, subject, grade, options };
+  itemBank.push(item);
+  renderBank();
+  switchTab(2);
+  showToastGreen('Item added to bank. (' + itemBank.length + '/10)');
+}
+
+function removeFromBank(i) {
+  itemBank.splice(i, 1);
+  renderBank();
+}
+
+function renderBank() {
+  const container = document.getElementById('bankContainer');
+  document.getElementById('bankCountBadge').textContent = itemBank.length + ' / 10';
+  if (!itemBank.length) {
+    container.innerHTML = '<p style="color:var(--text-dim);font-family:\'JetBrains Mono\',monospace;font-size:0.85rem;">No items saved yet.</p>';
+    return;
+  }
+  container.innerHTML = itemBank.map((item, i) => `
+    <div class="bank-item">
+      <div class="bank-item-header">
+        <div class="bank-item-meta">#${item.id} · ${item.blooms.toUpperCase()} · ${item.cogContext} · ${item.subject || 'Subject not set'}</div>
+        <button class="remove-btn" onclick="removeFromBank(${i})">Remove</button>
+      </div>
+      <div class="bank-item-stem">${item.stem}</div>
+      <div class="bank-item-options">
+        ${item.options.map(o => `<div style="color:${o.type === 'correct' ? 'var(--green)' : 'var(--text-dim)'};">${o.letter}. ${o.text || '(blank)'} — <em>${distractorDiagnostics[o.type].label}</em></div>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── AP2 Schema ─────────────────────────────────────────────────────────────
+const AP2Schema = {
+  validMandateTypes: [
+    'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+    'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+    'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+    'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+    'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+    'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+    'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+    'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+    'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+    'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+    'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+    'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+    'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+    'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
+    'english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record',
+    'mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record',
+    'mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record',
+    'lesson_design_record','assessment_item_record','classroom_scenario_record',
+    'gt_differentiation_record','instructor_toolkit_record',
+    'cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record',
+    'primary_source_record','historiography_record','anachronism_record','counterfactual_record',
+    'franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record',
+    'micro_theory_record','economic_systems_record','economists_panel_record',
+    'economic_history_record','econ_principles_record'
+  ],
+  validate(payload) {
+    if (!payload || typeof payload !== 'object') return { valid: false, error: 'Payload must be an object.' };
+    if (!payload.mandate_type) return { valid: false, error: 'Missing mandate_type.' };
+    if (!this.validMandateTypes.includes(payload.mandate_type)) return { valid: false, error: `Invalid mandate_type: ${payload.mandate_type}` };
+    if (!payload.tool_id) return { valid: false, error: 'Missing tool_id.' };
+    if (!payload.generated_at) return { valid: false, error: 'Missing generated_at.' };
+    return { valid: true };
+  }
+};
+
+// ── Export ─────────────────────────────────────────────────────────────────
+function exportMarkdown() {
+  if (!itemBank.length) { showToast('No items in bank. Add items first.'); return; }
+  let md = `# Assessment Item Bank\n*Generated by ApexLogics Assessment Item Writer (AL-75)*\n\n`;
+  itemBank.forEach((item, i) => {
+    md += `## Item ${item.id}\n`;
+    md += `**Bloom's Level:** ${item.blooms} | **Cognitive Context:** ${item.cogContext}\n`;
+    if (item.subject) md += `**Subject:** ${item.subject}`;
+    if (item.grade) md += ` | **Grade:** ${item.grade}`;
+    md += `\n\n**Learning Objective:** ${item.objective}\n\n`;
+    md += `**Stem:** ${item.stem}\n\n`;
+    item.options.forEach(o => {
+      md += `${o.letter}. ${o.text || '(blank)'}\n`;
+      md += `   → *${distractorDiagnostics[o.type].label}*: ${o.diagnostic}\n\n`;
+    });
+    md += `---\n\n`;
+  });
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'assessment-items.md'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportAP2() {
+  const objective = document.getElementById('objective').value.trim();
+  const stem = document.getElementById('stemText').value.trim();
+  const blooms = document.getElementById('bloomsLevel').value;
+  const cogContext = document.getElementById('cogContext').value;
+  const correctOptionText = document.getElementById('optText0') ? document.getElementById('optText0').value.trim() : '';
+  const distractors = [1, 2, 3].map(i => ({
+    letter: optionLabels[i],
+    text: document.getElementById('optText' + i) ? document.getElementById('optText' + i).value.trim() : '',
+    type: document.getElementById('optType' + i) ? document.getElementById('optType' + i).value : '',
+    diagnostic: document.getElementById('optType' + i) ? distractorDiagnostics[document.getElementById('optType' + i).value].diagnostic : ''
+  }));
+
+  const payload = {
+    mandate_type: 'assessment_item_record',
+    tool_id: 'AL-75',
+    generated_at: new Date().toISOString(),
+    learning_objective: objective,
+    blooms_level: blooms,
+    cognitive_context: cogContext,
+    subject: document.getElementById('itemSubject').value.trim(),
+    grade: document.getElementById('itemGrade').value.trim(),
+    item_stem: stem,
+    correct_answer: correctOptionText,
+    distractors,
+    bloom_verb_used: '',
+    bank_item_count: itemBank.length
+  };
+
+  const result = AP2Schema.validate(payload);
+  if (!result.valid) { showToast('AP2 validation error: ' + result.error); return; }
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'assessment-item-ap2.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.background = '#7f1d1d'; t.style.borderColor = 'var(--red)'; t.style.color = '#fecaca';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+function showToastGreen(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.background = 'rgba(52,211,153,0.12)'; t.style.borderColor = 'var(--green)'; t.style.color = 'var(--green)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+renderOptionsArea();
+renderDistractorAnalysis();
+onBloomsChange();
+</script>
+
+</body>
+</html>

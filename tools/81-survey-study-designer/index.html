@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Survey Study Designer · ApexLogics #81</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/81-survey-study-designer/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #f87171; --accent-dim: rgba(248,113,113,0.18); --accent-low: rgba(248,113,113,0.08);
+      --border: rgba(248,113,113,0.18); --border-focus: #f87171;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: #E8A838; } .logo-org { color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; transition: all 0.15s; }
+    .nav-pill:hover { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(248,113,113,0.07); border: 1px solid rgba(248,113,113,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 28px; }
+    .stage-nav { display: flex; gap: 0; margin-bottom: 28px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .stage-btn { flex: 1; background: none; border: none; border-right: 1px solid var(--border); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 12px 8px; cursor: pointer; transition: all 0.15s; text-align: center; line-height: 1.4; }
+    .stage-btn:last-child { border-right: none; }
+    .stage-btn:hover { background: var(--accent-low); color: var(--text-muted); }
+    .stage-btn.active { background: var(--accent-dim); color: var(--accent); }
+    .stage-num { display: block; font-size: 0.65rem; margin-bottom: 2px; opacity: 0.7; }
+    .stage-pane { display: none; }
+    .stage-pane.active { display: block; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 16px; }
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    label { font-size: 0.82rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="text"], input[type="number"], select, textarea { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    textarea { resize: vertical; min-height: 80px; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .checklist { list-style: none; padding: 0; }
+    .checklist li { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.86rem; color: var(--text-muted); }
+    .checklist li:last-child { border-bottom: none; }
+    .checklist input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); margin-top: 2px; flex-shrink: 0; }
+    .example-box { background: rgba(52,211,153,0.05); border: 1px solid rgba(52,211,153,0.25); border-radius: 8px; padding: 14px 18px; margin-bottom: 14px; }
+    .example-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+    .example-bad { color: var(--red); }
+    .example-good { color: var(--green); }
+    .example-text { font-size: 0.86rem; color: var(--text-muted); line-height: 1.65; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 12px 32px; border-radius: 8px; font-size: 0.95rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; transition: opacity 0.2s; margin-top: 8px; }
+    .run-btn:hover { opacity: 0.88; }
+    .nav-btns { display: flex; gap: 10px; margin-top: 24px; }
+    .nav-btn { padding: 10px 24px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; cursor: pointer; transition: all 0.15s; }
+    .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .nav-btn.primary { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .result-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 14px; }
+    .result-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+    .result-val { font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; color: var(--accent); }
+    .result-note { font-size: 0.76rem; color: var(--text-dim); margin-top: 4px; }
+    .sampling-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    .sampling-card { border: 1px solid var(--border); border-radius: 8px; padding: 14px; cursor: pointer; transition: all 0.15s; }
+    .sampling-card:hover { border-color: var(--accent); background: var(--accent-low); }
+    .sampling-card.selected { border-color: var(--accent); background: var(--accent-dim); }
+    .sampling-card-name { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--accent); margin-bottom: 6px; }
+    .sampling-card-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; }
+    .design-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+    .design-btn { padding: 7px 16px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; cursor: pointer; transition: all 0.15s; }
+    .design-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .design-btn.selected { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .insight-box { background: rgba(248,113,113,0.06); border: 1px solid rgba(248,113,113,0.2); border-radius: 8px; padding: 14px 18px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 14px; }
+    .qbank-item { background: var(--surface); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 10px 14px; margin-bottom: 8px; font-size: 0.84rem; color: var(--text-muted); font-style: italic; }
+    .qbank-label { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; color: var(--text-dim); display: block; margin-bottom: 4px; }
+    .section-head { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 12px; margin-top: 22px; }
+    .spss-path { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--blue); background: rgba(96,165,250,0.07); padding: 6px 10px; border-radius: 4px; display: inline-block; margin: 4px 0; }
+    .apa-template { font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; color: var(--text-muted); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; margin-top: 6px; line-height: 1.7; }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(248,113,113,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    @media (max-width: 700px) {
+      .two-col, .sampling-cards { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.7rem; }
+      .stage-nav { flex-direction: column; }
+      .stage-btn { border-right: none; border-bottom: 1px solid var(--border); }
+      .stage-btn:last-child { border-bottom: none; }
+    }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <span class="logo-mark">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="14,2 26,24 2,24" stroke="#E8A838" stroke-width="2" fill="none"/>
+          <polygon points="14,8 22,22 6,22" stroke="#E8A838" stroke-width="1" fill="none" opacity="0.5"/>
+        </svg>
+      </span>
+      <span class="logo-name"><span class="logo-apex">Apex</span><span class="logo-org"> Logics.org</span></span>
+    </a>
+    <span class="nav-spacer"></span>
+    <a href="../../index.html" class="nav-pill">← All Tools</a>
+  </div>
+</nav>
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('zh')">ZH</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('de')">DE</button>
+  </div>
+</div>
+<div class="tool-wrapper">
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+  <div class="tool-eyebrow">AL-88 · Selected Studies — Sport Management</div>
+  <h1 class="tool-title">Survey Study Designer</h1>
+  <p class="tool-desc">A well-designed survey study is harder than it looks. This guided workflow walks through the five stages of survey research design — from sharper research questions through sampling strategy, instrument design, pilot planning, and analysis plan. Grounded in the methodology of a 2005 study on performance-enhancing supplement use among student-athletes at a Division I university (n=226, SPSS analysis), which demonstrated the messiness of real research design.</p>
+  <div class="tool-vintage">Data: Survey methodology: Fowler (2014), Survey Research Methods (5th ed.); Dillman et al. (2014), Internet, Phone, Mail, and Mixed-Mode Surveys; Likert (1932) scale origins</div>
+
+  <div class="stage-nav">
+    <button class="stage-btn active" onclick="switchStage(1,this)"><span class="stage-num">STAGE 1</span>Research<br>Question</button>
+    <button class="stage-btn" onclick="switchStage(2,this)"><span class="stage-num">STAGE 2</span>Population<br>&amp; Sampling</button>
+    <button class="stage-btn" onclick="switchStage(3,this)"><span class="stage-num">STAGE 3</span>Instrument<br>Design</button>
+    <button class="stage-btn" onclick="switchStage(4,this)"><span class="stage-num">STAGE 4</span>Pilot<br>Plan</button>
+    <button class="stage-btn" onclick="switchStage(5,this)"><span class="stage-num">STAGE 5</span>Analysis<br>Plan</button>
+  </div>
+
+  <!-- STAGE 1 -->
+  <div id="stage-1" class="stage-pane active">
+    <div class="card">
+      <div class="card-title">Stage 1 — Research Question</div>
+      <div class="field">
+        <label>Draft Research Question</label>
+        <textarea id="rqText" rows="3" placeholder="E.g.: Why do student-athletes use dietary supplements?"></textarea>
+        <span class="field-hint">Write your initial draft — we'll sharpen it next.</span>
+      </div>
+      <div class="section-head">Quality Checklist</div>
+      <ul class="checklist" id="rqChecklist">
+        <li><input type="checkbox" id="rqc1"> <label for="rqc1">Is this question empirically answerable (not philosophical or purely normative)?</label></li>
+        <li><input type="checkbox" id="rqc2"> <label for="rqc2">Is it specific enough to be testable — a single, bounded claim?</label></li>
+        <li><input type="checkbox" id="rqc3"> <label for="rqc3">Is it feasible within your available sample and resources?</label></li>
+        <li><input type="checkbox" id="rqc4"> <label for="rqc4">Is it original — not already definitively answered in the literature?</label></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">RQ Sharpener — Example Transformations</div>
+      <div class="example-box">
+        <div class="example-label example-bad">❌ Vague / untestable</div>
+        <div class="example-text">"Do athletes use supplements?"</div>
+        <div class="example-label example-good" style="margin-top:12px">✓ Specific / empirically testable</div>
+        <div class="example-text">"What is the self-reported prevalence of dietary supplement use among NCAA Division I student-athletes at [University X], and what are the primary perceived reasons for use?"</div>
+      </div>
+      <div class="example-box">
+        <div class="example-label example-bad">❌ Too broad</div>
+        <div class="example-text">"How does coaching affect athletes?"</div>
+        <div class="example-label example-good" style="margin-top:12px">✓ Bounded and measurable</div>
+        <div class="example-text">"Is there a statistically significant relationship between perceived coach pressure (5-point Likert scale) and self-reported frequency of dietary supplement use among Division I athletes?"</div>
+      </div>
+      <div class="example-box">
+        <div class="example-label example-bad">❌ Normative (not empirical)</div>
+        <div class="example-text">"Should student-athletes use performance-enhancing supplements?"</div>
+        <div class="example-label example-good" style="margin-top:12px">✓ Descriptive / comparative</div>
+        <div class="example-text">"Do Division I athletes who receive coach-provided nutrition guidance report lower rates of unsanctioned supplement use than those who do not?"</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Hypotheses Builder</div>
+      <div class="field">
+        <label>Hypothesis 1 (Directional)</label>
+        <input type="text" id="h1" placeholder="E.g.: Athletes reporting high perceived coach pressure will report higher supplement use frequency." />
+      </div>
+      <div class="field">
+        <label>Hypothesis 2 (Directional)</label>
+        <input type="text" id="h2" placeholder="E.g.: Male athletes will report higher supplement use than female athletes." />
+      </div>
+      <div class="field">
+        <label>Hypothesis 3 (Null / Exploratory)</label>
+        <input type="text" id="h3" placeholder="E.g.: There will be no significant difference in supplement use by year in school (freshman vs. senior)." />
+      </div>
+      <div class="section-head">Study Design Type</div>
+      <div class="design-btns" id="designBtns">
+        <button class="design-btn" onclick="setDesign('Descriptive',this)">Descriptive</button>
+        <button class="design-btn" onclick="setDesign('Correlational',this)">Correlational</button>
+        <button class="design-btn" onclick="setDesign('Quasi-Experimental',this)">Quasi-Experimental</button>
+        <button class="design-btn" onclick="setDesign('True Experimental',this)">True Experimental</button>
+      </div>
+      <p id="designNote" style="font-size:0.82rem;color:var(--text-muted);margin-top:8px;min-height:24px"></p>
+    </div>
+    <div class="nav-btns"><button class="nav-btn primary" onclick="switchStage(2,null)">Next: Population &amp; Sampling →</button></div>
+  </div>
+
+  <!-- STAGE 2 -->
+  <div id="stage-2" class="stage-pane">
+    <div class="card">
+      <div class="card-title">Stage 2 — Population &amp; Sampling</div>
+      <div class="two-col">
+        <div class="field">
+          <label>Target Population</label>
+          <input type="text" id="targetPop" placeholder="E.g.: All NCAA Division I student-athletes in the US" />
+          <span class="field-hint">The full group your research question is about.</span>
+        </div>
+        <div class="field">
+          <label>Accessible Population</label>
+          <input type="text" id="accessPop" placeholder="E.g.: Student-athletes at [University X], Fall 2005" />
+          <span class="field-hint">The subset you can actually reach.</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Sampling Strategy</div>
+      <div class="sampling-cards" id="samplingCards">
+        <div class="sampling-card" onclick="selectSampling('Simple Random','Every member of the accessible population has an equal probability of selection. Requires a complete sampling frame (roster, list). Gold standard for representativeness.')">
+          <div class="sampling-card-name">Simple Random Sampling</div>
+          <div class="sampling-card-desc">Equal probability for all; requires complete roster.</div>
+        </div>
+        <div class="sampling-card" onclick="selectSampling('Stratified Random','Divide population into subgroups (strata), then randomly sample within each stratum. Used when subgroup representation matters — e.g., ensuring equal numbers of male and female athletes.')">
+          <div class="sampling-card-name">Stratified Random</div>
+          <div class="sampling-card-desc">Sample within subgroups; ensures representation.</div>
+        </div>
+        <div class="sampling-card" onclick="selectSampling('Cluster','Sample natural groupings (teams, schools, departments). Convenient when a full roster is unavailable; less precise than random methods.')">
+          <div class="sampling-card-name">Cluster Sampling</div>
+          <div class="sampling-card-desc">Sample natural groups (teams, schools); less precise.</div>
+        </div>
+        <div class="sampling-card" onclick="selectSampling('Convenience / Purposive','Sample whoever is available or fits the criteria. Fast and practical; significantly limits generalizability. Most academic surveys actually use convenience sampling — be honest about it.')">
+          <div class="sampling-card-name">Convenience / Purposive</div>
+          <div class="sampling-card-desc">Whoever is available; fast but limits generalizability.</div>
+        </div>
+        <div class="sampling-card" onclick="selectSampling('Systematic','Every nth person from a list. Practically useful when a sampling frame exists; risks periodic bias if the list has a hidden pattern.')">
+          <div class="sampling-card-name">Systematic Sampling</div>
+          <div class="sampling-card-desc">Every nth person from a list; simple and practical.</div>
+        </div>
+      </div>
+      <div id="samplingNote" class="insight-box" style="display:none"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Sample Size Estimator</div>
+      <div class="two-col">
+        <div class="field">
+          <label>Population Size (N)</label>
+          <input type="number" id="popSize" value="500" min="10" max="100000" oninput="calcN()" />
+          <span class="field-hint">Total accessible population</span>
+        </div>
+        <div class="field">
+          <label>Margin of Error (%)</label>
+          <input type="number" id="moe" value="5" min="1" max="20" step="0.5" oninput="calcN()" />
+          <span class="field-hint">±% acceptable error</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Confidence Level</label>
+        <div class="design-btns" id="confBtns">
+          <button class="design-btn" onclick="setConf(1.645,'90%',this)">90%</button>
+          <button class="design-btn selected" onclick="setConf(1.96,'95%',this)">95%</button>
+          <button class="design-btn" onclick="setConf(2.576,'99%',this)">99%</button>
+        </div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:16px;flex-wrap:wrap">
+        <div class="result-box" style="flex:1;min-width:160px">
+          <div class="result-label">Required n</div>
+          <div class="result-val" id="reqN">—</div>
+          <div class="result-note" id="reqNNote"></div>
+        </div>
+        <div class="result-box" style="flex:1;min-width:220px">
+          <div class="result-label">Formula Used</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--text-dim);line-height:1.8">
+            n₀ = Z² × p × (1–p) / e²<br>
+            n = n₀ / (1 + (n₀–1)/N)<br>
+            Z=z-score, p=0.5 (max variance), e=margin of error
+          </div>
+        </div>
+      </div>
+      <div class="insight-box" style="margin-top:14px">
+        <strong style="color:var(--text)">Nonresponse bias note:</strong> Nonresponse is not random. Who doesn't respond tells you something. Plan for it: use incentives, send reminders, and compare early vs. late responders to test for response bias. A 40% response rate with nonresponse bias can be worse than a 70% response rate without it.
+      </div>
+    </div>
+    <div class="nav-btns">
+      <button class="nav-btn" onclick="switchStage(1,null)">← Stage 1</button>
+      <button class="nav-btn primary" onclick="switchStage(3,null)">Next: Instrument Design →</button>
+    </div>
+  </div>
+
+  <!-- STAGE 3 -->
+  <div id="stage-3" class="stage-pane">
+    <div class="card">
+      <div class="card-title">Stage 3 — Instrument Design</div>
+      <div class="field">
+        <label>Number of Constructs / Survey Sections</label>
+        <select id="numSections" onchange="buildSections()">
+          <option value="2">2</option>
+          <option value="3" selected>3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+        </select>
+      </div>
+      <div id="sectionBuilder"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Likert Scale Builder</div>
+      <div class="two-col">
+        <div>
+          <div class="section-head">5-Point Agree/Disagree</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text-muted);line-height:2">
+            1 — Strongly Disagree<br>
+            2 — Disagree<br>
+            3 — Neither agree nor disagree<br>
+            4 — Agree<br>
+            5 — Strongly Agree
+          </div>
+          <div class="field-hint" style="margin-top:8px">Use for: attitude/opinion items. Neutral midpoint is genuinely useful here.</div>
+        </div>
+        <div>
+          <div class="section-head">5-Point Frequency</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text-muted);line-height:2">
+            1 — Never<br>
+            2 — Rarely<br>
+            3 — Sometimes<br>
+            4 — Often<br>
+            5 — Always
+          </div>
+          <div class="field-hint" style="margin-top:8px">Use for: behavioral frequency items. Avoid "always" anchors for behaviors that vary.</div>
+        </div>
+      </div>
+      <div class="two-col" style="margin-top:16px">
+        <div>
+          <div class="section-head">7-Point Intensity Scale</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text-muted);line-height:2">
+            1 — Extremely Low<br>
+            4 — Moderate<br>
+            7 — Extremely High
+          </div>
+          <div class="field-hint" style="margin-top:8px">Use for: measuring degree of construct (e.g., perceived pressure). More variance than 5-point.</div>
+        </div>
+        <div>
+          <div class="section-head">Semantic Differential</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text-muted);line-height:2">
+            Harmful — 1 2 3 4 5 — Beneficial<br>
+            Weak — 1 2 3 4 5 — Strong
+          </div>
+          <div class="field-hint" style="margin-top:8px">Use for: bipolar constructs (good/bad, strong/weak). Osgood's original scale.</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Item Writing Checklist (per question)</div>
+      <ul class="checklist">
+        <li><input type="checkbox"> <label>Single topic per item — no double-barreled questions ("Do you use protein powder and creatine?": bad)</label></li>
+        <li><input type="checkbox"> <label>No leading language ("Don't you agree that supplements are dangerous?" is leading)</label></li>
+        <li><input type="checkbox"> <label>No double negatives ("I do not disagree that..." — confusing)</label></li>
+        <li><input type="checkbox"> <label>Clear, concrete, unambiguous — every respondent interprets the question the same way</label></li>
+        <li><input type="checkbox"> <label>Consistent with response scale — don't ask frequency with an agree/disagree scale</label></li>
+        <li><input type="checkbox"> <label>Appropriate reading level for your target population</label></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">Sample Question Bank</div>
+      <div class="section-head">Supplement Use (Frequency)</div>
+      <div class="qbank-item"><span class="qbank-label">Behavioral Frequency · 5-Point Scale</span>"How often do you use dietary supplements (protein powders, creatine, vitamins, etc.)? 1=Never, 2=Rarely, 3=Sometimes, 4=Often, 5=Always"</div>
+      <div class="qbank-item"><span class="qbank-label">Type Checklist · Binary</span>"Which of the following supplements have you used in the past 12 months? (Check all that apply): □ Protein powder □ Creatine □ Multivitamins □ Energy drinks □ Pre-workout formulas □ None"</div>
+      <div class="section-head">Perceived Pressure (Likert)</div>
+      <div class="qbank-item"><span class="qbank-label">Coach Pressure · 5-Point Intensity</span>"To what extent do you feel pressure from coaches to improve athletic performance through nutrition or supplementation? 1=No pressure at all, 5=Extreme pressure"</div>
+      <div class="qbank-item"><span class="qbank-label">Peer Influence · 5-Point Agree/Disagree</span>"Most of my teammates use dietary supplements." (SA/A/N/D/SD)</div>
+      <div class="section-head">Knowledge / Awareness</div>
+      <div class="qbank-item"><span class="qbank-label">True/False Knowledge Item</span>"Creatine is classified as a banned substance by the NCAA. □ True □ False □ Not sure" (Correct answer: False — creatine is not banned by NCAA)</div>
+      <div class="qbank-item"><span class="qbank-label">Knowledge Scale Item</span>"How familiar are you with the NCAA's banned substance list? 1=Not at all familiar, 5=Extremely familiar"</div>
+    </div>
+    <div class="nav-btns">
+      <button class="nav-btn" onclick="switchStage(2,null)">← Stage 2</button>
+      <button class="nav-btn primary" onclick="switchStage(4,null)">Next: Pilot Plan →</button>
+    </div>
+  </div>
+
+  <!-- STAGE 4 -->
+  <div id="stage-4" class="stage-pane">
+    <div class="card">
+      <div class="card-title">Stage 4 — Pilot Plan</div>
+      <div class="insight-box">
+        <strong style="color:var(--text)">Cognitive Interviewing:</strong> Test 5–7 people from your target population. Ask them to think aloud while completing the survey. What are they actually interpreting? Pay attention to: how long they pause on specific questions, when they ask for clarification, and whether their verbal reasoning matches the intent of the item.
+      </div>
+      <div class="section-head">Pilot Checklist</div>
+      <ul class="checklist">
+        <li><input type="checkbox"> <label><strong>Timing:</strong> How long does it actually take to complete? (Aim for ≤15 minutes for survey studies. Long surveys have dramatically higher dropout rates.)</label></li>
+        <li><input type="checkbox"> <label><strong>Instructions:</strong> Are they clear without verbal explanation? Can a respondent complete the survey cold, without you present?</label></li>
+        <li><input type="checkbox"> <label><strong>Skip logic:</strong> Does conditional routing work correctly? (e.g., "If Q3 = Never, skip to Q7")</label></li>
+        <li><input type="checkbox"> <label><strong>Response distributions:</strong> Is there any question where everyone gives the same answer? (Ceiling/floor effects — the question has no discriminatory power)</label></li>
+        <li><input type="checkbox"> <label><strong>Sensitive questions:</strong> Do any questions cause visible discomfort or refusal? Plan to reframe, make optional, or remove.</label></li>
+        <li><input type="checkbox"> <label><strong>Terminology:</strong> Do respondents understand all terms? (e.g., Do athletes know what "NCAA-sanctioned" means?)</label></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">Common Pilot Findings &amp; Fixes</div>
+      <table style="width:100%;border-collapse:collapse;font-size:0.84rem">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--text-dim);text-transform:uppercase">Finding</th>
+            <th style="text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--text-dim);text-transform:uppercase">Fix</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-muted)">All responses clustered at one end of scale</td><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-muted)">Add more extreme anchors; rephrase to increase variance; consider 7-point scale</td></tr>
+          <tr><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-muted)">Respondents frequently skip question X</td><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-muted)">Rephrase for clarity; make it optional; or remove if not central to RQ</td></tr>
+          <tr><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-muted)">Respondents interpret question differently than intended</td><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-muted)">Rewrite with explicit operationalization; add brief definition in parentheses</td></tr>
+          <tr><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-muted)">Survey takes 25 minutes instead of 10</td><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-muted)">Cut lowest-priority items; combine constructs; use shorter stems</td></tr>
+          <tr><td style="padding:9px 12px;color:var(--text-muted)">Double-barreled question identified</td><td style="padding:9px 12px;color:var(--text-muted)">Split into two separate items; decide which is most important to your RQ</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="nav-btns">
+      <button class="nav-btn" onclick="switchStage(3,null)">← Stage 3</button>
+      <button class="nav-btn primary" onclick="switchStage(5,null)">Next: Analysis Plan →</button>
+    </div>
+  </div>
+
+  <!-- STAGE 5 -->
+  <div id="stage-5" class="stage-pane">
+    <div class="card">
+      <div class="card-title">Stage 5 — Analysis Plan</div>
+      <div class="insight-box">Always report descriptive statistics before inferential tests. Readers need to know means, SDs, and n before they can interpret a p-value.</div>
+      <div class="section-head">Descriptive Statistics to Report</div>
+      <ul style="font-size:0.86rem;color:var(--text-muted);line-height:2;padding-left:20px">
+        <li>Frequencies and percentages for all categorical/nominal variables (sport, gender, year in school)</li>
+        <li>Mean (M) and standard deviation (SD) for each Likert scale item</li>
+        <li>M and SD for composite scale scores (sum or mean of items within a construct)</li>
+        <li>Range (min–max) and n per item (flag missing data)</li>
+        <li>Cronbach's alpha (α) for multi-item scales — reliability check (α ≥ 0.70 acceptable; ≥ 0.80 preferred)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">Inferential Test Selector</div>
+      <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:16px">Match your test to the design type (Stage 1) and measurement level of your variables.</p>
+      <table style="width:100%;border-collapse:collapse;font-size:0.83rem">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--text-dim);text-transform:uppercase">Scenario</th>
+            <th style="text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--text-dim);text-transform:uppercase">Test</th>
+            <th style="text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--text-dim);text-transform:uppercase">SPSS Path</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-muted)">2 groups, continuous/interval outcome</td><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--blue);font-family:'JetBrains Mono',monospace;font-size:0.8rem">Independent samples t-test</td><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-dim);font-size:0.78rem">Analyze → Compare Means → Independent-Samples T Test</td></tr>
+          <tr><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-muted)">3+ groups, continuous outcome</td><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--blue);font-family:'JetBrains Mono',monospace;font-size:0.8rem">One-Way ANOVA</td><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-dim);font-size:0.78rem">Analyze → Compare Means → One-Way ANOVA</td></tr>
+          <tr><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-muted)">2 categorical variables (association)</td><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--blue);font-family:'JetBrains Mono',monospace;font-size:0.8rem">Chi-square test of independence</td><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-dim);font-size:0.78rem">Analyze → Descriptive Statistics → Crosstabs (Chi-square)</td></tr>
+          <tr><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-muted)">2 continuous variables, normal distribution</td><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--blue);font-family:'JetBrains Mono',monospace;font-size:0.8rem">Pearson correlation (r)</td><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-dim);font-size:0.78rem">Analyze → Correlate → Bivariate (Pearson)</td></tr>
+          <tr><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-muted)">2 ordinal/non-normal variables</td><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--blue);font-family:'JetBrains Mono',monospace;font-size:0.8rem">Spearman rho (ρ)</td><td style="padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-dim);font-size:0.78rem">Analyze → Correlate → Bivariate (Spearman)</td></tr>
+          <tr><td style="padding:9px 12px;color:var(--text-muted)">Predict continuous outcome from predictors</td><td style="padding:9px 12px;color:var(--blue);font-family:'JetBrains Mono',monospace;font-size:0.8rem">Multiple regression</td><td style="padding:9px 12px;color:var(--text-dim);font-size:0.78rem">Analyze → Regression → Linear</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">APA Reporting Templates</div>
+      <div class="section-head">t-test</div>
+      <div class="apa-template">An independent samples t-test was conducted to compare [outcome] for [Group A] (M = ___, SD = ___) and [Group B] (M = ___, SD = ___). There was a [significant / no significant] difference; t(df) = ___, p = .___, d = ___.</div>
+      <div class="section-head">Chi-square</div>
+      <div class="apa-template">A chi-square test of independence revealed a [significant / no significant] association between [Variable 1] and [Variable 2], χ²(df, N = ___) = ___, p = .___, Cramér's V = ___.</div>
+      <div class="section-head">Pearson Correlation</div>
+      <div class="apa-template">There was a [positive / negative / no] correlation between [Variable A] and [Variable B], r(n–2) = ___, p = .___. [Variable A] accounted for ___% of the variance in [Variable B].</div>
+      <div class="section-head">Missing Data Plan</div>
+      <div class="insight-box" style="margin-top:8px">Report n per item in your results table. Consider listwise vs. pairwise deletion strategy. Mean imputation is acceptable for &lt;5% missing on any given item. If missing data exceeds 10%, report it explicitly and discuss potential nonresponse bias. Never simply drop cases without acknowledging the implications for your sample.</div>
+    </div>
+
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">📄 Export Research Memo (Markdown)</button>
+      <button class="export-btn ap2" onclick="exportAP2()">⬡ Export AP2 Record</button>
+    </div>
+  </div>
+
+</div><!-- end tool-wrapper -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-88 · Data: Fowler 2014; Dillman 2014
+</footer>
+
+<script>
+  const state = {
+    rqText: '',
+    designType: '',
+    samplingStrategy: '',
+    estimatedN: 0,
+    instrumentSections: [],
+    analysisTests: []
+  };
+
+  let zScore = 1.96;
+  let confLabel = '95%';
+
+  function switchStage(n, btn) {
+    document.querySelectorAll('.stage-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.stage-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('stage-' + n).classList.add('active');
+    if (btn) btn.classList.add('active');
+    else document.querySelectorAll('.stage-btn')[n-1].classList.add('active');
+  }
+
+  function setLang(l) {
+    try { sessionStorage.setItem('apex_lang', l); } catch(e) {}
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent === l.toUpperCase()));
+  }
+  (function() {
+    try { const l = sessionStorage.getItem('apex_lang'); if (l) setLang(l); } catch(e) {}
+  })();
+
+  function setDesign(type, btn) {
+    state.designType = type;
+    document.querySelectorAll('#designBtns .design-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    const notes = {
+      'Descriptive': 'Describes characteristics of a population. No manipulation, no comparison groups. Results: frequencies, percentages, means.',
+      'Correlational': 'Examines relationships between variables without manipulation. Can show association, not causation. Results: Pearson r, regression.',
+      'Quasi-Experimental': 'Compares groups but without random assignment. Pre-existing groups (athletes vs. non-athletes). Reduces internal validity.',
+      'True Experimental': 'Random assignment to conditions. Strongest causal inference. Rare in survey research — requires active intervention.'
+    };
+    document.getElementById('designNote').textContent = notes[type] || '';
+  }
+
+  function selectSampling(name, desc) {
+    state.samplingStrategy = name;
+    document.querySelectorAll('.sampling-card').forEach(c => c.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+    const note = document.getElementById('samplingNote');
+    note.textContent = desc;
+    note.style.display = 'block';
+  }
+
+  function setConf(z, label, btn) {
+    zScore = z; confLabel = label;
+    document.querySelectorAll('#confBtns .design-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    calcN();
+  }
+
+  function calcN() {
+    const N = parseInt(document.getElementById('popSize').value) || 500;
+    const e = (parseFloat(document.getElementById('moe').value) || 5) / 100;
+    const p = 0.5;
+    const n0 = (zScore * zScore * p * (1 - p)) / (e * e);
+    const n = Math.ceil(n0 / (1 + (n0 - 1) / N));
+    state.estimatedN = n;
+    document.getElementById('reqN').textContent = n.toLocaleString();
+    document.getElementById('reqNNote').textContent = `${confLabel} confidence, ±${(e*100).toFixed(1)}%, from N=${N.toLocaleString()}`;
+  }
+  calcN();
+
+  function buildSections() {
+    const n = parseInt(document.getElementById('numSections').value);
+    const container = document.getElementById('sectionBuilder');
+    container.innerHTML = '';
+    state.instrumentSections = [];
+    const qTypes = ['Likert scale (Agree/Disagree)','Likert scale (Frequency)','Semantic Differential','Ranking','Binary (Yes/No)','Open-ended','Demographic'];
+    for (let i = 1; i <= n; i++) {
+      const div = document.createElement('div');
+      div.style.cssText = 'border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-bottom:12px;background:var(--surface)';
+      div.innerHTML = `
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--accent);margin-bottom:12px;text-transform:uppercase">Section ${i}</div>
+        <div class="two-col">
+          <div class="field"><label>Construct Name</label><input type="text" id="sec${i}name" placeholder="E.g.: Supplement Use Frequency" oninput="updateSection(${i})" /></div>
+          <div class="field"><label>Question Type</label><select id="sec${i}type" onchange="updateSection(${i})">${qTypes.map(t=>`<option>${t}</option>`).join('')}</select></div>
+        </div>
+        <div class="field"><label>Operationalization (what does this construct mean in observable terms?)</label><input type="text" id="sec${i}op" placeholder="E.g.: Self-reported days per week using any dietary supplement" oninput="updateSection(${i})" /></div>`;
+      container.appendChild(div);
+      state.instrumentSections.push({ section: i, name: '', type: qTypes[0], operationalization: '' });
+    }
+  }
+
+  function updateSection(i) {
+    if (!state.instrumentSections[i-1]) return;
+    state.instrumentSections[i-1].name = document.getElementById('sec'+i+'name').value;
+    state.instrumentSections[i-1].type = document.getElementById('sec'+i+'type').value;
+    state.instrumentSections[i-1].operationalization = document.getElementById('sec'+i+'op').value;
+  }
+
+  buildSections();
+
+  const AP2Schema = {
+    validMandateTypes: [
+      'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+      'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+      'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+      'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+      'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+      'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+      'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+      'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+      'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+      'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+      'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+      'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+      'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+      'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
+      'english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record',
+      'mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record',
+      'mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record',
+      'lesson_design_record','assessment_item_record','classroom_scenario_record',
+      'gt_differentiation_record','instructor_toolkit_record',
+      'cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record',
+      'primary_source_record','historiography_record','anachronism_record','counterfactual_record',
+      'franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record',
+      'micro_theory_record','economic_systems_record','economists_panel_record',
+      'economic_history_record','econ_principles_record'
+    ],
+    validate(record) {
+      if (!record || typeof record !== 'object') return { valid: false, error: 'Record must be an object' };
+      if (!record.mandate_type) return { valid: false, error: 'Missing mandate_type' };
+      if (!this.validMandateTypes.includes(record.mandate_type)) return { valid: false, error: 'Invalid mandate_type: ' + record.mandate_type };
+      if (!record.al_id) return { valid: false, error: 'Missing al_id' };
+      if (!record.generated_at) return { valid: false, error: 'Missing generated_at' };
+      return { valid: true };
+    }
+  };
+
+  function getRQText() { return (document.getElementById('rqText') || {}).value || ''; }
+
+  function exportMarkdown() {
+    const rq = getRQText();
+    const md = `# Survey Research Design Memo
+**Generated:** ${new Date().toLocaleString()}
+**Tool:** AL-88 · ApexLogics.org
+
+## Research Question
+${rq || '[Not entered]'}
+
+**Study Design Type:** ${state.designType || '[Not selected]'}
+
+## Hypotheses
+- H1: ${(document.getElementById('h1')||{}).value || '[Not entered]'}
+- H2: ${(document.getElementById('h2')||{}).value || '[Not entered]'}
+- H3 (Null): ${(document.getElementById('h3')||{}).value || '[Not entered]'}
+
+## Population & Sampling
+**Target Population:** ${(document.getElementById('targetPop')||{}).value || '[Not entered]'}
+**Accessible Population:** ${(document.getElementById('accessPop')||{}).value || '[Not entered]'}
+**Sampling Strategy:** ${state.samplingStrategy || '[Not selected]'}
+**Required Sample Size (n):** ${state.estimatedN || '[Not calculated]'} (${confLabel} confidence)
+
+## Instrument Sections
+${state.instrumentSections.map((s,i) => `${i+1}. **${s.name || 'Unnamed construct'}** — ${s.type}\n   Operationalization: ${s.operationalization || '[Not entered]'}`).join('\n')}
+
+## Analysis Plan
+- Descriptive statistics: frequencies, means, SDs per item
+- Inferential tests: per design type and measurement level (see tool)
+- Reliability: Cronbach's alpha (α ≥ 0.70) for multi-item scales
+- Missing data: report n per item; discuss nonresponse implications
+
+---
+*Methodology: Fowler (2014); Dillman et al. (2014)*
+`;
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'survey-design-memo.md'; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportAP2() {
+    const record = {
+      mandate_type: 'survey_design_record',
+      al_id: 'AL-88',
+      generated_at: new Date().toISOString(),
+      rq_text: getRQText(),
+      design_type: state.designType,
+      sampling_strategy: state.samplingStrategy,
+      estimated_n: state.estimatedN,
+      instrument_sections: state.instrumentSections,
+      analysis_plan_tests: ['descriptive statistics', 'reliability (Cronbach alpha)', state.designType ? 'inferential per design type' : 'TBD']
+    };
+    const result = AP2Schema.validate(record);
+    if (!result.valid) { alert('AP2 validation error: ' + result.error); return; }
+    const blob = new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'ap2-survey-design-record.json'; a.click();
+    URL.revokeObjectURL(url);
+  }
+</script>
+</body>
+</html>

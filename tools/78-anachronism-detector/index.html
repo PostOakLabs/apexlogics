@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anachronism Detector · ApexLogics #78</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/78-anachronism-detector/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #fbbf24; --accent-dim: rgba(251,191,36,0.18); --accent-low: rgba(251,191,36,0.08);
+      --border: rgba(251,191,36,0.18); --border-focus: #fbbf24;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: #E8A838; } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 28px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 28px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 10px 18px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    select, textarea, input[type="text"], input[type="number"] { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    select:focus, textarea:focus, input:focus { outline: none; border-color: var(--border-focus); }
+    textarea { resize: vertical; line-height: 1.6; }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-style: italic; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 12px 36px; border-radius: 8px; font-size: 0.95rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; margin: 8px 0; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .flag-list { margin-top: 16px; }
+    .flag-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 8px; margin-bottom: 10px; }
+    .flag-item.red { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.3); }
+    .flag-item.amber { background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.3); }
+    .flag-item.green { background: rgba(52,211,153,0.07); border: 1px solid rgba(52,211,153,0.3); }
+    .flag-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+    .flag-dot.red { background: var(--red); }
+    .flag-dot.amber { background: var(--amber); }
+    .flag-dot.green { background: var(--green); }
+    .flag-term { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; font-weight: 500; }
+    .flag-term.red { color: var(--red); }
+    .flag-term.amber { color: var(--amber); }
+    .flag-term.green { color: var(--green); }
+    .flag-note { font-size: 0.8rem; color: var(--text-muted); margin-top: 3px; }
+    .no-flags { color: var(--text-dim); font-size: 0.87rem; font-style: italic; padding: 12px 0; }
+    .quiz-excerpt { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; }
+    .quiz-excerpt-label { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .quiz-excerpt-text { font-size: 0.9rem; color: var(--text-muted); line-height: 1.7; font-style: italic; margin-bottom: 14px; }
+    .quiz-guess { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    .quiz-guess input[type="text"] { font-size: 0.85rem; padding: 8px 12px; }
+    .quiz-reveal { background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 7px 16px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; }
+    .quiz-reveal:hover { border-color: var(--accent); color: var(--accent); }
+    .quiz-answer { display: none; background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.25); border-radius: 8px; padding: 12px 16px; margin-top: 10px; font-size: 0.84rem; color: var(--text-muted); }
+    .quiz-answer.visible { display: block; }
+    .quiz-answer strong { color: var(--red); }
+    .score-display { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.3); border-radius: 10px; padding: 16px 20px; text-align: center; font-family: 'JetBrains Mono', monospace; }
+    .score-val { font-size: 2rem; color: var(--accent); }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(251,191,36,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #7f1d1d; border: 1px solid var(--red); color: #fecaca; padding: 12px 22px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; z-index: 200; display: none; }
+    .toast.show { display: block; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    @media (max-width: 700px) { .tool-title { font-size: 1.8rem; } .results-export-row { flex-direction: column; } }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="../../index.html" class="nav-pill accent">← All Tools</a>
+  </div>
+</nav>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <div class="tool-eyebrow">AL-85 · Selected Studies — History</div>
+  <h1 class="tool-title">Anachronism Detector</h1>
+  <p class="tool-desc">An anachronism is something out of its time — a telephone in ancient Rome, the phrase "OK" in 1840s England, a corporation in medieval Europe. This tool checks claims, fiction excerpts, or historical scenarios against an embedded database of 80+ chronological facts: when concepts, technologies, institutions, and expressions first appeared. Use it to verify historical fiction, spot errors in student work, or play "spot the anachronism" with embedded quiz excerpts.</p>
+  <div class="tool-vintage">Data vintage: Chronological data: Oxford English Dictionary (word/phrase first use); Wikipedia + scholarly sources for invention/institution dates (compiled 2024–25)</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">1 · Check a Claim</button>
+    <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">2 · Spot the Anachronism Quiz</button>
+  </div>
+
+  <!-- TAB 1: CHECK A CLAIM -->
+  <div class="tab-pane active" id="tabPane1">
+    <div class="card">
+      <div class="card-title">Check Your Text for Anachronisms <span class="badge">80+ Entries</span></div>
+      <div class="field">
+        <label for="claimText">Enter a historical claim, passage, or scenario</label>
+        <textarea id="claimText" rows="5" placeholder="e.g. In 1776, the colonists used telegraphs to coordinate the revolution, and Benjamin Franklin consulted the newspaper..."></textarea>
+        <span class="field-hint">The tool scans your text for terms matching its chronological database.</span>
+      </div>
+      <div class="field">
+        <label for="claimYear">Historical period (approximate year or century)</label>
+        <input type="text" id="claimYear" placeholder="e.g. 1776  or  13th century  or  50 CE" />
+        <span class="field-hint">Enter as a number (1776), negative for BCE (-50), or descriptive century.</span>
+      </div>
+      <button class="run-btn" onclick="checkClaim()">Check for Anachronisms</button>
+    </div>
+
+    <div class="card" id="resultsCard" style="display:none;">
+      <div class="card-title" id="resultsTitle">Results</div>
+      <div id="flagList" class="flag-list"></div>
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Export Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()">⬇ Export AP2 JSON</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: QUIZ -->
+  <div class="tab-pane" id="tabPane2">
+    <div class="card">
+      <div class="card-title">Spot the Anachronism Quiz <span class="badge">5 Excerpts</span></div>
+      <p style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 20px;">Each excerpt is set in a specific historical period and contains one or more deliberate anachronisms. Read each passage, enter your guess, then reveal the answer.</p>
+
+      <div class="quiz-excerpt" id="quiz0">
+        <div class="quiz-excerpt-label">Excerpt 1 — Set in 1492 (Columbus's voyage)</div>
+        <div class="quiz-excerpt-text">"Columbus gazed at the compass and consulted his telescope to scan the horizon. His crew was getting restless, and he noted their anxieties in his journal."</div>
+        <div class="quiz-guess">
+          <label style="font-size:0.75rem;">What is the anachronism?</label>
+          <input type="text" placeholder="Type your answer..." id="q0guess" />
+        </div>
+        <button class="quiz-reveal" onclick="revealQuiz(0)">Reveal Answer</button>
+        <div class="quiz-answer" id="q0answer">
+          <strong>Anachronism:</strong> The <strong>telescope</strong>. Columbus used a compass (which was available — Chinese magnetic compass c.1040, European use c.1190), but the telescope was not invented until 1608 (Hans Lipperhey). Columbus had no optical telescope. His navigation used dead reckoning and a compass, not telescopic observation.
+        </div>
+      </div>
+
+      <div class="quiz-excerpt" id="quiz1">
+        <div class="quiz-excerpt-label">Excerpt 2 — Set in medieval Europe, 13th century</div>
+        <div class="quiz-excerpt-text">"The guildhall of the corporation met to discuss their insurance policies and decide how to allocate stock dividends among the partners."</div>
+        <div class="quiz-guess">
+          <label style="font-size:0.75rem;">What are the anachronisms?</label>
+          <input type="text" placeholder="Type your answer..." id="q1guess" />
+        </div>
+        <button class="quiz-reveal" onclick="revealQuiz(1)">Reveal Answer</button>
+        <div class="quiz-answer" id="q1answer">
+          <strong>Anachronisms:</strong> <strong>Corporation</strong> (East India Company 1600; modern corporate form 19th century), <strong>insurance policies</strong> (marine insurance contracts first appear in Genoa, 1347 — so this is barely possible by late 13th century but the formal concept of insurance as practiced was later), and <strong>stock dividends</strong> (Amsterdam Stock Exchange 1602). The guildhall itself is period-appropriate, but the corporate and financial mechanisms are not.
+        </div>
+      </div>
+
+      <div class="quiz-excerpt" id="quiz2">
+        <div class="quiz-excerpt-label">Excerpt 3 — Set in ancient Rome, 50 CE</div>
+        <div class="quiz-excerpt-text">"The centurion spoke into his radio to coordinate the ambush, while another soldier used his revolver to hold the prisoner at bay."</div>
+        <div class="quiz-guess">
+          <label style="font-size:0.75rem;">What are the anachronisms?</label>
+          <input type="text" placeholder="Type your answer..." id="q2guess" />
+        </div>
+        <button class="quiz-reveal" onclick="revealQuiz(2)">Reveal Answer</button>
+        <div class="quiz-answer" id="q2answer">
+          <strong>Anachronisms:</strong> <strong>Radio</strong> (Marconi's first radio transmission 1895 — 1,845 years after this scene) and <strong>revolver</strong> (Colt's revolver patent 1836 — 1,786 years after this scene). Roman legionaries used gladii, pila, and shields. Both are extreme anachronisms.
+        </div>
+      </div>
+
+      <div class="quiz-excerpt" id="quiz3">
+        <div class="quiz-excerpt-label">Excerpt 4 — Set in 1776 America</div>
+        <div class="quiz-excerpt-text">"Benjamin Franklin published the pamphlet in the newspaper, then boarded the railroad to Philadelphia to present it to the Continental Congress."</div>
+        <div class="quiz-guess">
+          <label style="font-size:0.75rem;">What is the anachronism?</label>
+          <input type="text" placeholder="Type your answer..." id="q3guess" />
+        </div>
+        <button class="quiz-reveal" onclick="revealQuiz(3)">Reveal Answer</button>
+        <div class="quiz-answer" id="q3answer">
+          <strong>Anachronism:</strong> The <strong>railroad</strong>. Franklin could plausibly publish in a newspaper (the first American newspaper dates to 1690; the Pennsylvania Gazette was published from 1728). But the steam locomotive was not invented until 1804, and commercial rail service began in 1825. In 1776, Franklin would have traveled by horse, coach, or boat. The railroad is 28–49 years too early.
+        </div>
+      </div>
+
+      <div class="quiz-excerpt" id="quiz4">
+        <div class="quiz-excerpt-label">Excerpt 5 — Set in Renaissance Florence, 1490</div>
+        <div class="quiz-excerpt-text">"Leonardo read the newspaper while across the workshop, the scientist peered through his microscope at a specimen of Florentine moss."</div>
+        <div class="quiz-guess">
+          <label style="font-size:0.75rem;">What are the anachronisms?</label>
+          <input type="text" placeholder="Type your answer..." id="q4guess" />
+        </div>
+        <button class="quiz-reveal" onclick="revealQuiz(4)">Reveal Answer</button>
+        <div class="quiz-answer" id="q4answer">
+          <strong>Anachronisms:</strong> <strong>Newspaper</strong> (first printed newspaper: Relation, 1605, Strasbourg — 115 years too early), and the word <strong>"scientist"</strong> (coined by William Whewell in 1833 — 343 years too early; in 1490, one would say "natural philosopher"). The <strong>microscope</strong> is marginal: attributed to Zacharias Janssen c.1590 — possible within a century of this scene, but not yet in 1490. Leonardo himself designed instruments but had no compound microscope.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-85 · Data: OED first-use dates; invention chronology compiled 2024–25
+</footer>
+
+<script>
+  const anachronismDB = [
+    // Technology
+    {term: "telephone", invented: 1876, note: "Bell's patent 1876"},
+    {term: "telegraph", invented: 1837, note: "Morse's electromagnetic telegraph 1837; optical telegraph 1792"},
+    {term: "radio", invented: 1895, note: "Marconi's first radio transmission 1895"},
+    {term: "television", invented: 1926, note: "Baird's first demonstration 1926"},
+    {term: "computer", invented: 1936, note: "Turing's theoretical model 1936; ENIAC 1945"},
+    {term: "internet", invented: 1969, note: "ARPANET 1969; World Wide Web 1991"},
+    {term: "smartphone", invented: 2007, note: "iPhone launch January 2007"},
+    {term: "automobile", invented: 1885, note: "Benz Patent-Motorwagen 1885"},
+    {term: "railroad", invented: 1804, note: "Steam locomotive 1804; commercial rail 1825"},
+    {term: "steam engine", invented: 1712, note: "Newcomen's atmospheric engine 1712; Watt's improvements 1769"},
+    {term: "printing press", invented: 1440, note: "Gutenberg's movable type c.1440"},
+    {term: "gunpowder", invented: 850, note: "Chinese formula c.850 CE; European use c.1300"},
+    {term: "cannon", invented: 1260, note: "First cannons c.1260s China; Europe c.1320"},
+    {term: "musket", invented: 1520, note: "Early matchlock muskets c.1520"},
+    {term: "revolver", invented: 1836, note: "Colt's revolver patent 1836"},
+    {term: "machine gun", invented: 1862, note: "Gatling gun 1862"},
+    {term: "airplane", invented: 1903, note: "Wright Brothers first flight December 17, 1903"},
+    {term: "electricity", invented: 1831, note: "Faraday's electromagnetic induction 1831; electric light 1879"},
+    {term: "microscope", invented: 1590, note: "Zacharias Janssen c.1590"},
+    {term: "telescope", invented: 1608, note: "Hans Lipperhey 1608; Galileo 1609"},
+    {term: "clock", invented: 1300, note: "Mechanical clocks c.1300 CE; pendulum clock 1656"},
+    {term: "compass", invented: 1040, note: "Chinese magnetic compass c.1040; European use c.1190"},
+    {term: "eyeglasses", invented: 1286, note: "First recorded use in Italy c.1286"},
+    {term: "paper", invented: 105, note: "Cai Lun's improvement 105 CE; papermaking reached Europe c.1150"},
+    {term: "stirrup", invented: 300, note: "Earliest stirrups Central Asia c.300 CE"},
+    // Institutions and concepts
+    {term: "corporation", invented: 1600, note: "East India Company 1600; modern corporate form 19th c."},
+    {term: "stock market", invented: 1602, note: "Amsterdam Stock Exchange 1602"},
+    {term: "bank", invented: 1157, note: "Bank of Venice 1157; Bank of England 1694"},
+    {term: "insurance", invented: 1347, note: "Marine insurance contracts Genoa 1347"},
+    {term: "newspaper", invented: 1605, note: "First printed newspaper Relation 1605, Strasbourg"},
+    {term: "university", invented: 1088, note: "University of Bologna 1088; Paris c.1150"},
+    {term: "democracy", invented: -507, note: "Athenian demokratia established 507 BCE"},
+    {term: "parliament", invented: 1215, note: "Magna Carta 1215; Model Parliament 1295"},
+    {term: "constitution", invented: 1787, note: "US Constitution 1787; constitutionalism as concept earlier"},
+    {term: "nation-state", invented: 1648, note: "Peace of Westphalia 1648 as conventional origin"},
+    {term: "police", invented: 1829, note: "London Metropolitan Police (Peel) 1829; earlier constables existed"},
+    {term: "income tax", invented: 1799, note: "First modern income tax UK 1799 (Pitt the Younger, wartime)"},
+    {term: "public health", invented: 1848, note: "UK Public Health Act 1848; germ theory 1860s"},
+    {term: "copyright", invented: 1710, note: "Statute of Anne 1710"},
+    {term: "patent", invented: 1474, note: "Venice Patent Statute 1474"},
+    // Language and expressions
+    {term: "OK", invented: 1839, note: "First print use: Boston Morning Post, March 23, 1839"},
+    {term: "teenager", invented: 1941, note: "First use in print 1941"},
+    {term: "boredom", invented: 1852, note: "Word 'boredom' coined by Dickens, Bleak House 1852"},
+    {term: "scientist", invented: 1833, note: "Coined by William Whewell 1833"},
+    {term: "biology", invented: 1802, note: "Term coined independently by Lamarck and Treviranus 1802"},
+    {term: "statistics", invented: 1749, note: "Term coined by Gottfried Achenwall 1749"},
+    {term: "psychology", invented: 1590, note: "First use c.1590; established as discipline 1879"},
+    {term: "economics", invented: 1890, note: "Coined by Alfred Marshall; 'political economy' was earlier term"},
+    {term: "ideology", invented: 1796, note: "Coined by Destutt de Tracy 1796"},
+    {term: "capitalism", invented: 1850, note: "Word first used c.1850; concept much earlier"},
+    {term: "socialism", invented: 1827, note: "First use in English 1827"},
+    {term: "liberalism", invented: 1815, note: "As political term c.1815"},
+    {term: "nationalism", invented: 1798, note: "Term coined c.1798 during French Revolutionary period"},
+    {term: "genocide", invented: 1944, note: "Coined by Raphael Lemkin in 1944"},
+    {term: "holocaust", invented: 1941, note: "Used specifically for Nazi genocide from early 1940s"},
+    {term: "propaganda", invented: 1622, note: "Congregatio de Propaganda Fide (Catholic Church) 1622"},
+    // Cultural and social
+    {term: "soccer", invented: 1863, note: "Football Association rules codified 1863; 'soccer' as slang from c.1880s"},
+    {term: "baseball", invented: 1845, note: "Knickerbocker Rules codified 1845"},
+    {term: "restaurant", invented: 1765, note: "First use of 'restaurant' Paris c.1765"},
+    {term: "hotel", invented: 1765, note: "'Hotel' in English c.1765; earlier inns existed"},
+    {term: "coffee house", invented: 1475, note: "First coffee house Constantinople 1475; London 1652"},
+    {term: "kindergarten", invented: 1837, note: "Froebel's Kindergarten founded 1837"},
+    {term: "comic book", invented: 1933, note: "Modern comic book format 1933"},
+    {term: "photography", invented: 1839, note: "Daguerreotype announced 1839"},
+    {term: "cinema", invented: 1895, note: "Lumière brothers' first public film screening 1895"},
+    {term: "phonograph", invented: 1877, note: "Edison's phonograph 1877"},
+    // Medicine
+    {term: "vaccine", invented: 1796, note: "Jenner's smallpox vaccine 1796"},
+    {term: "anesthesia", invented: 1846, note: "First surgical use of ether 1846"},
+    {term: "antiseptic", invented: 1867, note: "Lister's antiseptic technique 1867"},
+    {term: "germ theory", invented: 1862, note: "Pasteur's germ theory of disease published 1862"},
+    {term: "antibiotic", invented: 1928, note: "Penicillin discovered by Fleming 1928"},
+    {term: "aspirin", invented: 1899, note: "Bayer marketed aspirin 1899"},
+    {term: "x-ray", invented: 1895, note: "Röntgen discovered X-rays 1895"},
+    {term: "psychiatry", invented: 1808, note: "Term coined 1808; as medical specialty 19th c."}
+  ];
+
+  let lastFlags = [];
+  let lastClaim = '';
+  let lastPeriod = '';
+  let claimChecked = false;
+
+  function parsePeriodYear(str) {
+    str = str.trim().toLowerCase();
+    if (!str) return null;
+    // Try direct number
+    const n = parseFloat(str.replace(/[^0-9\-\.]/g, ''));
+    if (!isNaN(n)) return n;
+    // Century patterns
+    const centMatch = str.match(/(\d+)(st|nd|rd|th)\s+century/);
+    if (centMatch) return (parseInt(centMatch[1]) - 1) * 100 + 50;
+    return null;
+  }
+
+  function checkClaim() {
+    const text = document.getElementById('claimText').value;
+    const yearStr = document.getElementById('claimYear').value;
+    const periodYear = parsePeriodYear(yearStr);
+    lastClaim = text;
+    lastPeriod = yearStr;
+    claimChecked = true;
+
+    const lowerText = text.toLowerCase();
+    lastFlags = [];
+
+    anachronismDB.forEach(entry => {
+      if (lowerText.includes(entry.term.toLowerCase())) {
+        let severity = 'green';
+        let reason = '';
+        if (periodYear !== null) {
+          const gap = entry.invented - periodYear;
+          if (gap > 25) {
+            severity = 'red';
+            reason = `"${entry.term}" was not available until ${entry.invented > 0 ? entry.invented + ' CE' : Math.abs(entry.invented) + ' BCE'} — ${Math.abs(gap)} years after your stated period.`;
+          } else if (gap > 0) {
+            severity = 'amber';
+            reason = `"${entry.term}" appeared around ${entry.invented} — possibly anachronistic (only ${gap} years after your period).`;
+          } else {
+            severity = 'green';
+            reason = `"${entry.term}" was available by ${entry.invented > 0 ? entry.invented + ' CE' : Math.abs(entry.invented) + ' BCE'} — consistent with ${yearStr}.`;
+          }
+        } else {
+          severity = 'amber';
+          reason = `"${entry.term}" first attested: ${entry.invented > 0 ? entry.invented + ' CE' : Math.abs(entry.invented) + ' BCE'}. No period specified — review manually.`;
+        }
+        lastFlags.push({ term: entry.term, severity, reason, note: entry.note });
+      }
+    });
+
+    const card = document.getElementById('resultsCard');
+    const list = document.getElementById('flagList');
+    const title = document.getElementById('resultsTitle');
+    card.style.display = 'block';
+
+    if (lastFlags.length === 0) {
+      title.innerHTML = 'Results <span class="badge" style="background:rgba(52,211,153,0.18);color:#34d399;">No anachronisms detected</span>';
+      list.innerHTML = '<p class="no-flags">No terms in the database were found in your text. This does not guarantee historical accuracy — the database covers common anachronisms but is not exhaustive.</p>';
+    } else {
+      const redCount = lastFlags.filter(f => f.severity === 'red').length;
+      const amberCount = lastFlags.filter(f => f.severity === 'amber').length;
+      title.innerHTML = `Results <span class="badge">${lastFlags.length} term${lastFlags.length !== 1 ? 's' : ''} found</span>${redCount ? ` <span class="badge" style="background:rgba(248,113,113,0.18);color:#f87171;">${redCount} definite</span>` : ''}${amberCount ? ` <span class="badge" style="background:rgba(251,191,36,0.18);color:#fbbf24;">${amberCount} possible</span>` : ''}`;
+      list.innerHTML = lastFlags.map(f => `
+        <div class="flag-item ${f.severity}">
+          <div class="flag-dot ${f.severity}"></div>
+          <div>
+            <div class="flag-term ${f.severity}">${f.term}</div>
+            <div class="flag-note">${f.reason}</div>
+            <div class="flag-note" style="color:var(--text-dim); margin-top:2px; font-size:0.74rem;">${f.note}</div>
+          </div>
+        </div>`).join('');
+    }
+  }
+
+  function revealQuiz(n) {
+    document.getElementById('q' + n + 'answer').classList.add('visible');
+  }
+
+  function exportMarkdown() {
+    let md = `# Anachronism Detection Report\n\n**Text checked:** ${lastClaim.slice(0, 200)}\n**Period:** ${lastPeriod || '(not specified)'}\n\n## Flags Found\n`;
+    if (lastFlags.length === 0) {
+      md += 'No anachronisms detected.\n';
+    } else {
+      lastFlags.forEach(f => { md += `- **${f.term}** [${f.severity.toUpperCase()}]: ${f.reason} (${f.note})\n`; });
+    }
+    md += `\n*Generated by ApexLogics Anachronism Detector — AL-85*\n`;
+    download(md, 'anachronism-report.md', 'text/markdown');
+  }
+
+  function exportAP2() {
+    const payload = {
+      mandate_type: 'anachronism_record',
+      schema_version: '2.0',
+      generated_at: new Date().toISOString(),
+      claim_checked: claimChecked,
+      period_checked: lastPeriod || null,
+      anachronisms_found: lastFlags.map(f => ({ term: f.term, severity: f.severity, reason: f.reason })),
+      quiz_score: null
+    };
+    const AP2Schema = {
+      validMandateTypes: ['job_transition_record','compensation_package_record','credential_roi_record','education_cost_record','loan_repayment_record','career_break_record','exam_cost_record','scholarship_record','workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record','geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record','test_prep_record','international_student_record','parent_college_record','cpd_tracking_record','job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record','education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record','trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record','professional_degree_record','workforce_pell_record','workforce_pell_credential_rank','net_worth_trajectory_record','signing_bonus_record','gig_income_record','cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record','deferred_comp_457b_record','tutor_roi_record','test_retake_record','mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record','law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record','english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record','mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record','mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record','lesson_design_record','assessment_item_record','classroom_scenario_record','gt_differentiation_record','instructor_toolkit_record','cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record','primary_source_record','historiography_record','anachronism_record','counterfactual_record','franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record','micro_theory_record','economic_systems_record','economists_panel_record','economic_history_record','econ_principles_record'],
+      validate(p) { return this.validMandateTypes.includes(p.mandate_type); }
+    };
+    if (!AP2Schema.validate(payload)) { showToast('AP2 validation failed'); return; }
+    download(JSON.stringify(payload, null, 2), 'anachronism-ap2.json', 'application/json');
+  }
+
+  function download(content, filename, mime) {
+    const blob = new Blob([content], {type: mime});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function switchTab(n) {
+    for (let i = 1; i <= 2; i++) {
+      document.getElementById('tabPane' + i).classList.toggle('active', i === n);
+      document.getElementById('tabBtn' + i).classList.toggle('active', i === n);
+    }
+  }
+
+  function setLang(lang) {
+    try { sessionStorage.setItem('apex_lang', lang); } catch(e) {}
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang || (lang === 'zh' && b.textContent === '中文')));
+  }
+
+  (function init() {
+    try {
+      const lang = sessionStorage.getItem('apex_lang') || 'en';
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang || (lang === 'zh' && b.textContent === '中文')));
+    } catch(e) {}
+  })();
+</script>
+</body>
+</html>

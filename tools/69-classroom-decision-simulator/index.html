@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Classroom Decision Simulator · ApexLogics #69</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/69-classroom-decision-simulator/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #60a5fa; --accent-dim: rgba(96,165,250,0.18); --accent-low: rgba(96,165,250,0.08);
+      --border: rgba(96,165,250,0.18); --border-focus: #60a5fa;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: #E8A838; } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(96,165,250,0.07); border: 1px solid rgba(96,165,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 28px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 28px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 10px 18px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    /* Scenario selector */
+    .scenario-selector { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 28px; }
+    .scenario-card-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; cursor: pointer; text-align: left; transition: all 0.18s; }
+    .scenario-card-btn:hover { border-color: var(--accent); background: var(--accent-low); }
+    .scenario-card-btn.completed { border-color: var(--green); opacity: 0.7; }
+    .scenario-card-btn.active { border-color: var(--accent); background: var(--accent-dim); }
+    .scenario-num { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--accent); margin-bottom: 4px; }
+    .scenario-title { font-size: 0.92rem; font-weight: 600; color: var(--text); }
+    .scenario-status { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; margin-top: 4px; }
+    /* Progress bar */
+    .progress-bar-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; height: 8px; margin-bottom: 24px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 6px; transition: width 0.4s; }
+    /* Scenario display */
+    .scenario-display { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 28px 32px; margin-bottom: 20px; }
+    .scenario-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+    .scenario-setup { font-size: 1rem; color: var(--text); line-height: 1.7; font-style: italic; background: rgba(96,165,250,0.04); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 8px 8px 0; margin-bottom: 24px; }
+    .choices-grid { display: grid; gap: 12px; }
+    .choice-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; cursor: pointer; text-align: left; transition: all 0.18s; display: flex; align-items: flex-start; gap: 12px; }
+    .choice-btn:hover:not([disabled]) { border-color: var(--accent); background: var(--accent-low); }
+    .choice-btn[disabled] { cursor: default; }
+    .choice-letter { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 600; color: var(--accent); flex-shrink: 0; width: 22px; padding-top: 1px; }
+    .choice-text { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
+    .choice-btn.chosen { border-color: var(--accent); background: var(--accent-dim); }
+    .choice-btn.chosen .choice-text { color: var(--text); }
+    .choice-btn.best { border-color: var(--green) !important; background: rgba(52,211,153,0.06) !important; }
+    .choice-btn.risky { border-color: var(--red) !important; background: rgba(248,113,113,0.04) !important; }
+    /* Feedback */
+    .feedback-panel { background: rgba(96,165,250,0.06); border: 1px solid rgba(96,165,250,0.2); border-radius: 10px; padding: 20px 24px; margin-top: 16px; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .feedback-label { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+    .feedback-text { font-size: 0.9rem; color: var(--text-muted); line-height: 1.7; }
+    .feedback-text strong { color: var(--text); }
+    .next-btn { background: var(--accent); color: #000; border: none; padding: 12px 32px; border-radius: 8px; font-size: 0.95rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; margin-top: 16px; transition: opacity 0.2s; }
+    .next-btn:hover { opacity: 0.88; }
+    /* Debrief */
+    .debrief-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 18px 22px; margin-bottom: 14px; }
+    .debrief-scenario-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--accent); margin-bottom: 8px; }
+    .debrief-choice-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: flex-start; }
+    .debrief-letter { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 600; color: var(--accent); flex-shrink: 0; }
+    .debrief-choice-text { font-size: 0.88rem; color: var(--text); }
+    .debrief-feedback { font-size: 0.84rem; color: var(--text-muted); line-height: 1.65; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
+    .complete-banner { background: rgba(52,211,153,0.07); border: 1px solid var(--green); border-radius: 10px; padding: 16px 22px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px; }
+    .complete-icon { font-size: 1.8rem; }
+    .complete-text { font-size: 0.95rem; color: var(--text-muted); }
+    .complete-text strong { color: var(--text); display: block; font-size: 1rem; margin-bottom: 2px; }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(96,165,250,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #7f1d1d; border: 1px solid var(--red); color: #fecaca; padding: 12px 22px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; z-index: 200; display: none; }
+    .toast.show { display: block; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    @media (max-width: 700px) {
+      .scenario-selector { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="../../index.html" class="nav-pill accent">← All Tools</a>
+  </div>
+</nav>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <div class="tool-eyebrow">AL-76 · Selected Studies — Education</div>
+  <h1 class="tool-title">Classroom Decision Simulator</h1>
+  <p class="tool-desc">Teacher decisions happen in seconds. This simulator replays real classroom situations — a student who won't engage, a lesson falling apart, a conflict between peers — and asks you to choose a response. Each choice shows what the research says about its likely effects, so you build decision-making intuition grounded in pedagogy rather than instinct alone.</p>
+  <div class="tool-vintage">Data vintage: Scenarios drawn from practitioner research in classroom management and instructional practice (Marzano 2003, Wong &amp; Wong 2009, Emmer &amp; Evertson 2013)</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">Scenarios</button>
+    <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">Debrief</button>
+  </div>
+
+  <!-- ============ TAB 1: SCENARIOS ============ -->
+  <div class="tab-pane active" id="tabPane1">
+
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+    </div>
+
+    <div class="scenario-selector" id="scenarioSelector"></div>
+
+    <div id="scenarioActiveArea" style="display:none;">
+      <div class="scenario-display">
+        <div class="scenario-eyebrow" id="activeScenarioEyebrow"></div>
+        <div class="scenario-setup" id="activeScenarioSetup"></div>
+        <div class="choices-grid" id="choicesGrid"></div>
+      </div>
+      <div id="feedbackArea" style="display:none;">
+        <div class="feedback-panel" id="feedbackPanel">
+          <div class="feedback-label">Research-Informed Feedback</div>
+          <div class="feedback-text" id="feedbackText"></div>
+        </div>
+        <button class="next-btn" onclick="markCompleteAndNext()" id="nextBtn">Next Scenario →</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ TAB 2: DEBRIEF ============ -->
+  <div class="tab-pane" id="tabPane2">
+    <div id="debriefContent">
+      <p style="color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:0.85rem;">Complete at least one scenario to see your debrief here.</p>
+    </div>
+    <div class="results-export-row" id="exportRow" style="display:none;">
+      <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+    </div>
+  </div>
+
+</div><!-- end tool-wrapper -->
+
+<div class="toast" id="toast"></div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-76 · Data: Practitioner scenarios, teaching research literature
+</footer>
+
+<script>
+// ── Scenarios Data ─────────────────────────────────────────────────────────
+const SCENARIOS = [
+  {
+    id: 1,
+    title: 'The Disengaged Student',
+    setup: 'During independent work, Marcus hasn\'t touched his assignment in 10 minutes. He\'s not disruptive — just staring at his desk. Three other students are watching to see what you do.',
+    choices: [
+      {
+        letter: 'A',
+        text: 'Call his name from across the room and ask him to get to work.',
+        feedback: '<strong>Proximity-distant correction works but the public call-out may embarrass Marcus and make him more resistant.</strong> Wong &amp; Wong (2009) recommend private correction first. Outcome: ~60% chance of compliance, but relationship cost is real. If this is a pattern, public correction trains students that misbehavior gets class attention.',
+        quality: 'risky'
+      },
+      {
+        letter: 'B',
+        text: 'Walk to his desk quietly, kneel to eye level, and ask privately what\'s going on.',
+        feedback: '<strong>Best practice.</strong> Private correction preserves dignity, builds rapport, and often reveals an underlying issue — confusion, a personal problem, or something you can address quietly. Emmer &amp; Evertson (2013): private intervention is the high-yield default for non-disruptive off-task behavior. The other students see you handle it calmly without drama.',
+        quality: 'best'
+      },
+      {
+        letter: 'C',
+        text: 'Ignore it for now and check back in 5 minutes.',
+        feedback: '<strong>Viable if this is unusual behavior — gives space and doesn\'t make an issue of it.</strong> Risk: reinforces off-task habit if it\'s a pattern. Works best when you\'ve already built a strong relationship with the student and you know they\'re generally self-directed. Not recommended as the default.',
+        quality: 'neutral'
+      },
+      {
+        letter: 'D',
+        text: 'Change the whole class activity to something more engaging.',
+        feedback: '<strong>Reactive and expensive — disrupts students who are working.</strong> This is appropriate only if the entire class is disengaged, not one student. Responding to one student\'s off-task behavior by changing the lesson signals to the class that disengagement has consequences for everyone\'s work — not a precedent you want to set.',
+        quality: 'risky'
+      }
+    ]
+  },
+  {
+    id: 2,
+    title: 'The Pacing Crisis',
+    setup: 'You\'re 20 minutes into a 50-minute lesson and you\'re already at the end of your planned content. You have 8 prepared discussion questions but students answered the first two in 3 minutes each.',
+    choices: [
+      {
+        letter: 'A',
+        text: 'Keep firing through the remaining 6 questions at the same pace.',
+        feedback: '<strong>Covering material ≠ learning.</strong> Rushing through questions without depth produces surface recall. Marzano (2003): time-on-task matters less than quality of cognitive engagement. Running through 8 questions in 20 minutes tells students that quick answers are what\'s expected — not deep thinking.',
+        quality: 'risky'
+      },
+      {
+        letter: 'B',
+        text: 'Pick the 2 most generative questions and go deep.',
+        feedback: '<strong>Strong choice. Depth over breadth.</strong> Ask a follow-up: "Can you give me evidence for that?" or "What would be the counterargument?" or "Does everyone agree — who sees it differently?" This is what the Socratic method actually looks like in practice. You\'ll cover less ground and build more understanding.',
+        quality: 'best'
+      },
+      {
+        letter: 'C',
+        text: 'Stop the discussion and let students generate their own questions about the topic.',
+        feedback: '<strong>High-yield if students have enough background knowledge to generate meaningful questions.</strong> This requires prior knowledge activation and works best mid-unit or later. Risk: off-topic tangents and disengagement in classes with low prior knowledge. It\'s a strong move when students are primed — risky cold.',
+        quality: 'neutral'
+      },
+      {
+        letter: 'D',
+        text: 'End the discussion and assign silent reading for the remaining time.',
+        feedback: '<strong>Reactive and a low-trust signal to students.</strong> Pivoting to silent reading because the discussion went fast communicates: "I didn\'t plan well." Reserve this for genuine derailment, not a pace mismatch. Students who were engaged in discussion will feel punished for being responsive.',
+        quality: 'risky'
+      }
+    ]
+  },
+  {
+    id: 3,
+    title: 'The Challenge Question',
+    setup: 'A student asks a question you don\'t know the answer to, in front of the class: "Why did the textbook say X but the article you gave us says Y?" You genuinely aren\'t sure which source is more accurate.',
+    choices: [
+      {
+        letter: 'A',
+        text: 'Admit you don\'t know and move on quickly.',
+        feedback: '<strong>Honest but a missed opportunity.</strong> Students respect honesty — and they will test whether you bluff. But moving on quickly leaves the intellectual door closed. The best teachers treat "I don\'t know" as an opening, not a close.',
+        quality: 'neutral'
+      },
+      {
+        letter: 'B',
+        text: 'Give a confident-sounding answer to maintain authority.',
+        feedback: '<strong>High risk. Do not bluff.</strong> If students later discover you were wrong — and they often do — you lose credibility permanently. Adolescents and young adults are particularly attuned to whether adults own their uncertainty or paper over it. One confident wrong answer can undermine months of trust.',
+        quality: 'risky'
+      },
+      {
+        letter: 'C',
+        text: '"Great question — let\'s investigate this together," then model how you\'d check a source.',
+        feedback: '<strong>Best practice.</strong> This turns a gap into a teachable moment about how experts handle uncertainty — and about how knowledge is verified. Saying "Let me show you how I\'d investigate this" models intellectual humility AND research behavior. Students remember these moments more than direct instruction.',
+        quality: 'best'
+      },
+      {
+        letter: 'D',
+        text: 'Assign the student to research it and report back to class.',
+        feedback: '<strong>Acceptable if framed positively — problematic if it feels like a deflection.</strong> "That\'s such an interesting question that I want you to own the answer for us" is very different from "Go figure it out." If you use this approach, follow up — hold the student to actually reporting back and honor the commitment publicly.',
+        quality: 'neutral'
+      }
+    ]
+  },
+  {
+    id: 4,
+    title: 'First-Day Authority Test',
+    setup: 'It\'s the first week. A student tells you the previous teacher "never made us do this" and the class is watching to see how you respond.',
+    choices: [
+      {
+        letter: 'A',
+        text: 'Back down and modify the assignment on the spot.',
+        feedback: '<strong>Establishes you as negotiable — expect more challenges.</strong> Students test boundaries at the start of a course to find where the walls are. Inconsistency at the first challenge signals there are no firm walls. This doesn\'t mean you can\'t ever be flexible — it means the first public test is not the time to demonstrate it.',
+        quality: 'risky'
+      },
+      {
+        letter: 'B',
+        text: 'Explain your reasoning briefly and hold the expectation.',
+        feedback: '<strong>Correct response.</strong> State your rationale once, clearly, and move on: "I understand it was different before. In this class, here\'s why we do it this way — [brief reason]. Let\'s get started." Then redirect to work. You\'ve respected the student enough to explain, held the expectation, and moved on without drama. Wong &amp; Wong (2009): the first two weeks establish the classroom norms that persist all year.',
+        quality: 'best'
+      },
+      {
+        letter: 'C',
+        text: 'Ignore the comment and keep going.',
+        feedback: '<strong>Can work if delivered with calm, unmoved confidence.</strong> Treat it as a non-event. Risk: the student may escalate if they feel dismissed. This approach works better with low-investment side comments than direct challenges. If you use it, your body language and tone must signal "that\'s not how we operate here" without words.',
+        quality: 'neutral'
+      },
+      {
+        letter: 'D',
+        text: 'Engage in an extended debate about your policy.',
+        feedback: '<strong>Gives the challenge more air than it deserves.</strong> Extended debates invite the class to take sides, signals that your policies are negotiable, and consumes time and emotional energy. Address it, don\'t litigate it. One clear explanation is the ceiling — anything beyond that is a debate, and you\'ve already lost if you\'re in one.',
+        quality: 'risky'
+      }
+    ]
+  }
+];
+
+// ── Session state ──────────────────────────────────────────────────────────
+const simState = {
+  activeScenarioIndex: null,
+  choicesMade: {}, // {scenarioId: {choiceLetter, choiceText, feedback}}
+  completed: {}    // {scenarioId: true}
+};
+
+// ── Lang ───────────────────────────────────────────────────────────────────
+function setLang(code) {
+  sessionStorage.setItem('apex_lang', code);
+  document.documentElement.lang = code;
+  document.documentElement.dir = code === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.toLowerCase() === code || b.textContent === code);
+  });
+}
+(function() { setLang(sessionStorage.getItem('apex_lang') || 'en'); })();
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function switchTab(n) {
+  for (let i = 1; i <= 2; i++) {
+    document.getElementById('tabBtn' + i).classList.toggle('active', i === n);
+    document.getElementById('tabPane' + i).classList.toggle('active', i === n);
+  }
+  if (n === 2) renderDebrief();
+}
+
+// ── Scenario Selector ──────────────────────────────────────────────────────
+function renderSelector() {
+  const container = document.getElementById('scenarioSelector');
+  container.innerHTML = SCENARIOS.map((s, i) => {
+    const done = simState.completed[s.id];
+    const active = simState.activeScenarioIndex === i;
+    return `<button class="scenario-card-btn ${done ? 'completed' : ''} ${active ? 'active' : ''}"
+      onclick="openScenario(${i})">
+      <div class="scenario-num">SCENARIO ${s.id} OF ${SCENARIOS.length}</div>
+      <div class="scenario-title">"${s.title}"</div>
+      <div class="scenario-status" style="color:${done ? 'var(--green)' : active ? 'var(--accent)' : 'var(--text-dim)'};">
+        ${done ? '✓ Completed' : active ? '→ In Progress' : 'Not started'}
+      </div>
+    </button>`;
+  }).join('');
+  updateProgressBar();
+}
+
+function updateProgressBar() {
+  const done = Object.keys(simState.completed).length;
+  const pct = Math.round((done / SCENARIOS.length) * 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+// ── Open Scenario ──────────────────────────────────────────────────────────
+function openScenario(index) {
+  simState.activeScenarioIndex = index;
+  const scenario = SCENARIOS[index];
+  renderSelector();
+
+  document.getElementById('activeScenarioEyebrow').textContent = `Scenario ${scenario.id} — "${scenario.title}"`;
+  document.getElementById('activeScenarioSetup').textContent = scenario.setup;
+
+  // Build choices
+  const choicesGrid = document.getElementById('choicesGrid');
+  const prevChoice = simState.choicesMade[scenario.id];
+  choicesGrid.innerHTML = scenario.choices.map((c, ci) => {
+    let cls = 'choice-btn';
+    let disabled = '';
+    if (prevChoice) {
+      disabled = 'disabled';
+      if (prevChoice.letter === c.letter) cls += ' chosen';
+      if (c.quality === 'best') cls += ' best';
+      if (c.quality === 'risky' && prevChoice.letter === c.letter) cls += ' risky';
+    }
+    return `<button class="${cls}" ${disabled} onclick="makeChoice(${index}, '${c.letter}')">
+      <span class="choice-letter">${c.letter}.</span>
+      <span class="choice-text">${c.text}</span>
+    </button>`;
+  }).join('');
+
+  // Show feedback if already answered
+  if (prevChoice) {
+    const feedbackArea = document.getElementById('feedbackArea');
+    const feedbackText = document.getElementById('feedbackText');
+    feedbackText.innerHTML = prevChoice.feedback;
+    feedbackArea.style.display = 'block';
+    document.getElementById('nextBtn').textContent = index < SCENARIOS.length - 1 ? 'Next Scenario →' : 'View Debrief →';
+  } else {
+    document.getElementById('feedbackArea').style.display = 'none';
+  }
+
+  document.getElementById('scenarioActiveArea').style.display = 'block';
+  document.getElementById('scenarioActiveArea').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── Make Choice ────────────────────────────────────────────────────────────
+function makeChoice(scenarioIndex, letter) {
+  const scenario = SCENARIOS[scenarioIndex];
+  const choice = scenario.choices.find(c => c.letter === letter);
+  if (!choice) return;
+
+  simState.choicesMade[scenario.id] = {
+    letter: choice.letter,
+    text: choice.text,
+    feedback: choice.feedback,
+    quality: choice.quality
+  };
+
+  // Update choice buttons
+  const buttons = document.querySelectorAll('#choicesGrid .choice-btn');
+  buttons.forEach((btn, i) => {
+    btn.disabled = true;
+    const c = scenario.choices[i];
+    if (c.letter === letter) btn.classList.add('chosen');
+    if (c.quality === 'best') btn.classList.add('best');
+    if (c.quality === 'risky' && c.letter === letter) btn.classList.add('risky');
+  });
+
+  // Show feedback
+  const feedbackArea = document.getElementById('feedbackArea');
+  document.getElementById('feedbackText').innerHTML = choice.feedback;
+  feedbackArea.style.display = 'block';
+  document.getElementById('nextBtn').textContent = scenarioIndex < SCENARIOS.length - 1 ? 'Next Scenario →' : 'View Debrief →';
+  feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // Auto-mark complete
+  simState.completed[scenario.id] = true;
+  renderSelector();
+}
+
+// ── Next ───────────────────────────────────────────────────────────────────
+function markCompleteAndNext() {
+  const idx = simState.activeScenarioIndex;
+  if (idx < SCENARIOS.length - 1) {
+    openScenario(idx + 1);
+  } else {
+    switchTab(2);
+  }
+}
+
+// ── Debrief ────────────────────────────────────────────────────────────────
+function renderDebrief() {
+  const container = document.getElementById('debriefContent');
+  const completed = Object.keys(simState.choicesMade);
+  if (!completed.length) {
+    container.innerHTML = '<p style="color:var(--text-dim);font-family:\'JetBrains Mono\',monospace;font-size:0.85rem;">Complete at least one scenario to see your debrief here.</p>';
+    return;
+  }
+
+  const allDone = completed.length === SCENARIOS.length;
+  let html = '';
+  if (allDone) {
+    html += `<div class="complete-banner">
+      <div class="complete-icon">🎓</div>
+      <div class="complete-text">
+        <strong>All 4 scenarios complete.</strong>
+        Review your choices and the research-informed feedback below. Consider what patterns you notice in your decision-making tendencies.
+      </div>
+    </div>`;
+  }
+
+  SCENARIOS.forEach(scenario => {
+    const choice = simState.choicesMade[scenario.id];
+    if (!choice) return;
+    html += `<div class="debrief-item">
+      <div class="debrief-scenario-title">Scenario ${scenario.id}: "${scenario.title}"</div>
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:10px;font-style:italic;">${scenario.setup}</div>
+      <div class="debrief-choice-row">
+        <span class="debrief-letter" style="color:${choice.quality === 'best' ? 'var(--green)' : choice.quality === 'risky' ? 'var(--red)' : 'var(--amber)'};">${choice.letter}.</span>
+        <span class="debrief-choice-text">${choice.text}</span>
+      </div>
+      <div class="debrief-feedback">${choice.feedback}</div>
+    </div>`;
+  });
+
+  container.innerHTML = html;
+  document.getElementById('exportRow').style.display = completed.length ? 'flex' : 'none';
+}
+
+// ── AP2 Schema ─────────────────────────────────────────────────────────────
+const AP2Schema = {
+  validMandateTypes: [
+    'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+    'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+    'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+    'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+    'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+    'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+    'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+    'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+    'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+    'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+    'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+    'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+    'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+    'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
+    'english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record',
+    'mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record',
+    'mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record',
+    'lesson_design_record','assessment_item_record','classroom_scenario_record',
+    'gt_differentiation_record','instructor_toolkit_record',
+    'cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record',
+    'primary_source_record','historiography_record','anachronism_record','counterfactual_record',
+    'franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record',
+    'micro_theory_record','economic_systems_record','economists_panel_record',
+    'economic_history_record','econ_principles_record'
+  ],
+  validate(payload) {
+    if (!payload || typeof payload !== 'object') return { valid: false, error: 'Payload must be an object.' };
+    if (!payload.mandate_type) return { valid: false, error: 'Missing mandate_type.' };
+    if (!this.validMandateTypes.includes(payload.mandate_type)) return { valid: false, error: `Invalid mandate_type: ${payload.mandate_type}` };
+    if (!payload.tool_id) return { valid: false, error: 'Missing tool_id.' };
+    if (!payload.generated_at) return { valid: false, error: 'Missing generated_at.' };
+    return { valid: true };
+  }
+};
+
+// ── Export ─────────────────────────────────────────────────────────────────
+function exportMarkdown() {
+  const completed = Object.keys(simState.choicesMade);
+  if (!completed.length) { showToast('No scenarios completed yet.'); return; }
+  let md = `# Classroom Decision Simulator — Session Debrief\n*Generated by ApexLogics Classroom Decision Simulator (AL-76)*\n\n`;
+  SCENARIOS.forEach(scenario => {
+    const choice = simState.choicesMade[scenario.id];
+    if (!choice) return;
+    md += `## Scenario ${scenario.id}: "${scenario.title}"\n\n`;
+    md += `**Situation:** ${scenario.setup}\n\n`;
+    md += `**Your choice (${choice.letter}):** ${choice.text}\n\n`;
+    // Strip HTML tags from feedback
+    const div = document.createElement('div');
+    div.innerHTML = choice.feedback;
+    md += `**Research feedback:** ${div.textContent}\n\n---\n\n`;
+  });
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'classroom-simulator-debrief.md'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportAP2() {
+  const completed = Object.keys(simState.choicesMade);
+  if (!completed.length) { showToast('No scenarios completed yet.'); return; }
+  const scenariosCompleted = SCENARIOS
+    .filter(s => simState.choicesMade[s.id])
+    .map(s => {
+      const choice = simState.choicesMade[s.id];
+      const div = document.createElement('div');
+      div.innerHTML = choice.feedback;
+      return {
+        scenario_id: s.id,
+        scenario_title: s.title,
+        choice_made: choice.letter,
+        choice_text: choice.text,
+        choice_quality: choice.quality,
+        received_feedback_summary: div.textContent.slice(0, 300)
+      };
+    });
+
+  const payload = {
+    mandate_type: 'classroom_scenario_record',
+    tool_id: 'AL-76',
+    generated_at: new Date().toISOString(),
+    scenarios_completed: scenariosCompleted,
+    total_scenarios: SCENARIOS.length,
+    completed_count: completed.length,
+    best_practice_choices: scenariosCompleted.filter(s => s.choice_quality === 'best').length
+  };
+
+  const result = AP2Schema.validate(payload);
+  if (!result.valid) { showToast('AP2 validation error: ' + result.error); return; }
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'classroom-simulator-ap2.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+renderSelector();
+</script>
+
+</body>
+</html>

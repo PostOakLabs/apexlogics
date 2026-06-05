@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Primary Source Workbench · ApexLogics #76</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/76-primary-source-workbench/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #fbbf24; --accent-dim: rgba(251,191,36,0.18); --accent-low: rgba(251,191,36,0.08);
+      --border: rgba(251,191,36,0.18); --border-focus: #fbbf24;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: #E8A838; } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 28px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 28px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 10px 18px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    select, textarea, input[type="text"] { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    select:focus, textarea:focus, input[type="text"]:focus { outline: none; border-color: var(--border-focus); }
+    textarea { resize: vertical; line-height: 1.6; }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-style: italic; }
+    .source-preview { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; font-size: 0.88rem; color: var(--text-muted); line-height: 1.75; min-height: 100px; margin-top: 12px; white-space: pre-wrap; }
+    .soap-grid { display: grid; gap: 16px; }
+    .soap-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+    .soap-label { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent); margin-bottom: 4px; font-weight: 500; }
+    .soap-guide { font-size: 0.72rem; color: var(--text-dim); font-style: italic; margin-bottom: 8px; }
+    .summary-card { background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.3); border-radius: 10px; padding: 20px 24px; margin-top: 24px; display: none; }
+    .summary-card.visible { display: block; }
+    .summary-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; }
+    .summary-row { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(251,191,36,0.1); font-size: 0.85rem; }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-key { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent); min-width: 80px; }
+    .summary-val { color: var(--text-muted); flex: 1; }
+    .checklist-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(251,191,36,0.07); }
+    .checklist-item:last-child { border-bottom: none; }
+    .checklist-item input[type="checkbox"] { margin-top: 3px; accent-color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; }
+    .checklist-label { font-size: 0.87rem; color: var(--text-muted); flex: 1; }
+    .checklist-note { margin-top: 5px; }
+    .checklist-note input[type="text"] { font-size: 0.8rem; padding: 5px 10px; }
+    .bias-flags { margin-top: 8px; }
+    .bias-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(251,191,36,0.07); }
+    .bias-item:last-child { border-bottom: none; }
+    .bias-item input[type="checkbox"] { margin-top: 3px; accent-color: var(--red); width: 15px; height: 15px; flex-shrink: 0; }
+    .bias-label { font-size: 0.85rem; }
+    .bias-label strong { color: var(--red); }
+    .corr-prompt { background: var(--surface); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-bottom: 12px; }
+    .corr-prompt-q { font-size: 0.82rem; color: var(--accent); font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 12px 36px; border-radius: 8px; font-size: 0.95rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; margin: 12px 0; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(251,191,36,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #7f1d1d; border: 1px solid var(--red); color: #fecaca; padding: 12px 22px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; z-index: 200; display: none; }
+    .toast.show { display: block; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    .section-header { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dim); margin: 20px 0 10px; }
+    @media (max-width: 700px) { .tool-title { font-size: 1.8rem; } .results-export-row { flex-direction: column; } }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="../../index.html" class="nav-pill accent">← All Tools</a>
+  </div>
+</nav>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <div class="tool-eyebrow">AL-83 · Selected Studies — History</div>
+  <h1 class="tool-title">Primary Source Workbench</h1>
+  <p class="tool-desc">Every historian's first question isn't "what does this say?" but "who made this, why, and what are they not saying?" This workbench runs any primary source through the SOAPSTone analysis framework — Speaker, Occasion, Audience, Purpose, Subject, Tone — plus a provenance checklist, corroboration prompts, and a bias flag inventory. Choose from five embedded historical documents or paste your own text.</p>
+  <div class="tool-vintage">Data vintage: SOAPSTone framework: College Board AP History (2017); source criticism methods: Howell &amp; Prevenier (2001), From Reliable Sources; historical thinking framework: Wineburg (2001), Historical Thinking and Other Unnatural Acts</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">1 · Select Source</button>
+    <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">2 · SOAPSTone</button>
+    <button class="tab-btn" id="tabBtn3" onclick="switchTab(3)">3 · Provenance &amp; Bias</button>
+    <button class="tab-btn" id="tabBtn4" onclick="switchTab(4)">4 · Corroboration</button>
+  </div>
+
+  <!-- TAB 1: SELECT SOURCE -->
+  <div class="tab-pane active" id="tabPane1">
+    <div class="card">
+      <div class="card-title">Choose a Document <span class="badge">5 Embedded + Custom</span></div>
+      <div class="field">
+        <label for="docSelect">Select an embedded historical document</label>
+        <select id="docSelect" onchange="loadDoc()">
+          <option value="">— Select a document —</option>
+          <option value="0">Declaration of Independence (1776) — Preamble</option>
+          <option value="1">Napoleon's Proclamation to His Troops (1796)</option>
+          <option value="2">Karl Marx, Communist Manifesto (1848) — Opening</option>
+          <option value="3">Bismarck's "Blood and Iron" Speech (1862)</option>
+          <option value="4">Woodrow Wilson, Fourteen Points (1918) — Opening</option>
+        </select>
+      </div>
+      <div style="text-align:center; padding: 8px 0; color: var(--text-dim); font-size: 0.78rem; font-family: 'JetBrains Mono', monospace;">— OR —</div>
+      <div class="field">
+        <label for="customText">Paste your own primary source text</label>
+        <textarea id="customText" rows="5" placeholder="Paste or type your primary source text here..." oninput="loadCustom()"></textarea>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Source Preview</div>
+      <div class="source-preview" id="sourcePreview">Select a document or paste your own text above to see the preview here.</div>
+    </div>
+    <div style="margin-top: 16px;">
+      <button class="run-btn" onclick="switchTab(2)">Continue to SOAPSTone Analysis →</button>
+    </div>
+  </div>
+
+  <!-- TAB 2: SOAPSTONE -->
+  <div class="tab-pane" id="tabPane2">
+    <div class="card">
+      <div class="card-title">SOAPSTone Analysis Framework <span class="badge">College Board AP History 2017</span></div>
+      <p style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 20px;">For each element, answer the guiding question in your own words. The Summary Card appears once all six fields have content.</p>
+
+      <div class="soap-grid">
+        <div class="soap-item">
+          <div class="soap-label">S — Speaker</div>
+          <div class="soap-guide">Beyond the obvious author, whose voice or interests does this document represent?</div>
+          <textarea id="soapS" rows="3" placeholder="Who created this document? What is their background, position, and perspective?" oninput="checkSoap()"></textarea>
+        </div>
+        <div class="soap-item">
+          <div class="soap-label">O — Occasion</div>
+          <div class="soap-guide">What event, crisis, or opportunity directly triggered this text?</div>
+          <textarea id="soapO" rows="3" placeholder="What was the historical moment that prompted this document? What were the immediate circumstances?" oninput="checkSoap()"></textarea>
+        </div>
+        <div class="soap-item">
+          <div class="soap-label">A — Audience</div>
+          <div class="soap-guide">Who needed to hear this, and what did the author assume about them?</div>
+          <textarea id="soapA" rows="3" placeholder="Who was the intended audience? Primary audience? Secondary? What did the author assume they knew?" oninput="checkSoap()"></textarea>
+        </div>
+        <div class="soap-item">
+          <div class="soap-label">P — Purpose</div>
+          <div class="soap-guide">What did the author want the audience to think, feel, or do after reading this?</div>
+          <textarea id="soapP" rows="3" placeholder="What was the author trying to accomplish? Inform, persuade, celebrate, justify, protest?" oninput="checkSoap()"></textarea>
+        </div>
+        <div class="soap-item">
+          <div class="soap-label">Su — Subject</div>
+          <div class="soap-guide">If you had to summarize the content in one sentence, what is it about?</div>
+          <textarea id="soapSu" rows="3" placeholder="What is the literal subject matter?" oninput="checkSoap()"></textarea>
+        </div>
+        <div class="soap-item">
+          <div class="soap-label">T — Tone</div>
+          <div class="soap-guide">What emotional register — urgent, celebratory, defensive, confident, anxious — runs through the text?</div>
+          <textarea id="soapT" rows="3" placeholder="What is the emotional quality of the text? How does the author feel about the subject?" oninput="checkSoap()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary-card" id="soapSummary">
+      <div class="summary-title">SOAPSTone Summary Card</div>
+      <div id="summaryRows"></div>
+    </div>
+
+    <div style="margin-top: 16px;">
+      <button class="run-btn" onclick="switchTab(3)">Continue to Provenance &amp; Bias →</button>
+    </div>
+  </div>
+
+  <!-- TAB 3: PROVENANCE & BIAS -->
+  <div class="tab-pane" id="tabPane3">
+    <div class="card">
+      <div class="card-title">Provenance Checklist <span class="badge">Source Criticism</span></div>
+      <p style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 16px;">Check each item you have confirmed. Add notes where relevant.</p>
+
+      <div id="provenanceList">
+        <div class="checklist-item">
+          <input type="checkbox" id="prov0" />
+          <div class="checklist-label">
+            <strong>Document type identified</strong> — letter, speech, law, manifesto, diary, image description, etc.
+            <div class="checklist-note"><input type="text" placeholder="Notes..." /></div>
+          </div>
+        </div>
+        <div class="checklist-item">
+          <input type="checkbox" id="prov1" />
+          <div class="checklist-label">
+            <strong>Date of creation</strong> known or reliably estimated
+            <div class="checklist-note"><input type="text" placeholder="Notes..." /></div>
+          </div>
+        </div>
+        <div class="checklist-item">
+          <input type="checkbox" id="prov2" />
+          <div class="checklist-label">
+            <strong>Original language</strong> and translation notes (if applicable)
+            <div class="checklist-note"><input type="text" placeholder="Notes..." /></div>
+          </div>
+        </div>
+        <div class="checklist-item">
+          <input type="checkbox" id="prov3" />
+          <div class="checklist-label">
+            <strong>Physical location / archive / provenance chain</strong> known
+            <div class="checklist-note"><input type="text" placeholder="Notes..." /></div>
+          </div>
+        </div>
+        <div class="checklist-item">
+          <input type="checkbox" id="prov4" />
+          <div class="checklist-label">
+            <strong>Chain of custody</strong> — has the document been copied, edited, or translated multiple times?
+            <div class="checklist-note"><input type="text" placeholder="Notes..." /></div>
+          </div>
+        </div>
+        <div class="checklist-item">
+          <input type="checkbox" id="prov5" />
+          <div class="checklist-label">
+            <strong>Author's relationship to events described</strong>: eyewitness / participant / later observer / secondary source
+            <div class="checklist-note"><input type="text" placeholder="Notes..." /></div>
+          </div>
+        </div>
+        <div class="checklist-item">
+          <input type="checkbox" id="prov6" />
+          <div class="checklist-label">
+            <strong>Evidence of censorship, self-censorship, or political pressure</strong> on the author
+            <div class="checklist-note"><input type="text" placeholder="Notes..." /></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Bias Flag Inventory <span class="badge">Flag any that apply</span></div>
+      <div class="bias-flags">
+        <div class="bias-item">
+          <input type="checkbox" id="bias0" />
+          <div class="bias-label"><strong>Selection bias</strong> — author reports only favorable or convenient facts</div>
+        </div>
+        <div class="bias-item">
+          <input type="checkbox" id="bias1" />
+          <div class="bias-label"><strong>Temporal bias</strong> — document written long after the events (memory distortion)</div>
+        </div>
+        <div class="bias-item">
+          <input type="checkbox" id="bias2" />
+          <div class="bias-label"><strong>Self-serving bias</strong> — author had personal stake in the outcome described</div>
+        </div>
+        <div class="bias-item">
+          <input type="checkbox" id="bias3" />
+          <div class="bias-label"><strong>Audience bias</strong> — content shaped by what the author thought the audience wanted to hear</div>
+        </div>
+        <div class="bias-item">
+          <input type="checkbox" id="bias4" />
+          <div class="bias-label"><strong>Cultural / ideological lens</strong> — author's worldview filters what they notice and report</div>
+        </div>
+        <div class="bias-item">
+          <input type="checkbox" id="bias5" />
+          <div class="bias-label"><strong>Omission</strong> — significant parties, voices, or counterarguments are absent</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 16px;">
+      <button class="run-btn" onclick="switchTab(4)">Continue to Corroboration →</button>
+    </div>
+  </div>
+
+  <!-- TAB 4: CORROBORATION -->
+  <div class="tab-pane" id="tabPane4">
+    <div class="card">
+      <div class="card-title">Corroboration Prompts <span class="badge">Cross-Check Your Source</span></div>
+      <p style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 16px;">Answer each prompt to complete your source analysis. These questions push you toward verification, not just description.</p>
+
+      <div class="corr-prompt">
+        <div class="corr-prompt-q">What other primary sources from the same period might confirm or challenge this account?</div>
+        <textarea rows="3" placeholder="List other documents, records, or artifacts that address the same events..."></textarea>
+      </div>
+      <div class="corr-prompt">
+        <div class="corr-prompt-q">What secondary historians have analyzed this document? Do they agree on its significance?</div>
+        <textarea rows="3" placeholder="Name historians or works that have interpreted this source and summarize their views..."></textarea>
+      </div>
+      <div class="corr-prompt">
+        <div class="corr-prompt-q">Is there a contemporary counter-document (written by an opposing party) that addresses the same events?</div>
+        <textarea rows="3" placeholder="Identify any rival or opposing account from the same historical moment..."></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Contextualization Questions</div>
+      <div class="corr-prompt">
+        <div class="corr-prompt-q">What was the broader political, social, or economic context when this document was created?</div>
+        <textarea rows="3" placeholder="Describe the historical backdrop — what was happening in the world when the author wrote this?"></textarea>
+      </div>
+      <div class="corr-prompt">
+        <div class="corr-prompt-q">How does this document fit within the longer arc of the relevant historical process?</div>
+        <textarea rows="3" placeholder="Where does this source fall in the timeline — early, middle, or late in the process it describes?"></textarea>
+      </div>
+      <div class="corr-prompt">
+        <div class="corr-prompt-q">What would a reader in the original historical moment have understood that a modern reader might miss?</div>
+        <textarea rows="3" placeholder="What shared assumptions, codes, or references would have been obvious to the original audience?"></textarea>
+      </div>
+    </div>
+
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">⬇ Export Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">⬇ Export AP2 JSON</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-83 · Data: SOAPSTone: College Board AP History 2017; Wineburg 2001
+</footer>
+
+<script>
+  const DOCS = [
+    {
+      title: "Declaration of Independence (1776) — Preamble",
+      year: "1776",
+      text: `We hold these truths to be self-evident, that all men are created equal, that they are endowed by their Creator with certain unalienable Rights, that among these are Life, Liberty and the pursuit of Happiness. That to secure these rights, Governments are instituted among Men, deriving their just powers from the consent of the governed, That whenever any Form of Government becomes destructive of these ends, it is the Right of the People to alter or to abolish it...`
+    },
+    {
+      title: "Napoleon's Proclamation to His Troops (1796)",
+      year: "1796",
+      text: `Soldiers! You are naked and ill-fed! The Government owes you much and can give you nothing. Your patience, your courage, do you honor, but procure you neither advantage nor glory. I am about to lead you into the most fertile plains of the world. Rich provinces and great cities will be in your power; there you will find honor, glory, and wealth.`
+    },
+    {
+      title: "Karl Marx, Communist Manifesto (1848) — Opening",
+      year: "1848",
+      text: `A spectre is haunting Europe — the spectre of communism. All the powers of old Europe have entered into a holy alliance to exorcise this spectre: Pope and Tsar, Metternich and Guizot, French Radicals and German police-spies.`
+    },
+    {
+      title: `Bismarck's "Blood and Iron" Speech (1862)`,
+      year: "1862",
+      text: `Prussia must accumulate her strength and hold it for the favorable moment, which has already come and gone several times. Since the treaties of Vienna, our frontiers have been ill-designed for a healthy body politic. Not through speeches and majority decisions will the great questions of the day be decided — that was the mistake of 1848 and 1849 — but by iron and blood.`
+    },
+    {
+      title: "Woodrow Wilson, Fourteen Points (1918) — Opening",
+      year: "1918",
+      text: `It will be our wish and purpose that the processes of peace, when they are begun, shall be absolutely open and that they shall involve and permit henceforth no secret understandings of any kind.`
+    }
+  ];
+
+  let currentDocTitle = '';
+
+  function loadDoc() {
+    const sel = document.getElementById('docSelect').value;
+    if (sel === '') return;
+    const doc = DOCS[parseInt(sel)];
+    document.getElementById('sourcePreview').textContent = doc.text;
+    document.getElementById('customText').value = '';
+    currentDocTitle = doc.title;
+  }
+
+  function loadCustom() {
+    const txt = document.getElementById('customText').value.trim();
+    if (txt) {
+      document.getElementById('sourcePreview').textContent = txt;
+      document.getElementById('docSelect').value = '';
+      currentDocTitle = 'Custom Source';
+    }
+  }
+
+  function switchTab(n) {
+    for (let i = 1; i <= 4; i++) {
+      document.getElementById('tabPane' + i).classList.toggle('active', i === n);
+      document.getElementById('tabBtn' + i).classList.toggle('active', i === n);
+    }
+  }
+
+  function checkSoap() {
+    const keys = ['S','O','A','P','Su','T'];
+    const ids = ['soapS','soapO','soapA','soapP','soapSu','soapT'];
+    const labels = ['Speaker','Occasion','Audience','Purpose','Subject','Tone'];
+    const allFilled = ids.every(id => document.getElementById(id).value.trim().length > 0);
+    const card = document.getElementById('soapSummary');
+    const rows = document.getElementById('summaryRows');
+    if (allFilled) {
+      rows.innerHTML = ids.map((id, i) => `
+        <div class="summary-row">
+          <span class="summary-key">${keys[i]} — ${labels[i]}</span>
+          <span class="summary-val">${document.getElementById(id).value.trim()}</span>
+        </div>`).join('');
+      card.classList.add('visible');
+    } else {
+      card.classList.remove('visible');
+    }
+  }
+
+  function getBiasFlags() {
+    const labels = ['Selection bias','Temporal bias','Self-serving bias','Audience bias','Cultural/ideological lens','Omission'];
+    return Array.from({length: 6}, (_, i) => document.getElementById('bias' + i).checked ? labels[i] : null).filter(Boolean);
+  }
+
+  function getProvenanceComplete() {
+    return Array.from({length: 7}, (_, i) => document.getElementById('prov' + i).checked).filter(Boolean).length >= 4;
+  }
+
+  function exportMarkdown() {
+    const src = currentDocTitle || document.getElementById('customText').value.slice(0, 60) || '(no source selected)';
+    const s = document.getElementById('soapS').value || '(not completed)';
+    const o = document.getElementById('soapO').value || '(not completed)';
+    const a = document.getElementById('soapA').value || '(not completed)';
+    const p = document.getElementById('soapP').value || '(not completed)';
+    const su = document.getElementById('soapSu').value || '(not completed)';
+    const t = document.getElementById('soapT').value || '(not completed)';
+    const flags = getBiasFlags();
+    const md = `# Primary Source Analysis — ${src}\n\n## SOAPSTone\n- **Speaker:** ${s}\n- **Occasion:** ${o}\n- **Audience:** ${a}\n- **Purpose:** ${p}\n- **Subject:** ${su}\n- **Tone:** ${t}\n\n## Bias Flags\n${flags.length ? flags.map(f => `- ${f}`).join('\n') : '- None flagged'}\n\n## Provenance\n- Checklist items checked: ${Array.from({length:7},(_,i)=>document.getElementById('prov'+i).checked).filter(Boolean).length} / 7\n\n*Generated by ApexLogics Primary Source Workbench — AL-83*\n`;
+    download(md, 'primary-source-analysis.md', 'text/markdown');
+  }
+
+  function exportAP2() {
+    const src = currentDocTitle || 'Custom Source';
+    const payload = {
+      mandate_type: 'primary_source_record',
+      schema_version: '2.0',
+      generated_at: new Date().toISOString(),
+      source_id: src,
+      soap_stone_summary: {
+        S: document.getElementById('soapS').value,
+        O: document.getElementById('soapO').value,
+        A: document.getElementById('soapA').value,
+        P: document.getElementById('soapP').value,
+        Su: document.getElementById('soapSu').value,
+        T: document.getElementById('soapT').value
+      },
+      bias_flags: getBiasFlags(),
+      provenance_checklist_complete: getProvenanceComplete(),
+      corroboration_notes: ''
+    };
+    const AP2Schema = {
+      validMandateTypes: ['job_transition_record','compensation_package_record','credential_roi_record','education_cost_record','loan_repayment_record','career_break_record','exam_cost_record','scholarship_record','workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record','geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record','test_prep_record','international_student_record','parent_college_record','cpd_tracking_record','job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record','education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record','trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record','professional_degree_record','workforce_pell_record','workforce_pell_credential_rank','net_worth_trajectory_record','signing_bonus_record','gig_income_record','cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record','deferred_comp_457b_record','tutor_roi_record','test_retake_record','mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record','law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record','english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record','mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record','mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record','lesson_design_record','assessment_item_record','classroom_scenario_record','gt_differentiation_record','instructor_toolkit_record','cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record','primary_source_record','historiography_record','anachronism_record','counterfactual_record','franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record','micro_theory_record','economic_systems_record','economists_panel_record','economic_history_record','econ_principles_record'],
+      validate(p) { return this.validMandateTypes.includes(p.mandate_type); }
+    };
+    if (!AP2Schema.validate(payload)) { showToast('AP2 validation failed'); return; }
+    download(JSON.stringify(payload, null, 2), 'primary-source-ap2.json', 'application/json');
+  }
+
+  function download(content, filename, mime) {
+    const blob = new Blob([content], {type: mime});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function setLang(lang) {
+    try { sessionStorage.setItem('apex_lang', lang); } catch(e) {}
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang || (lang === 'zh' && b.textContent === '中文')));
+  }
+
+  (function init() {
+    try {
+      const lang = sessionStorage.getItem('apex_lang') || 'en';
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang || (lang === 'zh' && b.textContent === '中文')));
+    } catch(e) {}
+  })();
+</script>
+</body>
+</html>

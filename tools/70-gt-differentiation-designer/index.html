@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GT Differentiation Designer · ApexLogics #70</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/70-gt-differentiation-designer/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #60a5fa; --accent-dim: rgba(96,165,250,0.18); --accent-low: rgba(96,165,250,0.08);
+      --border: rgba(96,165,250,0.18); --border-focus: #60a5fa;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: #E8A838; } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(96,165,250,0.07); border: 1px solid rgba(96,165,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 28px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 28px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 10px 18px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="text"], input[type="number"], select, textarea {
+      background: var(--surface); border: 1px solid var(--border); color: var(--text);
+      padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem;
+      width: 100%; transition: border-color 0.2s;
+    }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    textarea { resize: vertical; min-height: 80px; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .range-val { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--accent); }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .add-btn { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); padding: 7px 16px; border-radius: 6px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all 0.15s; }
+    .add-btn:hover { background: var(--accent); color: #000; }
+    .remove-btn { background: none; border: 1px solid rgba(248,113,113,0.3); color: var(--red); padding: 4px 10px; border-radius: 5px; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; }
+    /* Enrichment strategy cards */
+    .enrichment-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin-bottom: 12px; transition: border-color 0.2s; }
+    .enrichment-card.selected { border-color: var(--accent); background: var(--accent-low); }
+    .enrichment-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; cursor: pointer; }
+    .enrichment-check { accent-color: var(--accent); width: 16px; height: 16px; flex-shrink: 0; margin-top: 3px; }
+    .enrichment-title { font-weight: 600; font-size: 0.92rem; color: var(--text); }
+    .enrichment-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.55; }
+    .enrichment-customize { margin-top: 10px; }
+    /* Compacting checklist */
+    .compact-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px; cursor: pointer; }
+    .compact-item input { accent-color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; }
+    .compact-item-label { font-size: 0.88rem; color: var(--text-muted); }
+    /* Summary */
+    .summary-block { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; margin-bottom: 14px; }
+    .summary-label { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .summary-value { font-size: 0.9rem; color: var(--text); line-height: 1.6; }
+    .strategy-pill { display: inline-block; background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; margin: 2px; }
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(96,165,250,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #7f1d1d; border: 1px solid var(--red); color: #fecaca; padding: 12px 22px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; z-index: 200; display: none; }
+    .toast.show { display: block; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    .info-box { background: rgba(96,165,250,0.06); border: 1px solid rgba(96,165,250,0.2); border-radius: 8px; padding: 14px 18px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.65; margin-bottom: 14px; }
+    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .tag { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 3px 9px; font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 5px; }
+    .tag button { background: none; border: none; color: inherit; cursor: pointer; font-size: 0.85rem; line-height: 1; padding: 0 2px; }
+    @media (max-width: 700px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="../../index.html" class="nav-pill accent">← All Tools</a>
+  </div>
+</nav>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <div class="tool-eyebrow">AL-77 · Selected Studies — Education</div>
+  <h1 class="tool-title">GT Differentiation Designer</h1>
+  <p class="tool-desc">Gifted students don't need more of the same work — they need work that actually challenges them. This tool adapts a standard lesson for gifted and talented students using three research-backed strategies: curriculum compacting (removing what they already know), enrichment (depth and complexity), and acceleration (moving faster or deeper into content). Grounded in the GT literature and the Youth Adventure Program approach for high-achieving middle schoolers.</p>
+  <div class="tool-vintage">Data vintage: GT differentiation frameworks: Renzulli (1977), Tomlinson (2001), Rogers (2002); TAGT standards</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">Lesson Profile</button>
+    <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">Compacting Plan</button>
+    <button class="tab-btn" id="tabBtn3" onclick="switchTab(3)">Enrichment</button>
+    <button class="tab-btn" id="tabBtn4" onclick="switchTab(4)">Acceleration</button>
+    <button class="tab-btn" id="tabBtn5" onclick="switchTab(5)">Export Plan</button>
+  </div>
+
+  <!-- ============ TAB 1: LESSON PROFILE ============ -->
+  <div class="tab-pane active" id="tabPane1">
+    <div class="card">
+      <div class="card-title">Standard Lesson Profile</div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="grade">Grade Level</label>
+          <input type="text" id="grade" placeholder="e.g. Grade 6 / 7th grade" />
+        </div>
+        <div class="field">
+          <label for="subject">Subject</label>
+          <input type="text" id="subject" placeholder="e.g. Pre-Algebra / Life Science" />
+        </div>
+      </div>
+      <div class="field" style="margin-top:14px;">
+        <label for="lessonDesc">Standard Lesson Description</label>
+        <textarea id="lessonDesc" style="min-height:110px;" placeholder="Describe what the standard lesson covers — its objectives, activities, and expected duration. This is the baseline that GT students will compact or extend beyond.&#10;&#10;e.g. Introduction to linear equations (2 weeks). Students learn to write and solve one-variable equations, identify slope and y-intercept from tables, and graph lines. Main activities: direct instruction, practice sets, graphing worksheet, quiz."></textarea>
+      </div>
+      <div class="form-grid two" style="margin-top:14px;">
+        <div class="field">
+          <label for="lessonDuration">Estimated Duration</label>
+          <input type="text" id="lessonDuration" placeholder="e.g. 2 weeks / 10 class periods" />
+        </div>
+        <div class="field">
+          <label for="preAssess">Pre-Assessment Option</label>
+          <select id="preAssess">
+            <option value="formal">Formal Pre-Test</option>
+            <option value="observation">Teacher Observation</option>
+            <option value="portfolio">Portfolio Sample / Prior Work</option>
+            <option value="skip">Skip Pre-Assessment (Not Using Compacting)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <button class="run-btn" onclick="switchTab(2)">Continue to Compacting Plan →</button>
+  </div>
+
+  <!-- ============ TAB 2: COMPACTING PLAN ============ -->
+  <div class="tab-pane" id="tabPane2">
+    <div class="card">
+      <div class="card-title">Curriculum Compacting <span class="badge">Renzulli, 1977</span></div>
+      <div class="info-box">
+        <strong>Curriculum compacting</strong> removes content GT students already know (or can learn rapidly), freeing time for enrichment or acceleration. It requires evidence that mastery exists — use pre-assessment data, not assumptions. Target: 40–70% of standard lesson content can often be compacted for identified GT learners.
+      </div>
+
+      <p class="field-hint" style="margin-bottom:12px;">Check what GT students in this unit likely already know or can demonstrate mastery of quickly:</p>
+      <div id="compactChecklist"></div>
+      <div style="display:flex;gap:8px;margin:12px 0 6px;">
+        <input type="text" id="compactCustomInput" placeholder="Add a concept/skill to compact..." style="flex:1;" />
+        <button class="add-btn" onclick="addCompactItem()">+ Add</button>
+      </div>
+      <div class="tag-list" id="compactCustomTags"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Time Freed by Compacting</div>
+      <div class="field">
+        <label>Estimated time freed: <span class="range-val" id="compactPctVal">40</span>%</label>
+        <input type="range" id="compactPct" min="0" max="80" step="5" value="40"
+          oninput="document.getElementById('compactPctVal').textContent = this.value" />
+        <span class="field-hint">0% = no compacting; 80% = GT student masters nearly all baseline content during pre-assessment window</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">What Will Compacted Students Do During Freed Time?</div>
+      <div class="field">
+        <textarea id="compactFreeTime" style="min-height:90px;" placeholder="e.g. Work on the enrichment module (see Tab 3). Access the acceleration track (see Tab 4). Complete an independent math project connecting linear equations to real-world data..."></textarea>
+      </div>
+    </div>
+
+    <button class="run-btn" onclick="switchTab(3)">Continue to Enrichment Options →</button>
+  </div>
+
+  <!-- ============ TAB 3: ENRICHMENT ============ -->
+  <div class="tab-pane" id="tabPane3">
+    <div class="card">
+      <div class="card-title">Enrichment Strategies <span class="badge">Tomlinson, 2001</span></div>
+      <div class="info-box">Select the enrichment strategies you will implement. Check a strategy to enable the customization field. GT enrichment should replace standard work — not be added on top of it.</div>
+      <div id="enrichmentStrategies"></div>
+    </div>
+    <button class="run-btn" onclick="switchTab(4)">Continue to Acceleration Options →</button>
+  </div>
+
+  <!-- ============ TAB 4: ACCELERATION ============ -->
+  <div class="tab-pane" id="tabPane4">
+    <div class="card">
+      <div class="card-title">Acceleration Options <span class="badge">Rogers, 2002</span></div>
+      <div class="info-box">
+        <strong>Acceleration</strong> moves GT students to more advanced content — either within the same subject or across grade levels. Rogers (2002) found subject-matter acceleration to be among the most effective GT interventions with strong long-term outcomes. Use selectively and with student/parent awareness.
+      </div>
+
+      <div class="form-grid two">
+        <div class="field">
+          <label for="accelType">Acceleration Type</label>
+          <select id="accelType">
+            <option value="none">Not applying acceleration this unit</option>
+            <option value="subject">Subject-Level Acceleration (access next grade's content)</option>
+            <option value="telescoping">Content Telescoping (cover 2 levels in 1 unit)</option>
+            <option value="pacing">Pacing Acceleration (move through content faster, independently)</option>
+            <option value="domain">Domain-Specific Acceleration (advanced track in one area only)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="accelNextContent">Advanced Content Target</label>
+          <input type="text" id="accelNextContent" placeholder="e.g. Grade 7 pre-algebra: systems of equations" />
+          <span class="field-hint">What content or standard would the student accelerate toward?</span>
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:14px;">
+        <label for="accelNotes">Acceleration Notes</label>
+        <textarea id="accelNotes" placeholder="e.g. Three students have already completed the Grade 6 math scope; they will work through the Grade 7 first-semester content at their own pace with weekly check-ins. Parent meeting required before starting. Use district-approved advanced materials..."></textarea>
+      </div>
+
+      <div class="field" style="margin-top:14px;">
+        <label for="accelLogistics">Logistics &amp; Coordination</label>
+        <textarea id="accelLogistics" placeholder="e.g. Coordinate with Grade 7 math teacher for resource sharing. Check with counselor re: transcript implications if student takes Grade 7 course for credit. Notify parents in writing..."></textarea>
+      </div>
+    </div>
+    <button class="run-btn" onclick="buildGTPlan()">Build GT Differentiation Plan →</button>
+  </div>
+
+  <!-- ============ TAB 5: EXPORT PLAN ============ -->
+  <div class="tab-pane" id="tabPane5">
+    <div class="results-section" id="gtResults">
+      <div id="gtPlanContent"></div>
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+      </div>
+    </div>
+    <div id="gtPrompt" style="color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:0.85rem;padding:40px 0;">
+      Complete Tabs 1–4 and click "Build GT Differentiation Plan" to generate your export.
+    </div>
+  </div>
+
+</div><!-- end tool-wrapper -->
+
+<div class="toast" id="toast"></div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-77 · Data: GT research: Renzulli 1977, Tomlinson 2001
+</footer>
+
+<script>
+// ── Data ───────────────────────────────────────────────────────────────────
+const COMPACT_DEFAULTS = [
+  'Vocabulary and definitions for this unit',
+  'Basic procedural knowledge (how to follow the steps)',
+  'Factual recall content',
+  'Introductory concepts (already covered in prior units or informal learning)',
+  'Standard practice exercises (lower-complexity problems)'
+];
+
+const ENRICHMENT_STRATEGIES = [
+  {
+    id: 'depth',
+    title: 'Depth',
+    desc: 'Explore the underlying concepts, theories, principles, and rules that govern the content. Move beyond the "what" to the "why" and "how it works at a deeper level."',
+    placeholder: 'e.g. Instead of just solving equations, students investigate WHY the properties of equality hold — connecting to the axioms of number theory. They read a short excerpt from a mathematician\'s essay on algebraic structures...'
+  },
+  {
+    id: 'complexity',
+    title: 'Complexity',
+    desc: 'Examine content through multiple perspectives, across disciplines, or with an ethics/values dimension. Add connections between this content and other fields or societal issues.',
+    placeholder: 'e.g. Students examine how linear equations appear in economics (supply/demand), physics (motion), and environmental science (population growth). They discuss: "Is it ethical to use mathematical models to make decisions about people?" ...'
+  },
+  {
+    id: 'abstraction',
+    title: 'Abstraction',
+    desc: 'Work with generalizations, symbolic representations, patterns, and rules that transcend the specific content — building toward formal mathematical or disciplinary thinking.',
+    placeholder: 'e.g. Students identify the general form y = mx + b and test whether it holds for non-linear relationships. They generate their own conjectures and attempt to prove or disprove them with examples...'
+  },
+  {
+    id: 'openended',
+    title: 'Open-Endedness',
+    desc: 'Present problems or investigations that have multiple valid solutions, require student judgment, and don\'t have a single "right answer" in the back of the book.',
+    placeholder: 'e.g. "Design a pricing model for a school store that maximizes both revenue and fairness. Defend your model with mathematical evidence and a written argument. There is no single correct answer — your reasoning is what matters..." '
+  },
+  {
+    id: 'realworld',
+    title: 'Real-World Application',
+    desc: 'Connect content to genuine professional or community problems. GT students benefit from seeing that the content is a tool practitioners actually use.',
+    placeholder: 'e.g. Students use real city traffic count data to build linear regression models and present findings as if reporting to a city transportation department. They identify limitations in their own models...'
+  },
+  {
+    id: 'independent',
+    title: 'Independent Study Option',
+    desc: 'The student designs their own inquiry — choosing a question, method, and product. Teacher acts as advisor rather than director. Requires student readiness for self-direction.',
+    placeholder: 'e.g. Student selects their own application domain (e.g. sports analytics, stock prices, climate data), designs an investigation, collects or accesses data, and produces a written + visual report. Weekly 10-min advisor check-in...'
+  }
+];
+
+const enrichmentState = {}; // {id: {selected: bool, customText: ''}}
+ENRICHMENT_STRATEGIES.forEach(s => { enrichmentState[s.id] = { selected: false, customText: '' }; });
+
+const compactCustomItems = [];
+
+// ── Lang ───────────────────────────────────────────────────────────────────
+function setLang(code) {
+  sessionStorage.setItem('apex_lang', code);
+  document.documentElement.lang = code;
+  document.documentElement.dir = code === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.toLowerCase() === code || b.textContent === code);
+  });
+}
+(function() { setLang(sessionStorage.getItem('apex_lang') || 'en'); })();
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function switchTab(n) {
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById('tabBtn' + i).classList.toggle('active', i === n);
+    document.getElementById('tabPane' + i).classList.toggle('active', i === n);
+  }
+}
+
+// ── Compact Checklist ──────────────────────────────────────────────────────
+function renderCompactChecklist() {
+  const container = document.getElementById('compactChecklist');
+  container.innerHTML = COMPACT_DEFAULTS.map((item, i) => `
+    <label class="compact-item">
+      <input type="checkbox" id="compact_${i}" value="${item}" />
+      <span class="compact-item-label">${item}</span>
+    </label>
+  `).join('');
+}
+
+function addCompactItem() {
+  const input = document.getElementById('compactCustomInput');
+  const val = input.value.trim();
+  if (!val) return;
+  compactCustomItems.push(val);
+  input.value = '';
+  renderCompactCustomTags();
+}
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('compactCustomInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); addCompactItem(); }
+  });
+});
+
+function removeCompactCustomItem(i) {
+  compactCustomItems.splice(i, 1);
+  renderCompactCustomTags();
+}
+function renderCompactCustomTags() {
+  const el = document.getElementById('compactCustomTags');
+  el.innerHTML = compactCustomItems.map((item, i) =>
+    `<span class="tag">${item}<button onclick="removeCompactCustomItem(${i})" title="Remove">×</button></span>`
+  ).join('');
+}
+
+// ── Enrichment Strategies ──────────────────────────────────────────────────
+function renderEnrichmentStrategies() {
+  const container = document.getElementById('enrichmentStrategies');
+  container.innerHTML = ENRICHMENT_STRATEGIES.map(s => {
+    const state = enrichmentState[s.id];
+    return `
+      <div class="enrichment-card ${state.selected ? 'selected' : ''}" id="enrichCard_${s.id}">
+        <label class="enrichment-header">
+          <input type="checkbox" class="enrichment-check" id="enrich_${s.id}"
+            ${state.selected ? 'checked' : ''}
+            onchange="toggleEnrichment('${s.id}')" />
+          <div>
+            <div class="enrichment-title">${s.title}</div>
+            <div class="enrichment-desc">${s.desc}</div>
+          </div>
+        </label>
+        <div class="enrichment-customize" id="enrichCustomize_${s.id}" style="${state.selected ? '' : 'display:none;'}">
+          <textarea id="enrichText_${s.id}" placeholder="${s.placeholder}"
+            oninput="enrichmentState['${s.id}'].customText = this.value">${state.customText}</textarea>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleEnrichment(id) {
+  enrichmentState[id].selected = !enrichmentState[id].selected;
+  const card = document.getElementById('enrichCard_' + id);
+  const customize = document.getElementById('enrichCustomize_' + id);
+  card.classList.toggle('selected', enrichmentState[id].selected);
+  customize.style.display = enrichmentState[id].selected ? '' : 'none';
+}
+
+// ── Build Plan ─────────────────────────────────────────────────────────────
+function buildGTPlan() {
+  const grade = document.getElementById('grade').value.trim();
+  const subject = document.getElementById('subject').value.trim();
+  const lessonDesc = document.getElementById('lessonDesc').value.trim();
+  if (!grade || !subject || !lessonDesc) {
+    showToast('Please fill in Grade, Subject, and Lesson Description in Tab 1.');
+    switchTab(1);
+    return;
+  }
+
+  // Sync enrichment text from DOM
+  ENRICHMENT_STRATEGIES.forEach(s => {
+    const el = document.getElementById('enrichText_' + s.id);
+    if (el) enrichmentState[s.id].customText = el.value.trim();
+  });
+
+  const compactPct = document.getElementById('compactPct').value;
+  const compactFreeTime = document.getElementById('compactFreeTime').value.trim();
+  const accelType = document.getElementById('accelType').value;
+  const accelNotes = document.getElementById('accelNotes').value.trim();
+  const selectedEnrichment = ENRICHMENT_STRATEGIES.filter(s => enrichmentState[s.id].selected);
+
+  // Collect compacted items
+  const compactedItems = [];
+  COMPACT_DEFAULTS.forEach((item, i) => {
+    const el = document.getElementById('compact_' + i);
+    if (el && el.checked) compactedItems.push(item);
+  });
+  compactCustomItems.forEach(item => compactedItems.push(item));
+
+  const container = document.getElementById('gtPlanContent');
+  let html = `
+    <div class="card">
+      <div class="card-title">GT Differentiation Plan Overview</div>
+      <div class="summary-block">
+        <div class="summary-label">Baseline Lesson</div>
+        <div class="summary-value"><strong>${subject}</strong> — ${grade}<br>${lessonDesc}<br><em style="color:var(--text-dim);">Duration: ${document.getElementById('lessonDuration').value.trim() || 'Not specified'} | Pre-assessment: ${document.getElementById('preAssess').value}</em></div>
+      </div>
+      <div class="summary-block">
+        <div class="summary-label">Compacting Plan (${compactPct}% of content freed)</div>
+        <div class="summary-value">
+          ${compactedItems.length ? '<strong>Content to compact:</strong><br>' + compactedItems.map(i => '• ' + i).join('<br>') : '<em style="color:var(--text-dim)">No compacting items selected</em>'}
+          ${compactFreeTime ? '<br><br><strong>Freed-time activity:</strong><br>' + compactFreeTime : ''}
+        </div>
+      </div>
+      <div class="summary-block">
+        <div class="summary-label">Enrichment Strategies (${selectedEnrichment.length} selected)</div>
+        <div class="summary-value">
+          ${selectedEnrichment.length ? selectedEnrichment.map(s => `
+            <div style="margin-bottom:10px;">
+              <span class="strategy-pill">${s.title}</span>
+              <span style="font-size:0.82rem;color:var(--text-muted);"> — ${enrichmentState[s.id].customText || s.desc}</span>
+            </div>`).join('') : '<em style="color:var(--text-dim)">No enrichment strategies selected</em>'}
+        </div>
+      </div>
+      <div class="summary-block">
+        <div class="summary-label">Acceleration</div>
+        <div class="summary-value">
+          ${accelType === 'none' ? '<em style="color:var(--text-dim)">No acceleration applied this unit</em>' :
+            `<strong>Type:</strong> ${document.getElementById('accelType').options[document.getElementById('accelType').selectedIndex].text}<br>
+             <strong>Target:</strong> ${document.getElementById('accelNextContent').value.trim() || '—'}<br>
+             ${accelNotes ? '<strong>Notes:</strong><br>' + accelNotes : ''}`}
+        </div>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+  document.getElementById('gtResults').classList.add('visible');
+  document.getElementById('gtPrompt').style.display = 'none';
+  switchTab(5);
+}
+
+// ── AP2 Schema ─────────────────────────────────────────────────────────────
+const AP2Schema = {
+  validMandateTypes: [
+    'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+    'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+    'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+    'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+    'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+    'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+    'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+    'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+    'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+    'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+    'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+    'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+    'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+    'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
+    'english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record',
+    'mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record',
+    'mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record',
+    'lesson_design_record','assessment_item_record','classroom_scenario_record',
+    'gt_differentiation_record','instructor_toolkit_record',
+    'cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record',
+    'primary_source_record','historiography_record','anachronism_record','counterfactual_record',
+    'franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record',
+    'micro_theory_record','economic_systems_record','economists_panel_record',
+    'economic_history_record','econ_principles_record'
+  ],
+  validate(payload) {
+    if (!payload || typeof payload !== 'object') return { valid: false, error: 'Payload must be an object.' };
+    if (!payload.mandate_type) return { valid: false, error: 'Missing mandate_type.' };
+    if (!this.validMandateTypes.includes(payload.mandate_type)) return { valid: false, error: `Invalid mandate_type: ${payload.mandate_type}` };
+    if (!payload.tool_id) return { valid: false, error: 'Missing tool_id.' };
+    if (!payload.generated_at) return { valid: false, error: 'Missing generated_at.' };
+    return { valid: true };
+  }
+};
+
+// ── Export ─────────────────────────────────────────────────────────────────
+function exportMarkdown() {
+  const grade = document.getElementById('grade').value.trim();
+  const subject = document.getElementById('subject').value.trim();
+  const lessonDesc = document.getElementById('lessonDesc').value.trim();
+  const compactPct = document.getElementById('compactPct').value;
+  const selectedEnrichment = ENRICHMENT_STRATEGIES.filter(s => enrichmentState[s.id].selected);
+  const accelType = document.getElementById('accelType').value;
+
+  let md = `# GT Differentiation Plan\n*Generated by ApexLogics GT Differentiation Designer (AL-77)*\n\n`;
+  md += `**Grade:** ${grade} | **Subject:** ${subject}\n\n`;
+  md += `## Baseline Lesson\n${lessonDesc}\n\n`;
+  md += `## Compacting Plan (${compactPct}% freed)\n`;
+
+  const compactedItems = [];
+  COMPACT_DEFAULTS.forEach((item, i) => {
+    const el = document.getElementById('compact_' + i);
+    if (el && el.checked) compactedItems.push(item);
+  });
+  compactCustomItems.forEach(item => compactedItems.push(item));
+
+  if (compactedItems.length) compactedItems.forEach(item => { md += `- ${item}\n`; });
+  else md += '*No compacting items selected*\n';
+  const ft = document.getElementById('compactFreeTime').value.trim();
+  if (ft) md += `\n**Freed-time activity:** ${ft}\n`;
+  md += '\n';
+
+  if (selectedEnrichment.length) {
+    md += `## Enrichment Strategies\n`;
+    selectedEnrichment.forEach(s => {
+      md += `### ${s.title}\n${enrichmentState[s.id].customText || s.desc}\n\n`;
+    });
+  }
+
+  md += `## Acceleration\n`;
+  if (accelType === 'none') md += '*No acceleration applied this unit*\n';
+  else {
+    md += `**Type:** ${accelType}\n`;
+    md += `**Target:** ${document.getElementById('accelNextContent').value.trim() || '—'}\n`;
+    const notes = document.getElementById('accelNotes').value.trim();
+    if (notes) md += `**Notes:** ${notes}\n`;
+  }
+
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'gt-differentiation-plan.md'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportAP2() {
+  const grade = document.getElementById('grade').value.trim();
+  const subject = document.getElementById('subject').value.trim();
+  const lessonDesc = document.getElementById('lessonDesc').value.trim();
+  if (!grade || !subject || !lessonDesc) { showToast('Complete the Lesson Profile first.'); return; }
+
+  const compactedItems = [];
+  COMPACT_DEFAULTS.forEach((item, i) => {
+    const el = document.getElementById('compact_' + i);
+    if (el && el.checked) compactedItems.push(item);
+  });
+  compactCustomItems.forEach(item => compactedItems.push(item));
+
+  const selectedEnrichment = ENRICHMENT_STRATEGIES
+    .filter(s => enrichmentState[s.id].selected)
+    .map(s => ({ id: s.id, title: s.title, customization: enrichmentState[s.id].customText }));
+
+  const payload = {
+    mandate_type: 'gt_differentiation_record',
+    tool_id: 'AL-77',
+    generated_at: new Date().toISOString(),
+    grade: grade,
+    subject: subject,
+    standard_lesson_summary: lessonDesc,
+    compacting_applied: compactedItems.length > 0,
+    compacted_items: compactedItems,
+    time_freed_pct: parseInt(document.getElementById('compactPct').value),
+    freed_time_activity: document.getElementById('compactFreeTime').value.trim(),
+    enrichment_strategies: selectedEnrichment,
+    acceleration_applied: document.getElementById('accelType').value !== 'none',
+    acceleration_type: document.getElementById('accelType').value,
+    acceleration_target: document.getElementById('accelNextContent').value.trim(),
+    acceleration_notes: document.getElementById('accelNotes').value.trim()
+  };
+
+  const result = AP2Schema.validate(payload);
+  if (!result.valid) { showToast('AP2 validation error: ' + result.error); return; }
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'gt-differentiation-ap2.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+renderCompactChecklist();
+renderEnrichmentStrategies();
+
+document.getElementById('compactCustomInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); addCompactItem(); }
+});
+</script>
+
+</body>
+</html>

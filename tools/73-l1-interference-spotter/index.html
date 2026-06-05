@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>L1-Interference Spotter · ApexLogics #73</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/73-l1-interference-spotter/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #2dd4bf; --accent-dim: rgba(45,212,191,0.18); --accent-low: rgba(45,212,191,0.08);
+      --border: rgba(45,212,191,0.18); --border-focus: #2dd4bf;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: #E8A838; } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(45,212,191,0.07); border: 1px solid rgba(45,212,191,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 28px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 10px 18px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .cat-card { border-radius: 10px; border: 1px solid var(--border); margin-bottom: 12px; overflow: hidden; }
+    .cat-header { background: var(--surface2); padding: 14px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+    .cat-header:hover { background: rgba(45,212,191,0.05); }
+    .cat-title { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--accent); }
+    .cat-sub { font-size: 0.78rem; color: var(--text-dim); margin-top: 3px; }
+    .cat-toggle { font-size: 0.9rem; color: var(--text-dim); }
+    .cat-body { display: none; padding: 20px; border-top: 1px solid var(--border); background: var(--surface); }
+    .cat-body.open { display: block; }
+    .cat-why { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.6; }
+    .error-box { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.3); border-radius: 6px; padding: 10px 14px; margin-bottom: 10px; }
+    .error-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--red); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .error-text { font-size: 0.88rem; color: #fca5a5; font-style: italic; line-height: 1.6; }
+    .correct-box { background: rgba(52,211,153,0.07); border: 1px solid rgba(52,211,153,0.3); border-radius: 6px; padding: 10px 14px; margin-bottom: 10px; }
+    .correct-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--green); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .correct-text { font-size: 0.88rem; color: #a7f3d0; line-height: 1.6; }
+    .tip-box { background: rgba(45,212,191,0.06); border: 1px solid rgba(45,212,191,0.2); border-radius: 6px; padding: 10px 14px; }
+    .tip-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .tip-text { font-size: 0.86rem; color: var(--text-muted); line-height: 1.6; }
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    textarea, select, input[type="text"] { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+    textarea:focus, select:focus, input:focus { outline: none; border-color: var(--border-focus); }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 12px 32px; border-radius: 8px; font-size: 0.95rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .triage-result { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-top: 16px; display: none; }
+    .triage-result.visible { display: block; }
+    .triage-section { margin-bottom: 14px; }
+    .triage-label { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .triage-value { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; }
+    .quiz-question { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 12px; }
+    .quiz-q { font-size: 0.92rem; color: var(--text); margin-bottom: 12px; line-height: 1.5; }
+    .quiz-opts { display: flex; flex-direction: column; gap: 8px; }
+    .quiz-opt { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: none; font-size: 0.86rem; color: var(--text-muted); font-family: 'Sora', sans-serif; text-align: left; transition: all 0.15s; }
+    .quiz-opt:hover { border-color: var(--accent); color: var(--text); }
+    .quiz-opt.correct { background: rgba(52,211,153,0.1); border-color: var(--green); color: var(--green); }
+    .quiz-opt.incorrect { background: rgba(248,113,113,0.1); border-color: var(--red); color: var(--red); }
+    .quiz-opt.reveal-correct { background: rgba(52,211,153,0.07); border-color: rgba(52,211,153,0.4); color: var(--green); }
+    .quiz-score-banner { background: rgba(45,212,191,0.08); border: 1px solid rgba(45,212,191,0.3); border-radius: 10px; padding: 18px 22px; margin-top: 16px; text-align: center; display: none; }
+    .quiz-score-banner.visible { display: block; }
+    .score-big { font-family: 'JetBrains Mono', monospace; font-size: 2rem; color: var(--accent); }
+    .score-sub { font-size: 0.88rem; color: var(--text-muted); margin-top: 6px; }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(45,212,191,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #7f1d1d; border: 1px solid var(--red); color: #fecaca; padding: 12px 22px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; z-index: 200; display: none; }
+    .toast.show { display: block; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    @media (max-width: 700px) {
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="../../index.html" class="nav-pill accent">← All Tools</a>
+  </div>
+</nav>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <div class="tool-eyebrow">AL-80 · Selected Studies — ESL/TEFL</div>
+  <h1 class="tool-title">L1-Interference Spotter<br><span style="font-size:1.4rem;color:var(--text-muted)">(Mandarin → English)</span></h1>
+  <p class="tool-desc">Teaching English to Mandarin speakers means working with a specific, well-documented set of transfer errors — not random mistakes but systematic patterns that follow directly from how Mandarin works. This reference and self-assessment tool covers the major interference categories: articles, tense vs. aspect, topic-comment word order, classifiers, phonological transfer, and copula omission. For teachers and learners.</p>
+  <div class="tool-vintage">Data vintage: L1 interference: Swan &amp; Smith, Learner English 2nd ed. (2001); Li &amp; Thompson, Mandarin Chinese (1981); contrastive analysis research</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">Reference</button>
+    <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">Triage Mode</button>
+    <button class="tab-btn" id="tabBtn3" onclick="switchTab(3)">Quick Quiz</button>
+  </div>
+
+  <!-- TAB 1: REFERENCE -->
+  <div class="tab-pane active" id="tabPane1">
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title">8 Interference Categories — Mandarin → English</div>
+      <p style="font-size:0.85rem;color:var(--text-muted);line-height:1.7;">Click any category to expand the full explanation, error examples, and teaching tip. Categories are ordered by frequency of occurrence in Mandarin-speaker learner corpora.</p>
+    </div>
+
+    <div id="categoryCards"></div>
+  </div>
+
+  <!-- TAB 2: TRIAGE MODE -->
+  <div class="tab-pane" id="tabPane2">
+    <div class="card">
+      <div class="card-title">Error Triage <span class="badge">Identify &amp; Respond</span></div>
+      <div class="field">
+        <label for="triageError">Student Error or Sentence</label>
+        <textarea id="triageError" placeholder='e.g. "Yesterday I go to the school and teacher give me homework."'></textarea>
+      </div>
+      <div class="field">
+        <label for="triageCat">Error Category (or Auto-Detect)</label>
+        <select id="triageCat">
+          <option value="auto">Auto-Detect</option>
+          <option value="articles">Articles (a/an/the/zero)</option>
+          <option value="tense">Tense vs. Aspect</option>
+          <option value="wordorder">Topic-Comment Word Order</option>
+          <option value="copula">Copula Omission</option>
+          <option value="classifiers">Measure Words / Classifiers</option>
+          <option value="phonological">Phonological Transfer</option>
+          <option value="questions">Question Formation</option>
+          <option value="negation">Negation</option>
+        </select>
+      </div>
+      <button class="run-btn" onclick="triageError()">Identify &amp; Respond</button>
+
+      <div class="triage-result" id="triageResult">
+        <div class="triage-section">
+          <div class="triage-label">Detected Category</div>
+          <div class="triage-value" id="triageDetected">—</div>
+        </div>
+        <div class="triage-section">
+          <div class="triage-label">Why This Happens</div>
+          <div class="triage-value" id="triageWhy">—</div>
+        </div>
+        <div class="triage-section">
+          <div class="triage-label">Targeted Correction</div>
+          <div class="triage-value" id="triageCorrection">—</div>
+        </div>
+        <div class="triage-section">
+          <div class="triage-label">Suggested Correction Technique</div>
+          <div class="triage-value" id="triageTechnique">—</div>
+        </div>
+        <div class="results-export-row">
+          <button class="export-btn" onclick="exportTriageMarkdown()">⬇ Markdown</button>
+          <button class="export-btn ap2" onclick="exportAP2('triage')">⬇ AP2 JSON</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: QUICK QUIZ -->
+  <div class="tab-pane" id="tabPane3">
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">Quick Quiz — Mandarin Transfer Patterns <span class="badge">8 Questions</span></div>
+      <p style="font-size:0.85rem;color:var(--text-muted);">Test your knowledge of Mandarin–English interference patterns. Select the best answer for each question.</p>
+    </div>
+    <div id="quizContainer"></div>
+    <div class="quiz-score-banner" id="scoreBanner">
+      <div class="score-big" id="scoreDisplay">—</div>
+      <div class="score-sub" id="scoreSub">—</div>
+    </div>
+    <div style="margin-top:16px;text-align:center;">
+      <button class="run-btn" style="max-width:280px;" onclick="submitQuiz()">Submit Quiz</button>
+      <button class="run-btn" style="max-width:280px;margin-top:8px;background:var(--surface2);color:var(--accent);border:1px solid var(--accent);" onclick="resetQuiz()">Reset Quiz</button>
+    </div>
+    <div class="results-export-row">
+      <button class="export-btn ap2" onclick="exportAP2('quiz')">⬇ AP2 JSON</button>
+    </div>
+  </div>
+
+</div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-80 · Data: Swan &amp; Smith 2001; Li &amp; Thompson 1981
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Lang ──────────────────────────────────────────────────────────────────
+function setLang(code) {
+  try { sessionStorage.setItem('apex_lang', code); } catch(e) {}
+  document.querySelectorAll('.lang-btn').forEach(function(b) {
+    b.classList.toggle('active', b.textContent.trim().toLowerCase() === code || (code === 'zh' && b.textContent.trim() === '中文'));
+  });
+}
+(function() {
+  var saved = ''; try { saved = sessionStorage.getItem('apex_lang') || 'en'; } catch(e) { saved = 'en'; }
+  setLang(saved);
+})();
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+function switchTab(n) {
+  for (var i = 1; i <= 3; i++) {
+    document.getElementById('tabPane' + i).classList.toggle('active', i === n);
+    document.getElementById('tabBtn' + i).classList.toggle('active', i === n);
+  }
+}
+
+// ── Category data ─────────────────────────────────────────────────────────
+var CATEGORIES = [
+  {
+    id: 'articles',
+    title: 'Articles (a / an / the / zero)',
+    subtitle: 'Most frequent written error for Mandarin speakers',
+    why: 'Mandarin has no article system whatsoever. There is no grammatical category that distinguishes specific from non-specific nouns, or introduces a noun into discourse for the first time vs. referring back to a known referent. Learners must acquire an entirely new grammatical system with no L1 scaffold.',
+    errors: 'I went to library. Please give me book.\nThe life is beautiful.\nI am student at university.\nShe plays piano every day.',
+    correction: '"The" signals definiteness: both speaker and listener know which specific referent is meant. "A/an" introduces a non-specific or first-mention countable noun. Zero article is used with mass nouns (water, information) and generics (Life is short. Dogs are loyal). This three-way distinction must be learned systematically.',
+    tip: 'Teach articles through noun phrase slots, not rules. Plenty of comprehensible input with articles highlighted works better than memorizing rules. Use visual frames: [first mention → a/an] → [second mention → the]. Avoid teaching "the = specific" in isolation — it misfires with generics.'
+  },
+  {
+    id: 'tense',
+    title: 'Tense vs. Aspect',
+    subtitle: 'Mandarin marks aspect, not tense — time is inferred',
+    why: 'Mandarin uses aspect markers (了 le for completion, 过 guò for past experience, 着 zhe for ongoing state) rather than grammatical tense. Time reference is established by context words: 昨天 (yesterday), 已经 (already), 现在 (now). Learners transfer this system to English, treating time adverbials as sufficient and omitting obligatory past tense morphology.',
+    errors: 'Yesterday I go to school.\nI already finish the work.\nHe study English for 3 years.\nLast week she come to my house.',
+    correction: 'English past tense is obligatory regardless of whether a time adverbial is present. "Yesterday I went." "I already finished." "He has studied English for 3 years." The presence of "yesterday" does not license omission of past tense marking.',
+    tip: 'Focus on time adverbials as triggers for tense selection. The word "already" in English strongly co-occurs with present perfect ("I\'ve already finished"), not bare past. Contrastive drills: "yesterday + past simple" vs. "already + present perfect" pairs work well.'
+  },
+  {
+    id: 'wordorder',
+    title: 'Topic-Comment Word Order',
+    subtitle: 'Mandarin fronts topics; English requires subject-verb',
+    why: 'Mandarin is a topic-prominent language. The sentence 这本书我看过了 (This book I have-read already) is perfectly grammatical — the topic (this book) is fronted, then commented upon. English is subject-prominent: the grammatical subject must appear before the verb. Learners topicalize in English exactly as they would in Mandarin.',
+    errors: 'This book, I have read it.\nThat movie, very good.\nThe homework, I didn\'t do.\nThis problem, very difficult to solve.',
+    correction: 'English requires subject-verb word order. "I have read this book." "That movie is very good." "I didn\'t do the homework." English topicalization exists ("As for the homework, I didn\'t complete it") but is formal and marked — not the default conversational pattern.',
+    tip: 'Show students that English topic-fronting exists but sounds literary or formal, not conversational. The real-world frequency difference is important: native speakers use it for rhetorical effect, not as a default structure. Provide paired examples at different registers.'
+  },
+  {
+    id: 'copula',
+    title: 'Copula Omission',
+    subtitle: '是 (shì) is only used with nouns in Mandarin, not adjectives',
+    why: 'In Mandarin, the copula 是 (shì/to be) is only required when the predicate is a noun: 他是学生 (He is student). When the predicate is an adjective, no copula appears: 他很高 (He very tall) is grammatical. English requires "be" with all adjective predicates. Learners omit the copula before adjectives because Mandarin grammar does not require one.',
+    errors: 'She very beautiful.\nThe problem not serious.\nHe happy today.\nThis exercise too difficult.',
+    correction: '"Be" is obligatory with adjective predicates in English: "She is very beautiful." "The problem is not serious." "He is happy today." The copula cannot be dropped regardless of the presence of degree adverbs like "very."',
+    tip: 'Substitution drills work quickly: "He __ happy" → fill in the blank. The pattern is shallow and regular, so once noticed it can be acquired rapidly. Focus on negative structures too: "The problem is not serious" (not "The problem not serious").'
+  },
+  {
+    id: 'classifiers',
+    title: 'Measure Words / Classifiers',
+    subtitle: 'Mandarin requires a classifier before every counted noun',
+    why: 'Mandarin requires a classifier (量词) between a number/demonstrative and a noun: 一本书 (one-[book-classifier]-book), 三个学生 (three-[person-CL]-students). English has no equivalent system — number is marked directly on countable nouns (three books) and uncountable nouns take measure phrases (pieces of information). Learners treat English nouns as if classifier-based, omitting plural -s or pluralizing uncountable nouns.',
+    errors: 'I have three book.\nGive me two information.\nThese equipments are expensive.\nShe gave me many advice.',
+    correction: 'English marks number on the noun: books, students. Some nouns are uncountable (information, equipment, furniture, advice, luggage, news, research, traffic) and do not take a plural -s or an indefinite article. "Two pieces of information." "Some advice." "A piece of equipment."',
+    tip: 'Uncountable nouns require the most systematic attention. Build a personal "uncountable noun list" — learners must add to it as they encounter new examples. Common false plurals (*informations, *advices, *furnitures) come up repeatedly at B1-B2 level.'
+  },
+  {
+    id: 'phonological',
+    title: 'Phonological Transfer',
+    subtitle: 'Mandarin phoneme inventory creates specific sound-level errors',
+    why: 'Mandarin is a tonal language with a different phoneme inventory from English. Several English phonemes have no Mandarin equivalent, and Mandarin syllable structure (mostly CV or CVN) differs from English (which allows complex initial and final consonant clusters). These gaps produce predictable substitution and simplification errors.',
+    errors: '"Lice" for "rice" (/r/ → /l/ substitution)\n"Berry" for "very" (/v/ → /b/ substitution)\n"Dis" for "this" (/ð/ → /d/)\n"Sing" for "thing" (/θ/ → /s/)\n"Esk" for "ask" (intrusive vowel before cluster)\n"Frien" for "friend" (final cluster reduction)',
+    correction: 'Key sound pairs: /r/ vs /l/ (no /r/ phoneme in standard Mandarin) · /v/ (not in standard Mandarin, often realized as /w/ or /b/) · /θ/ and /ð/ (th sounds, no equivalent in Mandarin) · Final consonant clusters (Mandarin syllables end in vowel, /n/, or /ŋ/ only — English has /str/, /nds/, /lps/ etc.)',
+    tip: 'Focus on minimal pairs for /r/-/l/: rice/lice, right/light, road/load, red/led. Final consonant clusters need dedicated pronunciation work — learners tend to add an intrusive vowel or reduce the cluster. Record students and playback for self-monitoring.'
+  },
+  {
+    id: 'questions',
+    title: 'Question Formation',
+    subtitle: 'Mandarin adds 吗 (ma) to statements — no inversion needed',
+    why: 'Mandarin forms yes/no questions by simply appending the sentence-final particle 吗 (ma) to a declarative sentence: 你喜欢咖啡吗？(You like coffee ma?) requires no structural change. English yes/no questions require subject-auxiliary inversion and do-support insertion. Learners apply the Mandarin strategy of preserving statement word order.',
+    errors: 'You like coffee?\nHe is your teacher?\nShe can speak English?\nThey went to Beijing?',
+    correction: '"Do you like coffee?" / "Is he your teacher?" / "Can she speak English?" / "Did they go to Beijing?" Subject-auxiliary inversion is obligatory in formal and written English yes/no questions. Do-support must be inserted when there is no modal or "be" as main verb.',
+    tip: 'Intonation alone can signal a question in informal spoken English ("You like coffee?"), which may reinforce the error. Make sure learners practice auxiliary inversion explicitly in writing and formal speaking contexts. Echo correction works well here: Teacher: "You like coffee?" (rising, then explicitly modelling "Do you like coffee?")'
+  },
+  {
+    id: 'negation',
+    title: 'Negation',
+    subtitle: '不/没 precede the verb directly in Mandarin — no do-support',
+    why: 'Mandarin negation is formed by placing 不 (bù, present/future negation) or 没 (méi, past negation) directly before the verb: 我不理解 (I not understand), 我没去 (I not-[past] go). English requires do-support: "I don\'t understand," "I didn\'t go." Learners transfer the Mandarin preverbal negator pattern without inserting the auxiliary.',
+    errors: 'I not understand.\nShe not like spicy food.\nWe not go yesterday.\nHe not finished his homework.',
+    correction: '"I don\'t understand." "She doesn\'t like spicy food." "We didn\'t go yesterday." "He hasn\'t finished his homework." Do-support (do/does/did) must be inserted in simple tense negation. With modal verbs and "be," negation is preverbal without do-support: "She can\'t speak French." "He isn\'t ready."',
+    tip: 'Teach do-support as a separate grammatical category, not just a rule attached to negation. Present positive and negative forms together in paradigm tables. The most common error is in simple present/past — focus there first before addressing modal and perfect constructions.'
+  }
+];
+
+// ── Render reference cards ────────────────────────────────────────────────
+(function renderCats() {
+  var html = '';
+  CATEGORIES.forEach(function(cat, idx) {
+    html += '<div class="cat-card" id="catCard' + idx + '">'
+      + '<div class="cat-header" onclick="toggleCat(' + idx + ')">'
+      + '<div><div class="cat-title">' + (idx+1) + '. ' + cat.title + '</div>'
+      + '<div class="cat-sub">' + cat.subtitle + '</div></div>'
+      + '<div class="cat-toggle" id="catToggle' + idx + '">▶</div>'
+      + '</div>'
+      + '<div class="cat-body" id="catBody' + idx + '">'
+      + '<p class="cat-why">' + cat.why + '</p>'
+      + '<div class="error-box"><div class="error-label">Typical Errors</div>'
+      + '<div class="error-text">' + cat.errors.replace(/\n/g, '<br>') + '</div></div>'
+      + '<div class="correct-box"><div class="correct-label">Target Form</div>'
+      + '<div class="correct-text">' + cat.correction + '</div></div>'
+      + '<div class="tip-box"><div class="tip-label">Teaching Tip</div>'
+      + '<div class="tip-text">' + cat.tip + '</div></div>'
+      + '</div></div>';
+  });
+  document.getElementById('categoryCards').innerHTML = html;
+})();
+
+function toggleCat(idx) {
+  var body = document.getElementById('catBody' + idx);
+  var tog = document.getElementById('catToggle' + idx);
+  var isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  tog.textContent = isOpen ? '▶' : '▼';
+}
+
+// ── Triage ────────────────────────────────────────────────────────────────
+var triageState = { category: null, error: '' };
+
+function autoDetect(text) {
+  var t = text.toLowerCase();
+  if (/\b(yesterday|last week|last year|ago)\b/.test(t) && !/\b(went|was|were|had|did|came|gave|took|said|told|made)\b/.test(t)) return 'tense';
+  if (/\b(i not|she not|he not|we not|they not|you not)\b/.test(t)) return 'negation';
+  if (/^(this|that|these|those)\s+\w+,/.test(t)) return 'wordorder';
+  if (/\b(she|he|it|they|this|that)\s+(very|quite|so|too|more|most)\s+\w+[^s]\b/.test(t) && !/\b(is|are|was|were)\b/.test(t)) return 'copula';
+  if (/\b(three|two|four|five|many|several)\s+\w+[^s]\b/.test(t)) return 'classifiers';
+  if (/\b(informations|advices|furnitures|equipments|luggages|knowledges)\b/.test(t)) return 'classifiers';
+  if (/\b(do you|does he|can she|are they)\b/.test(t) === false && /\?/.test(t)) return 'questions';
+  if (/\b(a|an|the)\b/.test(t) === false && t.length > 20) return 'articles';
+  return 'articles'; // default
+}
+
+function triageError() {
+  var errorText = document.getElementById('triageError').value.trim();
+  if (!errorText) { showToast('Please enter a student error or sentence.'); return; }
+  var catId = document.getElementById('triageCat').value;
+  if (catId === 'auto') catId = autoDetect(errorText);
+
+  var cat = CATEGORIES.filter(function(c){ return c.id === catId; })[0] || CATEGORIES[0];
+  triageState = { category: cat.id, error: errorText };
+
+  var techniques = {
+    articles: 'Metalinguistic Feedback — "What article do we use for first mention?" followed by Recast if self-correction fails.',
+    tense: 'Elicitation — "Yesterday I ____?" (pause). Or: Metalinguistic prompt: "What tense do we use with \'yesterday\'?"',
+    wordorder: 'Explicit Correction — name the pattern: "In English, the subject comes before the verb." Then model the correct form.',
+    copula: 'Elicitation — "She ___ very beautiful." (pause). This pattern responds well to pattern recognition practice.',
+    classifiers: 'Metalinguistic Feedback — "Is \'information\' countable?" Add to learner\'s personal uncountable noun list.',
+    phonological: 'Explicit drilling — minimal pairs (/r/ vs /l/), recording + playback for self-monitoring.',
+    questions: 'Repetition with rising intonation + explicit correction: "\'She can speak?\'... Do you mean: \'Can she speak?\'"',
+    negation: 'Elicitation — "I ___ understand" (pause). Teach do-support paradigm: do/does/did.'
+  };
+
+  document.getElementById('triageDetected').textContent = cat.title;
+  document.getElementById('triageWhy').textContent = cat.why;
+  document.getElementById('triageCorrection').textContent = cat.correction.substring(0, 300) + (cat.correction.length > 300 ? '...' : '');
+  document.getElementById('triageTechnique').textContent = techniques[catId] || techniques['articles'];
+  document.getElementById('triageResult').classList.add('visible');
+}
+
+// ── Quiz ──────────────────────────────────────────────────────────────────
+var QUIZ = [
+  { q: 'Which sentence contains a typical article error by a Mandarin speaker?', opts: ['She went to the store yesterday.','I am student at university.','He doesn\'t like spicy food.','Can you speak English?'], correct: 1 },
+  { q: '"Yesterday I go to school." — Which interference pattern does this illustrate?', opts: ['Article omission','Tense vs. aspect transfer','Copula omission','Negation error'], correct: 1 },
+  { q: 'A student says "She very beautiful." This is an example of:', opts: ['Relative clause overuse','Passive transfer','Copula omission','Article confusion'], correct: 2 },
+  { q: '"Give me two information." — What is the source of this error?', opts: ['Tense marking confusion','Classifier/measure word transfer — treating English nouns as count nouns','Question formation transfer','Negation without do-support'], correct: 1 },
+  { q: 'Which phonological difficulty is most characteristic of Mandarin speakers?', opts: ['Confusion of /p/ and /b/','Difficulty with /r/ vs /l/ distinction and final consonant clusters','Inability to produce /m/ and /n/ sounds','Confusion of /f/ and /v/ in initial position only'], correct: 1 },
+  { q: '"This book, I have read it." This sentence shows:', opts: ['Passive voice confusion','Topic-comment word order transfer from Mandarin','Incorrect use of present perfect','Relative clause error'], correct: 1 },
+  { q: '"I not understand." The error here is:', opts: ['Aspect marker transfer','Negation without do-support (不 transfer)','Topic fronting','Copula omission'], correct: 1 },
+  { q: 'Which Mandarin feature explains why learners say "You like coffee?" as a question?', opts: ['Mandarin lacks question words','Mandarin yes/no questions add 吗 to statements without inversion','Mandarin requires intonation for all questions','Mandarin questions always begin with the verb'], correct: 1 }
+];
+
+var quizAnswers = [];
+var quizSubmitted = false;
+
+function renderQuiz() {
+  quizAnswers = new Array(QUIZ.length).fill(null);
+  quizSubmitted = false;
+  var html = '';
+  QUIZ.forEach(function(q, qi) {
+    html += '<div class="quiz-question">'
+      + '<div class="quiz-q">' + (qi+1) + '. ' + q.q + '</div>'
+      + '<div class="quiz-opts">';
+    q.opts.forEach(function(opt, oi) {
+      html += '<button class="quiz-opt" id="qopt_' + qi + '_' + oi + '" onclick="selectQuizOpt(' + qi + ',' + oi + ')">' + opt + '</button>';
+    });
+    html += '</div></div>';
+  });
+  document.getElementById('quizContainer').innerHTML = html;
+  document.getElementById('scoreBanner').classList.remove('visible');
+}
+
+function selectQuizOpt(qi, oi) {
+  if (quizSubmitted) return;
+  quizAnswers[qi] = oi;
+  QUIZ[qi].opts.forEach(function(_, idx) {
+    var el = document.getElementById('qopt_' + qi + '_' + idx);
+    el.classList.remove('correct','incorrect','reveal-correct');
+    if (idx === oi) el.classList.add('correct');
+  });
+}
+
+function submitQuiz() {
+  if (quizSubmitted) return;
+  var unanswered = quizAnswers.filter(function(a){ return a === null; }).length;
+  if (unanswered > 0) { showToast('Please answer all ' + unanswered + ' remaining question(s).'); return; }
+  quizSubmitted = true;
+  var score = 0;
+  QUIZ.forEach(function(q, qi) {
+    var chosen = quizAnswers[qi];
+    var correct = q.correct;
+    QUIZ[qi].opts.forEach(function(_, oi) {
+      var el = document.getElementById('qopt_' + qi + '_' + oi);
+      el.classList.remove('correct','incorrect','reveal-correct');
+      if (oi === correct) el.classList.add('reveal-correct');
+      else if (oi === chosen && chosen !== correct) el.classList.add('incorrect');
+    });
+    if (chosen === correct) score++;
+  });
+  document.getElementById('scoreDisplay').textContent = score + ' / ' + QUIZ.length;
+  var pct = Math.round((score / QUIZ.length) * 100);
+  var msg = pct >= 87 ? 'Excellent — strong command of Mandarin transfer patterns.' :
+            pct >= 62 ? 'Good — review the categories you missed.' :
+            'Review the Reference tab — focus on the patterns you found difficult.';
+  document.getElementById('scoreSub').textContent = pct + '% — ' + msg;
+  document.getElementById('scoreBanner').classList.add('visible');
+}
+
+function resetQuiz() { renderQuiz(); }
+
+renderQuiz();
+
+// ── Exports ───────────────────────────────────────────────────────────────
+function exportTriageMarkdown() {
+  if (!triageState.category) { showToast('Run a triage first.'); return; }
+  var md = '# L1-Interference Triage\n\n'
+    + '**Student Error:** ' + triageState.error + '\n\n'
+    + '**Category:** ' + document.getElementById('triageDetected').textContent + '\n\n'
+    + '**Why it happens:** ' + document.getElementById('triageWhy').textContent + '\n\n'
+    + '**Suggested technique:** ' + document.getElementById('triageTechnique').textContent + '\n\n'
+    + '*Generated by ApexLogics L1-Interference Spotter (AL-80)*\n';
+  download('l1-triage.md', md, 'text/markdown');
+}
+
+function exportAP2(mode) {
+  var AP2Schema = {
+    validMandateTypes: [
+      'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+      'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+      'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+      'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+      'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+      'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+      'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+      'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+      'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+      'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+      'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+      'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+      'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+      'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
+      'english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record',
+      'mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record',
+      'mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record',
+      'lesson_design_record','assessment_item_record','classroom_scenario_record',
+      'gt_differentiation_record','instructor_toolkit_record',
+      'cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record',
+      'primary_source_record','historiography_record','anachronism_record','counterfactual_record',
+      'franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record',
+      'micro_theory_record','economic_systems_record','economists_panel_record',
+      'economic_history_record','econ_principles_record'
+    ],
+    validate: function(p) { return p && p.mandate_type && this.validMandateTypes.indexOf(p.mandate_type) >= 0; }
+  };
+  var payload = {
+    schema_version: '2.0', mandate_type: 'l1_interference_record',
+    generated: new Date().toISOString(), tool: 'AL-80 L1-Interference Spotter',
+    data: {
+      mode_used: mode,
+      l1: 'Mandarin',
+      categories_reviewed: CATEGORIES.map(function(c){ return c.id; }),
+      errors_triaged_count: triageState.category ? 1 : 0,
+      triage_category: triageState.category || null,
+      quiz_score: quizSubmitted ? document.getElementById('scoreDisplay').textContent : null
+    }
+  };
+  if (!AP2Schema.validate(payload)) { showToast('AP2 validation failed.'); return; }
+  download('l1-interference-ap2.json', JSON.stringify(payload, null, 2), 'application/json');
+}
+
+function download(name, content, type) {
+  var blob = new Blob([content], { type: type });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = name; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3500);
+}
+</script>
+</body>
+</html>

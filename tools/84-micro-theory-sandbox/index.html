@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Micro Theory Sandbox · ApexLogics #84</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/84-micro-theory-sandbox/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #34d399; --accent-dim: rgba(52,211,153,0.18); --accent-low: rgba(52,211,153,0.08);
+      --border: rgba(52,211,153,0.18); --border-focus: #34d399;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: #E8A838; } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(52,211,153,0.07); border: 1px solid rgba(52,211,153,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 28px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 28px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 10px 18px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+    select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; }
+    select:focus { outline: none; border-color: var(--border-focus); }
+    .range-val { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--accent); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .svg-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+    .svg-wrap svg { display: block; width: 100%; }
+    .metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); } .metric-val.amber { color: var(--amber); } .metric-val.red { color: var(--red); } .metric-val.blue { color: var(--blue); }
+    .metric-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
+    .scenario-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .scenario-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+    .scenario-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .section-label { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin: 16px 0 8px; }
+    .cost-svg-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+    .market-select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; margin-bottom: 16px; width: 100%; }
+    .market-info { background: rgba(52,211,153,0.06); border: 1px solid rgba(52,211,153,0.2); border-radius: 8px; padding: 14px 18px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 12px; }
+    .ref-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    .ref-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; text-transform: uppercase; color: var(--text-dim); padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+    .ref-table td { padding: 8px 12px; border-bottom: 1px solid rgba(52,211,153,0.06); vertical-align: top; }
+    .ref-table td:first-child { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; }
+    .arrow { color: var(--accent); font-weight: bold; }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(52,211,153,0.4); color: var(--accent); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #052e16; border: 1px solid var(--green); color: #bbf7d0; padding: 12px 22px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; z-index: 200; display: none; }
+    .toast.show { display: block; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    @media (max-width: 700px) {
+      .metrics-row { grid-template-columns: 1fr 1fr; }
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="../../index.html" class="nav-pill accent">← All Tools</a>
+  </div>
+</nav>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <div class="tool-eyebrow">AL-91 · Selected Studies — Economics</div>
+  <h1 class="tool-title">Micro Theory Sandbox</h1>
+  <p class="tool-desc">Microeconomics is the study of how individuals and firms make decisions under scarcity, and how those decisions produce market outcomes. This sandbox renders interactive supply-and-demand diagrams and cost curves in SVG — with sliders for demand shifters, supply shifters, price floors/ceilings, and market structure. Grounded in standard ECON 323 microeconomic theory content.</p>
+  <div class="tool-vintage">Data vintage: Framework: Varian (2014), Intermediate Microeconomics; Samuelson &amp; Nordhaus (2010), Economics; AP Microeconomics content standards</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">Supply &amp; Demand</button>
+    <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">Cost Curves</button>
+    <button class="tab-btn" id="tabBtn3" onclick="switchTab(3)">Quick Reference</button>
+  </div>
+
+  <!-- TAB 1: Supply & Demand -->
+  <div class="tab-pane active" id="tabPane1">
+
+    <div class="card">
+      <div class="card-title">Real-World Scenario Presets</div>
+      <div class="scenario-row">
+        <button class="scenario-btn" onclick="applyScenario('opec')">1973 OPEC Oil Shock</button>
+        <button class="scenario-btn" onclick="applyScenario('tech')">Tech Improvement (Chips)</button>
+        <button class="scenario-btn" onclick="applyScenario('boom')">Consumer Income Rise</button>
+        <button class="scenario-btn" onclick="applyScenario('minwage')">Minimum Wage Floor</button>
+        <button class="scenario-btn" onclick="applyScenario('rent')">Rent Control Ceiling</button>
+        <button class="scenario-btn" onclick="applyScenario('reset')">Reset All</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Supply &amp; Demand Diagram</div>
+      <div class="svg-wrap">
+        <svg id="sdSvg" viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div class="metrics-row">
+        <div class="metric-card"><div class="metric-label">Equilibrium Price</div><div class="metric-val green" id="mEqP">$60</div></div>
+        <div class="metric-card"><div class="metric-label">Equilibrium Qty</div><div class="metric-val blue" id="mEqQ">40 units</div></div>
+        <div class="metric-card"><div class="metric-label">Consumer Surplus</div><div class="metric-val amber" id="mCS">$800</div></div>
+        <div class="metric-card"><div class="metric-label">Producer Surplus</div><div class="metric-val" id="mPS" style="color:var(--teal)">$400</div></div>
+      </div>
+      <div id="interventionInfo" style="display:none;" class="market-info"></div>
+    </div>
+
+    <div class="form-grid two">
+      <div class="card">
+        <div class="card-title">Demand Shifters</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Consumer Income: <span class="range-val" id="v_income">0</span></label>
+            <input type="range" id="s_income" min="-30" max="30" value="0" oninput="updateSlider('income');renderSD()">
+            <span class="field-hint">Normal good: income ↑ → demand right</span>
+          </div>
+          <div class="field">
+            <label>Substitute Price: <span class="range-val" id="v_sub">0</span></label>
+            <input type="range" id="s_sub" min="-20" max="20" value="0" oninput="updateSlider('sub');renderSD()">
+            <span class="field-hint">Substitutes more expensive → demand right</span>
+          </div>
+          <div class="field">
+            <label>Complement Price: <span class="range-val" id="v_comp">0</span></label>
+            <input type="range" id="s_comp" min="-20" max="20" value="0" oninput="updateSlider('comp');renderSD()">
+            <span class="field-hint">Complements more expensive → demand left</span>
+          </div>
+          <div class="field">
+            <label>Consumer Tastes: <span class="range-val" id="v_taste">0</span></label>
+            <input type="range" id="s_taste" min="-30" max="30" value="0" oninput="updateSlider('taste');renderSD()">
+            <span class="field-hint">Positive = demand right</span>
+          </div>
+          <div class="field">
+            <label>Number of Buyers: <span class="range-val" id="v_buyers">0</span></label>
+            <input type="range" id="s_buyers" min="-20" max="20" value="0" oninput="updateSlider('buyers');renderSD()">
+            <span class="field-hint">More buyers → demand right</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Supply Shifters</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Input Costs: <span class="range-val" id="v_inputs">0</span></label>
+            <input type="range" id="s_inputs" min="-20" max="20" value="0" oninput="updateSlider('inputs');renderSD()">
+            <span class="field-hint">Higher costs → supply left</span>
+          </div>
+          <div class="field">
+            <label>Technology: <span class="range-val" id="v_tech">0</span></label>
+            <input type="range" id="s_tech" min="-20" max="20" value="0" oninput="updateSlider('tech');renderSD()">
+            <span class="field-hint">Better tech → supply right</span>
+          </div>
+          <div class="field">
+            <label>Number of Sellers: <span class="range-val" id="v_sellers">0</span></label>
+            <input type="range" id="s_sellers" min="-20" max="20" value="0" oninput="updateSlider('sellers');renderSD()">
+            <span class="field-hint">More sellers → supply right</span>
+          </div>
+          <div class="field">
+            <label>Gov't Subsidy: <span class="range-val" id="v_subsidy">0</span></label>
+            <input type="range" id="s_subsidy" min="0" max="20" value="0" oninput="updateSlider('subsidy');renderSD()">
+            <span class="field-hint">Subsidy → supply right</span>
+          </div>
+          <div class="field">
+            <label>Gov't Tax: <span class="range-val" id="v_tax">0</span></label>
+            <input type="range" id="s_tax" min="0" max="20" value="0" oninput="updateSlider('tax');renderSD()">
+            <span class="field-hint">Tax → supply left</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Price Interventions</div>
+      <div class="form-grid two">
+        <div class="field">
+          <label>Price Floor (0 = off): <span class="range-val" id="v_floor">0</span></label>
+          <input type="range" id="s_floor" min="0" max="80" value="0" oninput="updateSlider('floor');renderSD()">
+          <span class="field-hint">Dashed line. If above equilibrium → surplus</span>
+        </div>
+        <div class="field">
+          <label>Price Ceiling (0 = off): <span class="range-val" id="v_ceil">0</span></label>
+          <input type="range" id="s_ceil" min="0" max="80" value="0" oninput="updateSlider('ceil');renderSD()">
+          <span class="field-hint">Dashed line. If below equilibrium → shortage</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMD()">⬇ Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+    </div>
+  </div>
+
+  <!-- TAB 2: Cost Curves -->
+  <div class="tab-pane" id="tabPane2">
+    <div class="card">
+      <div class="card-title">Market Structure</div>
+      <select class="market-select" id="marketStruct" onchange="renderCostCurves()">
+        <option value="perfect">Perfect Competition</option>
+        <option value="monopoly">Monopoly</option>
+        <option value="mcomp">Monopolistic Competition</option>
+        <option value="oligopoly">Oligopoly</option>
+      </select>
+      <div class="market-info" id="marketInfo"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">ATC, AVC, and MC Curves</div>
+      <div class="cost-svg-wrap">
+        <svg id="costSvg" viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div class="metrics-row">
+        <div class="metric-card"><div class="metric-label">Min ATC (Efficient Scale)</div><div class="metric-val green" id="cMinATC">—</div></div>
+        <div class="metric-card"><div class="metric-label">Min ATC at Qty</div><div class="metric-val blue" id="cMinATCQ">—</div></div>
+        <div class="metric-card"><div class="metric-label">Min AVC (Shutdown Pt)</div><div class="metric-val amber" id="cMinAVC">—</div></div>
+        <div class="metric-card"><div class="metric-label">Min AVC at Qty</div><div class="metric-val" id="cMinAVCQ" style="color:var(--teal)">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: Quick Reference -->
+  <div class="tab-pane" id="tabPane3">
+    <div class="card">
+      <div class="card-title">Comparative Statics: Effect of Shocks on Equilibrium P* and Q*</div>
+      <table class="ref-table">
+        <thead><tr><th>Shock</th><th>Curve Shift</th><th>Effect on P*</th><th>Effect on Q*</th></tr></thead>
+        <tbody>
+          <tr><td>Consumer income ↑ (normal good)</td><td>Demand right</td><td class="arrow">↑</td><td class="arrow">↑</td></tr>
+          <tr><td>Consumer income ↑ (inferior good)</td><td>Demand left</td><td class="arrow">↓</td><td class="arrow">↓</td></tr>
+          <tr><td>Substitute price ↑</td><td>Demand right</td><td class="arrow">↑</td><td class="arrow">↑</td></tr>
+          <tr><td>Complement price ↑</td><td>Demand left</td><td class="arrow">↓</td><td class="arrow">↓</td></tr>
+          <tr><td>Input costs ↑</td><td>Supply left</td><td class="arrow">↑</td><td class="arrow">↓</td></tr>
+          <tr><td>Technology improves</td><td>Supply right</td><td class="arrow">↓</td><td class="arrow">↑</td></tr>
+          <tr><td>Number of sellers ↑</td><td>Supply right</td><td class="arrow">↓</td><td class="arrow">↑</td></tr>
+          <tr><td>Government subsidy</td><td>Supply right</td><td class="arrow">↓</td><td class="arrow">↑</td></tr>
+          <tr><td>Government tax/excise</td><td>Supply left</td><td class="arrow">↑</td><td class="arrow">↓</td></tr>
+          <tr><td>Number of buyers ↑</td><td>Demand right</td><td class="arrow">↑</td><td class="arrow">↑</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Elasticity Reference</div>
+      <table class="ref-table">
+        <thead><tr><th>PED Range</th><th>Classification</th><th>Examples</th><th>Interpretation</th></tr></thead>
+        <tbody>
+          <tr><td>|PED| = 0</td><td>Perfectly inelastic</td><td>Insulin, emergency surgery</td><td>Quantity doesn't respond to price</td></tr>
+          <tr><td>0 &lt; |PED| &lt; 1</td><td>Inelastic</td><td>Gasoline, basic food, utilities</td><td>% Δ Q &lt; % Δ P</td></tr>
+          <tr><td>|PED| = 1</td><td>Unit elastic</td><td>—</td><td>% Δ Q = % Δ P (TR unchanged)</td></tr>
+          <tr><td>|PED| &gt; 1</td><td>Elastic</td><td>Luxury goods, vacations, brand names</td><td>% Δ Q &gt; % Δ P</td></tr>
+          <tr><td>|PED| = ∞</td><td>Perfectly elastic</td><td>Perfectly competitive firm's demand</td><td>Any price increase → Q = 0</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:12px; font-size:0.84rem; color:var(--text-muted);">
+        <strong>Price Elasticity of Demand formula:</strong> <span style="font-family:'JetBrains Mono',monospace; color:var(--accent);">PED = (% change in Qd) / (% change in P)</span><br>
+        Total Revenue rule: inelastic → raise price to increase TR; elastic → lower price to increase TR.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Surplus Concepts</div>
+      <div style="font-size:0.88rem; color:var(--text-muted); line-height:1.8;">
+        <p><strong style="color:var(--text)">Consumer Surplus (CS):</strong> The area above the equilibrium price and below the demand curve. Represents what consumers would have been willing to pay above what they actually paid. In a linear demand model: CS = ½ × Q* × (P_max – P*).</p>
+        <p style="margin-top:8px"><strong style="color:var(--text)">Producer Surplus (PS):</strong> The area below the equilibrium price and above the supply curve. Represents revenue above the minimum the firm would have accepted. In a linear supply model: PS = ½ × Q* × (P* – P_min).</p>
+        <p style="margin-top:8px"><strong style="color:var(--text)">Total Surplus = CS + PS.</strong> Competitive equilibrium maximizes total surplus. Price controls and taxes create deadweight loss — the triangle of lost surplus not captured by anyone.</p>
+        <p style="margin-top:8px"><strong style="color:var(--text)">Deadweight Loss (DWL):</strong> The reduction in total surplus caused by market inefficiency (price controls, monopoly, taxes). = ½ × ΔQ × ΔP.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-91 · Data: Varian 2014; Samuelson &amp; Nordhaus 2010
+</footer>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const sliders = { income:0, sub:0, comp:0, taste:0, buyers:0, inputs:0, tech:0, sellers:0, subsidy:0, tax:0, floor:0, ceil:0 };
+
+function updateSlider(key) {
+  sliders[key] = +document.getElementById('s_' + key).value;
+  document.getElementById('v_' + key).textContent = sliders[key];
+}
+
+// ============================================================
+// SUPPLY & DEMAND MATH
+// ============================================================
+function computeSD() {
+  // Baseline: D: P = 100 - Q  →  Q_D = 100 - P
+  // S: P = 10 + Q/2  →  Q_S = 2P - 20
+  // Demand intercept shifts: income(+), sub(+), comp(-), taste(+), buyers(+)
+  const dShift = sliders.income + sliders.sub - sliders.comp + sliders.taste + sliders.buyers;
+  // Supply intercept shifts: inputs(-), tech(+), sellers(+), subsidy(+), tax(-)
+  const sShift = -sliders.inputs + sliders.tech + sliders.sellers + sliders.subsidy - sliders.tax;
+
+  // D: Q_D = (100 + dShift) - P  →  P = (100 + dShift) - Q
+  // S: P = (10 - sShift) + Q/2  →  Q_S = 2(P - (10 - sShift)) = 2P - 20 + 2*sShift
+  const dInt = 100 + dShift;   // demand price intercept
+  const sInt = 10 - sShift;    // supply price intercept (min P to supply anything)
+
+  // Equilibrium: dInt - Q = sInt + Q/2  → 3Q/2 = dInt - sInt → Q* = 2(dInt-sInt)/3
+  const eqQ = Math.max(0, (2 * (dInt - sInt)) / 3);
+  const eqP = dInt - eqQ;
+
+  // CS = 0.5 * Q* * (dInt - eqP)
+  const cs = 0.5 * eqQ * (dInt - eqP);
+  // PS = 0.5 * Q* * (eqP - sInt)
+  const ps = 0.5 * eqQ * (eqP - sInt);
+
+  return { eqP, eqQ, cs, ps, dInt, sInt, dShift, sShift };
+}
+
+// ============================================================
+// SVG RENDERING
+// ============================================================
+const PAD = { l:60, r:30, t:30, b:50 };
+const W = 700, H = 400;
+const chartW = W - PAD.l - PAD.r;
+const chartH = H - PAD.t - PAD.b;
+
+function qToX(q) { return PAD.l + (q / 100) * chartW; }
+function pToY(p) { return PAD.t + ((100 - p) / 100) * chartH; }
+
+function renderSD() {
+  const { eqP, eqQ, cs, ps, dInt, sInt } = computeSD();
+  const floor = sliders.floor;
+  const ceil = sliders.ceil;
+
+  // Update metrics
+  document.getElementById('mEqP').textContent = '$' + eqP.toFixed(1);
+  document.getElementById('mEqQ').textContent = eqQ.toFixed(1) + ' units';
+  document.getElementById('mCS').textContent = '$' + cs.toFixed(0);
+  document.getElementById('mPS').textContent = '$' + ps.toFixed(0);
+
+  // Intervention info
+  const iDiv = document.getElementById('interventionInfo');
+  let iText = '';
+  if (floor > 0 && floor > eqP) {
+    // Q_D at floor, Q_S at floor
+    const qd = Math.max(0, dInt - floor);
+    const qs = Math.max(0, 2 * (floor - sInt));
+    const surplus = qs - qd;
+    iText = `Price Floor at $${floor}: ${surplus > 0 ? `Surplus of ${surplus.toFixed(1)} units (Qs=${qs.toFixed(1)} > Qd=${qd.toFixed(1)})` : 'Non-binding (below equilibrium)'}`;
+  }
+  if (ceil > 0 && ceil < eqP) {
+    const qd = Math.max(0, dInt - ceil);
+    const qs = Math.max(0, 2 * (ceil - sInt));
+    const shortage = qd - qs;
+    iText = `Price Ceiling at $${ceil}: ${shortage > 0 ? `Shortage of ${shortage.toFixed(1)} units (Qd=${qd.toFixed(1)} > Qs=${qs.toFixed(1)})` : 'Non-binding (above equilibrium)'}`;
+  }
+  if (iText) { iDiv.style.display = 'block'; iDiv.textContent = iText; }
+  else { iDiv.style.display = 'none'; }
+
+  // Build SVG
+  const svg = document.getElementById('sdSvg');
+  let html = '';
+
+  // Axes
+  html += `<line x1="${PAD.l}" y1="${PAD.t}" x2="${PAD.l}" y2="${H-PAD.b}" stroke="#334155" stroke-width="1.5"/>`;
+  html += `<line x1="${PAD.l}" y1="${H-PAD.b}" x2="${W-PAD.r}" y2="${H-PAD.b}" stroke="#334155" stroke-width="1.5"/>`;
+
+  // Grid lines
+  for (let p = 0; p <= 100; p += 20) {
+    const y = pToY(p);
+    html += `<line x1="${PAD.l}" y1="${y}" x2="${W-PAD.r}" y2="${y}" stroke="#1e293b" stroke-width="1"/>`;
+    html += `<text x="${PAD.l-8}" y="${y+4}" fill="#64748b" font-size="11" text-anchor="end" font-family="JetBrains Mono,monospace">$${p}</text>`;
+  }
+  for (let q = 0; q <= 100; q += 20) {
+    const x = qToX(q);
+    html += `<line x1="${x}" y1="${PAD.t}" x2="${x}" y2="${H-PAD.b}" stroke="#1e293b" stroke-width="1"/>`;
+    html += `<text x="${x}" y="${H-PAD.b+18}" fill="#64748b" font-size="11" text-anchor="middle" font-family="JetBrains Mono,monospace">${q}</text>`;
+  }
+
+  // Axis labels
+  html += `<text x="${PAD.l-40}" y="${PAD.t + chartH/2}" fill="#94a3b8" font-size="12" text-anchor="middle" transform="rotate(-90,${PAD.l-40},${PAD.t + chartH/2})" font-family="Sora,sans-serif">Price ($)</text>`;
+  html += `<text x="${PAD.l + chartW/2}" y="${H-8}" fill="#94a3b8" font-size="12" text-anchor="middle" font-family="Sora,sans-serif">Quantity</text>`;
+
+  // CS shading (triangle above P* below demand)
+  if (eqQ > 0 && dInt > eqP) {
+    const x0 = qToX(0), y0 = pToY(dInt);
+    const xEq = qToX(eqQ), yEq = pToY(eqP);
+    const yBase = pToY(eqP);
+    html += `<polygon points="${x0},${y0} ${xEq},${yEq} ${x0},${yBase}" fill="rgba(251,191,36,0.12)" stroke="none"/>`;
+  }
+
+  // PS shading (triangle below P* above supply)
+  if (eqQ > 0 && eqP > sInt) {
+    const x0 = qToX(0), y0 = pToY(sInt > 0 ? sInt : 0);
+    const xEq = qToX(eqQ), yEq = pToY(eqP);
+    const yBase = pToY(eqP);
+    html += `<polygon points="${x0},${y0} ${xEq},${yEq} ${x0},${yBase}" fill="rgba(45,212,191,0.10)" stroke="none"/>`;
+  }
+
+  // Demand curve: P = dInt - Q  (Q from 0 to dInt, capped at 100)
+  const dQ0 = 0, dP0 = Math.min(dInt, 100);
+  const dQEnd = Math.min(dInt, 100), dPEnd = Math.max(dInt - dQEnd, 0);
+  html += `<line x1="${qToX(dQ0)}" y1="${pToY(dP0)}" x2="${qToX(dQEnd)}" y2="${pToY(dPEnd)}" stroke="#60a5fa" stroke-width="2.5" stroke-linecap="round"/>`;
+  html += `<text x="${qToX(dQEnd)-8}" y="${pToY(dPEnd)-6}" fill="#60a5fa" font-size="13" font-family="Sora,sans-serif" font-weight="600">D</text>`;
+
+  // Supply curve: P = sInt + Q/2  →  from Q=0 to Q=100
+  const sP0 = Math.max(sInt, 0);
+  const sQ0 = sInt < 0 ? -2*sInt : 0;
+  const sPEnd = sInt + 50;
+  html += `<line x1="${qToX(sQ0)}" y1="${pToY(sP0 < 0 ? 0 : sP0)}" x2="${qToX(100)}" y2="${pToY(Math.min(sInt+50,100))}" stroke="#34d399" stroke-width="2.5" stroke-linecap="round"/>`;
+  html += `<text x="${qToX(96)}" y="${pToY(Math.min(sInt+48,100))-6}" fill="#34d399" font-size="13" font-family="Sora,sans-serif" font-weight="600">S</text>`;
+
+  // Equilibrium point
+  if (eqQ > 0) {
+    const xE = qToX(eqQ), yE = pToY(eqP);
+    // Dashed crosshairs
+    html += `<line x1="${PAD.l}" y1="${yE}" x2="${xE}" y2="${yE}" stroke="#64748b" stroke-width="1" stroke-dasharray="4 3"/>`;
+    html += `<line x1="${xE}" y1="${yE}" x2="${xE}" y2="${H-PAD.b}" stroke="#64748b" stroke-width="1" stroke-dasharray="4 3"/>`;
+    html += `<circle cx="${xE}" cy="${yE}" r="6" fill="#E8A838" stroke="#fff" stroke-width="1.5"/>`;
+    html += `<text x="${xE+10}" y="${yE-10}" fill="#E8A838" font-size="11" font-family="JetBrains Mono,monospace">E($${eqP.toFixed(1)},${eqQ.toFixed(1)})</text>`;
+  }
+
+  // Price floor
+  if (floor > 0) {
+    const yF = pToY(floor);
+    html += `<line x1="${PAD.l}" y1="${yF}" x2="${W-PAD.r}" y2="${yF}" stroke="#f87171" stroke-width="1.8" stroke-dasharray="6 4"/>`;
+    html += `<text x="${W-PAD.r+2}" y="${yF+4}" fill="#f87171" font-size="11" font-family="JetBrains Mono,monospace">Floor $${floor}</text>`;
+  }
+
+  // Price ceiling
+  if (ceil > 0) {
+    const yC = pToY(ceil);
+    html += `<line x1="${PAD.l}" y1="${yC}" x2="${W-PAD.r}" y2="${yC}" stroke="#fbbf24" stroke-width="1.8" stroke-dasharray="6 4"/>`;
+    html += `<text x="${W-PAD.r+2}" y="${yC+4}" fill="#fbbf24" font-size="11" font-family="JetBrains Mono,monospace">Ceiling $${ceil}</text>`;
+  }
+
+  svg.innerHTML = html;
+}
+
+// ============================================================
+// SCENARIOS
+// ============================================================
+function applyScenario(s) {
+  const vals = {
+    opec:    { inputs:20, tech:0, sellers:0, subsidy:0, tax:0, income:0, sub:0, comp:0, taste:0, buyers:0, floor:0, ceil:0 },
+    tech:    { inputs:0, tech:20, sellers:0, subsidy:0, tax:0, income:0, sub:0, comp:0, taste:0, buyers:0, floor:0, ceil:0 },
+    boom:    { inputs:0, tech:0, sellers:0, subsidy:0, tax:0, income:15, sub:0, comp:0, taste:0, buyers:0, floor:0, ceil:0 },
+    minwage: { inputs:0, tech:0, sellers:0, subsidy:0, tax:0, income:0, sub:0, comp:0, taste:0, buyers:0, floor:25, ceil:0 },
+    rent:    { inputs:0, tech:0, sellers:0, subsidy:0, tax:0, income:0, sub:0, comp:0, taste:0, buyers:0, floor:0, ceil:20 },
+    reset:   { inputs:0, tech:0, sellers:0, subsidy:0, tax:0, income:0, sub:0, comp:0, taste:0, buyers:0, floor:0, ceil:0 }
+  };
+  const v = vals[s];
+  for (const k in v) {
+    sliders[k] = v[k];
+    if (document.getElementById('s_' + k)) document.getElementById('s_' + k).value = v[k];
+    if (document.getElementById('v_' + k)) document.getElementById('v_' + k).textContent = v[k];
+  }
+  renderSD();
+}
+
+// ============================================================
+// COST CURVES
+// ============================================================
+const qArr = [1,2,3,4,5,6,7,8,9,10,11,12];
+const tcArr = [100,130,152,168,183,200,222,254,302,370,462,580];
+const vcArr = [0,30,52,68,83,100,122,154,202,270,362,480];
+
+function renderCostCurves() {
+  const struct = document.getElementById('marketStruct').value;
+  const atc = qArr.map((q,i) => tcArr[i]/q);
+  const avc = qArr.map((q,i) => vcArr[i]/q);
+  const mc  = qArr.map((q,i) => i===0 ? vcArr[0] : vcArr[i]-vcArr[i-1]);
+
+  const minATC = Math.min(...atc), minATCQ = qArr[atc.indexOf(minATC)];
+  const minAVC = Math.min(...avc), minAVCQ = qArr[avc.indexOf(minAVC)];
+
+  document.getElementById('cMinATC').textContent = '$' + minATC.toFixed(1);
+  document.getElementById('cMinATCQ').textContent = minATCQ + ' units';
+  document.getElementById('cMinAVC').textContent = '$' + minAVC.toFixed(1);
+  document.getElementById('cMinAVCQ').textContent = minAVCQ + ' units';
+
+  const infos = {
+    perfect: 'Perfect Competition: Firms are price takers. Price = MC in short-run equilibrium. Long-run: entry/exit drives P = min ATC, so economic profit = 0. The firm produces where P = MC.',
+    monopoly: 'Monopoly: Firm faces downward-sloping demand curve. Sets MR = MC to maximize profit. Since MR < P, the monopolist charges P > MC, creating deadweight loss. Barriers to entry prevent long-run erosion of profit.',
+    mcomp:   'Monopolistic Competition: Many firms, differentiated products (restaurants, clothing brands). Short run: above-normal profit possible. Long run: free entry attracts competitors, shifts demand left until P = ATC (zero economic profit), but P > MC (allocative inefficiency persists).',
+    oligopoly:'Oligopoly: Few dominant firms with significant interdependence. Kinked demand curve theory: if one firm raises prices, rivals don\'t follow (elastic above kink); if one cuts prices, rivals match (inelastic below kink). Result: price stability / rigidity near current price.'
+  };
+  document.getElementById('marketInfo').textContent = infos[struct];
+
+  const svg = document.getElementById('costSvg');
+  const maxC = 200, maxQ = 13;
+  const pw = 700, ph = 380;
+  const pl = 60, pr = 30, pt = 30, pb = 50;
+  const cw = pw-pl-pr, ch = ph-pt-pb;
+
+  function cx(q) { return pl + (q/maxQ)*cw; }
+  function cy(c) { return pt + ((maxC-c)/maxC)*ch; }
+
+  let html = '';
+  // Axes
+  html += `<line x1="${pl}" y1="${pt}" x2="${pl}" y2="${ph-pb}" stroke="#334155" stroke-width="1.5"/>`;
+  html += `<line x1="${pl}" y1="${ph-pb}" x2="${pw-pr}" y2="${ph-pb}" stroke="#334155" stroke-width="1.5"/>`;
+  for (let c = 0; c <= maxC; c += 40) {
+    const y = cy(c);
+    html += `<line x1="${pl}" y1="${y}" x2="${pw-pr}" y2="${y}" stroke="#1e293b" stroke-width="1"/>`;
+    html += `<text x="${pl-8}" y="${y+4}" fill="#64748b" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">$${c}</text>`;
+  }
+  for (let q = 0; q <= 12; q += 2) {
+    const x = cx(q);
+    html += `<line x1="${x}" y1="${pt}" x2="${x}" y2="${ph-pb}" stroke="#1e293b" stroke-width="1"/>`;
+    html += `<text x="${x}" y="${ph-pb+16}" fill="#64748b" font-size="10" text-anchor="middle" font-family="JetBrains Mono,monospace">${q}</text>`;
+  }
+  html += `<text x="${pl-42}" y="${pt+ch/2}" fill="#94a3b8" font-size="11" text-anchor="middle" transform="rotate(-90,${pl-42},${pt+ch/2})" font-family="Sora,sans-serif">Cost ($)</text>`;
+  html += `<text x="${pl+cw/2}" y="${ph-8}" fill="#94a3b8" font-size="11" text-anchor="middle" font-family="Sora,sans-serif">Quantity</text>`;
+
+  // ATC line
+  let atcPts = qArr.map((q,i) => `${cx(q)},${cy(Math.min(atc[i],maxC))}`).join(' ');
+  html += `<polyline points="${atcPts}" fill="none" stroke="#60a5fa" stroke-width="2.2" stroke-linejoin="round"/>`;
+  html += `<text x="${cx(12)+4}" y="${cy(Math.min(atc[11],maxC))}" fill="#60a5fa" font-size="12" font-family="Sora,sans-serif">ATC</text>`;
+
+  // AVC line
+  let avcPts = qArr.map((q,i) => `${cx(q)},${cy(Math.min(avc[i],maxC))}`).join(' ');
+  html += `<polyline points="${avcPts}" fill="none" stroke="#34d399" stroke-width="2.2" stroke-linejoin="round"/>`;
+  html += `<text x="${cx(12)+4}" y="${cy(Math.min(avc[11],maxC))}" fill="#34d399" font-size="12" font-family="Sora,sans-serif">AVC</text>`;
+
+  // MC line
+  let mcPts = qArr.map((q,i) => `${cx(q)},${cy(Math.min(mc[i],maxC))}`).join(' ');
+  html += `<polyline points="${mcPts}" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linejoin="round"/>`;
+  html += `<text x="${cx(12)+4}" y="${cy(Math.min(mc[11],maxC))}" fill="#fbbf24" font-size="12" font-family="Sora,sans-serif">MC</text>`;
+
+  // Min ATC dot
+  html += `<circle cx="${cx(minATCQ)}" cy="${cy(minATC)}" r="5" fill="#60a5fa" stroke="#fff" stroke-width="1.5"/>`;
+  html += `<text x="${cx(minATCQ)+8}" y="${cy(minATC)-6}" fill="#60a5fa" font-size="10" font-family="JetBrains Mono,monospace">min ATC</text>`;
+
+  // Min AVC dot
+  html += `<circle cx="${cx(minAVCQ)}" cy="${cy(minAVC)}" r="5" fill="#34d399" stroke="#fff" stroke-width="1.5"/>`;
+  html += `<text x="${cx(minAVCQ)+8}" y="${cy(minAVC)+14}" fill="#34d399" font-size="10" font-family="JetBrains Mono,monospace">min AVC (shutdown)</text>`;
+
+  // Perfect competition: horizontal price line at min ATC
+  if (struct === 'perfect') {
+    const py2 = cy(minATC);
+    html += `<line x1="${pl}" y1="${py2}" x2="${pw-pr}" y2="${py2}" stroke="#f87171" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+    html += `<text x="${pl+4}" y="${py2-5}" fill="#f87171" font-size="10" font-family="JetBrains Mono,monospace">Long-run P = min ATC</text>`;
+  }
+
+  svg.innerHTML = html;
+}
+
+// ============================================================
+// EXPORTS
+// ============================================================
+const AP2_VALID_MANDATE_TYPES = ['job_transition_record','compensation_package_record','credential_roi_record','education_cost_record','loan_repayment_record','career_break_record','exam_cost_record','scholarship_record','workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record','geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record','test_prep_record','international_student_record','parent_college_record','cpd_tracking_record','job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record','education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record','trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record','professional_degree_record','workforce_pell_record','workforce_pell_credential_rank','net_worth_trajectory_record','signing_bonus_record','gig_income_record','cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record','deferred_comp_457b_record','tutor_roi_record','test_retake_record','mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record','law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record','english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record','mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record','mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record','lesson_design_record','assessment_item_record','classroom_scenario_record','gt_differentiation_record','instructor_toolkit_record','cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record','primary_source_record','historiography_record','anachronism_record','counterfactual_record','franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record','micro_theory_record','economic_systems_record','economists_panel_record','economic_history_record','econ_principles_record'];
+
+const AP2Schema = {
+  validate(obj) {
+    if (!obj.mandate_type) return { valid: false, error: 'missing mandate_type' };
+    if (!AP2_VALID_MANDATE_TYPES.includes(obj.mandate_type)) return { valid: false, error: 'invalid mandate_type: ' + obj.mandate_type };
+    return { valid: true };
+  }
+};
+
+function buildExportData() {
+  const { eqP, eqQ, cs, ps } = computeSD();
+  const demandShiftersUsed = [];
+  if (sliders.income !== 0) demandShiftersUsed.push('income');
+  if (sliders.sub !== 0) demandShiftersUsed.push('substitute_price');
+  if (sliders.comp !== 0) demandShiftersUsed.push('complement_price');
+  if (sliders.taste !== 0) demandShiftersUsed.push('consumer_tastes');
+  if (sliders.buyers !== 0) demandShiftersUsed.push('number_of_buyers');
+  const supplyShiftersUsed = [];
+  if (sliders.inputs !== 0) supplyShiftersUsed.push('input_costs');
+  if (sliders.tech !== 0) supplyShiftersUsed.push('technology');
+  if (sliders.sellers !== 0) supplyShiftersUsed.push('number_of_sellers');
+  if (sliders.subsidy !== 0) supplyShiftersUsed.push('government_subsidy');
+  if (sliders.tax !== 0) supplyShiftersUsed.push('government_tax');
+  let intervention = 'none';
+  if (sliders.floor > 0) intervention = 'price_floor_' + sliders.floor;
+  if (sliders.ceil > 0) intervention = 'price_ceiling_' + sliders.ceil;
+  return {
+    mandate_type: 'micro_theory_record',
+    tool: 'AL-91 Micro Theory Sandbox',
+    generated: new Date().toISOString(),
+    equilibrium_price: +eqP.toFixed(2),
+    equilibrium_quantity: +eqQ.toFixed(2),
+    consumer_surplus: +cs.toFixed(2),
+    producer_surplus: +ps.toFixed(2),
+    demand_shifters_used: demandShiftersUsed,
+    supply_shifters_used: supplyShiftersUsed,
+    market_structure_selected: document.getElementById('marketStruct').value,
+    intervention_applied: intervention
+  };
+}
+
+function exportMD() {
+  const d = buildExportData();
+  const md = `# Micro Theory Sandbox — Export\n**Generated:** ${d.generated}\n\n## Equilibrium\n- **Price:** $${d.equilibrium_price}\n- **Quantity:** ${d.equilibrium_quantity} units\n- **Consumer Surplus:** $${d.consumer_surplus}\n- **Producer Surplus:** $${d.producer_surplus}\n\n## Shifts Applied\n- **Demand shifters:** ${d.demand_shifters_used.join(', ') || 'none'}\n- **Supply shifters:** ${d.supply_shifters_used.join(', ') || 'none'}\n\n## Other\n- **Market structure:** ${d.market_structure_selected}\n- **Intervention:** ${d.intervention_applied}\n`;
+  const blob = new Blob([md], {type:'text/markdown'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'micro-theory-export.md'; a.click();
+}
+
+function exportAP2() {
+  const d = buildExportData();
+  const res = AP2Schema.validate(d);
+  if (!res.valid) { showToast('AP2 validation failed: ' + res.error); return; }
+  const blob = new Blob([JSON.stringify(d, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'micro-theory-ap2.json'; a.click();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ============================================================
+// TABS & LANG
+// ============================================================
+function switchTab(n) {
+  document.querySelectorAll('.tab-pane').forEach((p,i) => p.classList.toggle('active', i===n-1));
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', i===n-1));
+  if (n === 2) renderCostCurves();
+}
+
+function setLang(l) {
+  try { sessionStorage.setItem('apex_lang', l); } catch(e){}
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.trim() === l.toUpperCase() || (l==='zh' && b.textContent.trim()==='中文')));
+}
+
+// ============================================================
+// INIT
+// ============================================================
+(function init() {
+  const lang = (() => { try { return sessionStorage.getItem('apex_lang') || 'en'; } catch(e){ return 'en'; } })();
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.trim() === lang.toUpperCase() || (lang==='zh' && b.textContent.trim()==='中文')));
+  renderSD();
+  renderCostCurves();
+})();
+</script>
+</body>
+</html>

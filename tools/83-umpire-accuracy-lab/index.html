@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Umpire Accuracy Lab · ApexLogics #83</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/83-umpire-accuracy-lab/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #f87171; --accent-dim: rgba(248,113,113,0.18); --accent-low: rgba(248,113,113,0.08);
+      --border: rgba(248,113,113,0.18); --border-focus: #f87171;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: #E8A838; } .logo-org { color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; transition: all 0.15s; }
+    .nav-pill:hover { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(248,113,113,0.07); border: 1px solid rgba(248,113,113,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 28px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 28px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 10px 18px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 16px; }
+    .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 500; }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .section-head { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 12px; margin-top: 22px; }
+    .insight-box { background: rgba(248,113,113,0.06); border: 1px solid rgba(248,113,113,0.2); border-radius: 8px; padding: 14px 18px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 14px; }
+    .warn-box { background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.3); border-radius: 8px; padding: 12px 16px; font-size: 0.82rem; color: var(--text-muted); line-height: 1.65; margin-bottom: 14px; }
+    .warn-box strong { color: var(--amber); }
+    /* Chart */
+    .count-chart { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+    .count-row { display: flex; align-items: center; gap: 12px; }
+    .count-label { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); min-width: 48px; text-align: right; }
+    .count-bar-wrap { flex: 1; height: 20px; background: rgba(255,255,255,0.04); border-radius: 4px; overflow: hidden; }
+    .count-bar { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; }
+    .count-bar-val { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; color: #fff; }
+    .count-group { margin-bottom: 18px; }
+    .count-group-head { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; }
+    /* Debate */
+    .position-selector { display: flex; gap: 12px; margin-bottom: 20px; }
+    .pos-btn { flex: 1; padding: 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; cursor: pointer; transition: all 0.15s; text-align: center; }
+    .pos-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .pos-btn.selected { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .arg-item { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+    .arg-header { display: flex; align-items: flex-start; gap: 14px; padding: 14px 20px; cursor: pointer; background: var(--surface2); transition: background 0.15s; }
+    .arg-header:hover { background: var(--accent-low); }
+    .arg-num { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); min-width: 24px; padding-top: 2px; }
+    .arg-claim { font-size: 0.92rem; font-weight: 500; flex: 1; }
+    .arg-arrow { font-size: 0.8rem; color: var(--text-dim); transition: transform 0.2s; padding-top: 3px; }
+    .arg-item.open .arg-arrow { transform: rotate(90deg); }
+    .arg-body { display: none; padding: 0 20px 18px; background: var(--surface); }
+    .arg-item.open .arg-body { display: block; }
+    .arg-text { font-size: 0.86rem; color: var(--text-muted); line-height: 1.7; margin-top: 14px; }
+    .evidence-box { background: var(--surface2); border: 1px solid rgba(255,255,255,0.07); border-radius: 6px; padding: 10px 14px; margin-top: 10px; }
+    .evidence-label { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+    .evidence-row { font-size: 0.8rem; color: var(--text-muted); line-height: 1.6; }
+    .evidence-row span { color: var(--green); font-size: 0.78rem; }
+    .evidence-row .weakens { color: var(--red); }
+    /* Error framework */
+    .framework-step { display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .framework-step:last-child { border-bottom: none; }
+    .framework-num { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; color: var(--accent); min-width: 32px; padding-top: 2px; }
+    .framework-content { flex: 1; }
+    .framework-q { font-size: 0.92rem; font-weight: 500; margin-bottom: 4px; }
+    .framework-a { font-size: 0.84rem; color: var(--text-muted); line-height: 1.65; }
+    .apply-box { background: rgba(96,165,250,0.06); border: 1px solid rgba(96,165,250,0.25); border-radius: 8px; padding: 16px 20px; margin-bottom: 12px; }
+    .apply-field { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--blue); margin-bottom: 6px; text-transform: uppercase; }
+    .apply-prompt { font-size: 0.86rem; color: var(--text-muted); line-height: 1.65; }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(248,113,113,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .dq-list { list-style: none; padding: 0; }
+    .dq-list li { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.88rem; color: var(--text-muted); }
+    .dq-list li:last-child { border-bottom: none; }
+    .dq-list li::before { content: "▸ "; color: var(--accent); }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    @media (max-width: 700px) {
+      .metric-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.7rem; }
+      .position-selector { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <span class="logo-mark">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="14,2 26,24 2,24" stroke="#E8A838" stroke-width="2" fill="none"/>
+          <polygon points="14,8 22,22 6,22" stroke="#E8A838" stroke-width="1" fill="none" opacity="0.5"/>
+        </svg>
+      </span>
+      <span class="logo-name"><span class="logo-apex">Apex</span><span class="logo-org"> Logics.org</span></span>
+    </a>
+    <span class="nav-spacer"></span>
+    <a href="../../index.html" class="nav-pill">← All Tools</a>
+  </div>
+</nav>
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('zh')">ZH</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('de')">DE</button>
+  </div>
+</div>
+<div class="tool-wrapper">
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+  <div class="tool-eyebrow">AL-90 · Selected Studies — Sport Management</div>
+  <h1 class="tool-title">Umpire Accuracy Lab</h1>
+  <p class="tool-desc">MLB umpires called 34,294 incorrect ball-strike calls during the 2018 season — an average of 14 per game, 1.6 per inning. Worse: the error rate rises significantly with two-strike counts, where umpires are biased toward calling false strikes. This lab explores those findings (inspired by the BU Questrom research program on MLB umpire accuracy) in two modes: a measurement lesson on error rates and bias detection, and a structured debate on automated ball-strike technology.</p>
+  <div class="tool-vintage">Data: Inspired by: BU Questrom umpire accuracy research program (Mark T. Williams + graduate students); 11-season dataset analysis, ~4 million pitches. See also: bu.edu/articles/2019/mlb-umpires-strike-zone-accuracy/</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('data',this)">The Data — Measurement</button>
+    <button class="tab-btn" onclick="switchTab('debate',this)">Structured Debate — Robot Umps?</button>
+    <button class="tab-btn" onclick="switchTab('framework',this)">Error Analysis Framework</button>
+  </div>
+
+  <!-- TAB 1: MEASUREMENT -->
+  <div id="tab-data" class="tab-pane active">
+    <div class="card">
+      <div class="card-title">Section A — Scale of the Problem</div>
+      <div class="metric-grid">
+        <div class="metric-card">
+          <div class="metric-label">Incorrect calls (2018)</div>
+          <div class="metric-val" style="color:var(--red)">34,294</div>
+          <div class="metric-note">Ball-strike calls, full season</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Per Game</div>
+          <div class="metric-val" style="color:var(--amber)">~14</div>
+          <div class="metric-note">Incorrect calls per game</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Per Inning</div>
+          <div class="metric-val" style="color:var(--amber)">~1.6</div>
+          <div class="metric-note">Incorrect calls per inning</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Games ended wrong (2018)</div>
+          <div class="metric-val" style="color:var(--red)">20</div>
+          <div class="metric-note">Final call of game was incorrect</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">11-season dataset</div>
+          <div class="metric-val" style="color:var(--blue)">~4M</div>
+          <div class="metric-note">Pitches analyzed (inspired by BU)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Games ended wrong (11 seasons)</div>
+          <div class="metric-val" style="color:var(--red)">55</div>
+          <div class="metric-note">Final call was incorrect</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Umpire accuracy rate (est.)</div>
+          <div class="metric-val" style="color:var(--amber)">~85%</div>
+          <div class="metric-note">Borderline calls only (est.)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">ABS accuracy rate (est.)</div>
+          <div class="metric-val" style="color:var(--green)">&gt;99%</div>
+          <div class="metric-note">Hawk-Eye / TrackMan systems</div>
+        </div>
+      </div>
+      <div class="warn-box"><strong>Note on these figures:</strong> The 34,294 and associated per-game/per-inning figures are inspired by and consistent with findings from the BU Questrom research program on umpire accuracy. Exact values may vary by study parameters and season analyzed. See <a href="https://www.bu.edu/articles/2019/mlb-umpires-strike-zone-accuracy/" style="color:var(--amber)" target="_blank">bu.edu/articles/2019/mlb-umpires-strike-zone-accuracy/</a> for published context.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Section B — Two-Strike Count Bias</div>
+      <div class="insight-box">
+        <strong style="color:var(--text)">The Pattern:</strong> With a 2-strike count (0-2, 1-2, 2-2, 3-2), umpires are psychologically predisposed to "protect the hitter" — they become less likely to call strike 3 on borderline pitches. This results in elevated false-ball rates on pitches that are actually strikes when the batter is one strike away from striking out.
+        <br><br>
+        This is consistent with a broad body of cognitive psychology research on loss aversion under pressure: calling strike 3 on a questionable pitch feels like a decisive, consequential act. The umpire hesitates. The borderline pitch becomes a ball. The pitcher who deserved a strikeout loses it.
+      </div>
+      <div class="section-head">Illustrative Error Rates by Count Type</div>
+      <p style="font-size:0.76rem;color:var(--text-dim);margin-bottom:14px;font-family:'JetBrains Mono',monospace">Illustrative rates based on direction and magnitude of BU research findings, not exact study percentages.</p>
+      <div class="count-chart">
+        <div class="count-group">
+          <div class="count-group-head">No-strike counts (lower error rate)</div>
+          <div class="count-row">
+            <span class="count-label">0-0</span>
+            <div class="count-bar-wrap"><div class="count-bar" style="width:40%;background:var(--green)"><span class="count-bar-val">~4%</span></div></div>
+          </div>
+          <div class="count-row">
+            <span class="count-label">1-0</span>
+            <div class="count-bar-wrap"><div class="count-bar" style="width:42%;background:var(--green)"><span class="count-bar-val">~4%</span></div></div>
+          </div>
+          <div class="count-row">
+            <span class="count-label">2-0</span>
+            <div class="count-bar-wrap"><div class="count-bar" style="width:45%;background:var(--green)"><span class="count-bar-val">~4.5%</span></div></div>
+          </div>
+          <div class="count-row">
+            <span class="count-label">3-0</span>
+            <div class="count-bar-wrap"><div class="count-bar" style="width:44%;background:var(--green)"><span class="count-bar-val">~4.4%</span></div></div>
+          </div>
+        </div>
+        <div class="count-group">
+          <div class="count-group-head">One-strike counts (moderate error rate)</div>
+          <div class="count-row">
+            <span class="count-label">0-1</span>
+            <div class="count-bar-wrap"><div class="count-bar" style="width:55%;background:var(--amber)"><span class="count-bar-val">~5.5%</span></div></div>
+          </div>
+          <div class="count-row">
+            <span class="count-label">1-1</span>
+            <div class="count-bar-wrap"><div class="count-bar" style="width:58%;background:var(--amber)"><span class="count-bar-val">~5.8%</span></div></div>
+          </div>
+          <div class="count-row">
+            <span class="count-label">2-1</span>
+            <div class="count-bar-wrap"><div class="count-bar" style="width:57%;background:var(--amber)"><span class="count-bar-val">~5.7%</span></div></div>
+          </div>
+          <div class="count-row">
+            <span class="count-label">3-1</span>
+            <div class="count-bar-wrap"><div class="count-bar" style="width:55%;background:var(--amber)"><span class="count-bar-val">~5.5%</span></div></div>
+          </div>
+        </div>
+        <div class="count-group">
+          <div class="count-group-head">Two-strike counts (elevated error rate — two-strike bias)</div>
+          <div class="count-row">
+            <span class="count-label">0-2</span>
+            <div class="count-bar-wrap"><div class="count-bar" style="width:80%;background:var(--red)"><span class="count-bar-val">~8%</span></div></div>
+          </div>
+          <div class="count-row">
+            <span class="count-label">1-2</span>
+            <div class="count-bar-wrap"><div class="count-bar" style="width:85%;background:var(--red)"><span class="count-bar-val">~8.5%</span></div></div>
+          </div>
+          <div class="count-row">
+            <span class="count-label">2-2</span>
+            <div class="count-bar-wrap"><div class="count-bar" style="width:90%;background:var(--red)"><span class="count-bar-val">~9%</span></div></div>
+          </div>
+          <div class="count-row">
+            <span class="count-label">3-2</span>
+            <div class="count-bar-wrap"><div class="count-bar" style="width:95%;background:var(--red)"><span class="count-bar-val">~9.5%</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Section C — Performance Evaluation Framework for Umpires</div>
+      <div class="insight-box">MLB umpires are one of the most measurable professional workers in the world. Every decision they make is logged, timestamped, and cross-referenceable against a ground-truth measurement system. Most workers — surgeons, teachers, lawyers — face nothing comparable.</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--blue);margin-bottom:6px">ACCURACY RATE</div>
+          <div style="font-size:0.86rem;color:var(--text-muted)">Correct calls ÷ Total calls. Overall accuracy across all umpires typically 85–90% (borderline pitches only). Clear balls and obvious strikes are nearly always called correctly. The ~10–15% error rate applies specifically to pitches near the strike zone boundary.</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--amber);margin-bottom:6px">BIAS COEFFICIENT</div>
+          <div style="font-size:0.86rem;color:var(--text-muted)">Asymmetry between missed balls (calling a ball a strike) and missed strikes (calling a strike a ball). Two-strike count analysis reveals a systematic bias toward missed strikes — umpires are more likely to err toward keeping batters alive. This is not random noise; it is directional, predictable error.</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--green);margin-bottom:6px">COUNT-SPECIFIC ACCURACY</div>
+          <div style="font-size:0.86rem;color:var(--text-muted)">Performance degrades under specific high-pressure conditions — a critical performance evaluation insight for any worker. A surgeon who performs 95% of surgeries well but degrades under time pressure or specific patient profiles has a very different risk profile than one who performs uniformly. Umpire accuracy falling in 2-strike counts is a conditional performance problem.</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--accent);margin-bottom:6px">IMPLICATIONS FOR PERFORMANCE MANAGEMENT</div>
+          <div style="font-size:0.86rem;color:var(--text-muted)">If 99% of an umpire's calls are correct on obvious pitches but they struggle on borderline 2-strike counts, a performance improvement intervention should target specifically that condition — not overall retraining. The data enables targeted interventions impossible without granular performance logging.</div>
+        </div>
+      </div>
+      <div class="section-head" style="margin-top:20px">Discussion Questions</div>
+      <ul class="dq-list">
+        <li>If you were an MLB team, how would you use umpire accuracy data? (e.g., game preparation, at-bat strategy, pitcher selection for high-stakes counts)</li>
+        <li>Is an accuracy rate of ~85% acceptable for a professional whose errors directly affect game outcomes and potentially team playoff qualification?</li>
+        <li>What does "two-strike count bias" suggest about cognitive load and decision-making under pressure? What other professions show similar conditional performance degradation?</li>
+        <li>If umpire error is not random but systematic, who bears the cost? Are pitchers harmed more than batters, or vice versa?</li>
+        <li>Should individual umpire accuracy data be publicly disclosed? What are the arguments for and against transparency?</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- TAB 2: DEBATE -->
+  <div id="tab-debate" class="tab-pane">
+    <div class="card">
+      <div class="card-title">Automated Ball-Strike (ABS) Technology — Structured Debate</div>
+      <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:18px">ABS uses camera-tracking systems (Hawk-Eye, TrackMan) to call balls and strikes automatically. It is currently used in Triple-A and independent leagues. Select a position to view a full argument set.</p>
+      <div class="position-selector">
+        <button class="pos-btn" id="btnFor" onclick="selectPos('for')">⚙️ I will argue FOR ABS</button>
+        <button class="pos-btn" id="btnAgainst" onclick="selectPos('against')">🧢 I will argue AGAINST ABS</button>
+      </div>
+    </div>
+
+    <div id="forArgs" style="display:none">
+      <div class="card" style="border-color:rgba(52,211,153,0.35)">
+        <div class="card-title" style="color:var(--green)">Arguments FOR ABS (Robot Umpires)</div>
+        <div class="arg-item" onclick="toggleArg(this)">
+          <div class="arg-header"><span class="arg-num">1</span><span class="arg-claim">Accuracy: Technology is simply more accurate than humans</span><span class="arg-arrow">▶</span></div>
+          <div class="arg-body">
+            <div class="arg-text">ABS tracking systems (Hawk-Eye, TrackMan) call balls and strikes with greater than 99.5% accuracy compared to approximately 85–90% for human umpires on borderline pitches. When the purpose of the rule is to distinguish balls from strikes, a system that does so 99.5% of the time is objectively superior to one that does so 87% of the time. Improvement in call accuracy is not an aesthetic preference; it is a direct measure of how well the officiating system fulfills its stated purpose.</div>
+            <div class="evidence-box">
+              <div class="evidence-label">Evidence Requirements</div>
+              <div class="evidence-row"><span>Strengthens: </span> Peer-reviewed studies confirming &gt;99% ABS accuracy across diverse pitch types; Triple-A implementation data showing reduced controversy; player satisfaction surveys post-ABS implementation.</div>
+              <div class="evidence-row"><span class="weakens">Weakens: </span> Evidence that ABS misses specific pitch types (cutters on corner, knuckleballs); systematic calibration errors; player complaints about ABS accuracy in practice.</div>
+            </div>
+          </div>
+        </div>
+        <div class="arg-item" onclick="toggleArg(this)">
+          <div class="arg-header"><span class="arg-num">2</span><span class="arg-claim">Consistency: Human accuracy degrades; ABS is perfectly consistent</span><span class="arg-arrow">▶</span></div>
+          <div class="arg-body">
+            <div class="arg-text">Human umpires are affected by fatigue, heat, crowd noise, game pressure, and count-specific cognitive biases. Research shows accuracy declines later in games, in high-pressure counts, and potentially in high-temperature conditions. An ABS system calls the same pitch the same way in the 1st inning and the 9th inning, in 45°F and 95°F, with the bases empty and the World Series on the line. Consistency is itself a form of fairness — every team and player is evaluated on the same standard.</div>
+            <div class="evidence-box">
+              <div class="evidence-label">Evidence Requirements</div>
+              <div class="evidence-row"><span>Strengthens: </span> Studies documenting umpire accuracy decline by inning or game; temperature/fatigue correlation data; multi-game performance variance across umpires.</div>
+              <div class="evidence-row"><span class="weakens">Weakens: </span> Evidence that ABS systems also degrade (calibration drift, sensor wear); data showing human umpire consistency within acceptable tolerance ranges.</div>
+            </div>
+          </div>
+        </div>
+        <div class="arg-item" onclick="toggleArg(this)">
+          <div class="arg-header"><span class="arg-num">3</span><span class="arg-claim">Bias elimination: No two-strike bias, no favoritism for star pitchers</span><span class="arg-arrow">▶</span></div>
+          <div class="arg-body">
+            <div class="arg-text">Research has documented that elite pitchers (Jacob deGrom, Max Scherzer) consistently receive more favorable borderline calls than average pitchers — a reputation effect. Two-strike count bias systematically disadvantages pitchers on borderline third strikes. ABS eliminates both: every pitcher gets the same zone, every count is treated identically, every batter faces the same standard regardless of career accomplishments. In a sport where a single game can determine playoff seeding, systematic bias has material consequences for outcomes.</div>
+            <div class="evidence-box">
+              <div class="evidence-label">Evidence Requirements</div>
+              <div class="evidence-row"><span>Strengthens: </span> Studies documenting reputation effects on call rates by pitcher ERA tier; statistical demonstration that two-strike call rates differ from zero-strike rates on matched pitches.</div>
+              <div class="evidence-row"><span class="weakens">Weakens: </span> Evidence that observed "favoritism" is actually explained by elite pitchers locating pitches in the zone more precisely; studies showing no statistically significant reputation effect.</div>
+            </div>
+          </div>
+        </div>
+        <div class="arg-item" onclick="toggleArg(this)">
+          <div class="arg-header"><span class="arg-num">4</span><span class="arg-claim">Player trust: Umpire inconsistency distorts pitcher and batter behavior</span><span class="arg-arrow">▶</span></div>
+          <div class="arg-body">
+            <div class="arg-text">Pitchers who know umpire X has a high outside corner will pitch differently than against umpire Y who squeezes the zone. Batters adjust their swing decisions based on which umpire is working. This means a significant portion of player strategic decision-making is spent adapting to umpire idiosyncrasies rather than responding to actual pitch quality. ABS would eliminate this noise, focusing the competition entirely on pitcher-batter interaction. The pitcher who throws the best pitch wins, not the pitcher who best games the umpire's tendencies.</div>
+            <div class="evidence-box">
+              <div class="evidence-label">Evidence Requirements</div>
+              <div class="evidence-row"><span>Strengthens: </span> Analysis of catcher framing value (catchers paid premium for presenting pitches well implies zone inconsistency exists); evidence that pitcher pitch-mix changes by umpire assignment.</div>
+              <div class="evidence-row"><span class="weakens">Weakens: </span> Evidence that adaptation to umpire tendencies is a legitimate skill and source of competitive differentiation; argument that "gaming the umpire" is itself a real-world applicable skill.</div>
+            </div>
+          </div>
+        </div>
+        <div class="arg-item" onclick="toggleArg(this)">
+          <div class="arg-header"><span class="arg-num">5</span><span class="arg-claim">Precedent: ABS is proven at Triple-A and independent leagues</span><span class="arg-arrow">▶</span></div>
+          <div class="arg-body">
+            <div class="arg-text">ABS has been in use in Triple-A (AAA) baseball since 2023, and in independent leagues for several years prior. Data from those implementations shows the technology operates reliably in live game conditions, players adapt without significant disruption, and game pace is maintained. The transition from "future technology" to "proven in the minor leagues" eliminates the empirical uncertainty argument against ABS. The question is no longer whether ABS can work — it demonstrably does — but whether MLB is willing to make the institutional commitment to implement it.</div>
+            <div class="evidence-box">
+              <div class="evidence-label">Evidence Requirements</div>
+              <div class="evidence-row"><span>Strengthens: </span> Triple-A implementation data on controversy rate, player complaint rate, technical failure incidents; player and manager surveys on experience with ABS.</div>
+              <div class="evidence-row"><span class="weakens">Weakens: </span> Documentation of specific ABS failures in minor league games; evidence that minor league conditions (fewer games, lower stakes) don't transfer to 162-game MLB playoff pressure.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="againstArgs" style="display:none">
+      <div class="card" style="border-color:rgba(248,113,113,0.35)">
+        <div class="card-title" style="color:var(--red)">Arguments AGAINST ABS</div>
+        <div class="arg-item" onclick="toggleArg(this)">
+          <div class="arg-header"><span class="arg-num">1</span><span class="arg-claim">Zone definition: No two hitters have the same dimensions — a rigid ABS zone is unfair</span><span class="arg-arrow">▶</span></div>
+          <div class="arg-body">
+            <div class="arg-text">The official strike zone is defined as the 17-inch width of home plate by the space between "the top of the knees and the midpoint of the torso" — a player-specific definition. Aaron Judge stands 6'7". José Altuve stands 5'6". An ABS system either applies identical absolute coordinates to all batters (clearly wrong) or must compute individualized zones for each batter (creating new implementation complexity and potential disputes). Human umpires naturally adjust their zone to the batter's stance; an ABS system must be explicitly programmed to do so, and those programming choices become their own source of controversy.</div>
+            <div class="evidence-box">
+              <div class="evidence-label">Evidence Requirements</div>
+              <div class="evidence-row"><span>Strengthens: </span> Data showing that ABS systems in Triple-A apply different zones by player height; documentation of specific player complaints about ABS zone calibration; examples of pitches that ABS called differently from the rulebook intent.</div>
+              <div class="evidence-row"><span class="weakens">Weakens: </span> Evidence that current ABS implementations successfully individualize zones; data showing umpires themselves do not consistently adjust for batter height.</div>
+            </div>
+          </div>
+        </div>
+        <div class="arg-item" onclick="toggleArg(this)">
+          <div class="arg-header"><span class="arg-num">2</span><span class="arg-claim">The batter's eye: Working corners is part of baseball's texture</span><span class="arg-arrow">▶</span></div>
+          <div class="arg-body">
+            <div class="arg-text">Part of baseball's strategic depth is the cat-and-mouse between pitchers working the margins of the strike zone and batters (and catchers) learning which umpires have generous strike zones, which squeeze the outside corner, which favor fastballs over breaking balls. This umpire-specific strategic meta-game is a legitimate part of competition. A pitcher who studies an umpire's tendencies and exploits them is exhibiting a skill that translates broadly to reading and adapting to decision-makers under pressure — a valuable cognitive skill ABS would make irrelevant. What's lost is not merely "tradition" but a genuine competitive dimension.</div>
+            <div class="evidence-box">
+              <div class="evidence-label">Evidence Requirements</div>
+              <div class="evidence-row"><span>Strengthens: </span> Evidence that catcher framing (worth $15M+ in contract value) requires umpire inconsistency to create value; analysis showing that pitcher performance varies significantly by umpire assignment in ways consistent with strategic exploitation.</div>
+              <div class="evidence-row"><span class="weakens">Weakens: </span> Evidence that "reading the umpire" is actually primarily about exploiting systematic error (bias) rather than skill-based zone management; argument that zone inconsistency hurts batters disproportionately.</div>
+            </div>
+          </div>
+        </div>
+        <div class="arg-item" onclick="toggleArg(this)">
+          <div class="arg-header"><span class="arg-num">3</span><span class="arg-claim">Technical failure risk: A playoff-game ABS failure creates a legitimacy crisis</span><span class="arg-arrow">▶</span></div>
+          <div class="arg-body">
+            <div class="arg-text">Camera calibration degrades over time. Sensors can malfunction. Software can have edge-case failures. A human umpire who makes an error can be reprimanded, reassigned, or overruled by replay; an ABS system failure during a playoff game with no human override creates a different and potentially larger legitimacy crisis. The question is not whether ABS is usually reliable, but whether its failure modes are more or less disruptive than human error. A systematic technology failure — affecting all calls for an inning or game — has no human analog. The risk profile is different, not necessarily lower.</div>
+            <div class="evidence-box">
+              <div class="evidence-label">Evidence Requirements</div>
+              <div class="evidence-row"><span>Strengthens: </span> Documentation of ABS system failures in Triple-A games; analysis of how MLB protocols would handle mid-game ABS failure; evidence that current backup protocols are insufficient.</div>
+              <div class="evidence-row"><span class="weakens">Weakens: </span> Evidence that ABS systems have redundant backups (multiple cameras, independent tracking systems); data showing zero systematic failures in multi-season Triple-A implementation.</div>
+            </div>
+          </div>
+        </div>
+        <div class="arg-item" onclick="toggleArg(this)">
+          <div class="arg-header"><span class="arg-num">4</span><span class="arg-claim">Craft loss: Pitch-framing becomes worthless — destroying a legitimate skill</span><span class="arg-arrow">▶</span></div>
+          <div class="arg-body">
+            <div class="arg-text">Pitch-framing — the ability of a catcher to receive a pitch in a manner that influences the umpire toward calling it a strike — is a quantifiable skill worth tens of millions of dollars in market value. José Trevino, Yasmani Grandal, and Jonah Heim have all received significant contracts partly because of their elite framing metrics. ABS renders this skill entirely worthless. Beyond the immediate financial consequences for players who built careers on framing, it eliminates a non-obvious craft skill that adds strategic richness to the catcher-pitcher-umpire interaction. Whether framing skill is "exploiting bias" or "genuine craft" is itself a legitimate debate — but eliminating it removes a dimension of the game.</div>
+            <div class="evidence-box">
+              <div class="evidence-label">Evidence Requirements</div>
+              <div class="evidence-row"><span>Strengthens: </span> Contract data showing framing value priced into catcher salaries (statcast framing runs above average); evidence that elite framers consistently gain 20-30 extra strikes per year.</div>
+              <div class="evidence-row"><span class="weakens">Weakens: </span> Argument that framing is entirely parasitic on umpire error (a skill at exploiting a defect, not contributing to fair competition); evidence that elimination of framing value would be offset by catchers developing other skills.</div>
+            </div>
+          </div>
+        </div>
+        <div class="arg-item" onclick="toggleArg(this)">
+          <div class="arg-header"><span class="arg-num">5</span><span class="arg-claim">Tradition: Baseball's relationship with human error is part of its mythology</span><span class="arg-arrow">▶</span></div>
+          <div class="arg-body">
+            <div class="arg-text">Baseball's cultural history is inseparable from memorable umpiring moments — some controversial, some beloved. Armando Galarraga's near-perfect game destroyed by Jim Joyce's incorrect safe call in 2010 generated more sustained human interest than most actual perfect games. The pine tar game, Don Denkinger's 1985 call, Jeffrey Maier's home run — these moments became cultural reference points precisely because they involved human imperfection in high-stakes situations. A fully automated game removes the possibility of these kinds of stories. Whether this is a loss depends on what you believe baseball is for: perfect officiating of rules, or human drama in a structured competitive setting. That is a values question, not a statistical one.</div>
+            <div class="evidence-box">
+              <div class="evidence-label">Evidence Requirements</div>
+              <div class="evidence-row"><span>Strengthens: </span> Survey data on fan preference for human umpires vs. ABS; audience engagement metrics showing controversial calls increase post-game viewership; historical analysis of how officiating controversy has generated long-term fan interest.</div>
+              <div class="evidence-row"><span class="weakens">Weakens: </span> Fan surveys showing strong preference for ABS accuracy over human drama; evidence that incorrect calls generate negative rather than positive fan engagement; argument that tradition is a poor basis for institutional design in a professional sport.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: ERROR FRAMEWORK -->
+  <div id="tab-framework" class="tab-pane">
+    <div class="card">
+      <div class="card-title">Error Analysis Framework — For Any Performance Evaluation System</div>
+      <div class="insight-box">The umpire accuracy question is a special case of a general problem: how do you evaluate whether a decision-making system (human or automated) is performing adequately? Five questions structure any rigorous analysis.</div>
+      <div style="display:flex;flex-direction:column;gap:0">
+        <div class="framework-step">
+          <div class="framework-num">1</div>
+          <div class="framework-content">
+            <div class="framework-q">What is the reference standard?</div>
+            <div class="framework-a">An "error" is only definable if there is a ground truth to compare against. For umpires: does the pitch cross the geometrically defined strike zone? Hawk-Eye and TrackMan provide that ground truth. Without a reference standard, you cannot measure accuracy — you can only measure consistency. <em>Critical implication:</em> Many real-world performance evaluations lack a genuine reference standard (what is the "correct" legal ruling? the "correct" diagnosis for a complex case?). Umpiring is unusually tractable because the ground truth is physical and measurable.</div>
+          </div>
+        </div>
+        <div class="framework-step">
+          <div class="framework-num">2</div>
+          <div class="framework-content">
+            <div class="framework-q">What is the capture rate?</div>
+            <div class="framework-a">Are all decisions logged? For umpires: yes — every pitch is tracked by MLB's Statcast system. This is a nearly unique situation in professional performance evaluation. Most workers' decisions are not logged at a 99%+ capture rate. Teachers' moment-to-moment instructional decisions are not captured. Surgeons' judgment calls in the operating room are not captured. The high capture rate is what makes umpire performance evaluation possible at this level of precision. <em>Key question:</em> What is the capture rate for the decisions you care about evaluating?</div>
+          </div>
+        </div>
+        <div class="framework-step">
+          <div class="framework-num">3</div>
+          <div class="framework-content">
+            <div class="framework-q">Are errors random or systematic?</div>
+            <div class="framework-a">Random noise is unavoidable and theoretically unbiased — it doesn't favor any party over time. Systematic error (bias) is directional, persistent, and correctable. The two-strike count bias in umpire calling is systematic: it favors batters over pitchers in high-leverage counts, predictably and consistently. A random error rate of 10% is fundamentally different from a systematic bias rate of 10%. <em>Why this matters:</em> Systematic errors can be corrected through training, incentives, or technology. Random errors can only be reduced, not eliminated. Knowing which you're dealing with determines your intervention strategy.</div>
+          </div>
+        </div>
+        <div class="framework-step">
+          <div class="framework-num">4</div>
+          <div class="framework-content">
+            <div class="framework-q">What are the consequence asymmetries?</div>
+            <div class="framework-a">Is a false strike (calling a ball a strike) worse than a false ball (calling a strike a ball)? In different contexts: with a batter ahead 3-0, a missed strike matters more than a missed ball. In a 0-2 count, a missed third strike costs a pitcher an out. ABS debates partly rest on this: if errors were symmetric, the efficiency argument for ABS would be weaker. The two-strike bias suggests umpire errors are asymmetric — they disproportionately help batters at the margin that matters most. <em>General principle:</em> All error analysis should quantify consequence asymmetries, not just error rates.</div>
+          </div>
+        </div>
+        <div class="framework-step">
+          <div class="framework-num">5</div>
+          <div class="framework-content">
+            <div class="framework-q">What is the comparison benchmark?</div>
+            <div class="framework-a">How good could this process be? The technology limit for ABS is known: ~99.5% accuracy. The human limit is less certain, but consistent evidence suggests 90–92% on borderline pitches is near the ceiling for a human umpire working at game speed. Without a benchmark, "85% accuracy" sounds like a number without context. With ABS as a comparison, it becomes clear that ~10 percentage points of accuracy are available through technology adoption — the question is whether that gain is worth the costs of transition. <em>Ask always:</em> What is the best this system could theoretically be? Are we near that limit, or far from it?</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Apply This Framework to Your Industry</div>
+      <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:18px">The five-question framework applies to any human decision-making system subject to error analysis. Consider these applications:</p>
+      <div class="apply-box">
+        <div class="apply-field">Medical Diagnosis</div>
+        <div class="apply-prompt">Reference standard: Biopsy, lab result, confirmed outcome. Capture rate: Varies — some decisions are logged, many are not. Systematic errors: Diagnosis bias by patient demographics (documented in multiple studies). Consequence asymmetry: False negative (missing a disease) typically worse than false positive. Benchmark: Computer-aided diagnosis (CAD) for mammography reads, AI for radiology — what is their measured accuracy vs. human radiologists?</div>
+      </div>
+      <div class="apply-box">
+        <div class="apply-field">Legal Decisions (Sentencing)</div>
+        <div class="apply-prompt">Reference standard: Hard to define — what is the "correct" sentence? Capture rate: Sentencing decisions are logged. Systematic errors: Documented disparities by defendant race, time of day (Israeli parole board hunger study). Consequence asymmetry: False imprisonment vs. wrongful release — deeply asymmetric consequences. Benchmark: Actuarial risk tools vs. judicial discretion — ongoing empirical debate.</div>
+      </div>
+      <div class="apply-box">
+        <div class="apply-field">Financial Audit</div>
+        <div class="apply-prompt">Reference standard: Actual financial statement accuracy (knowable after the fact, sometimes). Capture rate: Auditor decisions are documented in workpapers. Systematic errors: Auditors who develop long relationships with client management may develop confirmation bias. Consequence asymmetry: Missing a fraud (false negative) vs. flagging a non-issue (false positive) — different regulatory and reputational consequences. Benchmark: AI-assisted audit tools are now being evaluated against human auditor accuracy in large-sample studies.</div>
+      </div>
+    </div>
+
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">📄 Export Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">⬡ Export AP2 Record</button>
+    </div>
+  </div>
+
+</div><!-- end tool-wrapper -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-90 · Data: Inspired by BU Questrom umpire accuracy research; Williams et al.
+</footer>
+
+<script>
+  const state = {
+    modesUsed: new Set(),
+    debatePosition: null,
+    argsReviewed: [],
+    frameworkApplied: false
+  };
+
+  function switchTab(id, btn) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    btn.classList.add('active');
+    state.modesUsed.add(id);
+  }
+
+  function toggleArg(el) {
+    el.classList.toggle('open');
+    if (el.classList.contains('open')) {
+      const claim = el.querySelector('.arg-claim').textContent;
+      if (!state.argsReviewed.includes(claim)) state.argsReviewed.push(claim);
+    }
+  }
+
+  function selectPos(pos) {
+    state.debatePosition = pos;
+    document.getElementById('btnFor').classList.toggle('selected', pos === 'for');
+    document.getElementById('btnAgainst').classList.toggle('selected', pos === 'against');
+    document.getElementById('forArgs').style.display = pos === 'for' ? 'block' : 'none';
+    document.getElementById('againstArgs').style.display = pos === 'against' ? 'block' : 'none';
+    state.modesUsed.add('debate');
+  }
+
+  function setLang(l) {
+    try { sessionStorage.setItem('apex_lang', l); } catch(e) {}
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent === l.toUpperCase()));
+  }
+  (function() { try { const l = sessionStorage.getItem('apex_lang'); if (l) setLang(l); } catch(e) {} })();
+
+  const AP2Schema = {
+    validMandateTypes: [
+      'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+      'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+      'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+      'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+      'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+      'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+      'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+      'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+      'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+      'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+      'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+      'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+      'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+      'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
+      'english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record',
+      'mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record',
+      'mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record',
+      'lesson_design_record','assessment_item_record','classroom_scenario_record',
+      'gt_differentiation_record','instructor_toolkit_record',
+      'cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record',
+      'primary_source_record','historiography_record','anachronism_record','counterfactual_record',
+      'franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record',
+      'micro_theory_record','economic_systems_record','economists_panel_record',
+      'economic_history_record','econ_principles_record'
+    ],
+    validate(record) {
+      if (!record || typeof record !== 'object') return { valid: false, error: 'Record must be an object' };
+      if (!record.mandate_type) return { valid: false, error: 'Missing mandate_type' };
+      if (!this.validMandateTypes.includes(record.mandate_type)) return { valid: false, error: 'Invalid mandate_type: ' + record.mandate_type };
+      if (!record.al_id) return { valid: false, error: 'Missing al_id' };
+      if (!record.generated_at) return { valid: false, error: 'Missing generated_at' };
+      return { valid: true };
+    }
+  };
+
+  function exportMarkdown() {
+    const md = `# Umpire Accuracy Lab — Session Export
+**Generated:** ${new Date().toLocaleString()}
+**Tool:** AL-90 · ApexLogics.org
+
+## Session Summary
+- Modes used: ${[...state.modesUsed].join(', ') || 'measurement'}
+- Debate position: ${state.debatePosition || 'none selected'}
+- Arguments reviewed: ${state.argsReviewed.length}
+
+## Key Findings — Scale of Error (2018 MLB Season)
+- 34,294 incorrect ball-strike calls
+- ~14 incorrect calls per game
+- ~1.6 incorrect calls per inning
+- 20 games ended on an incorrect final call
+- 55 games in 11-season dataset ended incorrectly
+
+## Two-Strike Count Bias
+Umpires show elevated error rates (~8-10%) in 0-2, 1-2, 2-2, 3-2 counts vs. ~4-5% in no-strike counts. Systematic (not random) bias toward protecting batters from false strike 3 calls.
+
+## Error Analysis Framework
+1. Reference standard — defined and measurable (pitch tracking technology)
+2. Capture rate — near 100% (MLB Statcast logs all pitches)
+3. Error type — systematic bias, not random noise
+4. Consequence asymmetry — two-strike errors cost pitchers more than other counts
+5. Benchmark — ABS systems achieve >99% accuracy vs. ~85-90% human
+
+---
+*Inspired by: BU Questrom umpire accuracy research program. See bu.edu/articles/2019/mlb-umpires-strike-zone-accuracy/*
+`;
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'umpire-accuracy-lab-session.md'; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportAP2() {
+    const record = {
+      mandate_type: 'umpire_accuracy_record',
+      al_id: 'AL-90',
+      generated_at: new Date().toISOString(),
+      mode_used: [...state.modesUsed].join(',') || 'measurement',
+      debate_position: state.debatePosition || 'none',
+      arguments_reviewed: state.argsReviewed.length,
+      error_framework_applied: state.modesUsed.has('framework')
+    };
+    const result = AP2Schema.validate(record);
+    if (!result.valid) { alert('AP2 validation error: ' + result.error); return; }
+    const blob = new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'ap2-umpire-accuracy-record.json'; a.click();
+    URL.revokeObjectURL(url);
+  }
+</script>
+</body>
+</html>

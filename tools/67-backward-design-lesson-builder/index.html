@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Backward-Design Lesson Builder · ApexLogics #67</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/67-backward-design-lesson-builder/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #60a5fa; --accent-dim: rgba(96,165,250,0.18); --accent-low: rgba(96,165,250,0.08);
+      --border: rgba(96,165,250,0.18); --border-focus: #60a5fa;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: #E8A838; } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(96,165,250,0.07); border: 1px solid rgba(96,165,250,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 28px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 28px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 10px 18px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="text"], input[type="number"], select, textarea {
+      background: var(--surface); border: 1px solid var(--border); color: var(--text);
+      padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem;
+      width: 100%; transition: border-color 0.2s;
+    }
+    textarea { resize: vertical; min-height: 80px; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .add-btn { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); padding: 7px 16px; border-radius: 6px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all 0.15s; }
+    .add-btn:hover { background: var(--accent); color: #000; }
+    .remove-btn { background: none; border: 1px solid rgba(248,113,113,0.3); color: var(--red); padding: 4px 10px; border-radius: 5px; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; }
+    .remove-btn:hover { background: rgba(248,113,113,0.1); }
+    .klsu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
+    .klsu-cell { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+    .klsu-label { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--accent); margin-bottom: 6px; }
+    .klsu-desc { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 8px; }
+    .whereto-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
+    .whereto-label { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent); margin-bottom: 4px; }
+    .whereto-desc { font-size: 0.72rem; color: var(--text-dim); margin-bottom: 8px; }
+    .day-block { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; display: grid; grid-template-columns: 2fr 1fr auto; gap: 10px; align-items: end; }
+    .rubric-criterion { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+    .rubric-levels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+    .rubric-level-hdr { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-align: center; padding-bottom: 4px; }
+    .checkgroup { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+    .check-item { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-muted); cursor: pointer; }
+    .check-item input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .summary-block { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; margin-bottom: 14px; }
+    .summary-label { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .summary-value { font-size: 0.9rem; color: var(--text); line-height: 1.6; }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(96,165,250,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #7f1d1d; border: 1px solid var(--red); color: #fecaca; padding: 12px 22px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; z-index: 200; display: none; }
+    .toast.show { display: block; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    .section-label { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text-muted); margin: 16px 0 8px; }
+    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .tag { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 3px 9px; font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 5px; }
+    .tag button { background: none; border: none; color: inherit; cursor: pointer; font-size: 0.85rem; line-height: 1; padding: 0 2px; }
+    @media (max-width: 700px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .klsu-grid { grid-template-columns: 1fr; }
+      .rubric-levels { grid-template-columns: 1fr 1fr; }
+      .day-block { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="../../index.html" class="nav-pill accent">← All Tools</a>
+  </div>
+</nav>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <div class="tool-eyebrow">AL-74 · Selected Studies — Education</div>
+  <h1 class="tool-title">Backward-Design Lesson Builder</h1>
+  <p class="tool-desc">Build lessons the way expert teachers think: start with what students must be able to do, then design evidence of learning, then plan activities. This tool scaffolds the Understanding by Design (UbD) framework — Stage 1 Desired Results, Stage 2 Assessment Evidence, Stage 3 Learning Plan — naming each step explicitly so you learn the method as you build.</p>
+  <div class="tool-vintage">Data vintage: Framework: Wiggins &amp; McTighe, Understanding by Design (2nd ed., 2005); Bloom's taxonomy updated 2001</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">Stage 1 — Goals</button>
+    <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">Stage 2 — Evidence</button>
+    <button class="tab-btn" id="tabBtn3" onclick="switchTab(3)">Stage 3 — Learning Plan</button>
+    <button class="tab-btn" id="tabBtn4" onclick="switchTab(4)">Export</button>
+  </div>
+
+  <!-- ============ TAB 1: STAGE 1 GOALS ============ -->
+  <div class="tab-pane active" id="tabPane1">
+
+    <div class="card">
+      <div class="card-title">Unit Basics <span class="badge">Stage 1 of 3</span></div>
+      <div class="form-grid three">
+        <div class="field">
+          <label for="subject">Subject</label>
+          <input type="text" id="subject" placeholder="e.g. 7th Grade Science" />
+        </div>
+        <div class="field">
+          <label for="grade">Grade Level</label>
+          <input type="text" id="grade" placeholder="e.g. Grade 7 / 11th grade" />
+        </div>
+        <div class="field">
+          <label for="unitTopic">Unit Topic</label>
+          <input type="text" id="unitTopic" placeholder="e.g. Ecosystems and Energy Flow" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Standards</div>
+      <p class="field-hint" style="margin-bottom:12px;">Enter relevant standard codes and press Add. These anchor your desired results to curriculum requirements.</p>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <input type="text" id="standardInput" placeholder="e.g. NGSS MS-LS2-3" style="flex:1;" />
+        <button class="add-btn" onclick="addStandard()">+ Add</button>
+      </div>
+      <div class="tag-list" id="standardsList"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Essential Questions <span class="badge">1–3 recommended</span></div>
+      <p class="field-hint" style="margin-bottom:12px;">Essential questions are open-ended, thought-provoking, and point toward the heart of the discipline. They should recur throughout the unit.</p>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <input type="text" id="eqInput" placeholder="e.g. How do changes in one part of an ecosystem ripple outward?" style="flex:1;" />
+        <button class="add-btn" onclick="addEQ()">+ Add</button>
+      </div>
+      <div class="tag-list" id="eqList"></div>
+      <div id="eqWarning" style="display:none;margin-top:8px;font-size:0.75rem;color:var(--amber);">UbD recommends 1–3 essential questions per unit. More than 3 dilutes focus.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">KLSU Grid — Desired Results</div>
+      <p class="field-hint" style="margin-bottom:14px;">Fill each quadrant. The four quadrants are the backbone of Stage 1. K and L are foundational; S and U are the deeper targets.</p>
+      <div class="klsu-grid">
+        <div class="klsu-cell">
+          <div class="klsu-label">K — Students will KNOW…</div>
+          <div class="klsu-desc">Facts, concepts, vocabulary, information students must recall</div>
+          <textarea id="klsuK" placeholder="e.g. Vocabulary: producer, consumer, decomposer, food web. Key facts: energy flows from sun → producers → consumers..."></textarea>
+        </div>
+        <div class="klsu-cell">
+          <div class="klsu-label">L — Students will DO… (Transfer Goals)</div>
+          <div class="klsu-desc">The skills, processes, or performances students can independently execute</div>
+          <textarea id="klsuL" placeholder="e.g. Construct a food web diagram from primary source data. Predict effects of removing one species..."></textarea>
+        </div>
+        <div class="klsu-cell">
+          <div class="klsu-label">S — Students will develop SKILLS…</div>
+          <div class="klsu-desc">Disciplinary skills and habits of mind built across the unit</div>
+          <textarea id="klsuS" placeholder="e.g. Analyzing ecological data. Drawing evidence-based conclusions. Communicating scientific reasoning..."></textarea>
+        </div>
+        <div class="klsu-cell">
+          <div class="klsu-label">U — Students will UNDERSTAND that…</div>
+          <div class="klsu-desc">Big ideas, enduring understandings — transferable beyond this unit</div>
+          <textarea id="klsuU" placeholder="e.g. All living things are interdependent. Human activity has measurable ecological consequences. Systems maintain stability through feedback..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <button class="run-btn" onclick="switchTab(2)">Continue to Stage 2 — Evidence →</button>
+  </div>
+
+  <!-- ============ TAB 2: STAGE 2 EVIDENCE ============ -->
+  <div class="tab-pane" id="tabPane2">
+
+    <div class="card">
+      <div class="card-title">Performance Task <span class="badge">Stage 2 of 3</span></div>
+      <p class="field-hint" style="margin-bottom:12px;">A performance task is a culminating activity that asks students to apply their learning to a real or simulated situation. It should directly address the Essential Questions and reveal whether students have achieved the understandings in Stage 1.</p>
+      <div class="field">
+        <label for="perfTask">Performance Task Description</label>
+        <textarea id="perfTask" style="min-height:120px;" placeholder="e.g. Students will take on the role of environmental consultants hired by a local conservation group. Using data provided on species populations in a local wetland, they will: (1) construct an annotated food web, (2) predict the impact of removing one key species, and (3) present a written recommendation to the 'board' with evidence-based reasoning..."></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Rubric Criteria Builder <span class="badge">Up to 6 criteria</span></div>
+      <p class="field-hint" style="margin-bottom:14px;">Add criteria for scoring the performance task. For each criterion, describe what performance looks like at 4 levels: Excellent, Proficient, Developing, Beginning.</p>
+      <div id="rubricCriteria"></div>
+      <button class="add-btn" onclick="addRubricCriterion()" id="addCriterionBtn">+ Add Criterion</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Other Evidence</div>
+      <p class="field-hint" style="margin-bottom:12px;">Check all additional evidence sources you will use to assess student understanding. These complement the performance task.</p>
+      <div class="checkgroup">
+        <label class="check-item"><input type="checkbox" id="ev_quiz" /> Quiz / Test</label>
+        <label class="check-item"><input type="checkbox" id="ev_obs" /> Teacher Observation</label>
+        <label class="check-item"><input type="checkbox" id="ev_exit" /> Exit Ticket</label>
+        <label class="check-item"><input type="checkbox" id="ev_portfolio" /> Portfolio</label>
+        <label class="check-item"><input type="checkbox" id="ev_self" /> Student Self-Assessment</label>
+        <label class="check-item"><input type="checkbox" id="ev_peer" /> Peer Assessment</label>
+        <label class="check-item"><input type="checkbox" id="ev_discussion" /> Socratic Discussion</label>
+        <label class="check-item"><input type="checkbox" id="ev_hw" /> Homework / Practice</label>
+      </div>
+    </div>
+
+    <button class="run-btn" onclick="switchTab(3)">Continue to Stage 3 — Learning Plan →</button>
+  </div>
+
+  <!-- ============ TAB 3: STAGE 3 LEARNING PLAN ============ -->
+  <div class="tab-pane" id="tabPane3">
+
+    <div class="card">
+      <div class="card-title">WHERETO Elements <span class="badge">Stage 3 of 3</span></div>
+      <p class="field-hint" style="margin-bottom:16px;">WHERETO is a UbD framework for designing the sequence of learning activities. Each letter represents a design principle. Fill in how each element will appear in your unit.</p>
+
+      <div class="whereto-item">
+        <div class="whereto-label">W — Where &amp; Why</div>
+        <div class="whereto-desc">Help students know WHERE the unit is going and WHY. What is the big question? What will the final performance look like?</div>
+        <textarea id="wW" placeholder="e.g. Day 1: share the environmental consultant scenario. Show the final product expectations. Post the essential questions on the wall for the unit..."></textarea>
+      </div>
+      <div class="whereto-item">
+        <div class="whereto-label">H — Hook &amp; Hold</div>
+        <div class="whereto-desc">HOOK students at the start and HOLD interest throughout with engaging problems, mysteries, provocations, or experiences.</div>
+        <textarea id="wH" placeholder="e.g. Show 2-minute video of coral reef bleaching before/after. Ask: 'What killed it?' Reveal that the cause was removing one species of fish..."></textarea>
+      </div>
+      <div class="whereto-item">
+        <div class="whereto-label">E1 — Equip &amp; Explore</div>
+        <div class="whereto-desc">EQUIP students with needed knowledge and skills. Provide EXPERIENCES to build understanding directly.</div>
+        <textarea id="wE1" placeholder="e.g. Direct instruction on food webs + vocabulary. Hands-on: build food chain cards. Lab simulation: 'What Eats What' data analysis..."></textarea>
+      </div>
+      <div class="whereto-item">
+        <div class="whereto-label">R — Rethink &amp; Revise</div>
+        <div class="whereto-desc">Build in opportunities for students to RETHINK big ideas, REVISE their work, and refine their understanding.</div>
+        <textarea id="wR" placeholder="e.g. Mid-unit: students receive peer feedback on first food web draft and revise. Socratic seminar challenging initial assumptions about 'harmful' vs. 'helpful' species..."></textarea>
+      </div>
+      <div class="whereto-item">
+        <div class="whereto-label">E2 — Evaluate</div>
+        <div class="whereto-desc">Build in regular opportunities for students to EVALUATE their own work and progress against the goals.</div>
+        <textarea id="wE2" placeholder="e.g. Self-assessment checklist against rubric criteria at midpoint. Exit tickets: 'What am I still confused about?' before the final task..."></textarea>
+      </div>
+      <div class="whereto-item">
+        <div class="whereto-label">T — Tailor &amp; Differentiate</div>
+        <div class="whereto-desc">TAILOR work to reflect individual student needs, interests, and learning styles.</div>
+        <textarea id="wT" placeholder="e.g. Tiered food web complexity (3-level vs. 5-level vs. researcher-generated). Choice: write the recommendation OR present it as a video. Scaffolded vocabulary support for ELLs..."></textarea>
+      </div>
+      <div class="whereto-item">
+        <div class="whereto-label">O — Organize &amp; Sequence</div>
+        <div class="whereto-desc">ORGANIZE and SEQUENCE the learning plan to maximize engagement and deep understanding.</div>
+        <textarea id="wO" placeholder="e.g. Sequence: Hook (day 1) → vocabulary + direct instruction (days 2–3) → lab exploration (days 4–5) → drafting (day 6) → peer feedback + revision (day 7) → final presentation (day 8)..."></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Daily Schedule <span class="badge">Up to 10 days</span></div>
+      <p class="field-hint" style="margin-bottom:14px;">Lay out your daily blocks. Each entry has an activity description and estimated duration.</p>
+      <div id="dayBlocks"></div>
+      <button class="add-btn" onclick="addDayBlock()" id="addDayBtn">+ Add Day</button>
+    </div>
+
+    <button class="run-btn" onclick="buildPlan()">Build Full Lesson Plan →</button>
+  </div>
+
+  <!-- ============ TAB 4: EXPORT ============ -->
+  <div class="tab-pane" id="tabPane4">
+    <div class="results-section" id="planResults">
+      <div class="card">
+        <div class="card-title">Lesson Plan Summary</div>
+        <div id="planSummaryContent"></div>
+      </div>
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+      </div>
+    </div>
+    <div id="planPrompt" style="color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:0.85rem;padding:40px 0;">
+      Complete Stage 1–3 and click "Build Full Lesson Plan" to generate your export.
+    </div>
+  </div>
+
+</div><!-- end tool-wrapper -->
+
+<div class="toast" id="toast"></div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-74 · Data: UbD framework, Wiggins &amp; McTighe 2005
+</footer>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const state = {
+  standards: [],
+  essentialQuestions: [],
+  rubricCriteria: [],
+  dayBlocks: [],
+  planBuilt: false
+};
+
+// ── Lang ───────────────────────────────────────────────────────────────────
+function setLang(code) {
+  sessionStorage.setItem('apex_lang', code);
+  document.documentElement.lang = code;
+  document.documentElement.dir = code === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.toLowerCase() === code || b.textContent === code);
+  });
+}
+(function() {
+  const saved = sessionStorage.getItem('apex_lang') || 'en';
+  setLang(saved);
+})();
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function switchTab(n) {
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById('tabBtn' + i).classList.toggle('active', i === n);
+    document.getElementById('tabPane' + i).classList.toggle('active', i === n);
+  }
+}
+
+// ── Standards ──────────────────────────────────────────────────────────────
+function addStandard() {
+  const input = document.getElementById('standardInput');
+  const val = input.value.trim();
+  if (!val) return;
+  if (state.standards.indexOf(val) !== -1) { input.value = ''; return; }
+  state.standards.push(val);
+  input.value = '';
+  renderStandards();
+}
+document.getElementById('standardInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); addStandard(); }
+});
+function removeStandard(i) {
+  state.standards.splice(i, 1);
+  renderStandards();
+}
+function renderStandards() {
+  const el = document.getElementById('standardsList');
+  el.innerHTML = state.standards.map((s, i) =>
+    `<span class="tag">${s}<button onclick="removeStandard(${i})" title="Remove">×</button></span>`
+  ).join('');
+}
+
+// ── Essential Questions ────────────────────────────────────────────────────
+function addEQ() {
+  const input = document.getElementById('eqInput');
+  const val = input.value.trim();
+  if (!val) return;
+  if (state.essentialQuestions.length >= 5) { showToast('Maximum 5 essential questions.'); return; }
+  state.essentialQuestions.push(val);
+  input.value = '';
+  renderEQs();
+}
+document.getElementById('eqInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); addEQ(); }
+});
+function removeEQ(i) {
+  state.essentialQuestions.splice(i, 1);
+  renderEQs();
+}
+function renderEQs() {
+  const el = document.getElementById('eqList');
+  el.innerHTML = state.essentialQuestions.map((q, i) =>
+    `<span class="tag" style="max-width:100%;word-break:break-word;">${q}<button onclick="removeEQ(${i})" title="Remove">×</button></span>`
+  ).join('');
+  document.getElementById('eqWarning').style.display = state.essentialQuestions.length > 3 ? 'block' : 'none';
+}
+
+// ── Rubric Criteria ────────────────────────────────────────────────────────
+function addRubricCriterion() {
+  if (state.rubricCriteria.length >= 6) { showToast('Maximum 6 rubric criteria.'); return; }
+  const idx = state.rubricCriteria.length;
+  state.rubricCriteria.push({ name: '', levels: ['', '', '', ''] });
+  renderRubric();
+}
+function removeRubricCriterion(i) {
+  state.rubricCriteria.splice(i, 1);
+  renderRubric();
+}
+function renderRubric() {
+  const container = document.getElementById('rubricCriteria');
+  container.innerHTML = state.rubricCriteria.map((c, i) => `
+    <div class="rubric-criterion">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <input type="text" placeholder="Criterion name (e.g. Scientific Accuracy)" value="${c.name}"
+          oninput="state.rubricCriteria[${i}].name = this.value" style="flex:1;" />
+        <button class="remove-btn" onclick="removeRubricCriterion(${i})">Remove</button>
+      </div>
+      <div class="rubric-levels">
+        <div class="rubric-level-hdr" style="color:var(--green);">4 — Excellent</div>
+        <div class="rubric-level-hdr" style="color:var(--accent);">3 — Proficient</div>
+        <div class="rubric-level-hdr" style="color:var(--amber);">2 — Developing</div>
+        <div class="rubric-level-hdr" style="color:var(--red);">1 — Beginning</div>
+        ${[0,1,2,3].map(li => `<textarea placeholder="${['Exceeds expectations — fully accurate, detailed, well-supported','Meets expectations — mostly accurate, adequate detail','Approaching expectations — some inaccuracies or gaps','Below expectations — significant errors or missing'][li]}" oninput="state.rubricCriteria[${i}].levels[${li}] = this.value">${c.levels[li]}</textarea>`).join('')}
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('addCriterionBtn').style.display = state.rubricCriteria.length >= 6 ? 'none' : '';
+}
+
+// ── Day Blocks ─────────────────────────────────────────────────────────────
+function addDayBlock() {
+  if (state.dayBlocks.length >= 10) { showToast('Maximum 10 day blocks.'); return; }
+  state.dayBlocks.push({ activity: '', duration: '50' });
+  renderDayBlocks();
+}
+function removeDayBlock(i) {
+  state.dayBlocks.splice(i, 1);
+  renderDayBlocks();
+}
+function renderDayBlocks() {
+  const container = document.getElementById('dayBlocks');
+  container.innerHTML = state.dayBlocks.map((d, i) => `
+    <div class="day-block">
+      <div class="field">
+        <label>Day ${i+1} — Activity</label>
+        <input type="text" value="${d.activity}" placeholder="e.g. Hook: coral reef video + discussion"
+          oninput="state.dayBlocks[${i}].activity = this.value" />
+      </div>
+      <div class="field">
+        <label>Duration (min)</label>
+        <input type="number" value="${d.duration}" min="5" max="180" step="5"
+          oninput="state.dayBlocks[${i}].duration = this.value" />
+      </div>
+      <button class="remove-btn" onclick="removeDayBlock(${i})" style="align-self:flex-end;margin-bottom:1px;">✕</button>
+    </div>
+  `).join('');
+  document.getElementById('addDayBtn').style.display = state.dayBlocks.length >= 10 ? 'none' : '';
+}
+
+// ── Build Plan ─────────────────────────────────────────────────────────────
+function buildPlan() {
+  const subject = document.getElementById('subject').value.trim();
+  const grade = document.getElementById('grade').value.trim();
+  const unit = document.getElementById('unitTopic').value.trim();
+
+  if (!subject || !grade || !unit) {
+    showToast('Please fill in Subject, Grade, and Unit Topic in Stage 1.');
+    switchTab(1);
+    return;
+  }
+
+  // Sync rubric criterion names from DOM (since we used oninput)
+  // already handled via oninput bindings
+
+  const perfTask = document.getElementById('perfTask').value.trim();
+
+  // Build display content
+  const summaryEl = document.getElementById('planSummaryContent');
+  const evChecked = ['quiz','obs','exit','portfolio','self','peer','discussion','hw'].filter(k =>
+    document.getElementById('ev_' + k).checked
+  );
+  const evLabels = { quiz: 'Quiz/Test', obs: 'Teacher Observation', exit: 'Exit Ticket', portfolio: 'Portfolio', self: 'Self-Assessment', peer: 'Peer Assessment', discussion: 'Socratic Discussion', hw: 'Homework/Practice' };
+
+  let html = `
+    <div class="summary-block">
+      <div class="summary-label">Unit Overview</div>
+      <div class="summary-value">
+        <strong>Subject:</strong> ${subject} &nbsp;|&nbsp; <strong>Grade:</strong> ${grade} &nbsp;|&nbsp; <strong>Unit:</strong> ${unit}
+        ${state.standards.length ? '<br><strong>Standards:</strong> ' + state.standards.join(', ') : ''}
+      </div>
+    </div>
+    <div class="summary-block">
+      <div class="summary-label">Essential Questions</div>
+      <div class="summary-value">${state.essentialQuestions.length ? state.essentialQuestions.map((q,i) => `${i+1}. ${q}`).join('<br>') : '<em style="color:var(--text-dim)">None added</em>'}</div>
+    </div>
+    <div class="summary-block">
+      <div class="summary-label">Desired Results — KLSU</div>
+      <div class="summary-value">
+        <strong>Know:</strong> ${document.getElementById('klsuK').value.trim() || '—'}<br>
+        <strong>Do (Transfer):</strong> ${document.getElementById('klsuL').value.trim() || '—'}<br>
+        <strong>Skills:</strong> ${document.getElementById('klsuS').value.trim() || '—'}<br>
+        <strong>Understand:</strong> ${document.getElementById('klsuU').value.trim() || '—'}
+      </div>
+    </div>
+    <div class="summary-block">
+      <div class="summary-label">Performance Task</div>
+      <div class="summary-value">${perfTask || '<em style="color:var(--text-dim)">Not specified</em>'}</div>
+    </div>
+    <div class="summary-block">
+      <div class="summary-label">Rubric (${state.rubricCriteria.length} criteria)</div>
+      <div class="summary-value">
+        ${state.rubricCriteria.length ?
+          state.rubricCriteria.map(c => `<strong>${c.name || 'Unnamed criterion'}</strong>`).join(', ')
+          : '<em style="color:var(--text-dim)">No rubric criteria added</em>'}
+      </div>
+    </div>
+    <div class="summary-block">
+      <div class="summary-label">Other Assessment Evidence</div>
+      <div class="summary-value">${evChecked.length ? evChecked.map(k => evLabels[k]).join(', ') : '<em style="color:var(--text-dim)">None selected</em>'}</div>
+    </div>
+    <div class="summary-block">
+      <div class="summary-label">WHERETO Learning Plan</div>
+      <div class="summary-value">
+        ${['W','H','E1','R','E2','T','O'].map(k => {
+          const labels = { W: 'Where &amp; Why', H: 'Hook &amp; Hold', E1: 'Equip &amp; Explore', R: 'Rethink &amp; Revise', E2: 'Evaluate', T: 'Tailor', O: 'Organize &amp; Sequence' };
+          const val = document.getElementById('w' + k).value.trim();
+          return val ? `<strong>${k} — ${labels[k]}:</strong> ${val}<br>` : '';
+        }).join('')}
+      </div>
+    </div>
+    <div class="summary-block">
+      <div class="summary-label">Daily Schedule (${state.dayBlocks.length} days)</div>
+      <div class="summary-value">
+        ${state.dayBlocks.length ?
+          state.dayBlocks.map((d, i) => `<strong>Day ${i+1}:</strong> ${d.activity || '—'} (${d.duration} min)`).join('<br>')
+          : '<em style="color:var(--text-dim)">No days added</em>'}
+      </div>
+    </div>
+  `;
+
+  summaryEl.innerHTML = html;
+  document.getElementById('planResults').classList.add('visible');
+  document.getElementById('planPrompt').style.display = 'none';
+  state.planBuilt = true;
+  switchTab(4);
+}
+
+// ── AP2 Schema ─────────────────────────────────────────────────────────────
+const AP2Schema = {
+  validMandateTypes: [
+    'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+    'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+    'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+    'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+    'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+    'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+    'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+    'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+    'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+    'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+    'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+    'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+    'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+    'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
+    'english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record',
+    'mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record',
+    'mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record',
+    'lesson_design_record','assessment_item_record','classroom_scenario_record',
+    'gt_differentiation_record','instructor_toolkit_record',
+    'cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record',
+    'primary_source_record','historiography_record','anachronism_record','counterfactual_record',
+    'franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record',
+    'micro_theory_record','economic_systems_record','economists_panel_record',
+    'economic_history_record','econ_principles_record'
+  ],
+  validate(payload) {
+    if (!payload || typeof payload !== 'object') return { valid: false, error: 'Payload must be an object.' };
+    if (!payload.mandate_type) return { valid: false, error: 'Missing mandate_type.' };
+    if (!this.validMandateTypes.includes(payload.mandate_type)) return { valid: false, error: `Invalid mandate_type: ${payload.mandate_type}` };
+    if (!payload.tool_id) return { valid: false, error: 'Missing tool_id.' };
+    if (!payload.generated_at) return { valid: false, error: 'Missing generated_at.' };
+    return { valid: true };
+  }
+};
+
+// ── Export ─────────────────────────────────────────────────────────────────
+function exportMarkdown() {
+  const subject = document.getElementById('subject').value.trim();
+  const grade = document.getElementById('grade').value.trim();
+  const unit = document.getElementById('unitTopic').value.trim();
+  const perfTask = document.getElementById('perfTask').value.trim();
+  const evChecked = ['quiz','obs','exit','portfolio','self','peer','discussion','hw'].filter(k =>
+    document.getElementById('ev_' + k).checked
+  );
+  const evLabels = { quiz: 'Quiz/Test', obs: 'Teacher Observation', exit: 'Exit Ticket', portfolio: 'Portfolio', self: 'Self-Assessment', peer: 'Peer Assessment', discussion: 'Socratic Discussion', hw: 'Homework/Practice' };
+
+  let md = `# Backward-Design Lesson Plan\n\n`;
+  md += `**Subject:** ${subject}  \n**Grade:** ${grade}  \n**Unit:** ${unit}\n\n`;
+  md += `## Stage 1 — Desired Results\n\n`;
+  if (state.standards.length) md += `**Standards:** ${state.standards.join(', ')}\n\n`;
+  if (state.essentialQuestions.length) {
+    md += `**Essential Questions:**\n`;
+    state.essentialQuestions.forEach((q, i) => md += `${i+1}. ${q}\n`);
+    md += '\n';
+  }
+  md += `**KLSU Grid:**\n`;
+  md += `- **Know:** ${document.getElementById('klsuK').value.trim() || '—'}\n`;
+  md += `- **Do (Transfer):** ${document.getElementById('klsuL').value.trim() || '—'}\n`;
+  md += `- **Skills:** ${document.getElementById('klsuS').value.trim() || '—'}\n`;
+  md += `- **Understand:** ${document.getElementById('klsuU').value.trim() || '—'}\n\n`;
+  md += `## Stage 2 — Assessment Evidence\n\n`;
+  md += `**Performance Task:**\n${perfTask || '—'}\n\n`;
+  if (state.rubricCriteria.length) {
+    md += `**Rubric Criteria:**\n`;
+    state.rubricCriteria.forEach(c => {
+      md += `\n### ${c.name || 'Unnamed Criterion'}\n`;
+      md += `| Excellent (4) | Proficient (3) | Developing (2) | Beginning (1) |\n`;
+      md += `|---|---|---|---|\n`;
+      md += `| ${c.levels[0]||'—'} | ${c.levels[1]||'—'} | ${c.levels[2]||'—'} | ${c.levels[3]||'—'} |\n`;
+    });
+    md += '\n';
+  }
+  if (evChecked.length) md += `**Other Evidence:** ${evChecked.map(k => evLabels[k]).join(', ')}\n\n`;
+  md += `## Stage 3 — Learning Plan\n\n`;
+  const wheretoKeys = ['W','H','E1','R','E2','T','O'];
+  const wheretoLabels = { W: 'Where & Why', H: 'Hook & Hold', E1: 'Equip & Explore', R: 'Rethink & Revise', E2: 'Evaluate', T: 'Tailor', O: 'Organize & Sequence' };
+  wheretoKeys.forEach(k => {
+    const val = document.getElementById('w' + k).value.trim();
+    if (val) md += `**${k} — ${wheretoLabels[k]}:** ${val}\n\n`;
+  });
+  if (state.dayBlocks.length) {
+    md += `**Daily Schedule:**\n`;
+    state.dayBlocks.forEach((d, i) => md += `- Day ${i+1}: ${d.activity || '—'} (${d.duration} min)\n`);
+    md += '\n';
+  }
+  md += `---\n*Generated by ApexLogics Backward-Design Lesson Builder (AL-74)*\n`;
+
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'lesson-plan.md'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportAP2() {
+  const evChecked = ['quiz','obs','exit','portfolio','self','peer','discussion','hw'].filter(k =>
+    document.getElementById('ev_' + k).checked
+  );
+  const payload = {
+    mandate_type: 'lesson_design_record',
+    tool_id: 'AL-74',
+    generated_at: new Date().toISOString(),
+    unit_topic: document.getElementById('unitTopic').value.trim(),
+    grade_level: document.getElementById('grade').value.trim(),
+    subject: document.getElementById('subject').value.trim(),
+    essential_questions: state.essentialQuestions,
+    performance_task_summary: document.getElementById('perfTask').value.trim(),
+    assessment_methods: evChecked,
+    learning_plan_summary: ['W','H','E1','R','E2','T','O'].map(k => ({
+      element: k,
+      content: document.getElementById('w' + k).value.trim()
+    })).filter(x => x.content),
+    rubric_criteria: state.rubricCriteria.map(c => ({ name: c.name, levels: c.levels })),
+    standards: state.standards,
+    daily_schedule: state.dayBlocks.map((d, i) => ({ day: i+1, activity: d.activity, duration_min: parseInt(d.duration) || 0 }))
+  };
+
+  const result = AP2Schema.validate(payload);
+  if (!result.valid) { showToast('AP2 validation error: ' + result.error); return; }
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'lesson-plan-ap2.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+addRubricCriterion(); // start with one criterion
+addDayBlock();        // start with one day
+</script>
+
+</body>
+</html>

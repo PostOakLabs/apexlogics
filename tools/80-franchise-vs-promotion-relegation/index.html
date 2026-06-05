@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Franchise vs. Promotion/Relegation Comparator · ApexLogics #80</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/80-franchise-vs-promotion-relegation/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #f87171; --accent-dim: rgba(248,113,113,0.18); --accent-low: rgba(248,113,113,0.08);
+      --border: rgba(248,113,113,0.18); --border-focus: #f87171;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: #E8A838; } .logo-org { color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; transition: all 0.15s; }
+    .nav-pill:hover { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(248,113,113,0.07); border: 1px solid rgba(248,113,113,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 28px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 28px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 10px 18px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 16px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .model-card { border-radius: 12px; padding: 24px; }
+    .model-card.franchise { background: rgba(96,165,250,0.06); border: 1px solid rgba(96,165,250,0.3); }
+    .model-card.pr { background: rgba(52,211,153,0.06); border: 1px solid rgba(52,211,153,0.3); }
+    .model-name { font-family: 'DM Serif Display', serif; font-size: 1.4rem; margin-bottom: 6px; }
+    .model-name.franchise { color: var(--blue); }
+    .model-name.pr { color: var(--green); }
+    .model-leagues { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); margin-bottom: 14px; }
+    .model-body { font-size: 0.88rem; color: var(--text-muted); line-height: 1.7; }
+    .model-origin { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.82rem; color: var(--text-dim); line-height: 1.65; }
+    .dim-list { display: flex; flex-direction: column; gap: 12px; }
+    .dim-item { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .dim-header { display: flex; align-items: center; gap: 14px; padding: 14px 20px; cursor: pointer; background: var(--surface2); transition: background 0.15s; }
+    .dim-header:hover { background: var(--accent-low); }
+    .dim-num { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); min-width: 28px; }
+    .dim-title-text { font-size: 0.92rem; font-weight: 500; flex: 1; }
+    .dim-arrow { font-size: 0.8rem; color: var(--text-dim); transition: transform 0.2s; }
+    .dim-item.open .dim-arrow { transform: rotate(90deg); }
+    .dim-body { display: none; padding: 0 20px 20px; background: var(--surface); }
+    .dim-item.open .dim-body { display: block; }
+    .dim-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .dim-col-head { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .dim-col-head.franchise { color: var(--blue); }
+    .dim-col-head.pr { color: var(--green); }
+    .dim-col-text { font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; }
+    .dim-tradeoff { margin-top: 14px; padding: 12px 16px; background: var(--accent-low); border-radius: 6px; font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
+    .debate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .debate-col { border-radius: 12px; padding: 20px 22px; }
+    .debate-col.for { background: rgba(96,165,250,0.06); border: 1px solid rgba(96,165,250,0.3); }
+    .debate-col.against { background: rgba(52,211,153,0.06); border: 1px solid rgba(52,211,153,0.3); }
+    .debate-col-title { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px; }
+    .debate-col-title.for { color: var(--blue); }
+    .debate-col-title.against { color: var(--green); }
+    .debate-point { background: var(--surface); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 12px 16px; margin-bottom: 10px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.65; }
+    .debate-point strong { color: var(--text); display: block; margin-bottom: 4px; font-size: 0.82rem; }
+    .position-selector { display: flex; gap: 12px; margin-bottom: 20px; }
+    .pos-btn { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; cursor: pointer; transition: all 0.15s; }
+    .pos-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .pos-btn.selected { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .dq-list { list-style: none; padding: 0; }
+    .dq-list li { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.88rem; color: var(--text-muted); }
+    .dq-list li:last-child { border-bottom: none; }
+    .dq-list li::before { content: "▸ "; color: var(--accent); }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-bottom: 20px; }
+    .data-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.67rem; text-transform: uppercase; color: var(--text-dim); padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: right; }
+    .data-table th:first-child { text-align: left; }
+    .data-table td { padding: 8px 12px; border-bottom: 1px solid rgba(248,113,113,0.06); text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+    .data-table td:first-child { text-align: left; font-family: 'Sora', sans-serif; }
+    .metric-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 500; }
+    .metric-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(248,113,113,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    .section-head { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 12px; margin-top: 24px; }
+    .insight-box { background: rgba(248,113,113,0.06); border: 1px solid rgba(248,113,113,0.2); border-radius: 8px; padding: 14px 18px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 14px; }
+    @media (max-width: 700px) {
+      .two-col, .dim-cols, .debate-grid, .metric-row { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.7rem; }
+    }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <span class="logo-mark">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="14,2 26,24 2,24" stroke="#E8A838" stroke-width="2" fill="none"/>
+          <polygon points="14,8 22,22 6,22" stroke="#E8A838" stroke-width="1" fill="none" opacity="0.5"/>
+        </svg>
+      </span>
+      <span class="logo-name"><span class="logo-apex">Apex</span><span class="logo-org"> Logics.org</span></span>
+    </a>
+    <span class="nav-spacer"></span>
+    <a href="../../index.html" class="nav-pill">← All Tools</a>
+  </div>
+</nav>
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('zh')">ZH</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('de')">DE</button>
+  </div>
+</div>
+<div class="tool-wrapper">
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+  <div class="tool-eyebrow">AL-87 · Selected Studies — Sport Management</div>
+  <h1 class="tool-title">Franchise vs. Promotion/Relegation Comparator</h1>
+  <p class="tool-desc">Two radically different answers to the question: how do you organize professional sport? The closed franchise model (NFL, NBA, MLB) protects team owners from competitive failure. The open promotion/relegation model (EPL, La Liga, Bundesliga) threatens every club with demotion every season. This comparator maps both models across eight governance dimensions — incentives, revenue, competitive balance, investment, fan culture, and more.</p>
+  <div class="tool-vintage">Data: League financials: Deloitte Football Money League 2024; Forbes team valuations 2024; academic sources: Fort &amp; Quirk (1995), Noll (2002), Szymanski (2003)</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('overview',this)">Model Overview</button>
+    <button class="tab-btn" onclick="switchTab('dimensions',this)">8-Dimension Comparison</button>
+    <button class="tab-btn" onclick="switchTab('debate',this)">Debate Mode</button>
+    <button class="tab-btn" onclick="switchTab('data',this)">Key Data</button>
+  </div>
+
+  <!-- TAB 1: OVERVIEW -->
+  <div id="tab-overview" class="tab-pane active">
+    <div class="two-col">
+      <div class="model-card franchise">
+        <div class="model-name franchise">Franchise Model</div>
+        <div class="model-leagues">NFL · NBA · MLB · NHL · MLS</div>
+        <div class="model-body">
+          A closed league structure in which membership is permanent and determined by a central league authority, not competitive performance. Teams pay a franchise fee for entry. Once in the league, a team cannot be demoted for poor play — no matter how many games they lose, the franchise retains its place in the top division.
+          <br><br>
+          The league itself is structured as a joint venture among franchise owners. Revenue is pooled and shared. Salary caps, luxury taxes, and reverse-order entry drafts compress competitive imbalances and redistribute talent toward weaker teams.
+        </div>
+        <div class="model-origin">
+          <strong style="color:#60a5fa">Origin:</strong> Rooted in 19th-century American professional baseball. The National League (1876) established the template: fixed membership, territorial exclusivity, central scheduling authority. The "reserve clause" — binding players to their clubs indefinitely — enforced the structure until Curt Flood's challenge and the 1975 Messersmith arbitration established free agency. The franchise model was explicitly designed to manage competition among club owners, not just among players.
+        </div>
+      </div>
+      <div class="model-card pr">
+        <div class="model-name pr">Promotion/Relegation</div>
+        <div class="model-leagues">EPL · La Liga · Bundesliga · Serie A · Ligue 1</div>
+        <div class="model-body">
+          An open pyramid structure in which clubs move between tiers based on competitive performance. The bottom three (or more) clubs in the top division are relegated to the second division each season. The top finishers in the second division are promoted to fill those spots.
+          <br><br>
+          There is no salary cap. Clubs compete for player talent in a global, open transfer market. No central draft. No revenue floor. A club born in 1889 in a small English town can, if it performs well enough, reach the Premier League — or fall out of it.
+        </div>
+        <div class="model-origin">
+          <strong style="color:#34d399">Origin:</strong> The English Football League introduced the promotion/relegation system in 1893, with Division One and Division Two. The concept arose naturally from the challenge of leagues expanding: how do you admit new clubs while maintaining quality? The Scottish Football Association had already seen smaller clubs lobbying for access. Today the English pyramid has 11 tiers, with theoretical continuous promotion/relegation from the Premier League to semi-professional football and back.
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Core Structural Differences</div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="text-align:left">Feature</th>
+            <th>Franchise Model</th>
+            <th>Promotion/Relegation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Membership</td><td>Permanent (can't be demoted)</td><td>Merit-based, annual reassignment</td></tr>
+          <tr><td>Entry mechanism</td><td>Franchise fee (up to $2.4B)</td><td>Earn promotion on the field</td></tr>
+          <tr><td>Salary cap</td><td>Yes (most leagues)</td><td>No (most leagues)</td></tr>
+          <tr><td>Player draft</td><td>Yes (reverse-order)</td><td>No</td></tr>
+          <tr><td>Revenue sharing</td><td>Extensive (NFL: 100% TV split)</td><td>Partial (EPL: unequal TV split)</td></tr>
+          <tr><td>Relocation possible?</td><td>Yes (owner permission)</td><td>No — club tied to geography</td></tr>
+          <tr><td>Number of teams (top div)</td><td>NFL: 32, NBA: 30, MLB: 30</td><td>EPL: 20, Bundesliga: 18</td></tr>
+          <tr><td>Primary academic framework</td><td>Fort &amp; Quirk profit maximization</td><td>Sloane win maximization (1971)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 2: 8 DIMENSIONS -->
+  <div id="tab-dimensions" class="tab-pane">
+    <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:18px;">Click each dimension to expand the full comparison.</p>
+    <div class="dim-list" id="dimList">
+
+      <div class="dim-item" onclick="toggleDim(this)">
+        <div class="dim-header">
+          <span class="dim-num">01</span>
+          <span class="dim-title-text">Competitive Balance</span>
+          <span class="dim-arrow">▶</span>
+        </div>
+        <div class="dim-body">
+          <div class="dim-cols">
+            <div>
+              <div class="dim-col-head franchise">Franchise Model</div>
+              <div class="dim-col-text">Protected by salary caps, reverse-order drafts, luxury taxes, and revenue sharing — all explicitly designed to compress win distributions. The NFL's near-equal TV revenue split ($350M/team/year 2023) and hard salary cap produce the tightest competitive balance of any major professional sport. Gini coefficient of wins in the NFL ≈ 0.12. Any team can plausibly compete for a championship in a given season. The phrase "any given Sunday" is not marketing — it reflects genuine variance.</div>
+            </div>
+            <div>
+              <div class="dim-col-head pr">Promotion/Relegation (EPL)</div>
+              <div class="dim-col-text">No salary cap. Competitive balance depends entirely on spending power. Manchester City's dominance from 2011–2024 (10 EPL titles in 13 seasons under Abu Dhabi ownership) illustrates how capital concentration creates sustained dynasties. Gini coefficient of EPL wins ≈ 0.42. However: clubs in 10th–17th place fight fiercely to avoid relegation — a battle with direct financial stakes (promotion/relegation worth ~£170M in EPL TV rights). The bottom of the table has high stakes even when the top is predictable.</div>
+            </div>
+          </div>
+          <div class="dim-tradeoff">Trade-off: Franchise = balanced top tier, "everyone has a chance." P/R = predictable champion, but ferocious midtable and bottom-of-table battles with existential stakes.</div>
+        </div>
+      </div>
+
+      <div class="dim-item" onclick="toggleDim(this)">
+        <div class="dim-header">
+          <span class="dim-num">02</span>
+          <span class="dim-title-text">Investment Incentives</span>
+          <span class="dim-arrow">▶</span>
+        </div>
+        <div class="dim-body">
+          <div class="dim-cols">
+            <div>
+              <div class="dim-col-head franchise">Franchise Model</div>
+              <div class="dim-col-text">An owner can strategically underinvest without competitive consequences — no relegation risk. This produces the phenomenon of "tanking": deliberately fielding a weak team to accumulate high draft picks. The Philadelphia 76ers' "Process" (2013–2017) involved winning 19 games in a season. Critics argue tanking is a rational response to poor franchise-building incentives. Franchise asset values inflate regardless of on-field performance: the Dallas Cowboys were valued at $9B (Forbes 2024), having not won a Super Bowl since 1995. Asset appreciation rewards owners independent of competitive success.</div>
+            </div>
+            <div>
+              <div class="dim-col-head pr">Promotion/Relegation (EPL)</div>
+              <div class="dim-col-text">Clubs face existential competitive threat — relegation from the EPL to the Championship costs a club £170M+ in lost TV revenue. Championship clubs invest aggressively to earn promotion: Leeds United spent £100M+ in 2019–20 Championship season. This creates both intense competition and severe financial risk. Clubs that overinvest for promotion and fail face potential insolvency (Administration in English football). "Parachute payments" — EPL payments to relegated clubs for 3 seasons (~£45M/year declining) — partially cushion the blow but create a different competitive imbalance within the Championship itself.</div>
+            </div>
+          </div>
+          <div class="dim-tradeoff">Trade-off: Franchise creates tanking incentives but stable asset values. P/R creates constant competitive pressure but risk of financial ruin from overspending on promotion bids.</div>
+        </div>
+      </div>
+
+      <div class="dim-item" onclick="toggleDim(this)">
+        <div class="dim-header">
+          <span class="dim-num">03</span>
+          <span class="dim-title-text">Revenue Distribution</span>
+          <span class="dim-arrow">▶</span>
+        </div>
+        <div class="dim-body">
+          <div class="dim-cols">
+            <div>
+              <div class="dim-col-head franchise">Franchise Model</div>
+              <div class="dim-col-text">The NFL distributes 100% of national TV revenue equally — approximately $350M per team per year under the current contract. This is the most egalitarian revenue model in professional sport. NBA and MLB share substantially but with less equality; local market revenue (gate receipts, local TV, sponsorships) stays with the club, creating income disparities between large-market franchises (Yankees, Dodgers) and small-market clubs (Rays, Pirates). MLB's luxury tax partially addresses this. The underlying philosophy: a rising tide lifts all boats — competitive leagues attract more fans and higher TV rights.</div>
+            </div>
+            <div>
+              <div class="dim-col-head pr">Promotion/Relegation (EPL)</div>
+              <div class="dim-col-text">EPL distributes broadcast revenue unequally. The 2023–24 distribution: 50% equal split, 25% merit payment (based on final table position), 25% facility fees (based on live broadcast appearances). Result: Manchester City (champions) received ~£175M; Sheffield United (20th, relegated) received ~£105M — a ~70% gap. Champions League revenue compounds this: a club reaching the knockout stages earns €50M+, unavailable to non-qualified clubs. No cross-league revenue sharing exists between the EPL and Championship. Relegated clubs enter an immediate financial spiral unless parachute payments sustain them.</div>
+            </div>
+          </div>
+          <div class="dim-tradeoff">Trade-off: Franchise = structural equality via mandatory sharing. P/R = inequality compounds over time, reinforcing dominance at the top of the pyramid.</div>
+        </div>
+      </div>
+
+      <div class="dim-item" onclick="toggleDim(this)">
+        <div class="dim-header">
+          <span class="dim-num">04</span>
+          <span class="dim-title-text">Fan Culture</span>
+          <span class="dim-arrow">▶</span>
+        </div>
+        <div class="dim-body">
+          <div class="dim-cols">
+            <div>
+              <div class="dim-col-head franchise">Franchise Model</div>
+              <div class="dim-col-text">Franchise relocation is possible and has occurred repeatedly: the Baltimore Colts moved to Indianapolis (1984) in the middle of the night. The Seattle SuperSonics became the Oklahoma City Thunder (2008). The Raiders moved Oakland → Los Angeles → Las Vegas. Fan identity can be disrupted or destroyed. However, geographic monopoly protects fans from their club being outcompeted — there is no fear of "your team falling to the second division." The NFL's parity mechanism means every season is potentially a championship season for every fanbase, which sustains engagement and TV ratings.</div>
+            </div>
+            <div>
+              <div class="dim-col-head pr">Promotion/Relegation (EPL)</div>
+              <div class="dim-col-text">P/R creates deep, multi-generational fan identity tied to place. Clubs like Burnley, Brentford, and Coventry City have community roots spanning 130+ years with no relocations. The stakes are emotionally intense at every table position: a relegation battle in February is as consequential to a Luton Town supporter as a championship run. However: relegation is emotionally devastating for fans of small clubs who've invested years watching their team in the top flight. The psychological literature on P/R and fan wellbeing shows significant negative effects of relegation on local fan communities.</div>
+            </div>
+          </div>
+          <div class="dim-tradeoff">Trade-off: Franchise = potential relocation trauma but no demotion. P/R = deep geographic identity but relegation as existential threat to community clubs.</div>
+        </div>
+      </div>
+
+      <div class="dim-item" onclick="toggleDim(this)">
+        <div class="dim-header">
+          <span class="dim-num">05</span>
+          <span class="dim-title-text">Player Markets</span>
+          <span class="dim-arrow">▶</span>
+        </div>
+        <div class="dim-body">
+          <div class="dim-cols">
+            <div>
+              <div class="dim-col-head franchise">Franchise Model</div>
+              <div class="dim-col-text">Rookie draft creates monopsony on entering players: clubs with the worst records get first selection of the best new talent. Players sign entry-level contracts at below-market rates for 3–4 years before arbitration rights accrue. Salary caps limit total payroll and individual salaries. Free agency exists but is constrained by franchise tags and restricted free agency mechanisms. The result: a structured, imperfect labor market heavily shaped by collective bargaining agreements (CBAs) negotiated by player unions (NFLPA, NBPA, MLBPA). Multiple work stoppages occurred when CBAs expired: 2011 NFL lockout, 2011 NBA lockout, 1994–95 MLB strike (cancelled World Series).</div>
+            </div>
+            <div>
+              <div class="dim-col-head pr">Promotion/Relegation (EPL)</div>
+              <div class="dim-col-text">Open global transfer market with no salary cap. The Bosman ruling (ECJ 1995) established freedom of contract: players out of contract can move to any EU club for free. Transfer fees apply for contracted players — EPL clubs paid record fees including £115M for Enzo Fernández (Chelsea, 2023). No draft system. Youth academies serve as talent pipelines; clubs can sign players as young as 9 in the UK (EPPP academy system). No equivalent collective bargaining at the league level — players negotiate individual contracts. The Professional Footballers' Association (PFA) provides some collective voice but no CBA.</div>
+            </div>
+          </div>
+          <div class="dim-tradeoff">Trade-off: Franchise = structured labor market with union protection and CBA. P/R = global free market with significant agent power but no collective wage floor.</div>
+        </div>
+      </div>
+
+      <div class="dim-item" onclick="toggleDim(this)">
+        <div class="dim-header">
+          <span class="dim-num">06</span>
+          <span class="dim-title-text">League Expansion &amp; Contraction</span>
+          <span class="dim-arrow">▶</span>
+        </div>
+        <div class="dim-body">
+          <div class="dim-cols">
+            <div>
+              <div class="dim-col-head franchise">Franchise Model</div>
+              <div class="dim-col-text">Controlled expansion through league vote — existing owners must approve new entrants. Expansion fees create windfall revenues for current owners: the Las Vegas Golden Knights paid $500M to join the NHL (2017); the Seattle Kraken paid $650M (2021). The NFL awarded Las Vegas (2020) and the process for a potential second New York franchise has generated valuations exceeding $2.5B. Contraction is theoretically possible but extremely rare — the last major contraction was MLB's aborted attempt to eliminate the Expos and Twins (2001), blocked by legal challenges.</div>
+            </div>
+            <div>
+              <div class="dim-col-head pr">Promotion/Relegation (EPL)</div>
+              <div class="dim-col-text">League composition changes every season: 3 clubs promoted, 3 relegated (EPL). No expansion fees — clubs earn entry through competitive merit. The English football pyramid contains approximately 4,500 clubs in 11 tiers; theoretically, any club could ascend from Sunday league football to the Premier League across enough successful seasons. In practice, AFC Wimbledon (formed by fans after the original Wimbledon FC's controversial relocation) rose from non-league to League One in under 15 years. This organic restructuring means the "league" as an institution is permeable in ways no franchise model permits.</div>
+            </div>
+          </div>
+          <div class="dim-tradeoff">Trade-off: Franchise = expansion as profitable event for owners. P/R = meritocratic open pyramid but no expansion revenue; top-tier clubs share no entry-fee windfall.</div>
+        </div>
+      </div>
+
+      <div class="dim-item" onclick="toggleDim(this)">
+        <div class="dim-header">
+          <span class="dim-num">07</span>
+          <span class="dim-title-text">Club Ownership Goals</span>
+          <span class="dim-arrow">▶</span>
+        </div>
+        <div class="dim-body">
+          <div class="dim-cols">
+            <div>
+              <div class="dim-col-head franchise">Franchise Model</div>
+              <div class="dim-col-text">US franchise owners are typically analyzed as profit maximizers (Fort &amp; Quirk, 1995). The franchise structure itself incentivizes this: asset appreciation is guaranteed regardless of wins, revenue sharing reduces the marginal return to winning, and TV contracts provide income floors. Owners who sell players to reduce payroll may reduce team quality but improve margins. The Dallas Cowboys generate ~$1.5B in annual revenue while consistently underperforming on the field since 1995. Growing tension: private equity entry (NFL approved PE ownership in 2024) further institutionalizes financial return as primary ownership objective.</div>
+            </div>
+            <div>
+              <div class="dim-col-head pr">Promotion/Relegation (EPL)</div>
+              <div class="dim-col-text">European football tradition models clubs as community institutions (Sloane, 1971: win maximization rather than profit maximization). The historical reality: most EPL clubs ran operating losses for decades, subsidized by wealthy local owners motivated by sporting success and social prestige. This is changing rapidly. US investors (Fenway Sports Group at Liverpool, Todd Boehly at Chelsea, Stan Kroenke at Arsenal) import profit-maximization frameworks. The tension between traditional supporter culture and corporate ownership is one of the defining conflicts in contemporary European football — exemplified by the failed European Super League (April 2021), which attempted to merge P/R with a franchise-style closed competition.</div>
+            </div>
+          </div>
+          <div class="dim-tradeoff">Trade-off: Franchise = profit maximization as legitimate and expected. P/R = historical win maximization tradition under pressure from globalizing capital.</div>
+        </div>
+      </div>
+
+      <div class="dim-item" onclick="toggleDim(this)">
+        <div class="dim-header">
+          <span class="dim-num">08</span>
+          <span class="dim-title-text">Labor Relations</span>
+          <span class="dim-arrow">▶</span>
+        </div>
+        <div class="dim-body">
+          <div class="dim-cols">
+            <div>
+              <div class="dim-col-head franchise">Franchise Model</div>
+              <div class="dim-col-text">Powerful, legally recognized player unions negotiate collective bargaining agreements covering minimum salaries, salary cap levels, revenue sharing percentages, free agency rules, discipline procedures, and health/safety protocols. The NFLPA, NBPA, and MLBPA are among the most sophisticated labor organizations in American industry. Recurring work stoppages illustrate genuine power: the 1994 MLB strike lasted 232 days and cancelled the World Series. The 2011 NFL and NBA lockouts each cost regular season games. Players have legal recourse (arbitration, labor courts) and leverage through solidarity.</div>
+            </div>
+            <div>
+              <div class="dim-col-head pr">Promotion/Relegation (EPL)</div>
+              <div class="dim-col-text">No equivalent collective bargaining in European football. The PFA (Professional Footballers' Association, founded 1907) provides welfare services, educational programs, and some advocacy, but negotiates no CBA — individual clubs set wages individually with individual agents. Salary caps don't exist, so there's no central agreement to negotiate. The Bosman ruling was won by an individual player in the European Court of Justice, not through collective action. Player power in European football is exercised primarily through agents (FIFA agents now licensed under new regulations), individual contract negotiations, and, increasingly, player-representative bodies at club level.</div>
+            </div>
+          </div>
+          <div class="dim-tradeoff">Trade-off: Franchise = robust collective bargaining but recurring work stoppages. P/R = no salary caps to negotiate but also no floor protections for lower-division players.</div>
+        </div>
+      </div>
+
+    </div><!-- end dim-list -->
+  </div>
+
+  <!-- TAB 3: DEBATE MODE -->
+  <div id="tab-debate" class="tab-pane">
+    <div class="card">
+      <div class="card-title">Choose Your Position</div>
+      <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:18px;">Select a debate position to view a structured argument set. Use these for in-class debates, written assignments, or discussion preparation.</p>
+      <div class="position-selector">
+        <button class="pos-btn" id="btnFranchise" onclick="selectPosition('franchise')">🏟️ Pro-Franchise Model</button>
+        <button class="pos-btn" id="btnPR" onclick="selectPosition('pr')">⚽ Pro-Promotion/Relegation</button>
+      </div>
+    </div>
+
+    <div id="franchiseArgs" style="display:none">
+      <div class="card" style="border-color:rgba(96,165,250,0.35)">
+        <div class="card-title" style="color:var(--blue)">Pro-Franchise Arguments</div>
+        <div class="debate-point"><strong>1. Competitive Balance is a Public Good</strong>The franchise model's salary cap, draft, and revenue sharing mechanisms produce the most competitive major sport in the world. NFL parity ensures fan engagement across all 32 markets. Every team enters September with a theoretical path to the Super Bowl — P/R leagues cannot offer this.</div>
+        <div class="debate-point"><strong>2. Asset Stability Attracts Long-Term Investment</strong>Franchise permanence allows owners to invest in stadium infrastructure, community facilities, and youth development without fear of relegation eliminating their revenue base overnight. A $2B stadium investment requires revenue certainty that a P/R system cannot guarantee.</div>
+        <div class="debate-point"><strong>3. Collective Bargaining Protects Players</strong>The franchise model's closed structure enables meaningful collective bargaining. The NFLPA, NBPA, and MLBPA have secured minimum salaries, health benefits, pension plans, and due process protections that players in open P/R systems lack. The average NFL career may be short, but players have union protection.</div>
+        <div class="debate-point"><strong>4. Revenue Sharing Supports Small Markets</strong>Equal distribution of national TV revenue means the Green Bay Packers — owned by their community, no billionaire owner — can compete financially with the Dallas Cowboys. The franchise model subsidizes competitive equality that P/R's winner-take-all revenue structure cannot provide.</div>
+        <div class="debate-point"><strong>5. No Club Should Fear Existential Financial Ruin</strong>Relegation from the EPL to the Championship has financially ruined clubs. Sunderland, Coventry City, Leeds United, Bradford City — all suffered near-collapse or actual administration following relegation. A franchise model protects clubs (and their communities) from the financial cliff-edge that makes P/R high-stakes but also high-risk.</div>
+      </div>
+    </div>
+
+    <div id="prArgs" style="display:none">
+      <div class="card" style="border-color:rgba(52,211,153,0.35)">
+        <div class="card-title" style="color:var(--green)">Pro-Promotion/Relegation Arguments</div>
+        <div class="debate-point"><strong>1. Every Game Matters</strong>In a franchise system, a team 10 games out of playoff contention in September has nothing to play for. In P/R, clubs in 18th place in March are fighting for their financial survival. Every point matters at every position in the table. This produces more meaningful matches, more fan engagement per game, and more intense competition across the full season.</div>
+        <div class="debate-point"><strong>2. Meritocracy is the Correct Organizing Principle</strong>A system where the worst teams stay in the top division because they paid an entry fee is not competition — it's a cartel. Genuine competition requires the possibility of failure. P/R ensures that top-division membership is earned, not purchased. Leicester City's 2015–16 title demonstrated that the P/R pyramid can produce remarkable competitive upsets.</div>
+        <div class="debate-point"><strong>3. Community Clubs Have a Path to the Top</strong>In the franchise model, there is no path from a community club to the top division — the number of franchises is fixed by owner vote and costs hundreds of millions to join. In P/R, Brentford FC moved from non-league football to the Premier League across decades of hard work, investment, and smart management. The pyramid is permeable in a way no franchise system permits.</div>
+        <div class="debate-point"><strong>4. No Tanking</strong>Deliberate losing — tanking — is rational in a franchise system. It is suicidal in a P/R system. The incentive to perform at maximum effort every game is structurally guaranteed. Losing enough games gets you relegated, not rewarded with a high draft pick.</div>
+        <div class="debate-point"><strong>5. Deep Geographic Identity</strong>EPL clubs have multi-generational supporter communities tied to specific places. Clubs like Arsenal (1886), Everton (1878), and Aston Villa (1874) have never relocated and carry continuous cultural history. The franchise model's relocation mechanism — teams following the money to larger markets — severs that bond in ways that P/R's geographic permanence prevents.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Discussion Questions for Classroom Use</div>
+      <ul class="dq-list">
+        <li>The European Super League (2021) attempted to create a closed franchise-style competition within European football. Why did supporters react with such hostility? What does this tell us about fan preferences for competitive structure?</li>
+        <li>MLS uses a franchise model with single-entity ownership. How has this shaped MLS competitively and financially compared to the EPL? Is MLS's model sustainable for growing a soccer culture in North America?</li>
+        <li>If the NFL adopted promotion/relegation, which teams would most likely face demotion based on recent competitive history? What would the financial consequences be?</li>
+        <li>Fort &amp; Quirk (1995) argue franchise owners are profit maximizers. Sloane (1971) argues European club owners are win maximizers. Which model better describes the behavior of contemporary EPL owners like Chelsea's Todd Boehly or Arsenal's Stan Kroenke?</li>
+        <li>Szymanski (2003) argues that P/R produces better economic outcomes for clubs overall by allowing efficient entry and exit. What assumptions underlie this claim, and when might it break down?</li>
+        <li>The failed European Super League would have been a hybrid: closed membership like a franchise league, but using the existing P/R pyramid for other competitions. Is a hybrid model coherent? What are the contradictions?</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- TAB 4: KEY DATA -->
+  <div id="tab-data" class="tab-pane">
+    <div class="section-head">NFL Revenue Distribution 2023</div>
+    <div class="metric-row">
+      <div class="metric-card"><div class="metric-label">National TV / Team</div><div class="metric-val" style="color:var(--blue)">~$350M</div><div class="metric-note">Equal split, 32 teams</div></div>
+      <div class="metric-card"><div class="metric-label">Total League Revenue</div><div class="metric-val" style="color:var(--green)">$20B+</div><div class="metric-note">2023 season (Forbes)</div></div>
+      <div class="metric-card"><div class="metric-label">Highest Franchise Value</div><div class="metric-val" style="color:var(--amber)">$9B</div><div class="metric-note">Dallas Cowboys (Forbes 2024)</div></div>
+      <div class="metric-card"><div class="metric-label">Salary Cap 2024</div><div class="metric-val" style="color:var(--accent)">$255M</div><div class="metric-note">Per team, hard cap</div></div>
+    </div>
+
+    <div class="section-head">EPL 2023–24 TV/Prize Money Distribution (Selected)</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="text-align:left">Club</th>
+          <th>Final Position</th>
+          <th>Est. TV Distribution</th>
+          <th>vs. Champion</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Manchester City</td><td>1st</td><td>~£175M</td><td>—</td></tr>
+        <tr><td>Arsenal</td><td>2nd</td><td>~£170M</td><td>-3%</td></tr>
+        <tr><td>Liverpool</td><td>3rd</td><td>~£165M</td><td>-6%</td></tr>
+        <tr><td>Aston Villa</td><td>4th</td><td>~£158M</td><td>-10%</td></tr>
+        <tr><td>Tottenham Hotspur</td><td>5th</td><td>~£152M</td><td>-13%</td></tr>
+        <tr><td>Luton Town</td><td>18th</td><td>~£108M</td><td>-38%</td></tr>
+        <tr><td>Burnley</td><td>19th</td><td>~£106M</td><td>-39%</td></tr>
+        <tr><td>Sheffield United</td><td>20th</td><td>~£105M</td><td>-40%</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:0.72rem;color:var(--text-dim);margin-bottom:20px;font-family:'JetBrains Mono',monospace">Note: EPL distributions include equal share + merit payments + facility fees. Estimates based on public reporting.</p>
+
+    <div class="section-head">Win Percentage Standard Deviations (Competitive Balance)</div>
+    <div class="insight-box">A lower standard deviation in win percentage indicates more competitive balance — teams are closer in quality. Higher SD = greater dominance by elite teams.</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="text-align:left">League</th>
+          <th>Avg Win% SD</th>
+          <th>Salary Cap?</th>
+          <th>Model</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>NFL</td><td>0.19</td><td>Hard cap</td><td style="color:var(--blue)">Franchise</td></tr>
+        <tr><td>MLB</td><td>0.15</td><td>Luxury tax only</td><td style="color:var(--blue)">Franchise</td></tr>
+        <tr><td>NBA</td><td>0.24</td><td>Soft cap</td><td style="color:var(--blue)">Franchise</td></tr>
+        <tr><td>EPL</td><td>0.22</td><td>None</td><td style="color:var(--green)">P/R</td></tr>
+        <tr><td>Bundesliga</td><td>0.20</td><td>None</td><td style="color:var(--green)">P/R</td></tr>
+        <tr><td>La Liga</td><td>0.23</td><td>None</td><td style="color:var(--green)">P/R</td></tr>
+      </tbody>
+    </table>
+
+    <div class="section-head">Forbes Top Team Valuations 2024</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="text-align:left">Club/Franchise</th>
+          <th>Sport</th>
+          <th>Model</th>
+          <th>Value (USD)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Dallas Cowboys</td><td>NFL</td><td style="color:var(--blue)">Franchise</td><td>$9.0B</td></tr>
+        <tr><td>Golden State Warriors</td><td>NBA</td><td style="color:var(--blue)">Franchise</td><td>$7.7B</td></tr>
+        <tr><td>New York Yankees</td><td>MLB</td><td style="color:var(--blue)">Franchise</td><td>$7.6B</td></tr>
+        <tr><td>New England Patriots</td><td>NFL</td><td style="color:var(--blue)">Franchise</td><td>$7.4B</td></tr>
+        <tr><td>Real Madrid</td><td>Soccer</td><td style="color:var(--green)">P/R</td><td>$6.6B</td></tr>
+        <tr><td>Los Angeles Lakers</td><td>NBA</td><td style="color:var(--blue)">Franchise</td><td>$6.4B</td></tr>
+        <tr><td>Manchester City</td><td>Soccer</td><td style="color:var(--green)">P/R</td><td>$6.2B</td></tr>
+        <tr><td>Barcelona</td><td>Soccer</td><td style="color:var(--green)">P/R</td><td>$5.7B</td></tr>
+        <tr><td>New York Giants</td><td>NFL</td><td style="color:var(--blue)">Franchise</td><td>$5.6B</td></tr>
+        <tr><td>Manchester United</td><td>Soccer</td><td style="color:var(--green)">P/R</td><td>$5.4B</td></tr>
+      </tbody>
+    </table>
+
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">📄 Export Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">⬡ Export AP2 Record</button>
+    </div>
+  </div>
+
+</div><!-- end tool-wrapper -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-87 · Data: Deloitte 2024; Forbes 2024; Fort &amp; Quirk 1995
+</footer>
+
+<script>
+  // State
+  const state = {
+    dimensionsViewed: [],
+    debatePosition: null,
+    notes: ''
+  };
+
+  // Tab switching
+  function switchTab(id, btn) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // Dimension toggle
+  function toggleDim(el) {
+    const wasOpen = el.classList.contains('open');
+    el.classList.toggle('open');
+    if (!wasOpen) {
+      const num = el.querySelector('.dim-num').textContent;
+      const title = el.querySelector('.dim-title-text').textContent;
+      const key = num + ':' + title;
+      if (!state.dimensionsViewed.includes(key)) state.dimensionsViewed.push(key);
+    }
+  }
+
+  // Debate position
+  function selectPosition(pos) {
+    state.debatePosition = pos;
+    document.getElementById('btnFranchise').classList.toggle('selected', pos === 'franchise');
+    document.getElementById('btnPR').classList.toggle('selected', pos === 'pr');
+    document.getElementById('franchiseArgs').style.display = pos === 'franchise' ? 'block' : 'none';
+    document.getElementById('prArgs').style.display = pos === 'pr' ? 'block' : 'none';
+  }
+
+  // Lang
+  function setLang(l) {
+    try { sessionStorage.setItem('apex_lang', l); } catch(e) {}
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent === l.toUpperCase()));
+  }
+  (function() {
+    try { const l = sessionStorage.getItem('apex_lang'); if (l) setLang(l); } catch(e) {}
+  })();
+
+  // AP2 Schema
+  const AP2Schema = {
+    validMandateTypes: [
+      'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+      'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+      'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+      'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+      'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+      'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+      'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+      'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+      'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+      'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+      'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+      'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+      'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+      'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
+      'english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record',
+      'mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record',
+      'mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record',
+      'lesson_design_record','assessment_item_record','classroom_scenario_record',
+      'gt_differentiation_record','instructor_toolkit_record',
+      'cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record',
+      'primary_source_record','historiography_record','anachronism_record','counterfactual_record',
+      'franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record',
+      'micro_theory_record','economic_systems_record','economists_panel_record',
+      'economic_history_record','econ_principles_record'
+    ],
+    validate(record) {
+      if (!record || typeof record !== 'object') return { valid: false, error: 'Record must be an object' };
+      if (!record.mandate_type) return { valid: false, error: 'Missing mandate_type' };
+      if (!this.validMandateTypes.includes(record.mandate_type)) return { valid: false, error: 'Invalid mandate_type: ' + record.mandate_type };
+      if (!record.al_id) return { valid: false, error: 'Missing al_id' };
+      if (!record.generated_at) return { valid: false, error: 'Missing generated_at' };
+      return { valid: true };
+    }
+  };
+
+  function buildRecord() {
+    return {
+      mandate_type: 'franchise_governance_record',
+      al_id: 'AL-87',
+      generated_at: new Date().toISOString(),
+      dimensions_viewed: state.dimensionsViewed,
+      debate_position_taken: state.debatePosition || 'none',
+      comparison_notes: state.notes || ''
+    };
+  }
+
+  function exportMarkdown() {
+    const md = `# Franchise vs. Promotion/Relegation Comparator — Session Export
+**Generated:** ${new Date().toLocaleString()}
+**Tool:** AL-87 · ApexLogics.org
+
+## Session Summary
+- Dimensions viewed: ${state.dimensionsViewed.length > 0 ? state.dimensionsViewed.join('; ') : 'None recorded'}
+- Debate position taken: ${state.debatePosition || 'None selected'}
+
+## Model Overview
+**Franchise Model (NFL/NBA/MLB):** Closed league. Permanent membership. Salary cap. Reverse-order draft. Revenue sharing. Relocation possible.
+**Promotion/Relegation (EPL/Bundesliga):** Open pyramid. Merit-based tier assignment. No salary cap. No draft. Unequal revenue. No relocation.
+
+## Key Data Points
+- NFL TV revenue per team: ~$350M/year (equal split)
+- EPL TV gap (1st vs. 20th): ~£175M vs. ~£105M (~40% gap)
+- NFL win% SD: 0.19 | EPL: 0.22 | MLB: 0.15
+- Cowboys franchise value: $9.0B (Forbes 2024)
+
+## Academic Sources
+- Fort & Quirk (1995): Franchise owners as profit maximizers
+- Sloane (1971): European clubs as win maximizers
+- Szymanski (2003): Economic design of sporting contests
+
+---
+*Data: Deloitte Football Money League 2024; Forbes 2024*
+`;
+    download(md, 'franchise-pr-comparison.md', 'text/markdown');
+  }
+
+  function exportAP2() {
+    const record = buildRecord();
+    const result = AP2Schema.validate(record);
+    if (!result.valid) { alert('AP2 validation error: ' + result.error); return; }
+    const blob = new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'ap2-franchise-governance-record.json'; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function download(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
+</script>
+</body>
+</html>

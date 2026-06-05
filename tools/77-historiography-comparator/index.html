@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Historiography Comparator · ApexLogics #77</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/77-historiography-comparator/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #fbbf24; --accent-dim: rgba(251,191,36,0.18); --accent-low: rgba(251,191,36,0.08);
+      --border: rgba(251,191,36,0.18); --border-focus: #fbbf24;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: #E8A838; } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 28px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 28px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 10px 18px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    select, textarea, input[type="text"] { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    select:focus, textarea:focus, input[type="text"]:focus { outline: none; border-color: var(--border-focus); }
+    textarea { resize: vertical; line-height: 1.6; }
+    .event-selector { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+    .event-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); padding: 10px 14px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; text-align: left; }
+    .event-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .event-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-low); }
+    .school-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    .school-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+    .school-name { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent); margin-bottom: 4px; font-weight: 500; }
+    .school-desc { font-size: 0.83rem; color: var(--text-muted); line-height: 1.65; }
+    .school-badge { display: inline-block; background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 1px 6px; font-size: 0.62rem; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; }
+    .schools-overview { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; }
+    .school-overview-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+    .so-name { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); margin-bottom: 6px; }
+    .so-desc { font-size: 0.74rem; color: var(--text-dim); line-height: 1.5; }
+    .thesis-builder { background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.3); border-radius: 10px; padding: 20px 24px; margin-top: 24px; }
+    .thesis-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; }
+    .thesis-template { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; font-size: 0.88rem; color: var(--text-muted); line-height: 1.7; margin-top: 12px; display: none; }
+    .thesis-template.visible { display: block; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 12px 36px; border-radius: 8px; font-size: 0.95rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; margin: 12px 0; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(251,191,36,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #7f1d1d; border: 1px solid var(--red); color: #fecaca; padding: 12px 22px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; z-index: 200; display: none; }
+    .toast.show { display: block; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    .no-event-msg { color: var(--text-dim); font-size: 0.87rem; font-style: italic; padding: 20px 0; }
+    @media (max-width: 700px) { .event-selector { grid-template-columns: 1fr; } .schools-overview { grid-template-columns: repeat(2, 1fr); } .tool-title { font-size: 1.8rem; } }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="../../index.html" class="nav-pill accent">← All Tools</a>
+  </div>
+</nav>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <div class="tool-eyebrow">AL-84 · Selected Studies — History</div>
+  <h1 class="tool-title">Historiography Comparator</h1>
+  <p class="tool-desc">Historiography is the history of how historians interpret history. The same event — the French Revolution, the fall of Rome, the Industrial Revolution — looks radically different depending on whether you're asking about great leaders, economic structures, social forces, or cultural meanings. This tool maps five major interpretive schools onto ten canonical historical events so you can see how the questions a school asks shape the answers it finds.</p>
+  <div class="tool-vintage">Data vintage: Historiographical schools: Burke (2001), New Perspectives on Historical Writing; Evans (1997), In Defence of History; Stanford (1998), A Companion to the Study of History</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">1 · Event Selector</button>
+    <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">2 · School Comparison</button>
+    <button class="tab-btn" id="tabBtn3" onclick="switchTab(3)">3 · Thesis Builder</button>
+  </div>
+
+  <!-- TAB 1: EVENT SELECTOR -->
+  <div class="tab-pane active" id="tabPane1">
+    <div class="card">
+      <div class="card-title">Select a Historical Event <span class="badge">10 Events</span></div>
+      <p style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 16px;">Choose one event to compare across all five historiographical schools.</p>
+      <div class="event-selector" id="eventSelector">
+        <button class="event-btn" data-idx="0" onclick="selectEvent(0)">French Revolution (1789–1799)</button>
+        <button class="event-btn" data-idx="1" onclick="selectEvent(1)">Fall of the Western Roman Empire (376–476 CE)</button>
+        <button class="event-btn" data-idx="2" onclick="selectEvent(2)">Industrial Revolution (Britain, c.1760–1840)</button>
+        <button class="event-btn" data-idx="3" onclick="selectEvent(3)">World War I (1914–1918)</button>
+        <button class="event-btn" data-idx="4" onclick="selectEvent(4)">World War II (1939–1945)</button>
+        <button class="event-btn" data-idx="5" onclick="selectEvent(5)">The Cold War (1947–1991)</button>
+        <button class="event-btn" data-idx="6" onclick="selectEvent(6)">American Civil War (1861–1865)</button>
+        <button class="event-btn" data-idx="7" onclick="selectEvent(7)">The Black Death (1347–1353)</button>
+        <button class="event-btn" data-idx="8" onclick="selectEvent(8)">The Renaissance (c.1300–1600)</button>
+        <button class="event-btn" data-idx="9" onclick="selectEvent(9)">Decolonization in Africa (c.1945–1975)</button>
+      </div>
+      <button class="run-btn" onclick="switchTab(2)" style="margin-top:8px;">View School Comparison →</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">The Five Schools at a Glance</div>
+      <div class="schools-overview">
+        <div class="school-overview-card">
+          <div class="so-name">Traditional / Great Man</div>
+          <div class="so-desc">Leaders, statesmen, commanders. Narrative driven by exceptional individuals. Chronological storytelling.</div>
+        </div>
+        <div class="school-overview-card">
+          <div class="so-name">Annales / Social</div>
+          <div class="so-desc">Long-term structures: geography, climate, demography, economy. Skeptical of event-driven history.</div>
+        </div>
+        <div class="school-overview-card">
+          <div class="so-name">Marxist / Economic</div>
+          <div class="so-desc">Class struggle, modes of production, economic determinism. History driven by material contradictions.</div>
+        </div>
+        <div class="school-overview-card">
+          <div class="so-name">Revisionist</div>
+          <div class="so-desc">Questions prevailing orthodoxies; rehabilitates "losers"; challenges national myths. Varies by event.</div>
+        </div>
+        <div class="school-overview-card">
+          <div class="so-name">Postmodern / Cultural</div>
+          <div class="so-desc">Representations, discourse, memory, identity. Questions grand narratives. Marginalized voices.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: SCHOOL COMPARISON -->
+  <div class="tab-pane" id="tabPane2">
+    <div class="card">
+      <div class="card-title" id="comparisonTitle">School Comparison <span class="badge" id="eventBadge">No event selected</span></div>
+      <div id="comparisonContent">
+        <p class="no-event-msg">Go to Tab 1 and select an event first.</p>
+      </div>
+    </div>
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">⬇ Export Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">⬇ Export AP2 JSON</button>
+    </div>
+  </div>
+
+  <!-- TAB 3: THESIS BUILDER -->
+  <div class="tab-pane" id="tabPane3">
+    <div class="card">
+      <div class="card-title">Thesis Builder</div>
+      <p style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 16px;">Select an event and a school to generate a thesis template. Then customize it with your own argument.</p>
+      <div class="field">
+        <label for="thesisEvent">Event</label>
+        <select id="thesisEvent" onchange="buildThesis()">
+          <option value="">— Select event —</option>
+          <option value="0">French Revolution (1789–1799)</option>
+          <option value="1">Fall of the Western Roman Empire</option>
+          <option value="2">Industrial Revolution (Britain)</option>
+          <option value="3">World War I</option>
+          <option value="4">World War II</option>
+          <option value="5">The Cold War</option>
+          <option value="6">American Civil War</option>
+          <option value="7">The Black Death</option>
+          <option value="8">The Renaissance</option>
+          <option value="9">Decolonization in Africa</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="thesisSchool">Historiographical School</label>
+        <select id="thesisSchool" onchange="buildThesis()">
+          <option value="">— Select school —</option>
+          <option value="0">Traditional / Great Man History</option>
+          <option value="1">Annales / Social History</option>
+          <option value="2">Marxist / Economic History</option>
+          <option value="3">Revisionist History</option>
+          <option value="4">Postmodern / Cultural History</option>
+        </select>
+      </div>
+      <div id="thesisOutput" class="thesis-template">
+        <div id="thesisText"></div>
+      </div>
+      <div class="field" style="margin-top:16px;">
+        <label for="thesisCustom">Customize your thesis</label>
+        <textarea id="thesisCustom" rows="4" placeholder="Edit the generated template or write your own thesis here..."></textarea>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-84 · Data: Burke 2001, Evans 1997, Stanford 1998
+</footer>
+
+<script>
+  const EVENTS = [
+    "French Revolution (1789–1799)",
+    "Fall of the Western Roman Empire (376–476 CE)",
+    "Industrial Revolution (Britain, c.1760–1840)",
+    "World War I (1914–1918)",
+    "World War II (1939–1945)",
+    "The Cold War (1947–1991)",
+    "American Civil War (1861–1865)",
+    "The Black Death (1347–1353)",
+    "The Renaissance (c.1300–1600)",
+    "Decolonization in Africa (c.1945–1975)"
+  ];
+
+  const SCHOOLS = [
+    "Traditional / Great Man History",
+    "Annales / Social History",
+    "Marxist / Economic History",
+    "Revisionist History",
+    "Postmodern / Cultural History"
+  ];
+
+  const SCHOOL_FOCUS = [
+    "individual leadership, decisions of great figures, and turning-point events",
+    "long-term structural forces — geography, climate, demography, and economic cycles",
+    "class struggle, material contradictions, and economic modes of production",
+    "challenging prevailing orthodoxies and questioning dominant national or ideological narratives",
+    "discourse, representation, memory, and the construction of historical 'truth'"
+  ];
+
+  // 10 events × 5 schools = 50 descriptions
+  const INTERPS = [
+    // French Revolution
+    [
+      "Louis XVI's weak leadership and the brilliance of revolutionary figures like Mirabeau, Danton, and Robespierre drove the Revolution's course. The Terror was largely the product of Robespierre's fanaticism.",
+      "The Revolution was the product of centuries of demographic pressure, grain price volatility, and fiscal crisis of the French state. Braudel's longue durée: the real subject is the slow transformation of French rural society.",
+      "The bourgeoisie overthrew the feudal aristocracy. Classic bourgeois revolution: the capitalist class used popular forces to seize state power, then suppressed those same forces once their property interests were secured.",
+      "Revisionist historians (Furet) challenged the Marxist interpretation: the Revolution was not a class war but a political and ideological crisis of the Old Regime. The Jacobin 'social interpretation' was mythology.",
+      "The Revolution was as much about language and representation as class struggle. The discourse of 'the people,' 'tyranny,' and 'virtue' shaped what actors thought they were doing. Lynn Hunt: political culture as a form of power."
+    ],
+    // Fall of Rome
+    [
+      "Gibbon's Decline and Fall: Roman military and civic virtue decayed; Christianity weakened martial spirit; barbarian leaders (Alaric, Attila) exploited the weakness of late emperors.",
+      "Peter Heather and demographic historians: the real story is climate shifts, plague (Plague of Cyprian, 249–262), and the disruption of trade networks. The 'fall' was a centuries-long structural transformation.",
+      "The late Roman economy was fundamentally extractive — slave labor and provincial exploitation. As the slave supply diminished and provinces were devastated, the economic base collapsed.",
+      "Peter Brown's 'Late Antiquity' school: there was no fall, only transformation. Roman culture and institutions survived and transformed into Byzantine, Islamic, and medieval European civilization.",
+      "The very concept of 'the fall of Rome' is a narrative construction — what falls depends on who you are. For North Africans or Egyptians, Roman rule and its end meant very different things than for Italians."
+    ],
+    // Industrial Revolution
+    [
+      "The heroic narrative: inventors (Watt, Arkwright, Stephenson) and entrepreneurs drove unprecedented economic transformation through ingenuity and enterprise.",
+      "Robert Allen's 'high wage economy' thesis: British industrialization was driven by relatively high wages + cheap energy (coal), making labor-saving machinery economically rational. Not genius — relative prices.",
+      "Primitive accumulation of capital through enclosure, colonial trade, and slavery funded industrialization. The factory system created a new industrial proletariat living in brutal conditions — Thompson's 'The Making of the English Working Class.'",
+      "Joel Mokyr: 'The Enlightened Economy' — cultural and intellectual changes (the Enlightenment's application of reason to practical problems) created the conditions for technological innovation.",
+      "Carolyn Steedman and others: industrial modernity was also a transformation of interiority, domestic space, and class feeling. The factory was not just an economic unit but a disciplinary and cultural institution."
+    ],
+    // WWI
+    [
+      "August 1914 as a tragic miscalculation: great statesmen stumbled into a war none wanted. The alliance system and military timetables (Schlieffen Plan) gave leaders no room to maneuver.",
+      "A longer view: WWI as the product of imperial competition, arms races, and economic rivalries that made large-scale conflict increasingly likely across 1870–1914.",
+      "Lenin's 'Imperialism, the Highest Stage of Capitalism' (1917): WWI was an imperialist war among capitalist powers competing for colonies and markets. The workers had no stake in it.",
+      "Fischer Controversy (1960s): Germany deliberately sought war to achieve continental hegemony. Challenged the 'no one wanted war' consensus.",
+      "Jay Winter and cultural historians: WWI was also a crisis of representation. How do you mourn unprecedented death? The war transformed memory, commemoration, and the meaning of sacrifice."
+    ],
+    // WWII
+    [
+      "Hitler's unique evil and aggressive expansionism made war inevitable. Churchill as heroic resister. The war as a moral struggle between democracy and fascism.",
+      "The political economy of the interwar period: the Great Depression, the collapse of liberal democracy in continental Europe, the failure of the Versailles settlement.",
+      "Fascism as capitalism in crisis — big business supported Hitler to crush labor movements. The war as inter-imperialist conflict with an anti-communist dimension.",
+      "A.J.P. Taylor's 'Origins of the Second World War' (1961): Hitler was an opportunist, not a master planner; the Western powers' appeasement was as much to blame as German aggression. Deeply controversial.",
+      "Memory and genocide studies: the Holocaust forces a rethinking of what 'history' can say. Testimony, trauma, and the limits of representation (Dominick LaCapra)."
+    ],
+    // Cold War
+    [
+      "Soviet expansionism forced the US into a defensive posture. Containment was the rational, necessary response to communist aggression.",
+      "The Cold War as an outgrowth of the geopolitical structures created by WWII's destruction of European power. Bipolarity as an almost mechanical result of the 1945 power vacuum.",
+      "Both superpowers were imperialist; the Cold War was a competition between American and Soviet capitalism for global dominance. 'National liberation' movements were proxies for great power competition.",
+      "Williams/Kolko school: American economic imperialism drove the Cold War. The US needed open markets and was the aggressive party in 1945–47.",
+      "The Cold War as a system of meaning that structured identities, cultural production, and everyday life on both sides. How did 'freedom' and 'communism' function as ideological categories?"
+    ],
+    // American Civil War
+    [
+      "Great men narrative: Lincoln as savior of the Union; Grant and Sherman as decisive military commanders; Lee as tragic hero of a doomed cause.",
+      "The long structural history: cotton economy, slave demography, soil exhaustion, and westward expansion created an increasingly irreconcilable conflict between two economic systems.",
+      "The 'Second American Revolution': the Northern industrial bourgeoisie used the war to destroy the slave-planter class and establish capitalist hegemony over the entire national economy.",
+      "Lost Cause tradition (contested and discredited): the war was about states' rights, not slavery. Historians have systematically refuted this. The Confederate constitution explicitly protected slavery.",
+      "How is the war remembered? Confederate monuments, 'heritage' politics, and the battle over what the war 'meant' are ongoing cultural conflicts. The past is not past."
+    ],
+    // Black Death
+    [
+      "Narrative of the plague's spread across Europe from 1347; the suffering and death of kings, clergy, and peasants; the failure of medicine and the Church.",
+      "Malthusian interpretation: 14th-century Europe was overpopulated relative to its agricultural capacity. The Black Death was a Malthusian 'correction.' Its aftermath actually improved conditions for surviving peasants (higher wages).",
+      "The Black Death accelerated the crisis of feudalism. Labor shortage gave peasants bargaining power; the Peasants' Revolt of 1381 was a downstream consequence. The plague was a solvent of feudal social relations.",
+      "Ole Benedictow's demographic work: the Black Death killed 50–60% of Europe's population — far higher than earlier estimates. Changes our understanding of demographic recovery and long-term consequences.",
+      "The Black Death as a crisis of meaning: how do you explain God's silence when half your world dies? Cultural responses (flagellants, Jewish scapegoating, Danse Macabre) reveal the cultural and psychological landscape of late medieval Europe."
+    ],
+    // Renaissance
+    [
+      "Jacob Burckhardt's classic interpretation: the Renaissance was the birth of the modern individual, of secular humanism, of art and letters freed from medieval constraint. Italy as the cradle of modernity.",
+      "The Renaissance was enabled by the commercial prosperity of Italian city-states — the Medicis as patrons because they had capital to spend. Long-term economic growth created the material conditions for cultural flourishing.",
+      "The Renaissance glorified the ruling class. Humanism was the ideology of the merchant elite — a cultural legitimation of new wealth and secular power.",
+      "Haskins and medievalists: the 'Renaissance' was not a sharp break. The 12th-century renaissance (recovery of classical texts) was equally important. The medieval-modern divide is overdrawn.",
+      "Whose Renaissance? Women, Jews, and the urban poor had very different experiences. Gender historians (Joan Kelly: 'Did Women Have a Renaissance?') challenged the universalizing narrative."
+    ],
+    // Decolonization
+    [
+      "The heroic nationalist narrative: figures like Nkrumah, Kenyatta, Lumumba led their peoples to independence through courage and political skill.",
+      "Decolonization driven by structural shifts: WWII's destruction of European power, the rise of US and Soviet anti-colonialism, demographic pressure in African cities, and economic strains of maintaining empire.",
+      "Formal independence without economic independence is incomplete liberation. Neo-colonialism (Nkrumah's term): Western corporations and international financial institutions maintained economic control after political independence.",
+      "Recent scholarship: colonial powers transferred power to friendly elites rather than surrendering it. The speed of decolonization reflected metropolitan calculation, not African pressure alone.",
+      "Frantz Fanon (The Wretched of the Earth): decolonization as a psychological as well as political process. The colonized must decolonize their own minds, not just their institutions."
+    ]
+  ];
+
+  let selectedEvent = null;
+  let viewedSchools = [];
+  let thesisSchoolSelected = '';
+  let thesisEventSelected = '';
+
+  function selectEvent(idx) {
+    selectedEvent = idx;
+    document.querySelectorAll('.event-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+  }
+
+  function switchTab(n) {
+    for (let i = 1; i <= 3; i++) {
+      document.getElementById('tabPane' + i).classList.toggle('active', i === n);
+      document.getElementById('tabBtn' + i).classList.toggle('active', i === n);
+    }
+    if (n === 2) renderComparison();
+  }
+
+  function renderComparison() {
+    const badge = document.getElementById('eventBadge');
+    const content = document.getElementById('comparisonContent');
+    if (selectedEvent === null) {
+      badge.textContent = 'No event selected';
+      content.innerHTML = '<p class="no-event-msg">Go to Tab 1 and select an event first.</p>';
+      return;
+    }
+    badge.textContent = EVENTS[selectedEvent];
+    const interps = INTERPS[selectedEvent];
+    const colors = ['#fbbf24','#34d399','#60a5fa','#f87171','#a78bfa'];
+    content.innerHTML = SCHOOLS.map((school, i) => {
+      if (!viewedSchools.includes(school)) viewedSchools.push(school);
+      return `<div class="school-card" style="margin-bottom:14px;">
+        <div class="school-badge" style="background:${colors[i]}22; color:${colors[i]};">${school}</div>
+        <div class="school-desc">${interps[i]}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function buildThesis() {
+    const ei = document.getElementById('thesisEvent').value;
+    const si = document.getElementById('thesisSchool').value;
+    if (ei === '' || si === '') return;
+    const ev = EVENTS[parseInt(ei)];
+    const sc = SCHOOLS[parseInt(si)];
+    const focus = SCHOOL_FOCUS[parseInt(si)];
+    const interp = INTERPS[parseInt(ei)][parseInt(si)];
+    thesisEventSelected = ev;
+    thesisSchoolSelected = sc;
+    const out = document.getElementById('thesisOutput');
+    const text = document.getElementById('thesisText');
+    text.innerHTML = `<strong>Thesis template:</strong><br><br>According to <em>${sc}</em> historians, <em>${ev}</em> was primarily shaped by <em>${focus}</em>, as evidenced by the following interpretation:<br><br><em style="color:var(--text-dim);">"${interp}"</em><br><br><strong>Your thesis template:</strong><br>According to [${sc}] historians, [${ev}] was primarily caused/shaped by [insert specific argument], as evidenced by [specific example].`;
+    out.classList.add('visible');
+    document.getElementById('thesisCustom').value = `According to ${sc} historians, ${ev} was primarily shaped by [your argument here], as evidenced by [your evidence here].`;
+  }
+
+  function exportMarkdown() {
+    const ev = selectedEvent !== null ? EVENTS[selectedEvent] : '(none selected)';
+    let md = `# Historiography Comparator — ${ev}\n\n`;
+    if (selectedEvent !== null) {
+      SCHOOLS.forEach((school, i) => {
+        md += `## ${school}\n${INTERPS[selectedEvent][i]}\n\n`;
+      });
+    }
+    if (thesisSchoolSelected) {
+      md += `## Thesis Builder\n**School:** ${thesisSchoolSelected}\n**Custom thesis:** ${document.getElementById('thesisCustom').value}\n\n`;
+    }
+    md += `*Generated by ApexLogics Historiography Comparator — AL-84*\n`;
+    download(md, 'historiography-comparator.md', 'text/markdown');
+  }
+
+  function exportAP2() {
+    const payload = {
+      mandate_type: 'historiography_record',
+      schema_version: '2.0',
+      generated_at: new Date().toISOString(),
+      event_selected: selectedEvent !== null ? EVENTS[selectedEvent] : null,
+      schools_viewed: viewedSchools,
+      thesis_school_selected: thesisSchoolSelected || null,
+      thesis_text: document.getElementById('thesisCustom').value || null
+    };
+    const AP2Schema = {
+      validMandateTypes: ['job_transition_record','compensation_package_record','credential_roi_record','education_cost_record','loan_repayment_record','career_break_record','exam_cost_record','scholarship_record','workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record','geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record','test_prep_record','international_student_record','parent_college_record','cpd_tracking_record','job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record','education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record','trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record','professional_degree_record','workforce_pell_record','workforce_pell_credential_rank','net_worth_trajectory_record','signing_bonus_record','gig_income_record','cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record','deferred_comp_457b_record','tutor_roi_record','test_retake_record','mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record','law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record','english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record','mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record','mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record','lesson_design_record','assessment_item_record','classroom_scenario_record','gt_differentiation_record','instructor_toolkit_record','cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record','primary_source_record','historiography_record','anachronism_record','counterfactual_record','franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record','micro_theory_record','economic_systems_record','economists_panel_record','economic_history_record','econ_principles_record'],
+      validate(p) { return this.validMandateTypes.includes(p.mandate_type); }
+    };
+    if (!AP2Schema.validate(payload)) { showToast('AP2 validation failed'); return; }
+    download(JSON.stringify(payload, null, 2), 'historiography-ap2.json', 'application/json');
+  }
+
+  function download(content, filename, mime) {
+    const blob = new Blob([content], {type: mime});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function setLang(lang) {
+    try { sessionStorage.setItem('apex_lang', lang); } catch(e) {}
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang || (lang === 'zh' && b.textContent === '中文')));
+  }
+
+  (function init() {
+    try {
+      const lang = sessionStorage.getItem('apex_lang') || 'en';
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang || (lang === 'zh' && b.textContent === '中文')));
+    } catch(e) {}
+  })();
+</script>
+</body>
+</html>

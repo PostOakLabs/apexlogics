@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CEFR Text Leveler · ApexLogics #72</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/72-cefr-text-leveler/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #2dd4bf; --accent-dim: rgba(45,212,191,0.18); --accent-low: rgba(45,212,191,0.08);
+      --border: rgba(45,212,191,0.18); --border-focus: #2dd4bf;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: #E8A838; } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(45,212,191,0.07); border: 1px solid rgba(45,212,191,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 28px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 10px 18px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    textarea, select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    textarea { resize: vertical; min-height: 220px; line-height: 1.6; }
+    textarea:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); } .metric-val.amber { color: var(--amber); }
+    .metric-val.accent { color: var(--accent); } .metric-val.red { color: var(--red); }
+    .metric-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
+    .verdict-banner { border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; background: rgba(45,212,191,0.08); border: 1px solid rgba(45,212,191,0.3); }
+    .verdict-icon { font-size: 1.8rem; }
+    .verdict-text strong { color: var(--text); font-size: 1rem; display: block; margin-bottom: 2px; }
+    .verdict-text { font-size: 0.92rem; color: var(--text-muted); }
+    .status-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 7px; background: var(--surface); border: 1px solid var(--border); margin-bottom: 8px; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .status-dot.green { background: var(--green); }
+    .status-dot.amber { background: var(--amber); }
+    .status-dot.red { background: var(--red); }
+    .status-label { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text-muted); flex: 1; }
+    .status-val { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text); }
+    .suggestion-list { list-style: none; padding: 0; margin: 0; }
+    .suggestion-list li { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.88rem; color: var(--text-muted); display: flex; gap: 10px; }
+    .suggestion-list li:last-child { border-bottom: none; }
+    .suggestion-list li::before { content: "→"; color: var(--accent); flex-shrink: 0; }
+    .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+    .vocab-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-muted); }
+    .vocab-chip.flagged { border-color: rgba(251,191,36,0.4); color: var(--amber); background: rgba(251,191,36,0.06); }
+    .ff-card { background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.3); border-radius: 8px; padding: 14px 18px; margin-bottom: 10px; }
+    .ff-card .ff-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--amber); margin-bottom: 6px; }
+    .ff-card p { font-size: 0.85rem; color: var(--text-muted); }
+    .insight-box { background: rgba(45,212,191,0.06); border: 1px solid rgba(45,212,191,0.2); border-radius: 8px; padding: 16px 20px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.7; }
+    .insight-box strong { color: var(--text); }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(45,212,191,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #7f1d1d; border: 1px solid var(--red); color: #fecaca; padding: 12px 22px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; z-index: 200; display: none; }
+    .toast.show { display: block; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    @media (max-width: 700px) {
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="../../index.html" class="nav-pill accent">← All Tools</a>
+  </div>
+</nav>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <div class="tool-eyebrow">AL-79 · Selected Studies — ESL/TEFL</div>
+  <h1 class="tool-title">CEFR Text Leveler</h1>
+  <p class="tool-desc">Before giving a text to language learners, know where it sits on the CEFR scale — and what would need to change to move it down a level. This tool analyzes a passage against A2, B1, and B2 readability indicators: sentence length, vocabulary frequency tier, grammatical structures, and text density. No AI — all analysis is rules-based and transparent, so you understand exactly what makes a text harder or easier.</p>
+  <div class="tool-vintage">Data vintage: CEFR descriptors: Council of Europe (2020); vocabulary frequency bands: NGSL (Browne et al., 2013); grammar complexity indicators: Swan (2005)</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">Text Input</button>
+    <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">Analysis Results</button>
+    <button class="tab-btn" id="tabBtn3" onclick="switchTab(3)">Vocabulary Focus</button>
+  </div>
+
+  <!-- TAB 1: TEXT INPUT -->
+  <div class="tab-pane active" id="tabPane1">
+    <div class="card">
+      <div class="card-title">Paste Your Text</div>
+      <div class="field" style="margin-bottom:16px;">
+        <label for="inputText">Text to Analyze (up to ~1000 words)</label>
+        <textarea id="inputText" placeholder="Paste the reading passage, article, or text excerpt here..."></textarea>
+        <span class="field-hint">Minimum ~50 words for meaningful analysis. Plain text only — formatting is stripped.</span>
+      </div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="targetLevel">Target CEFR Level</label>
+          <select id="targetLevel">
+            <option value="A2">A2 — Elementary</option>
+            <option value="B1" selected>B1 — Intermediate</option>
+            <option value="B2">B2 — Upper-Intermediate</option>
+            <option value="B2+">B2+ / C1 — Advanced</option>
+          </select>
+          <span class="field-hint">The level you're aiming to use this text with.</span>
+        </div>
+        <div class="field">
+          <label for="learnerL1">Learner L1 (First Language)</label>
+          <select id="learnerL1">
+            <option value="mandarin" selected>Mandarin / Cantonese</option>
+            <option value="spanish">Spanish</option>
+            <option value="french">French</option>
+            <option value="arabic">Arabic</option>
+            <option value="korean">Korean</option>
+            <option value="japanese">Japanese</option>
+            <option value="portuguese">Portuguese</option>
+            <option value="other">Other</option>
+          </select>
+          <span class="field-hint">Used for L1-specific vocabulary flags in Tab 3.</span>
+        </div>
+      </div>
+      <button class="run-btn" onclick="analyzeText()">Analyze Text</button>
+    </div>
+  </div>
+
+  <!-- TAB 2: ANALYSIS RESULTS -->
+  <div class="tab-pane" id="tabPane2">
+    <div class="results-section visible" id="resultsSection">
+
+      <div class="verdict-banner" id="verdictBanner">
+        <div class="verdict-icon" id="verdictIcon">📊</div>
+        <div class="verdict-text">
+          <strong id="verdictTitle">Run analysis first</strong>
+          <span id="verdictSub">Paste text in Tab 1 and click Analyze Text.</span>
+        </div>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Word Count</div>
+          <div class="metric-val accent" id="mWordCount">—</div>
+          <div class="metric-note">tokens in text</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Sentences</div>
+          <div class="metric-val accent" id="mSentCount">—</div>
+          <div class="metric-note">sentence boundaries</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Avg Sentence</div>
+          <div class="metric-val accent" id="mAvgSent">—</div>
+          <div class="metric-note">words per sentence</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Lexical Density</div>
+          <div class="metric-val accent" id="mLexDens">—</div>
+          <div class="metric-note">content word %</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Long Sentences</div>
+          <div class="metric-val amber" id="mLongSent">—</div>
+          <div class="metric-note">&gt;20 words each</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">C-level Vocab</div>
+          <div class="metric-val amber" id="mCVocab">—</div>
+          <div class="metric-note">words &gt;8 chars (%)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Estimated CEFR</div>
+          <div class="metric-val green" id="mEstCEFR">—</div>
+          <div class="metric-note">rules-based estimate</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Target Match</div>
+          <div class="metric-val green" id="mTargetMatch">—</div>
+          <div class="metric-note">vs. selected target</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Complexity Breakdown <span class="badge">CEFR Feature Check</span></div>
+        <div id="complexityRows"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Grammatical Structure Flags</div>
+        <div id="grammarRows"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Simplification Suggestions</div>
+        <div id="simplificationTarget" style="font-size:0.82rem;color:var(--text-dim);font-family:'JetBrains Mono',monospace;margin-bottom:12px;"></div>
+        <ul class="suggestion-list" id="suggestionList"></ul>
+      </div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown Report</button>
+        <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: VOCABULARY FOCUS -->
+  <div class="tab-pane" id="tabPane3">
+    <div class="card">
+      <div class="card-title">Advanced Vocabulary (C-Level Candidates) <span class="badge" id="vocabBadge">Run analysis first</span></div>
+      <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:16px;">Words longer than 8 characters, sorted alphabetically. These are candidates for glossing, pre-teaching, or replacement.</p>
+      <div class="vocab-grid" id="vocabGrid"><p style="color:var(--text-dim);font-size:0.84rem;">Analyze text in Tab 1 to populate this list.</p></div>
+    </div>
+
+    <div class="card" id="ffCard" style="display:none;">
+      <div class="card-title">L1 Interference — False Friends &amp; Common Confusables</div>
+      <div id="ffContent"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Vocabulary Tier Breakdown</div>
+      <div id="vocabTierBreakdown"><p style="color:var(--text-dim);font-size:0.84rem;">Run analysis to see tier distribution.</p></div>
+    </div>
+  </div>
+
+</div><!-- .tool-wrapper -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-79 · Data: CEFR 2020 descriptors, NGSL 2013
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+var lastResult = null;
+
+// ── Lang ──────────────────────────────────────────────────────────────────
+function setLang(code) {
+  try { sessionStorage.setItem('apex_lang', code); } catch(e) {}
+  document.querySelectorAll('.lang-btn').forEach(function(b) {
+    b.classList.toggle('active', b.textContent.trim().toLowerCase() === code || (code === 'zh' && b.textContent.trim() === '中文'));
+  });
+}
+(function() {
+  var saved = ''; try { saved = sessionStorage.getItem('apex_lang') || 'en'; } catch(e) { saved = 'en'; }
+  setLang(saved);
+})();
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+function switchTab(n) {
+  for (var i = 1; i <= 3; i++) {
+    document.getElementById('tabPane' + i).classList.toggle('active', i === n);
+    document.getElementById('tabBtn' + i).classList.toggle('active', i === n);
+  }
+}
+
+// ── Stopwords ─────────────────────────────────────────────────────────────
+var STOPWORDS = new Set(['the','a','an','is','are','was','were','be','been','have','has','had',
+  'do','does','did','will','would','could','should','may','might','shall','can','not','no',
+  'and','but','or','so','yet','for','nor','of','in','on','at','to','from','with','by','as',
+  'that','this','these','those','it','its','he','she','we','they','his','her','our','their',
+  'my','your','i','you','me','him','us','them','who','what','when','where','why','how',
+  'all','each','every','both','few','more','most','some','such','only','also','just','even',
+  'very','too','up','out','about','after','before','into','over','under','again','then',
+  'there','here','which','if','while','although','because','since','unless']);
+
+// ── False friends by L1 ───────────────────────────────────────────────────
+var FALSE_FRIENDS = {
+  mandarin: [
+    { word: 'actual', note: '"Actual" in English means real/existing, not "current/now" (现在). E.g., "the actual cost" = the real cost.' },
+    { word: 'library', note: '"Library" = a place to borrow books (图书馆). A place to buy books is a "bookstore" (书店).' },
+    { word: 'sensible', note: '"Sensible" = having good judgment (明智的), NOT the same as "sensitive" (敏感的).' },
+    { word: 'sympathetic', note: '"Sympathetic" = showing understanding of someone\'s problems, NOT necessarily "likeable" (可爱的).' },
+    { word: 'eventually', note: '"Eventually" = in the end, after a long time. NOT "possibly" or "maybe" (可能).' }
+  ]
+};
+
+// ── Core analysis ─────────────────────────────────────────────────────────
+function analyzeText() {
+  var raw = document.getElementById('inputText').value.trim();
+  if (raw.length < 50) { showToast('Please paste at least 50 characters of text.'); return; }
+
+  var target = document.getElementById('targetLevel').value;
+  var l1 = document.getElementById('learnerL1').value;
+
+  // Tokenize
+  var words = raw.match(/\b[a-zA-Z']+\b/g) || [];
+  var wordCount = words.length;
+
+  // Sentences
+  var sentences = raw.split(/[.!?]+/).map(function(s){ return s.trim(); }).filter(function(s){ return s.length > 3; });
+  var sentCount = Math.max(sentences.length, 1);
+
+  // Words per sentence (sentence word arrays)
+  var sentWords = raw.split(/[.!?]+/).map(function(s){ return (s.match(/\b[a-zA-Z']+\b/g) || []); }).filter(function(a){ return a.length > 0; });
+  var avgSent = sentWords.length > 0 ? Math.round(sentWords.reduce(function(a,b){ return a + b.length; }, 0) / sentWords.length) : 0;
+
+  // Long sentences
+  var longSentCount = sentWords.filter(function(s){ return s.length > 20; }).length;
+
+  // Vocab tiers
+  var lower = words.map(function(w){ return w.toLowerCase().replace(/'/g,''); });
+  var cLevel = lower.filter(function(w){ return w.length > 8; });
+  var bLevel = lower.filter(function(w){ return w.length >= 6 && w.length <= 8; });
+  var aLevel = lower.filter(function(w){ return w.length <= 5; });
+  var cPct = Math.round((cLevel.length / wordCount) * 100);
+  var bPct = Math.round((bLevel.length / wordCount) * 100);
+  var aPct = 100 - cPct - bPct;
+
+  // Lexical density
+  var contentWords = lower.filter(function(w){ return !STOPWORDS.has(w) && w.length > 1; });
+  var lexDens = Math.round((contentWords.length / wordCount) * 100);
+
+  // Estimated CEFR
+  var estCEFR;
+  if (avgSent <= 12 && lexDens <= 40) estCEFR = 'A2';
+  else if (avgSent <= 18 && lexDens <= 50) estCEFR = 'B1';
+  else if (avgSent <= 25 && lexDens <= 60) estCEFR = 'B2';
+  else estCEFR = 'C1+';
+
+  // Grammar flags
+  var textLower = raw.toLowerCase();
+  var passiveMatches = (raw.match(/\b(is|are|was|were|be|been|being)\s+\w+ed\b/gi) || []).length;
+  var relClauseMatches = (raw.match(/\b(who|which|that|whom|whose)\b/gi) || []).length;
+  var conditionalMatches = (raw.match(/\b(if|unless|provided that|as long as)\b/gi) || []).length;
+  var reportedSpeechMatches = (raw.match(/\b(said that|told|asked whether|thought that)\b/gi) || []).length;
+
+  // Store result
+  lastResult = {
+    wordCount: wordCount, sentCount: sentCount, avgSent: avgSent, longSentCount: longSentCount,
+    lexDens: lexDens, cPct: cPct, bPct: bPct, aPct: aPct,
+    estCEFR: estCEFR, target: target, l1: l1,
+    passiveMatches: passiveMatches, relClauseMatches: relClauseMatches,
+    conditionalMatches: conditionalMatches, reportedSpeechMatches: reportedSpeechMatches,
+    cWords: cLevel, words: lower
+  };
+
+  renderResults(lastResult);
+  renderVocab(lastResult);
+  switchTab(2);
+}
+
+function renderResults(r) {
+  // Metrics
+  document.getElementById('mWordCount').textContent = r.wordCount;
+  document.getElementById('mSentCount').textContent = r.sentCount;
+  document.getElementById('mAvgSent').textContent = r.avgSent + ' w';
+  document.getElementById('mLexDens').textContent = r.lexDens + '%';
+  document.getElementById('mLongSent').textContent = r.longSentCount;
+  document.getElementById('mCVocab').textContent = r.cPct + '%';
+  document.getElementById('mEstCEFR').textContent = r.estCEFR;
+
+  // Target match
+  var levels = ['A2','B1','B2','B2+','C1+'];
+  var ei = levels.indexOf(r.estCEFR); if(ei < 0) ei = 4;
+  var ti = levels.indexOf(r.target); if(ti < 0) ti = 3;
+  var diff = ei - ti;
+  var matchEl = document.getElementById('mTargetMatch');
+  if (diff === 0) { matchEl.textContent = 'Match ✓'; matchEl.className = 'metric-val green'; }
+  else if (diff > 0) { matchEl.textContent = '+' + diff + ' levels'; matchEl.className = 'metric-val red'; }
+  else { matchEl.textContent = diff + ' levels'; matchEl.className = 'metric-val amber'; }
+
+  // Verdict
+  var verdictMap = { 'A2':'🟢','B1':'🟡','B2':'🟠','B2+':'🔴','C1+':'🔴' };
+  document.getElementById('verdictIcon').textContent = verdictMap[r.estCEFR] || '📊';
+  document.getElementById('verdictTitle').textContent = 'Estimated Level: ' + r.estCEFR + ' — Target: ' + r.target;
+  var sub = diff === 0 ? 'Text complexity matches your target level.' :
+            diff > 0 ? 'Text is ' + diff + ' level(s) above target — simplification recommended.' :
+            'Text is below target level — consider adding complexity.';
+  document.getElementById('verdictSub').textContent = sub;
+
+  // Complexity breakdown
+  var thresholds = {
+    'A2': { avgSent: 12, lexDens: 40 },
+    'B1': { avgSent: 18, lexDens: 50 },
+    'B2': { avgSent: 25, lexDens: 60 },
+    'B2+': { avgSent: 28, lexDens: 65 }
+  };
+  var th = thresholds[r.target] || thresholds['B1'];
+
+  var rows = [
+    { label: 'Avg Sentence Length', val: r.avgSent + ' words', threshold: 'Target ≤ ' + th.avgSent, ok: r.avgSent <= th.avgSent },
+    { label: 'Lexical Density', val: r.lexDens + '%', threshold: 'Target ≤ ' + th.lexDens + '%', ok: r.lexDens <= th.lexDens },
+    { label: 'Long Sentences (>20w)', val: r.longSentCount, threshold: 'Target ≤ 2', ok: r.longSentCount <= 2 },
+    { label: 'C-Level Vocabulary', val: r.cPct + '%', threshold: 'Target ≤ 15%', ok: r.cPct <= 15 }
+  ];
+
+  var html = '';
+  rows.forEach(function(row) {
+    var cls = row.ok ? 'green' : (row.val === row.threshold ? 'amber' : 'amber');
+    // More nuanced: close to threshold = amber
+    var dotCls = row.ok ? 'green' : 'red';
+    html += '<div class="status-row">'
+      + '<div class="status-dot ' + dotCls + '"></div>'
+      + '<div class="status-label">' + row.label + '</div>'
+      + '<div class="status-val">' + row.val + ' <span style="color:var(--text-dim)">(' + row.threshold + ')</span></div>'
+      + '</div>';
+  });
+  document.getElementById('complexityRows').innerHTML = html;
+
+  // Grammar flags
+  var gRows = [
+    { label: 'Passive Voice Constructions', count: r.passiveMatches, threshold: 2 },
+    { label: 'Relative Clauses (who/which/that/whom/whose)', count: r.relClauseMatches, threshold: 3 },
+    { label: 'Conditional Structures (if/unless/provided that)', count: r.conditionalMatches, threshold: 2 },
+    { label: 'Reported Speech Markers', count: r.reportedSpeechMatches, threshold: 1 }
+  ];
+  var gHtml = '';
+  gRows.forEach(function(row) {
+    var dotCls = row.count === 0 ? 'green' : (row.count <= row.threshold ? 'amber' : 'red');
+    gHtml += '<div class="status-row">'
+      + '<div class="status-dot ' + dotCls + '"></div>'
+      + '<div class="status-label">' + row.label + '</div>'
+      + '<div class="status-val">' + row.count + ' found</div>'
+      + '</div>';
+  });
+  document.getElementById('grammarRows').innerHTML = gHtml;
+
+  // Suggestions
+  document.getElementById('simplificationTarget').textContent = 'To hit ' + r.target + ', consider:';
+  var th2 = thresholds[r.target] || thresholds['B1'];
+  var suggs = [];
+  if (r.avgSent > th2.avgSent) suggs.push('Break sentences longer than ' + th2.avgSent + ' words into two sentences (found avg of ' + r.avgSent + ' words)');
+  if (r.passiveMatches > 2) suggs.push('Convert ' + r.passiveMatches + ' passive construction(s) to active voice');
+  if (r.relClauseMatches > 3) suggs.push('Simplify or reword ' + r.relClauseMatches + ' relative clauses (who/which/that)');
+  if (r.cPct > 15) suggs.push('Replace or gloss ' + Math.round(r.wordCount * r.cPct / 100) + ' advanced vocabulary items (>8 characters)');
+  if (r.lexDens > th2.lexDens) suggs.push('Reduce lexical density from ' + r.lexDens + '% toward ' + th2.lexDens + '% by adding more function words or splitting complex noun phrases');
+  if (suggs.length === 0) suggs.push('Text complexity is appropriate for ' + r.target + ' — no major simplification needed.');
+
+  var sHtml = suggs.map(function(s){ return '<li>' + s + '</li>'; }).join('');
+  document.getElementById('suggestionList').innerHTML = sHtml;
+}
+
+function renderVocab(r) {
+  // Unique C-words
+  var unique = Array.from(new Set(r.cWords)).sort();
+  document.getElementById('vocabBadge').textContent = unique.length + ' words';
+
+  if (unique.length === 0) {
+    document.getElementById('vocabGrid').innerHTML = '<p style="color:var(--text-dim);font-size:0.84rem;">No words longer than 8 characters found.</p>';
+  } else {
+    var html = unique.map(function(w){ return '<div class="vocab-chip">' + w + '</div>'; }).join('');
+    document.getElementById('vocabGrid').innerHTML = html;
+  }
+
+  // Tier breakdown
+  document.getElementById('vocabTierBreakdown').innerHTML =
+    '<div class="status-row"><div class="status-dot green"></div><div class="status-label">A/B tier (≤5 chars — high-frequency)</div><div class="status-val">' + r.aPct + '%</div></div>' +
+    '<div class="status-row"><div class="status-dot amber"></div><div class="status-label">B tier (6–8 chars — intermediate)</div><div class="status-val">' + r.bPct + '%</div></div>' +
+    '<div class="status-row"><div class="status-dot red"></div><div class="status-label">C tier candidate (>8 chars — advanced)</div><div class="status-val">' + r.cPct + '%</div></div>';
+
+  // False friends
+  var ff = FALSE_FRIENDS[r.l1];
+  if (ff && ff.length > 0) {
+    var ffEl = document.getElementById('ffCard');
+    ffEl.style.display = 'block';
+    var ffHtml = ff.filter(function(item){
+      return unique.indexOf(item.word) >= 0 || r.words.indexOf(item.word) >= 0;
+    }).map(function(item){
+      return '<div class="ff-card"><div class="ff-title">⚠ "' + item.word + '" — potential false friend for ' + r.l1 + ' speakers</div><p>' + item.note + '</p></div>';
+    }).join('');
+    if (!ffHtml) ffHtml = '<p style="color:var(--text-dim);font-size:0.84rem;">No flagged false friends detected in this text for ' + r.l1 + ' speakers.</p>';
+    document.getElementById('ffContent').innerHTML = ffHtml;
+  }
+}
+
+// ── Exports ───────────────────────────────────────────────────────────────
+function exportMarkdown() {
+  if (!lastResult) { showToast('Run analysis first.'); return; }
+  var r = lastResult;
+  var md = '# CEFR Text Analysis Report\n\n'
+    + '**Estimated Level:** ' + r.estCEFR + '  \n'
+    + '**Target Level:** ' + r.target + '  \n'
+    + '**Learner L1:** ' + r.l1 + '\n\n'
+    + '## Metrics\n'
+    + '- Word Count: ' + r.wordCount + '\n'
+    + '- Sentence Count: ' + r.sentCount + '\n'
+    + '- Average Sentence Length: ' + r.avgSent + ' words\n'
+    + '- Long Sentences (>20w): ' + r.longSentCount + '\n'
+    + '- Lexical Density: ' + r.lexDens + '%\n'
+    + '- C-Level Vocab (%): ' + r.cPct + '%\n\n'
+    + '## Grammatical Structures\n'
+    + '- Passive voice: ' + r.passiveMatches + '\n'
+    + '- Relative clauses: ' + r.relClauseMatches + '\n'
+    + '- Conditionals: ' + r.conditionalMatches + '\n'
+    + '- Reported speech: ' + r.reportedSpeechMatches + '\n\n'
+    + '*Generated by ApexLogics CEFR Text Leveler (AL-79)*\n';
+  download('cefr-analysis.md', md, 'text/markdown');
+}
+
+function exportAP2() {
+  if (!lastResult) { showToast('Run analysis first.'); return; }
+  var r = lastResult;
+  var AP2Schema = {
+    validMandateTypes: [
+      'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+      'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+      'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+      'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+      'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+      'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+      'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+      'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+      'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+      'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+      'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+      'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+      'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+      'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
+      'english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record',
+      'mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record',
+      'mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record',
+      'lesson_design_record','assessment_item_record','classroom_scenario_record',
+      'gt_differentiation_record','instructor_toolkit_record',
+      'cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record',
+      'primary_source_record','historiography_record','anachronism_record','counterfactual_record',
+      'franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record',
+      'micro_theory_record','economic_systems_record','economists_panel_record',
+      'economic_history_record','econ_principles_record'
+    ],
+    validate: function(payload) {
+      return payload && payload.mandate_type && this.validMandateTypes.indexOf(payload.mandate_type) >= 0;
+    }
+  };
+  var payload = {
+    schema_version: '2.0',
+    mandate_type: 'cefr_leveling_record',
+    generated: new Date().toISOString(),
+    tool: 'AL-79 CEFR Text Leveler',
+    data: {
+      text_word_count: r.wordCount,
+      avg_sentence_length: r.avgSent,
+      estimated_cefr: r.estCEFR,
+      target_level: r.target,
+      lexical_density_pct: r.lexDens,
+      complex_structure_counts: {
+        passive_voice: r.passiveMatches,
+        relative_clauses: r.relClauseMatches,
+        conditionals: r.conditionalMatches,
+        reported_speech: r.reportedSpeechMatches
+      },
+      c_level_vocab_pct: r.cPct,
+      long_sentence_count: r.longSentCount,
+      simplification_suggestions_count: document.querySelectorAll('#suggestionList li').length,
+      l1_context: r.l1
+    }
+  };
+  if (!AP2Schema.validate(payload)) { showToast('AP2 validation failed — invalid mandate type.'); return; }
+  download('cefr-leveling-ap2.json', JSON.stringify(payload, null, 2), 'application/json');
+}
+
+function download(name, content, type) {
+  var blob = new Blob([content], { type: type });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = name; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3500);
+}
+</script>
+</body>
+</html>

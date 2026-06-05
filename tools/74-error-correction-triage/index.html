@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Error-Correction Triage · ApexLogics #74</title>
+  <link rel="canonical" href="https://apexlogics.org/tools/74-error-correction-triage/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #2dd4bf; --accent-dim: rgba(45,212,191,0.18); --accent-low: rgba(45,212,191,0.08);
+      --border: rgba(45,212,191,0.18); --border-focus: #2dd4bf;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --teal: #2dd4bf;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 58px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark svg { width: 28px; height: 28px; }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+    .logo-apex { color: #E8A838; } .logo-org { color: var(--text-dim); }
+    .logo-tag { font-size: 0.65rem; color: var(--text-dim); }
+    .nav-spacer { flex: 1; }
+    .nav-pill { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .nav-pill.accent { border-color: var(--accent); color: var(--accent); }
+    .lang-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 24px; display: flex; justify-content: center; }
+    .lang-inner { display: flex; gap: 4px; }
+    .lang-btn { background: none; border: 1px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn:hover { color: var(--text-muted); border-color: var(--border); }
+    .lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-low); }
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { background: rgba(45,212,191,0.07); border: 1px solid rgba(45,212,191,0.25); border-radius: 8px; padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 28px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 28px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 10px 18px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    textarea, select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+    textarea:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .radio-group { display: flex; flex-direction: column; gap: 7px; }
+    .radio-opt { display: flex; align-items: center; gap: 9px; cursor: pointer; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.86rem; color: var(--text-muted); transition: all 0.15s; }
+    .radio-opt:hover { border-color: var(--accent); color: var(--text); }
+    .radio-opt input { accent-color: var(--accent); }
+    .radio-opt.selected { border-color: var(--accent); background: var(--accent-low); color: var(--text); }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 12px 32px; border-radius: 8px; font-size: 0.95rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+    .decision-banner { border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; }
+    .decision-banner.correct-now { background: rgba(52,211,153,0.06); border: 1px solid rgba(52,211,153,0.3); }
+    .decision-banner.defer { background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.3); }
+    .decision-banner.recast { background: rgba(45,212,191,0.06); border: 1px solid rgba(45,212,191,0.3); }
+    .decision-banner.metalinguistic { background: rgba(96,165,250,0.06); border: 1px solid rgba(96,165,250,0.3); }
+    .decision-icon { font-size: 1.8rem; }
+    .decision-text strong { font-size: 1rem; display: block; margin-bottom: 2px; }
+    .decision-text { font-size: 0.92rem; color: var(--text-muted); }
+    .technique-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 10px; }
+    .tech-name { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--accent); margin-bottom: 6px; }
+    .tech-desc { font-size: 0.87rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 10px; }
+    .tech-when { font-size: 0.82rem; color: var(--text-dim); font-style: italic; margin-bottom: 8px; }
+    .tech-example { background: var(--surface2); border-radius: 6px; padding: 10px 14px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 8px; line-height: 1.7; }
+    .tech-research { background: rgba(45,212,191,0.05); border-left: 3px solid var(--accent); padding: 8px 12px; font-size: 0.8rem; color: var(--text-dim); border-radius: 0 6px 6px 0; }
+    .tech-risk { background: rgba(251,191,36,0.06); border-left: 3px solid var(--amber); padding: 8px 12px; font-size: 0.8rem; color: var(--text-dim); border-radius: 0 6px 6px 0; margin-top: 6px; }
+    .research-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 12px; }
+    .research-cite { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent); margin-bottom: 8px; }
+    .research-finding { font-size: 0.88rem; color: var(--text-muted); line-height: 1.7; }
+    .triage-out { display: none; margin-top: 16px; }
+    .triage-out.visible { display: block; }
+    .triage-section { margin-bottom: 14px; }
+    .triage-label { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .triage-value { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; }
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: rgba(45,212,191,0.4); color: var(--accent); }
+    .export-btn.ap2:hover { background: var(--accent-dim); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #7f1d1d; border: 1px solid var(--red); color: #fecaca; padding: 12px 22px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; z-index: 200; display: none; }
+    .toast.show { display: block; }
+    .tool-footer { border-top: 1px solid var(--border); margin-top: 60px; padding-top: 24px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .tool-footer a { color: var(--text-dim); text-decoration: none; }
+    .tool-footer a:hover { color: var(--accent); }
+    @media (max-width: 700px) {
+      .form-grid.two { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <a href="../../index.html" class="nav-pill accent">← All Tools</a>
+  </div>
+</nav>
+
+<div class="lang-bar">
+  <div class="lang-inner">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</div>
+
+  <div class="tool-eyebrow">AL-81 · Selected Studies — ESL/TEFL</div>
+  <h1 class="tool-title">Error-Correction Triage</h1>
+  <p class="tool-desc">Not all errors should be corrected. Not all errors should be corrected the same way. SLA research is clear: over-correction kills fluency; under-correction allows fossilization. This triage tool helps teachers decide which student errors to address now, which to defer, and how to correct — distinguishing global errors (communication breaks down) from local errors (communication succeeds despite the mistake).</p>
+  <div class="tool-vintage">Data vintage: SLA correction research: Lightbown &amp; Spada (2006), Truscott (1996), Ferris (1999), Nassaji (2016); corrective feedback taxonomy: Lyster &amp; Ranta (1997)</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">Triage an Error</button>
+    <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">Technique Reference</button>
+    <button class="tab-btn" id="tabBtn3" onclick="switchTab(3)">Research Digest</button>
+  </div>
+
+  <!-- TAB 1: TRIAGE -->
+  <div class="tab-pane active" id="tabPane1">
+    <div class="card">
+      <div class="card-title">Error Classification Inputs</div>
+      <div class="field">
+        <label for="errorInput">Student Error (paste writing or describe spoken error)</label>
+        <textarea id="errorInput" placeholder='e.g. "She don\'t like the homework." or "Student wrote: Yesterday I go to school."'></textarea>
+      </div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="contextSel">Context</label>
+          <select id="contextSel">
+            <option value="oral">Oral production</option>
+            <option value="written" selected>Written work</option>
+            <option value="grammar">Grammar focus activity</option>
+            <option value="fluency">Fluency activity</option>
+            <option value="accuracy">Accuracy activity</option>
+            <option value="exam">Exam preparation</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="levelSel">Learner Level</label>
+          <select id="levelSel">
+            <option value="beginner">Beginner</option>
+            <option value="intermediate" selected>Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="focusSel">Instructional Focus Right Now</label>
+          <select id="focusSel">
+            <option value="fluency">Fluency</option>
+            <option value="accuracy" selected>Accuracy</option>
+            <option value="communication">Communication</option>
+            <option value="grammar">Grammar form</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="errorTypeSel">Error Type</label>
+          <select id="errorTypeSel">
+            <option value="phonological">Phonological (pronunciation)</option>
+            <option value="morphological" selected>Morphological (tense, plural, agreement)</option>
+            <option value="syntactic">Syntactic (word order, clause structure)</option>
+            <option value="lexical">Lexical (wrong word choice)</option>
+            <option value="discourse">Discourse (cohesion, organization)</option>
+          </select>
+        </div>
+      </div>
+      <button class="run-btn" onclick="triageNow()">Triage This Error</button>
+
+      <div class="triage-out" id="triageOut">
+        <div id="decisionBanner"></div>
+        <div class="card" style="margin-top:0;">
+          <div class="card-title">Triage Decision</div>
+          <div class="triage-section">
+            <div class="triage-label">Global vs. Local Classification</div>
+            <div class="triage-value" id="globalLocal">—</div>
+          </div>
+          <div class="triage-section">
+            <div class="triage-label">Correction Recommendation</div>
+            <div class="triage-value" id="correctionRec">—</div>
+          </div>
+          <div class="triage-section">
+            <div class="triage-label">Suggested Techniques (Lyster &amp; Ranta 1997)</div>
+            <div id="techniqueRecs"></div>
+          </div>
+        </div>
+        <div class="results-export-row">
+          <button class="export-btn" onclick="exportMd()">⬇ Markdown</button>
+          <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: TECHNIQUE REFERENCE -->
+  <div class="tab-pane" id="tabPane2">
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">Lyster &amp; Ranta (1997) — 6 Corrective Feedback Techniques</div>
+      <p style="font-size:0.85rem;color:var(--text-muted);line-height:1.7;">Based on classroom interaction analysis in French immersion contexts. These categories have been widely adopted and validated across language learning contexts.</p>
+    </div>
+    <div id="techniqueCards"></div>
+  </div>
+
+  <!-- TAB 3: RESEARCH DIGEST -->
+  <div class="tab-pane" id="tabPane3">
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">Key Research Findings — Error Correction in SLA</div>
+      <p style="font-size:0.85rem;color:var(--text-muted);line-height:1.7;">Five foundational findings every ESL/EFL teacher should know. These represent the core empirical base for making correction decisions.</p>
+    </div>
+    <div id="researchCards"></div>
+  </div>
+
+</div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-81 · Data: SLA research: Lyster &amp; Ranta 1997, Lightbown &amp; Spada 2006
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Lang ──────────────────────────────────────────────────────────────────
+function setLang(code) {
+  try { sessionStorage.setItem('apex_lang', code); } catch(e) {}
+  document.querySelectorAll('.lang-btn').forEach(function(b) {
+    b.classList.toggle('active', b.textContent.trim().toLowerCase() === code || (code === 'zh' && b.textContent.trim() === '中文'));
+  });
+}
+(function() {
+  var saved = ''; try { saved = sessionStorage.getItem('apex_lang') || 'en'; } catch(e) { saved = 'en'; }
+  setLang(saved);
+})();
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+function switchTab(n) {
+  for (var i = 1; i <= 3; i++) {
+    document.getElementById('tabPane' + i).classList.toggle('active', i === n);
+    document.getElementById('tabBtn' + i).classList.toggle('active', i === n);
+  }
+}
+
+// ── Technique data ────────────────────────────────────────────────────────
+var TECHNIQUES = [
+  {
+    name: 'Explicit Correction',
+    desc: 'Teacher directly provides the correct form and signals it is an error. "No, you should say \'went,\' not \'go.\'" The error is named, and the correct form is provided simultaneously.',
+    when: 'Best for: Low-stakes accuracy work, grammar focus activities, when a pattern needs to become conscious knowledge, beginner learners.',
+    example: 'Student: "Yesterday I go to the store."\nTeacher: "Not \'go\' — we use past tense here. You should say \'I went to the store.\' \'Go\' is present; \'went\' is past."',
+    research: 'Most metalinguistically transparent technique. Learner is left in no doubt about what was wrong and what is correct. High explicit learning potential.',
+    risk: 'Can embarrass learners, especially in front of peers. Interrupts communicative flow. Overuse can suppress learner output.'
+  },
+  {
+    name: 'Recast',
+    desc: 'Teacher reformulates the student\'s error in the correct form without explicitly marking it as wrong. The correction is embedded in a natural conversational response.',
+    when: 'Best for: Fluency activities, conversational exchanges, when you want to maintain communicative flow. Most common technique in immersion classrooms.',
+    example: 'Student: "Yesterday I go to store."\nTeacher: "Oh, you went to the store — what did you buy?"\n(Note: teacher continued the conversation without highlighting the correction)',
+    research: 'Most frequently used technique in L&R (1997) data — 55% of all feedback. But leads to lowest uptake rate. Learners may perceive it as a response to content, not form.',
+    risk: 'Ambiguity is the core weakness: learners may not notice the correction embedded in the teacher\'s response. Works better with attentive, higher-level learners.'
+  },
+  {
+    name: 'Clarification Request',
+    desc: 'Teacher signals non-understanding or need for repetition/clarification: "Sorry? I\'m not sure I understood." Forces the student to self-repair and rephrase.',
+    when: 'Best for: When error causes genuine (or performed) ambiguity. Oral production. When you want the learner to notice and self-repair without being told what is wrong.',
+    example: 'Student: "The movie was very bored."\nTeacher: "Sorry? I didn\'t quite follow — could you say that again?"\nStudent (self-corrects): "Oh, I mean — the movie was very boring."',
+    research: 'Creates a natural repair sequence. Most effective when the error does genuinely impede communication. Can feel artificial if the teacher obviously understood.',
+    risk: 'If used too frequently regardless of actual comprehension difficulty, learners learn to distrust it or become anxious about every utterance.'
+  },
+  {
+    name: 'Metalinguistic Feedback',
+    desc: 'Teacher comments on the form or asks a question about it without providing the correct form. "Is that the right tense?" / "What do we say in English for past time?" Promotes deeper processing.',
+    when: 'Best for: When the student likely knows the rule and can self-correct with a prompt. Grammar focus activities. Intermediate to advanced learners.',
+    example: 'Student: "Yesterday I go to school."\nTeacher: "Hmm — what tense do we use with \'yesterday\'?"\nStudent: "Oh... past tense. Yesterday I went to school."\nTeacher: "Exactly."',
+    research: 'Promotes conscious awareness (noticing) of the gap between interlanguage and target form. The act of self-correction after metalinguistic prompting appears to deepen form-meaning mapping.',
+    risk: 'Requires the learner to already have the rule available — if they don\'t, the question creates confusion and anxiety. Know your learners\' metalinguistic knowledge before using.'
+  },
+  {
+    name: 'Elicitation',
+    desc: 'Teacher directly elicits the correct form through pausing, prompting, or partial utterance: "Yesterday I ____?" (with expectant pause), or "How do we say that in English?"',
+    when: 'Best for: When target form has been recently taught. Controlled practice stages. Good for drilling without rote mechanical repetition.',
+    example: 'Student: "She don\'t like spicy food."\nTeacher: "She ____?" (pause with rising intonation, perhaps a gesture)\nStudent: "She doesn\'t like spicy food."\nTeacher: "Right — doesn\'t for she/he/it."',
+    research: 'Elicitation produces the highest uptake rates among prompting techniques (L&R 1997). The student produces the correct form themselves, which may aid retention more than simply hearing it from the teacher.',
+    risk: 'Can feel like a guessing game if the learner truly doesn\'t know the form. Watch for learner distress and be ready to provide the form if self-repair fails.'
+  },
+  {
+    name: 'Repetition',
+    desc: 'Teacher repeats the error with rising intonation, signaling that something is wrong without identifying what. Student: "She don\'t like it." Teacher: "She DON\'T like it?" (stress on error)',
+    when: 'Best for: Quick in-class signal that something is wrong. Low interruption to flow. Works best with attentive, higher-level learners who are listening carefully.',
+    example: 'Student: "I have three book."\nTeacher: "Three BOOK?" (rising intonation, slight pause)\nStudent: "Oh — three books."\nTeacher: (nods, continues lesson)',
+    research: 'Minimal interruption makes this useful for fluency contexts. However, it can be mistaken for genuine non-comprehension, or simply missed. Relies heavily on learner\'s self-monitoring capacity.',
+    risk: 'Students with low metalinguistic awareness may not realize what is being signaled. The technique is ambiguous by design — make sure students understand the convention.'
+  }
+];
+
+// ── Research data ─────────────────────────────────────────────────────────
+var RESEARCH = [
+  {
+    cite: 'Truscott (1996) — "The Case Against Grammar Correction in L2 Writing Classes"',
+    finding: 'Truscott argued that grammar correction in writing is ineffective and potentially harmful, and should be abandoned. His central claim: error correction does not lead to accuracy improvement in subsequent writing, because it does not address the underlying developmental processes. This paper sparked a major debate (the Truscott–Ferris debate) that shaped correction practice for a generation of teachers. Key implication: selective, focused correction on specific forms may be more defensible than comprehensive coverage of all errors.'
+  },
+  {
+    cite: 'Ferris (1999) — "The Case for Grammar Correction in L2 Writing Classes: A Response to Truscott"',
+    finding: 'Ferris countered Truscott, arguing that focused, selective correction on high-frequency, treatable errors is more effective than comprehensive correction — but that correction per se should not be abandoned. Her distinction between "treatable" errors (rule-governed, e.g. subject-verb agreement, article use) and "untreatable" errors (idiomatic, lexical) is practically useful. Implication: prioritize errors that students can self-correct with a rule, and focus on a small number per draft rather than marking everything.'
+  },
+  {
+    cite: 'Lyster & Ranta (1997) — "Corrective Feedback and Learner Uptake"',
+    finding: 'In a landmark study of French immersion classrooms, L&R found that recasts were by far the most common teacher feedback move (55% of all feedback), but led to the lowest rate of student uptake (repair). Prompts — techniques that pushed students to self-correct (clarification requests, metalinguistic feedback, elicitation, repetition) — led to significantly higher uptake rates. Implication: the most common technique may not be the most effective. Prompts that push students toward self-repair may produce more durable learning.'
+  },
+  {
+    cite: 'Nassaji (2016) — "Research Timeline: Interactional Feedback in L2 Learning"',
+    finding: 'A systematic review of 30+ years of oral corrective feedback research concludes that interactional feedback has a consistent, positive effect on L2 development. The key mediating variable is learner noticing: feedback only leads to learning if the learner perceives and processes the form being targeted. Methodological advances (eye-tracking, think-aloud protocols) confirm that recast ambiguity is the central problem — learners often do not notice embedded corrections. Implication: the teacher\'s job is to make the correction noticeable, not just to provide it.'
+  },
+  {
+    cite: 'Lightbown & Spada (2006) — "How Languages Are Learned"',
+    finding: 'In their influential synthesis, Lightbown and Spada conclude that form-focused instruction is beneficial to L2 acquisition, but only when embedded in meaningful communication contexts — not as isolated grammar drilling. The optimal condition is meaning-focused instruction with reactive attention to form when communication breaks down or errors occur. "Focus on form" (reactive, incidental) outperforms "focus on forms" (proactive, pre-selected grammar syllabus) in naturalistic communicative settings. Implication: let communication drive the lesson; correction serves meaning-making, not the other way around.'
+  }
+];
+
+// ── Render technique reference ────────────────────────────────────────────
+(function renderTechniques() {
+  var html = '';
+  TECHNIQUES.forEach(function(t, i) {
+    html += '<div class="technique-card">'
+      + '<div class="tech-name">' + (i+1) + '. ' + t.name + '</div>'
+      + '<p class="tech-desc">' + t.desc + '</p>'
+      + '<p class="tech-when">When to use: ' + t.when + '</p>'
+      + '<div class="tech-example"><strong style="color:var(--accent);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;">Example</strong><br>' + t.example.replace(/\n/g, '<br>') + '</div>'
+      + '<div class="tech-research"><strong>Research note:</strong> ' + t.research + '</div>'
+      + '<div class="tech-risk"><strong>Risk:</strong> ' + t.risk + '</div>'
+      + '</div>';
+  });
+  document.getElementById('techniqueCards').innerHTML = html;
+})();
+
+// ── Render research ───────────────────────────────────────────────────────
+(function renderResearch() {
+  var html = '';
+  RESEARCH.forEach(function(r) {
+    html += '<div class="research-item">'
+      + '<div class="research-cite">' + r.cite + '</div>'
+      + '<p class="research-finding">' + r.finding + '</p>'
+      + '</div>';
+  });
+  document.getElementById('researchCards').innerHTML = html;
+})();
+
+// ── Triage logic ──────────────────────────────────────────────────────────
+var lastTriage = null;
+
+function triageNow() {
+  var errorText = document.getElementById('errorInput').value.trim();
+  if (!errorText) { showToast('Please describe or paste the student error.'); return; }
+
+  var context = document.getElementById('contextSel').value;
+  var level = document.getElementById('levelSel').value;
+  var focus = document.getElementById('focusSel').value;
+  var errorType = document.getElementById('errorTypeSel').value;
+
+  // Global vs. Local logic
+  var isGlobal = false;
+  var globalReason = '';
+  if (errorType === 'syntactic' || errorType === 'discourse') {
+    if (context === 'oral' || context === 'fluency') {
+      isGlobal = false;
+      globalReason = 'Syntactic/discourse errors in oral/fluency contexts are typically local — communication generally succeeds despite them.';
+    } else {
+      isGlobal = true;
+      globalReason = 'Syntactic errors in written or accuracy-focused work often impede reader comprehension — classify as global for correction purposes.';
+    }
+  } else if (errorType === 'morphological') {
+    isGlobal = (focus === 'accuracy' || focus === 'grammar' || context === 'accuracy' || context === 'exam');
+    globalReason = isGlobal
+      ? 'Morphological error in an accuracy/grammar context — treat as global (correct the target form).'
+      : 'Morphological error during fluency or communication activity — typically local; defer correction.';
+  } else if (errorType === 'lexical') {
+    isGlobal = true;
+    globalReason = 'Lexical errors frequently cause miscommunication — classify as global unless the meaning is clear from context.';
+  } else if (errorType === 'phonological') {
+    isGlobal = false;
+    globalReason = 'Phonological errors are local in written work (not applicable) and are often local in oral contexts unless they cause genuine comprehension failure.';
+  } else {
+    isGlobal = false;
+    globalReason = 'Discourse errors are typically local during oral activities; address in writing feedback cycles.';
+  }
+
+  // Recommendation
+  var rec = '';
+  var decClass = '';
+  var decIcon = '';
+  if (focus === 'fluency' || context === 'fluency' || context === 'oral') {
+    if (!isGlobal) {
+      rec = 'Defer — fluency/oral activity. Note this error pattern for later focused work. Interrupting to correct local errors during fluency tasks suppresses output and undermines communicative confidence.';
+      decClass = 'defer'; decIcon = '⏱';
+    } else {
+      rec = 'Recast only — maintain flow, but model the correct form naturally in your next turn without drawing explicit attention to the error.';
+      decClass = 'recast'; decIcon = '↩';
+    }
+  } else if (focus === 'accuracy' || focus === 'grammar' || context === 'accuracy' || context === 'grammar' || context === 'exam') {
+    rec = 'Correct now — accuracy focus. The instructional goal is form accuracy and this is the appropriate moment. Choose a technique that promotes self-correction first.';
+    decClass = 'correct-now'; decIcon = '✓';
+  } else if (context === 'written') {
+    rec = 'Metalinguistic prompt — guide self-correction. Use coded correction (underline + error code) rather than writing the correction directly. Gives the learner agency to look up and repair.';
+    decClass = 'metalinguistic'; decIcon = '?';
+  } else {
+    rec = 'Recast only — model correct form without interrupting the communicative flow.';
+    decClass = 'recast'; decIcon = '↩';
+  }
+
+  // Technique recommendations
+  var techMap = {
+    'fluency': ['Recast', 'Repetition'],
+    'accuracy': ['Metalinguistic Feedback', 'Elicitation', 'Explicit Correction'],
+    'communication': ['Clarification Request', 'Recast'],
+    'grammar': ['Elicitation', 'Metalinguistic Feedback', 'Explicit Correction']
+  };
+  var techs = techMap[focus] || ['Recast', 'Metalinguistic Feedback'];
+
+  lastTriage = { errorText: errorText, context: context, level: level, focus: focus, errorType: errorType, isGlobal: isGlobal, rec: rec, techs: techs };
+
+  // Render
+  document.getElementById('decisionBanner').innerHTML =
+    '<div class="decision-banner ' + decClass + '" style="margin-bottom:16px;">'
+    + '<div class="decision-icon">' + decIcon + '</div>'
+    + '<div class="decision-text"><strong>' + (isGlobal ? 'Global Error' : 'Local Error') + ' — ' + (decClass === 'correct-now' ? 'Correct Now' : decClass === 'defer' ? 'Defer' : decClass === 'recast' ? 'Recast Only' : 'Metalinguistic Prompt') + '</strong>'
+    + '<span>' + rec + '</span></div></div>';
+
+  document.getElementById('globalLocal').textContent = (isGlobal ? 'Global — ' : 'Local — ') + globalReason;
+  document.getElementById('correctionRec').textContent = rec;
+
+  var techHtml = techs.map(function(name) {
+    var t = TECHNIQUES.filter(function(x){ return x.name === name; })[0];
+    if (!t) return '';
+    return '<div style="background:var(--accent-low);border:1px solid var(--border);border-radius:7px;padding:10px 14px;margin-bottom:8px;">'
+      + '<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.78rem;color:var(--accent);margin-bottom:4px;">' + name + '</div>'
+      + '<div style="font-size:0.84rem;color:var(--text-muted);">' + t.desc.substring(0, 140) + '...</div></div>';
+  }).join('');
+  document.getElementById('techniqueRecs').innerHTML = techHtml;
+
+  document.getElementById('triageOut').classList.add('visible');
+}
+
+// ── Exports ───────────────────────────────────────────────────────────────
+function exportMd() {
+  if (!lastTriage) { showToast('Run triage first.'); return; }
+  var t = lastTriage;
+  var md = '# Error-Correction Triage\n\n'
+    + '**Error:** ' + t.errorText + '\n'
+    + '**Error Type:** ' + t.errorType + '\n'
+    + '**Context:** ' + t.context + '\n'
+    + '**Learner Level:** ' + t.level + '\n'
+    + '**Instructional Focus:** ' + t.focus + '\n\n'
+    + '## Decision\n'
+    + '**Global vs. Local:** ' + (t.isGlobal ? 'Global' : 'Local') + '\n\n'
+    + '**Recommendation:** ' + t.rec + '\n\n'
+    + '**Suggested Techniques:** ' + t.techs.join(', ') + '\n\n'
+    + '*Generated by ApexLogics Error-Correction Triage (AL-81)*\n';
+  download('error-triage.md', md, 'text/markdown');
+}
+
+function exportAP2() {
+  if (!lastTriage) { showToast('Run triage first.'); return; }
+  var AP2Schema = {
+    validMandateTypes: [
+      'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
+      'loan_repayment_record','career_break_record','exam_cost_record','scholarship_record',
+      'workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record',
+      'geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record',
+      'test_prep_record','international_student_record','parent_college_record','cpd_tracking_record',
+      'job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record',
+      'education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record',
+      'trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record',
+      'professional_degree_record','workforce_pell_record','workforce_pell_credential_rank',
+      'net_worth_trajectory_record','signing_bonus_record','gig_income_record',
+      'cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record',
+      'deferred_comp_457b_record','tutor_roi_record','test_retake_record',
+      'mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record',
+      'law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record',
+      'english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record',
+      'mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record',
+      'mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record',
+      'lesson_design_record','assessment_item_record','classroom_scenario_record',
+      'gt_differentiation_record','instructor_toolkit_record',
+      'cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record',
+      'primary_source_record','historiography_record','anachronism_record','counterfactual_record',
+      'franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record',
+      'micro_theory_record','economic_systems_record','economists_panel_record',
+      'economic_history_record','econ_principles_record'
+    ],
+    validate: function(p) { return p && p.mandate_type && this.validMandateTypes.indexOf(p.mandate_type) >= 0; }
+  };
+  var t = lastTriage;
+  var payload = {
+    schema_version: '2.0', mandate_type: 'error_correction_record',
+    generated: new Date().toISOString(), tool: 'AL-81 Error-Correction Triage',
+    data: {
+      error_type: t.errorType, context: t.context, learner_level: t.level,
+      instructional_focus: t.focus, global_vs_local: t.isGlobal ? 'global' : 'local',
+      recommended_technique: t.techs[0] || 'Recast',
+      deferral_decision: t.rec.indexOf('Defer') >= 0 ? 'defer' : 'address_now',
+      all_suggested_techniques: t.techs
+    }
+  };
+  if (!AP2Schema.validate(payload)) { showToast('AP2 validation failed.'); return; }
+  download('error-correction-ap2.json', JSON.stringify(payload, null, 2), 'application/json');
+}
+
+function download(name, content, type) {
+  var blob = new Blob([content], { type: type });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = name; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3500);
+}
+</script>
+</body>
+</html>
