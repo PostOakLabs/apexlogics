@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAP vs. Standard Decision Engine · #89 · AL 96 · ApexLogics</title>
+<meta name="description" content="Compare the Repayment Assistance Plan (RAP) vs. Standard 10-year plan for federal student loans under OBBBA 2025. Monthly payment, total cost, PSLF path. Effective July 1, 2026.">
+<meta property="og:title" content="RAP vs. Standard Decision Engine — ApexLogics #89">
+<meta property="og:description" content="OBBBA 2025: new direct loan borrowers default to RAP, not Standard. Model your costs, forgiveness, and PSLF path side-by-side.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* RESET & BASE */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#070B14;--bg2:#0d1321;--bg3:#111827;--bg4:#1a2233;
+  --body:#c8d0e0;--dim:#7a8499;--border:#1e2d45;
+  --teal:#0d9488;--teal2:#0f766e;--teal3:#134e4a;--teal-glow:rgba(13,148,136,.15);
+  --amber:#f59e0b;--red:#ef4444;--green:#22c55e;
+  --font-serif:'DM Serif Display',serif;
+  --font-sans:'Sora',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --radius:10px;--radius-sm:6px;
+}
+html{font-size:15px;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--body);font-family:var(--font-sans);font-size:.875rem;line-height:1.6;min-height:100vh}
+a{color:var(--teal);text-decoration:none}
+a:hover{text-decoration:underline}
+button{font-family:var(--font-sans);cursor:pointer}
+input,select{font-family:var(--font-sans)}
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(7,11,20,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:1024px;margin:0 auto;padding:.6rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.logo{display:flex;align-items:center;gap:.55rem;text-decoration:none}
+.logo-mark{width:32px;height:32px;flex-shrink:0}.logo-mark svg{width:100%;height:100%}
+.logo-text{display:flex;flex-direction:column;line-height:1.1}
+.logo-name{font-family:var(--font-mono);font-size:.95rem;font-weight:500;color:var(--body);letter-spacing:-.02em;line-height:1}
+.logo-name span.logo-apex{color:#E8A838}
+.logo-name span.logo-org{color:var(--dim)}
+.logo-tag{font-family:var(--font-mono);font-size:.5rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);line-height:1}
+.nav-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;margin-left:auto;flex-shrink:0}
+.nav-pill{background:none;border:1px solid var(--border);border-radius:6px;color:var(--body);font-size:.62rem;padding:.3rem .65rem;font-family:var(--font-mono);letter-spacing:.04em;text-decoration:none;transition:border-color .15s,color .15s}
+.nav-pill:hover{border-color:#E8A838;color:var(--body)}
+.nav-pill.accent{border-color:rgba(232,168,56,.5);color:#E8A838}
+/* LANG BAR */
+.lang-bar{background:var(--bg2);border-bottom:1px solid var(--border);padding:.5rem 0}
+.lang-inner{max-width:1024px;margin:0 auto;padding:0 24px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.lang-btn{font-family:var(--font-mono);font-size:.58rem;padding:.22rem .5rem;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--dim);letter-spacing:.06em;transition:all .15s}
+.lang-btn:hover{border-color:var(--teal);color:var(--teal)}
+.lang-btn.active{background:var(--teal3);border-color:var(--teal);color:var(--teal)}
+/* LAYOUT */
+.container{max-width:1024px;margin:0 auto;padding:2rem 1.5rem 4rem}
+/* PII BANNER */
+.pii-banner{max-width:1024px;margin:1.25rem auto 0;padding:0}
+.pii-inner{background:rgba(255,255,255,.03);border:1px solid var(--border);border-left:3px solid #E8A838;border-radius:6px;padding:.7rem 1rem;font-size:.76rem;color:var(--dim);display:flex;gap:.5rem;align-items:flex-start}
+.pii-banner svg{flex-shrink:0;margin-top:.1rem;color:#4a90d9}
+/* OBBBA BANNER */
+.obbba-banner{background:#0a1400;border:1px solid #3a5f00;border-radius:var(--radius-sm);padding:.7rem 1rem;margin-bottom:1.5rem;font-size:.75rem;color:#9dc060;line-height:1.5}
+.obbba-banner strong{color:#a3e635}
+/* TOOL HEADER */
+.tool-eyebrow{font-family:var(--font-mono);font-size:.62rem;letter-spacing:.1em;color:#E8A838;margin-bottom:.5rem}
+.tool-title{font-family:var(--font-serif);font-size:2rem;color:#e8edf5;margin-bottom:.4rem;line-height:1.2}
+.tool-desc{color:var(--dim);font-size:.85rem;max-width:660px;margin-bottom:1.5rem}
+/* POLICY NOTICE */
+.policy-notice{background:#0a1a15;border:1px solid var(--teal3);border-radius:var(--radius-sm);padding:.8rem 1rem;margin-bottom:1.5rem;font-size:.75rem;color:#5fa898;line-height:1.5}
+.policy-notice strong{color:var(--teal);font-size:.7rem;letter-spacing:.05em;text-transform:uppercase;display:block;margin-bottom:.3rem}
+/* TABS */
+.tab-bar{display:flex;gap:.35rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:0}
+.tab-btn{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.06em;padding:.55rem 1.1rem;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dim);transition:all .15s;margin-bottom:-1px;cursor:pointer}
+.tab-btn:hover{color:var(--body)}
+.tab-btn.active{color:var(--teal);border-bottom-color:var(--teal)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+@media(max-width:680px){.grid-2,.grid-3{grid-template-columns:1fr}}
+/* CARD */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem}
+.card-title{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.08em;color:var(--dim);text-transform:uppercase;margin-bottom:.9rem}
+/* FORM */
+.field{margin-bottom:.9rem}
+.field label{display:block;font-size:.75rem;color:var(--dim);margin-bottom:.3rem;font-family:var(--font-mono);letter-spacing:.04em}
+.field input,.field select{width:100%;padding:.5rem .7rem;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--body);font-size:.85rem;transition:border-color .15s}
+.field input:focus,.field select:focus{outline:none;border-color:var(--teal)}
+.field .hint{font-size:.68rem;color:var(--dim);margin-top:.2rem}
+/* PILL TOGGLE */
+.pill-group{display:flex;gap:.3rem;flex-wrap:wrap}
+.pill{font-family:var(--font-mono);font-size:.62rem;padding:.28rem .7rem;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;transition:all .15s;letter-spacing:.05em}
+.pill:hover{border-color:var(--teal);color:var(--teal)}
+.pill.active{background:var(--teal3);border-color:var(--teal);color:var(--teal)}
+/* CALC BTN */
+.calc-btn{width:100%;padding:.7rem;background:var(--teal);border:none;border-radius:var(--radius-sm);color:#fff;font-family:var(--font-mono);font-size:.8rem;letter-spacing:.08em;font-weight:500;cursor:pointer;transition:background .15s;margin-top:.5rem}
+.calc-btn:hover{background:var(--teal2)}
+/* RESULTS */
+.results-section{margin-top:1.5rem}
+.results-hidden{display:none}
+/* COMPARISON PANEL */
+.comp-panel{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+@media(max-width:600px){.comp-panel{grid-template-columns:1fr}}
+.comp-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem}
+.comp-card.winner{border-color:var(--teal);background:rgba(13,148,136,.06)}
+.comp-card-label{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:.6rem}
+.comp-card.winner .comp-card-label{color:var(--teal)}
+.comp-stat{margin-bottom:.55rem}
+.comp-stat-val{font-family:var(--font-mono);font-size:1.3rem;color:#e8edf5;display:block}
+.comp-stat-lbl{font-size:.68rem;color:var(--dim)}
+.winner-badge{display:inline-block;background:var(--teal3);color:var(--teal);font-family:var(--font-mono);font-size:.55rem;letter-spacing:.1em;padding:.18rem .55rem;border-radius:20px;border:1px solid var(--teal);text-transform:uppercase;margin-bottom:.5rem}
+/* DETAIL TABLE */
+.detail-wrap{overflow-x:auto;margin-top:1rem}
+.detail-table{width:100%;border-collapse:collapse;font-size:.77rem}
+.detail-table th{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.06em;color:var(--dim);text-transform:uppercase;padding:.5rem .6rem;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+.detail-table th:first-child{text-align:left}
+.detail-table td{padding:.5rem .6rem;border-bottom:1px solid rgba(30,45,69,.5);text-align:right;font-family:var(--font-mono)}
+.detail-table td:first-child{text-align:left;color:var(--body)}
+.cell-green{color:var(--green)}
+.cell-amber{color:var(--amber)}
+.cell-red{color:var(--red)}
+.cell-dim{color:var(--dim)}
+/* RECOMMENDATION */
+.rec-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-top:1rem}
+.rec-box.rec-rap{border-color:var(--teal);background:rgba(13,148,136,.06)}
+.rec-box.rec-standard{border-color:#6366f1;background:rgba(99,102,241,.06)}
+.rec-title{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:.4rem}
+.rec-box.rec-rap .rec-title{color:var(--teal)}
+.rec-box.rec-standard .rec-title{color:#818cf8}
+.rec-text{font-size:.8rem;color:var(--body);line-height:1.6}
+/* PROJECTION CHART */
+.proj-row{display:grid;grid-template-columns:60px 1fr 1fr;gap:.4rem;align-items:center;padding:.2rem 0;font-size:.72rem;font-family:var(--font-mono)}
+.proj-bar{height:8px;border-radius:4px;min-width:2px}
+.proj-bar.rap{background:var(--teal)}
+.proj-bar.std{background:#6366f1}
+.proj-hdr{display:grid;grid-template-columns:60px 1fr 1fr;gap:.4rem;font-family:var(--font-mono);font-size:.62rem;color:var(--dim);letter-spacing:.05em;text-transform:uppercase;margin-bottom:.4rem}
+/* PSLF RESULTS */
+.pslf-stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1rem}
+@media(max-width:520px){.pslf-stat-row{grid-template-columns:1fr 1fr}}
+.pslf-stat{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.8rem;text-align:center}
+.pslf-stat-val{display:block;font-family:var(--font-mono);font-size:1.2rem;color:#e8edf5;margin-bottom:.2rem}
+.pslf-stat-lbl{font-size:.65rem;color:var(--dim)}
+.pslf-compare{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.9rem}
+.pslf-compare-row{display:flex;justify-content:space-between;font-size:.75rem;padding:.25rem 0;border-bottom:1px solid rgba(30,45,69,.4)}
+.pslf-compare-row:last-child{border-bottom:none}
+.pslf-ineligible{background:#1a0a0a;border:1px solid #5f1a1a;border-radius:var(--radius-sm);padding:.9rem;color:#f87171;font-size:.8rem;line-height:1.6}
+/* EXPORT */
+.results-export-row{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)}
+.export-btn{font-family:var(--font-mono);font-size:.65rem;padding:.35rem .75rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--dim);letter-spacing:.05em;cursor:pointer;transition:all .15s}
+.export-btn:hover{border-color:var(--teal);color:var(--teal)}
+.export-btn:disabled{opacity:.28;cursor:not-allowed}
+/* TOGGLE PANELS */
+.ap2-inbound-wrap,.manifest-wrap{margin-top:1.25rem}
+.toggle-header{display:flex;align-items:center;gap:.5rem;padding:.5rem .7rem;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;user-select:none}
+.toggle-header svg{color:var(--dim);transition:transform .2s;flex-shrink:0}
+.toggle-header.open svg{transform:rotate(90deg)}
+.toggle-label{font-family:var(--font-mono);font-size:.65rem;color:var(--dim);letter-spacing:.05em}
+.toggle-body{display:none;padding:.75rem;background:var(--bg3);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm)}
+.toggle-body.open{display:block}
+.toggle-body textarea{width:100%;min-height:80px;background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--body);font-family:var(--font-mono);font-size:.65rem;padding:.5rem;resize:vertical;line-height:1.4}
+/* MCP PANEL */
+.mcp-section{margin-top:1rem}
+.mcp-toggle{font-family:var(--font-mono);font-size:.62rem;color:var(--dim);background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.35rem .7rem;letter-spacing:.06em;cursor:pointer;transition:all .15s}
+.mcp-toggle:hover{border-color:var(--teal);color:var(--teal)}
+.mcp-panel{display:none;margin-top:.5rem;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.75rem;overflow-x:auto}
+.mcp-panel.open{display:block}
+.mcp-panel pre{font-family:var(--font-mono);font-size:.65rem;color:var(--dim);white-space:pre-wrap}
+/* FOOTER */
+.tool-footer{border-top:1px solid var(--border);padding:1.75rem 1.5rem;margin-top:3rem;font-size:0.78rem;color:var(--dim);font-family:var(--font-mono);text-align:center}
+.tool-footer a{color:var(--dim);text-decoration:none}
+.tool-footer a:hover{color:var(--body)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <span class="logo-mark">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="7" fill="#0d1321"/>
+          <path d="M7 24L13 8l6 10 4-6 2 4" stroke="#E8A838" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="25" cy="22" r="2.5" fill="#E8A838" opacity=".7"/>
+        </svg>
+      </span>
+      <span class="logo-text">
+        <span class="logo-name"><span class="logo-apex">Apex</span> <span class="logo-org">Logics.org</span></span>
+        <span class="logo-tag">Career &amp; Education Tools</span>
+      </span>
+    </a>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+      <div class="lang-inner" style="justify-content:flex-end;">
+        <button class="lang-btn" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('es')">ES</button>
+        <button class="lang-btn" onclick="setLang('fr')">FR</button>
+        <button class="lang-btn" onclick="setLang('ar')">AR</button>
+        <button class="lang-btn" onclick="setLang('pt')">PT</button>
+        <button class="lang-btn" onclick="setLang('zh')">&#x4E2D;&#x6587;</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- PII BANNER -->
+  <div class="pii-banner" role="note">
+    <div class="pii-inner">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <span data-i18n="pii_banner">🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <!-- OBBBA NOTICE -->
+  <div class="obbba-banner" role="note" style="margin-top:1rem">
+    <strong data-i18n="obbba_title">&#9889; OBBBA 2025 — Effective July 1, 2026</strong>
+    <span data-i18n="obbba_note"> Under the One Big Beautiful Bill Act, new Direct Loan borrowers are enrolled in the Repayment Assistance Plan (RAP) by default — not the Standard Plan. RAP uses a 1–10% of AGI sliding scale, $10/month floor, and 30-year forgiveness. This engine models both plans across your full repayment horizon so you can make the right choice.</span>
+  </div>
+
+  <!-- TOOL HEADER -->
+  <p class="tool-eyebrow" data-i18n="eyebrow">#101 · AL · 108 · Student Finance &amp; Debt</p>
+  <h1 class="tool-title" data-i18n="tool_title">RAP vs. Standard Decision Engine</h1>
+  <p class="tool-desc" data-i18n="tool_desc">Model the Repayment Assistance Plan (RAP) against the Standard 10-year plan — monthly payment, total cost, forgiveness amount, and PSLF path — for your specific loan and income situation.</p>
+
+  <!-- POLICY NOTICE -->
+  <div class="policy-notice" role="note">
+    <strong data-i18n="policy_title">&#9878; Legal &amp; Policy Notice</strong>
+    <span data-i18n="policy_text">Based on OBBBA 2025 (Pub. L. 119-XXX) statutory RAP parameters, effective July 1, 2026. RAP income brackets use reported sliding scale; final implementation guidance from the U.S. Department of Education may refine exact breakpoints. Applies to new Direct Loan borrowers on or after July 1, 2026. Pre-existing borrowers enrolled in SAVE will be transitioned; verify your status at studentaid.gov. This tool does not constitute financial or legal advice.</span>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-bar" role="tablist">
+    <button class="tab-btn active" role="tab" onclick="switchTab('compare')" data-i18n="tab1">RAP vs. Standard</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('pslf')" data-i18n="tab2">PSLF Optimizer</button>
+  </div>
+
+  <!-- ═══ TAB 1: RAP vs. STANDARD ═══ -->
+  <div class="tab-panel active" id="tab-compare">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title" data-i18n="card_loan">Loan Details</div>
+        <div class="field">
+          <label data-i18n="lbl_balance">Loan Balance ($)</label>
+          <input type="number" id="balance" value="45000" step="1000" min="1000">
+        </div>
+        <div class="field">
+          <label data-i18n="lbl_rate">Annual Interest Rate (%)</label>
+          <input type="number" id="rate" value="6.54" step="0.01" min="0" max="20">
+          <span class="hint" data-i18n="hint_rate">2025–26 direct unsubsidized: 6.54% undergrad, 8.08% grad</span>
+        </div>
+        <div class="field">
+          <label data-i18n="lbl_loan_type">Loan Type</label>
+          <div class="pill-group">
+            <button class="pill active" id="type-ug" onclick="setLoanType('ug')" data-i18n="pill_ug">Undergrad</button>
+            <button class="pill" id="type-gr" onclick="setLoanType('gr')" data-i18n="pill_gr">Grad / Professional</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title" data-i18n="card_income">Income &amp; Household</div>
+        <div class="field">
+          <label data-i18n="lbl_agi">Adjusted Gross Income / AGI ($)</label>
+          <input type="number" id="agi" value="55000" step="1000" min="0">
+        </div>
+        <div class="field">
+          <label data-i18n="lbl_family">Family Size</label>
+          <input type="number" id="family" value="1" step="1" min="1" max="8">
+        </div>
+        <div class="field">
+          <label data-i18n="lbl_income_growth">Annual Income Growth (%)</label>
+          <input type="number" id="income_growth" value="3" step="0.5" min="0" max="20">
+          <span class="hint" data-i18n="hint_income_growth">Used to project RAP payments over time. Higher growth = higher RAP payments later.</span>
+        </div>
+        <div class="field">
+          <label data-i18n="lbl_employer">Employer Type (for PSLF note)</label>
+          <select id="employer_type">
+            <option value="public" data-i18n="opt_public">Government / Public service</option>
+            <option value="nonprofit" data-i18n="opt_nonprofit">Qualifying 501(c)(3) non-profit</option>
+            <option value="private" data-i18n="opt_private">Private / For-profit</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calcCompare()" data-i18n="calc_btn">Compare RAP vs. Standard →</button>
+
+    <!-- RESULTS TAB 1 -->
+    <div class="results-section results-hidden" id="results-compare">
+      <div class="comp-panel" id="comp-panel"><!-- filled by JS --></div>
+
+      <!-- 5-YEAR BALANCE PROJECTION -->
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-title" data-i18n="proj_title">Balance Projection — Year by Year</div>
+        <div id="proj-chart"></div>
+      </div>
+
+      <!-- DETAIL TABLE -->
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-title" data-i18n="detail_title">Full Comparison Detail</div>
+        <div class="detail-wrap">
+          <table class="detail-table">
+            <thead>
+              <tr>
+                <th style="text-align:left" data-i18n="th_metric">Metric</th>
+                <th data-i18n="th_rap">RAP (30-yr)</th>
+                <th data-i18n="th_std">Standard (10-yr)</th>
+              </tr>
+            </thead>
+            <tbody id="detail-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RECOMMENDATION -->
+      <div id="rec-box" class="rec-box"></div>
+
+      <!-- EXPORT -->
+      <div class="results-export-row">
+        <button class="export-btn" id="mdBtn1" onclick="exportMD()" data-i18n="btn_md">Export Markdown</button>
+        <button class="export-btn" id="ap2Btn1" onclick="exportAP2()" data-i18n="btn_ap2">AP2 JSON</button>
+      </div>
+    </div>
+  </div><!-- /tab-compare -->
+
+  <!-- ═══ TAB 2: PSLF OPTIMIZER ═══ -->
+  <div class="tab-panel" id="tab-pslf">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title" data-i18n="card_pslf_inputs">PSLF Eligibility Inputs</div>
+        <div class="field">
+          <label data-i18n="lbl_pslf_employer">Employer Type</label>
+          <select id="pslf_employer">
+            <option value="public" data-i18n="opt_public">Government / Public service</option>
+            <option value="nonprofit" data-i18n="opt_nonprofit">Qualifying 501(c)(3) non-profit</option>
+            <option value="private" data-i18n="opt_private">Private / For-profit</option>
+          </select>
+        </div>
+        <div class="field">
+          <label data-i18n="lbl_payments_made">Qualifying Payments Made So Far</label>
+          <input type="number" id="payments_made" value="0" min="0" max="119" step="1">
+          <span class="hint" data-i18n="hint_payments_made">PSLF requires 120 qualifying payments on a qualifying plan while employed full-time at a qualifying employer. RAP qualifies.</span>
+        </div>
+        <div class="field">
+          <label data-i18n="lbl_pslf_balance">Loan Balance ($)</label>
+          <input type="number" id="pslf_balance" value="45000" step="500" min="0">
+        </div>
+        <div class="field">
+          <label data-i18n="lbl_pslf_rate">Interest Rate (%)</label>
+          <input type="number" id="pslf_rate" value="6.54" step="0.01" min="0" max="20">
+        </div>
+        <div class="field">
+          <label data-i18n="lbl_pslf_agi">AGI ($)</label>
+          <input type="number" id="pslf_agi" value="55000" step="1000" min="0">
+        </div>
+        <div class="field">
+          <label data-i18n="lbl_pslf_family">Family Size</label>
+          <input type="number" id="pslf_family" value="1" step="1" min="1" max="8">
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title" data-i18n="card_pslf_about">About PSLF + RAP</div>
+        <p style="font-size:.8rem;color:var(--dim);line-height:1.7;margin-bottom:.7rem" data-i18n="pslf_about_text">Public Service Loan Forgiveness cancels the remaining balance on your Direct Loans after 120 qualifying monthly payments while working full-time for a qualifying employer. RAP qualifies for PSLF under OBBBA 2025. PSLF forgiveness is tax-free.</p>
+        <p style="font-size:.78rem;color:var(--dim);line-height:1.6;margin-bottom:.5rem"><strong style="color:var(--body)" data-i18n="pslf_qualify_title">Qualifying employers:</strong> <span data-i18n="pslf_qualify_text">Federal, state, local, tribal government; qualifying 501(c)(3) non-profits; AmeriCorps; Peace Corps.</span></p>
+        <p style="font-size:.78rem;color:var(--dim);line-height:1.6"><strong style="color:var(--body)" data-i18n="pslf_plan_title">Qualifying plans:</strong> <span data-i18n="pslf_plan_text">RAP, IBR, PAYE, ICR, and Standard 10-year. Graduated and Extended plans do NOT qualify. RAP added as qualifying plan per OBBBA 2025.</span></p>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calcPSLF()" data-i18n="calc_pslf_btn">Calculate PSLF Path →</button>
+
+    <!-- RESULTS TAB 2 -->
+    <div class="results-section results-hidden" id="results-pslf">
+      <div id="pslf-result-panel"></div>
+      <div class="results-export-row">
+        <button class="export-btn" id="mdBtn2" onclick="exportMD2()" data-i18n="btn_md">Export Markdown</button>
+        <button class="export-btn" id="ap2Btn2" onclick="exportAP2()" data-i18n="btn_ap2">AP2 JSON</button>
+      </div>
+    </div>
+  </div><!-- /tab-pslf -->
+
+  <!-- MANIFEST -->
+  <div class="manifest-wrap">
+    <div class="toggle-header" onclick="toggleSection('manifest')" id="manifest-hdr">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="toggle-label">manifest.json — AP2 / MCP</span>
+    </div>
+    <div class="toggle-body" id="manifest">
+      <pre style="font-family:var(--font-mono);font-size:.68rem;color:var(--dim);white-space:pre-wrap" id="manifest-content"></pre>
+    </div>
+  </div>
+
+  <!-- AP2 INBOUND -->
+  <div class="ap2-inbound-wrap">
+    <div class="toggle-header" onclick="toggleSection('ap2-in')" id="ap2-in-hdr">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="toggle-label" data-i18n="ap2_inbound_label">AP2 Inbound — Load from AL-13 / AL-17</span>
+    </div>
+    <div class="toggle-body" id="ap2-in">
+      <p style="font-size:.7rem;color:var(--dim);margin-bottom:.5rem" data-i18n="ap2_inbound_desc">Paste an AP2 mandate from another Apex Logics tool to pre-fill your loan details.</p>
+      <textarea id="ap2InText" placeholder='{"mandate_type":"loan_repayment_record","inputs":{...}}'></textarea>
+      <button class="export-btn" onclick="loadAP2Inbound()" style="margin-top:.4rem" data-i18n="ap2_load_btn">Load AP2 Payload</button>
+    </div>
+  </div>
+
+  <div class="mcp-section"><button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">
+    MCP Tool Manifest
+  </button>
+  <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
+    <pre id="mcpManifestPre"></pre>
+  </div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-108 · Data: OBBBA 2025 / HHS FPL 2026
+  </footer>
+
+</div><!-- /container -->
+
+<script>
+'use strict';
+
+/* ── STATE ── */
+let loanType = 'ug';
+let currentLang = sessionStorage.getItem('apex_lang') || 'en';
+let lastResult = null;
+let lastPSLFResult = null;
+
+/* ── FPL TABLE (HHS 2026 est.) ── */
+const FPL = { 1:15650, 2:21150, 3:26650, 4:32150, 5:37650, 6:43150, 7:48650, 8:54150 };
+
+/* ── I18N ── */
+const STRINGS = {
+  en:{
+    pii_banner:"🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.",
+    obbba_title:"⚡ OBBBA 2025 — Effective July 1, 2026",
+    obbba_note:" Under the One Big Beautiful Bill Act, new Direct Loan borrowers are enrolled in the Repayment Assistance Plan (RAP) by default — not the Standard Plan. RAP uses a 1–10% of AGI sliding scale, $10/month floor, and 30-year forgiveness. This engine models both plans across your full repayment horizon.",
+    eyebrow:"#101 · AL · 108 · Student Finance & Debt",
+    tool_title:"RAP vs. Standard Decision Engine",
+    tool_desc:"Model the Repayment Assistance Plan (RAP) against the Standard 10-year plan — monthly payment, total cost, forgiveness amount, and PSLF path — for your specific loan and income situation.",
+    policy_title:"⚖ Legal & Policy Notice",
+    policy_text:"Based on OBBBA 2025 statutory RAP parameters, effective July 1, 2026. RAP income brackets use reported sliding scale; final U.S. Dept. of Education implementation guidance may refine exact breakpoints. This tool does not constitute financial or legal advice — verify your options at studentaid.gov.",
+    tab1:"RAP vs. Standard", tab2:"PSLF Optimizer",
+    card_loan:"Loan Details", card_income:"Income & Household",
+    lbl_balance:"Loan Balance ($)", lbl_rate:"Annual Interest Rate (%)",
+    hint_rate:"2025–26 direct unsubsidized: 6.54% undergrad, 8.08% grad",
+    lbl_loan_type:"Loan Type",
+    pill_ug:"Undergrad", pill_gr:"Grad / Professional",
+    lbl_agi:"Adjusted Gross Income / AGI ($)",
+    lbl_family:"Family Size",
+    lbl_income_growth:"Annual Income Growth (%)",
+    hint_income_growth:"Projects how RAP payments rise over time. Higher growth = faster balance reduction but higher payments.",
+    lbl_employer:"Employer Type (for PSLF note)",
+    opt_public:"Government / Public service",
+    opt_nonprofit:"Qualifying 501(c)(3) non-profit",
+    opt_private:"Private / For-profit",
+    calc_btn:"Compare RAP vs. Standard →",
+    proj_title:"Balance Projection — Year by Year",
+    detail_title:"Full Comparison Detail",
+    th_metric:"Metric", th_rap:"RAP (30-yr)", th_std:"Standard (10-yr)",
+    btn_md:"Export Markdown", btn_ap2:"AP2 JSON",
+    card_pslf_inputs:"PSLF Eligibility Inputs", card_pslf_about:"About PSLF + RAP",
+    lbl_pslf_employer:"Employer Type",
+    lbl_payments_made:"Qualifying Payments Made So Far",
+    hint_payments_made:"PSLF requires 120 qualifying payments on a qualifying plan while working full-time for a qualifying employer. RAP qualifies.",
+    lbl_pslf_balance:"Loan Balance ($)",
+    lbl_pslf_rate:"Interest Rate (%)",
+    lbl_pslf_agi:"AGI ($)",
+    lbl_pslf_family:"Family Size",
+    calc_pslf_btn:"Calculate PSLF Path →",
+    pslf_about_text:"Public Service Loan Forgiveness cancels the remaining balance on your Direct Loans after 120 qualifying monthly payments while working full-time for a qualifying employer. RAP qualifies for PSLF under OBBBA 2025. PSLF forgiveness is tax-free.",
+    pslf_qualify_title:"Qualifying employers:",
+    pslf_qualify_text:"Federal, state, local, tribal government; qualifying 501(c)(3) non-profits; AmeriCorps; Peace Corps.",
+    pslf_plan_title:"Qualifying plans:",
+    pslf_plan_text:"RAP, IBR, PAYE, ICR, and Standard 10-year. Graduated and Extended plans do NOT qualify. RAP added per OBBBA 2025.",
+    ap2_inbound_label:"AP2 Inbound — Load from AL-13 / AL-17",
+    ap2_inbound_desc:"Paste an AP2 mandate from another Apex Logics tool to pre-fill your loan details.",
+    ap2_load_btn:"Load AP2 Payload"
+  },
+  es:{
+    pii_banner:"🔒 Todos los datos se procesan localmente en tu navegador. No se transmite ningún dato. Las entradas desaparecen al cerrar la pestaña.",
+    obbba_title:"⚡ OBBBA 2025 — Vigente desde el 1 de julio de 2026",
+    obbba_note:" Bajo la OBBBA 2025, los nuevos prestatarios directos se inscriben en el Plan de Asistencia al Pago (RAP) de forma predeterminada — no en el Plan Estándar. RAP usa una escala del 1–10% del AGI, piso de $10/mes y condonación a 30 años.",
+    eyebrow:"#101 · AL · 108 · Finanzas Estudiantiles",
+    tool_title:"Motor de Decisión RAP vs. Estándar",
+    tool_desc:"Modela el Plan de Asistencia al Pago (RAP) frente al plan Estándar de 10 años según tu préstamo e ingresos.",
+    policy_title:"⚖ Aviso Legal y de Política",
+    policy_text:"Basado en los parámetros estatutarios de RAP de la OBBBA 2025, vigentes desde el 1 de julio de 2026. Esta herramienta no constituye asesoramiento financiero o legal.",
+    tab1:"RAP vs. Estándar", tab2:"Optimizador PSLF",
+    card_loan:"Detalles del Préstamo", card_income:"Ingresos y Hogar",
+    lbl_balance:"Saldo del Préstamo ($)", lbl_rate:"Tasa de Interés Anual (%)",
+    hint_rate:"Tasa directa no subsidiada 2025-26: 6.54% pregrado, 8.08% posgrado",
+    lbl_loan_type:"Tipo de Préstamo",
+    pill_ug:"Pregrado", pill_gr:"Posgrado / Profesional",
+    lbl_agi:"Ingreso Bruto Ajustado ($)",
+    lbl_family:"Tamaño de la Familia",
+    lbl_income_growth:"Crecimiento Anual de Ingresos (%)",
+    hint_income_growth:"Proyecta cómo aumentan los pagos RAP con el tiempo.",
+    lbl_employer:"Tipo de Empleador",
+    opt_public:"Gobierno / Servicio público",
+    opt_nonprofit:"ONG 501(c)(3) calificada",
+    opt_private:"Privado / Con fines de lucro",
+    calc_btn:"Comparar RAP vs. Estándar →",
+    proj_title:"Proyección de Saldo — Por Año",
+    detail_title:"Comparación Detallada",
+    th_metric:"Métrica", th_rap:"RAP (30 años)", th_std:"Estándar (10 años)",
+    btn_md:"Exportar Markdown", btn_ap2:"AP2 JSON",
+    card_pslf_inputs:"Entradas de Elegibilidad PSLF", card_pslf_about:"Sobre PSLF + RAP",
+    lbl_pslf_employer:"Tipo de Empleador",
+    lbl_payments_made:"Pagos Calificados Realizados",
+    hint_payments_made:"PSLF requiere 120 pagos calificados. RAP califica.",
+    lbl_pslf_balance:"Saldo del Préstamo ($)",
+    lbl_pslf_rate:"Tasa de Interés (%)",
+    lbl_pslf_agi:"AGI ($)",
+    lbl_pslf_family:"Tamaño de la Familia",
+    calc_pslf_btn:"Calcular Ruta PSLF →",
+    pslf_about_text:"El PSLF cancela el saldo restante después de 120 pagos calificados. RAP califica para PSLF bajo la OBBBA 2025.",
+    pslf_qualify_title:"Empleadores calificados:",
+    pslf_qualify_text:"Gobierno federal, estatal, local, tribal; ONG 501(c)(3); AmeriCorps; Cuerpo de Paz.",
+    pslf_plan_title:"Planes calificados:",
+    pslf_plan_text:"RAP, IBR, PAYE, ICR y Estándar 10 años. Graduado y Extendido NO califican.",
+    ap2_inbound_label:"AP2 Entrante — Cargar desde AL-13 / AL-17",
+    ap2_inbound_desc:"Pega un mandato AP2 de otra herramienta de Apex Logics.",
+    ap2_load_btn:"Cargar Payload AP2"
+  },
+  fr:{
+    pii_banner:"🔒 Toutes les données sont traitées localement. Aucune transmission. Les entrées disparaissent à la fermeture de l'onglet.",
+    obbba_title:"⚡ OBBBA 2025 — En vigueur le 1er juillet 2026",
+    obbba_note:" La loi OBBBA 2025 inscrit les nouveaux emprunteurs dans le Plan d'Assistance au Remboursement (RAP) par défaut. RAP : 1–10% de l'AGI, plancher 10$/mois, remise à 30 ans.",
+    eyebrow:"#101 · AL · 108 · Finance Étudiante",
+    tool_title:"Moteur de Décision RAP vs. Standard",
+    tool_desc:"Comparez le Plan d'Assistance au Remboursement (RAP) et le plan Standard 10 ans pour votre situation de prêt et de revenus.",
+    policy_title:"⚖ Avis Juridique et de Politique",
+    policy_text:"Basé sur les paramètres statutaires RAP de la loi OBBBA 2025, en vigueur le 1er juillet 2026. Cet outil ne constitue pas un conseil financier ou juridique.",
+    tab1:"RAP vs. Standard", tab2:"Optimiseur PSLF",
+    card_loan:"Détails du Prêt", card_income:"Revenus et Ménage",
+    lbl_balance:"Solde du Prêt ($)", lbl_rate:"Taux d'Intérêt Annuel (%)",
+    hint_rate:"Taux direct non subventionné 2025-26 : 6,54% licence, 8,08% master",
+    lbl_loan_type:"Type de Prêt",
+    pill_ug:"Licence", pill_gr:"Master / Professionnel",
+    lbl_agi:"Revenu Brut Ajusté ($)",
+    lbl_family:"Taille du Ménage",
+    lbl_income_growth:"Croissance Annuelle du Revenu (%)",
+    hint_income_growth:"Projette l'évolution des paiements RAP avec la croissance des revenus.",
+    lbl_employer:"Type d'Employeur",
+    opt_public:"Gouvernement / Service public",
+    opt_nonprofit:"ONG 501(c)(3) qualifiée",
+    opt_private:"Privé / À but lucratif",
+    calc_btn:"Comparer RAP vs. Standard →",
+    proj_title:"Projection du Solde — Par Année",
+    detail_title:"Comparaison Détaillée",
+    th_metric:"Métrique", th_rap:"RAP (30 ans)", th_std:"Standard (10 ans)",
+    btn_md:"Exporter Markdown", btn_ap2:"AP2 JSON",
+    card_pslf_inputs:"Entrées d'Éligibilité PSLF", card_pslf_about:"À Propos PSLF + RAP",
+    lbl_pslf_employer:"Type d'Employeur",
+    lbl_payments_made:"Paiements Qualifiés Effectués",
+    hint_payments_made:"PSLF nécessite 120 paiements qualifiés. RAP est qualifié.",
+    lbl_pslf_balance:"Solde du Prêt ($)",
+    lbl_pslf_rate:"Taux d'Intérêt (%)",
+    lbl_pslf_agi:"AGI ($)",
+    lbl_pslf_family:"Taille du Ménage",
+    calc_pslf_btn:"Calculer le Chemin PSLF →",
+    pslf_about_text:"Le PSLF annule le solde restant après 120 paiements qualifiés. RAP est qualifié selon la loi OBBBA 2025.",
+    pslf_qualify_title:"Employeurs qualifiés :",
+    pslf_qualify_text:"Gouvernement fédéral, étatique, local, tribal ; ONG 501(c)(3) ; AmeriCorps ; Corps de la Paix.",
+    pslf_plan_title:"Plans qualifiés :",
+    pslf_plan_text:"RAP, IBR, PAYE, ICR et Standard 10 ans. Gradué et Étendu NE qualifient PAS.",
+    ap2_inbound_label:"AP2 Entrant — Charger depuis AL-13 / AL-17",
+    ap2_inbound_desc:"Collez un mandat AP2 d'un autre outil Apex Logics.",
+    ap2_load_btn:"Charger le Payload AP2"
+  },
+  ar:{
+    pii_banner:"🔒 جميع البيانات تُعالج محليًا في متصفحك. لا تُرسل أي بيانات. تختفي المدخلات عند إغلاق التبويب.",
+    obbba_title:"⚡ OBBBA 2025 — سارية المفعول من 1 يوليو 2026",
+    obbba_note:" بموجب قانون OBBBA 2025، يُسجَّل المقترضون الجدد تلقائيًا في خطة مساعدة السداد (RAP) — وليس الخطة المعيارية. RAP: 1–10% من AGI، حد أدنى 10 دولار/شهر، إعفاء بعد 30 سنة.",
+    eyebrow:"#101 · AL · 108 · تمويل الطلاب",
+    tool_title:"محرك قرار RAP مقابل الخطة المعيارية",
+    tool_desc:"قارن خطة مساعدة السداد (RAP) مقابل الخطة المعيارية لمدة 10 سنوات.",
+    policy_title:"⚖ إشعار قانوني وسياسي",
+    policy_text:"استناداً إلى معاملات RAP القانونية في OBBBA 2025، سارية من 1 يوليو 2026. هذه الأداة لا تُشكّل نصيحة مالية أو قانونية.",
+    tab1:"RAP مقابل المعياري", tab2:"محسّن PSLF",
+    card_loan:"تفاصيل القرض", card_income:"الدخل والأسرة",
+    lbl_balance:"رصيد القرض ($)", lbl_rate:"معدل الفائدة السنوي (%)",
+    hint_rate:"معدل 2025-26: 6.54% للبكالوريوس، 8.08% للدراسات العليا",
+    lbl_loan_type:"نوع القرض",
+    pill_ug:"بكالوريوس", pill_gr:"دراسات عليا / مهني",
+    lbl_agi:"الدخل الإجمالي المعدّل ($)",
+    lbl_family:"حجم الأسرة",
+    lbl_income_growth:"نمو الدخل السنوي (%)",
+    hint_income_growth:"يُقدّر كيف ترتفع مدفوعات RAP مع نمو الدخل.",
+    lbl_employer:"نوع صاحب العمل",
+    opt_public:"حكومة / خدمة عامة",
+    opt_nonprofit:"منظمة غير ربحية 501(c)(3)",
+    opt_private:"خاص / ربحي",
+    calc_btn:"مقارنة RAP مقابل المعياري ←",
+    proj_title:"توقع الرصيد — سنة بسنة",
+    detail_title:"مقارنة تفصيلية",
+    th_metric:"المقياس", th_rap:"RAP (30 سنة)", th_std:"معياري (10 سنوات)",
+    btn_md:"تصدير Markdown", btn_ap2:"AP2 JSON",
+    card_pslf_inputs:"مدخلات الأهلية PSLF", card_pslf_about:"حول PSLF + RAP",
+    lbl_pslf_employer:"نوع صاحب العمل",
+    lbl_payments_made:"المدفوعات المؤهلة المنجزة",
+    hint_payments_made:"يتطلب PSLF 120 دفعة مؤهلة. RAP يؤهل.",
+    lbl_pslf_balance:"رصيد القرض ($)",
+    lbl_pslf_rate:"معدل الفائدة (%)",
+    lbl_pslf_agi:"AGI ($)",
+    lbl_pslf_family:"حجم الأسرة",
+    calc_pslf_btn:"حساب مسار PSLF ←",
+    pslf_about_text:"يلغي PSLF الرصيد المتبقي بعد 120 دفعة مؤهلة. RAP يؤهل لـ PSLF بموجب OBBBA 2025.",
+    pslf_qualify_title:"أصحاب العمل المؤهلون:",
+    pslf_qualify_text:"الحكومة الفيدرالية والولائية والمحلية والقبلية؛ المنظمات غير الربحية 501(c)(3)؛ AmeriCorps؛ سلك السلام.",
+    pslf_plan_title:"الخطط المؤهلة:",
+    pslf_plan_text:"RAP وIBR وPAYE وICR والمعياري 10 سنوات. المتدرج والموسّع لا يُؤهّلان.",
+    ap2_inbound_label:"AP2 وارد — تحميل من AL-13 / AL-17",
+    ap2_inbound_desc:"الصق ملف AP2 من أداة Apex Logics أخرى.",
+    ap2_load_btn:"تحميل AP2"
+  },
+  pt:{
+    pii_banner:"🔒 Todos os dados são processados localmente. Nenhum dado é transmitido. As entradas desaparecem ao fechar a aba.",
+    obbba_title:"⚡ OBBBA 2025 — Em vigor desde 1 de julho de 2026",
+    obbba_note:" A lei OBBBA 2025 inscreve novos mutuários no Plano de Assistência ao Pagamento (RAP) por padrão. RAP: 1–10% do AGI, piso de US$10/mês, remissão em 30 anos.",
+    eyebrow:"#101 · AL · 108 · Finanças Estudantis",
+    tool_title:"Motor de Decisão RAP vs. Padrão",
+    tool_desc:"Compare o Plano de Assistência ao Pagamento (RAP) com o plano Padrão de 10 anos para seu empréstimo e renda.",
+    policy_title:"⚖ Aviso Legal e de Política",
+    policy_text:"Baseado nos parâmetros estatutários RAP da lei OBBBA 2025, em vigor desde 1 de julho de 2026. Esta ferramenta não constitui aconselhamento financeiro ou jurídico.",
+    tab1:"RAP vs. Padrão", tab2:"Otimizador PSLF",
+    card_loan:"Detalhes do Empréstimo", card_income:"Renda e Família",
+    lbl_balance:"Saldo do Empréstimo ($)", lbl_rate:"Taxa de Juros Anual (%)",
+    hint_rate:"Taxa direta não subsidiada 2025-26: 6,54% graduação, 8,08% pós-graduação",
+    lbl_loan_type:"Tipo de Empréstimo",
+    pill_ug:"Graduação", pill_gr:"Pós-Graduação / Profissional",
+    lbl_agi:"Renda Bruta Ajustada ($)",
+    lbl_family:"Tamanho da Família",
+    lbl_income_growth:"Crescimento Anual de Renda (%)",
+    hint_income_growth:"Projeta como os pagamentos RAP aumentam com o crescimento da renda.",
+    lbl_employer:"Tipo de Empregador",
+    opt_public:"Governo / Serviço público",
+    opt_nonprofit:"ONG 501(c)(3) qualificada",
+    opt_private:"Privado / Com fins lucrativos",
+    calc_btn:"Comparar RAP vs. Padrão →",
+    proj_title:"Projeção de Saldo — Por Ano",
+    detail_title:"Comparação Detalhada",
+    th_metric:"Métrica", th_rap:"RAP (30 anos)", th_std:"Padrão (10 anos)",
+    btn_md:"Exportar Markdown", btn_ap2:"AP2 JSON",
+    card_pslf_inputs:"Entradas de Elegibilidade PSLF", card_pslf_about:"Sobre PSLF + RAP",
+    lbl_pslf_employer:"Tipo de Empregador",
+    lbl_payments_made:"Pagamentos Qualificados Realizados",
+    hint_payments_made:"PSLF requer 120 pagamentos qualificados. RAP qualifica.",
+    lbl_pslf_balance:"Saldo do Empréstimo ($)",
+    lbl_pslf_rate:"Taxa de Juros (%)",
+    lbl_pslf_agi:"AGI ($)",
+    lbl_pslf_family:"Tamanho da Família",
+    calc_pslf_btn:"Calcular Caminho PSLF →",
+    pslf_about_text:"O PSLF cancela o saldo restante após 120 pagamentos qualificados. RAP qualifica para PSLF sob a lei OBBBA 2025.",
+    pslf_qualify_title:"Empregadores qualificados:",
+    pslf_qualify_text:"Governo federal, estadual, local, tribal; ONGs 501(c)(3); AmeriCorps; Corpo da Paz.",
+    pslf_plan_title:"Planos qualificados:",
+    pslf_plan_text:"RAP, IBR, PAYE, ICR e Padrão 10 anos. Graduado e Estendido NÃO qualificam.",
+    ap2_inbound_label:"AP2 Entrada — Carregar de AL-13 / AL-17",
+    ap2_inbound_desc:"Cole um mandato AP2 de outra ferramenta Apex Logics.",
+    ap2_load_btn:"Carregar Payload AP2"
+  },
+  zh:{
+    pii_banner:"🔒 所有输入均在您的浏览器中本地处理。不传输任何数据。关闭标签页后输入自动消失。",
+    obbba_title:"⚡ OBBBA 2025 — 2026年7月1日起生效",
+    obbba_note:" 根据OBBBA 2025法案，新直接贷款借款人默认加入还款援助计划（RAP）——而非标准方案。RAP：AGI的1–10%，每月最低$10，30年豁免。",
+    eyebrow:"#101 · AL · 108 · 学生财务与债务",
+    tool_title:"RAP与标准方案决策引擎",
+    tool_desc:"根据您的贷款和收入情况，对比还款援助计划（RAP）与标准10年方案的月供、总费用、豁免金额和PSLF路径。",
+    policy_title:"⚖ 法律与政策声明",
+    policy_text:"基于OBBBA 2025法定RAP参数，自2026年7月1日起生效。本工具不构成财务或法律建议——请在studentaid.gov验证您的选项。",
+    tab1:"RAP与标准方案", tab2:"PSLF优化器",
+    card_loan:"贷款详情", card_income:"收入与家庭",
+    lbl_balance:"贷款余额 ($)", lbl_rate:"年利率 (%)",
+    hint_rate:"2025-26直接非补贴利率：本科6.54%，研究生8.08%",
+    lbl_loan_type:"贷款类型",
+    pill_ug:"本科", pill_gr:"研究生/专业",
+    lbl_agi:"调整后总收入 ($)",
+    lbl_family:"家庭规模",
+    lbl_income_growth:"年收入增长率 (%)",
+    hint_income_growth:"预测RAP还款如何随收入增长而变化。",
+    lbl_employer:"雇主类型",
+    opt_public:"政府 / 公共服务",
+    opt_nonprofit:"符合条件的501(c)(3)非营利组织",
+    opt_private:"私营 / 营利性",
+    calc_btn:"比较RAP与标准方案 →",
+    proj_title:"余额预测 — 逐年",
+    detail_title:"完整对比详情",
+    th_metric:"指标", th_rap:"RAP（30年）", th_std:"标准（10年）",
+    btn_md:"导出 Markdown", btn_ap2:"AP2 JSON",
+    card_pslf_inputs:"PSLF资格输入", card_pslf_about:"关于PSLF + RAP",
+    lbl_pslf_employer:"雇主类型",
+    lbl_payments_made:"已完成的合格还款次数",
+    hint_payments_made:"PSLF需要120次合格还款。RAP符合条件。",
+    lbl_pslf_balance:"贷款余额 ($)",
+    lbl_pslf_rate:"利率 (%)",
+    lbl_pslf_agi:"AGI ($)",
+    lbl_pslf_family:"家庭规模",
+    calc_pslf_btn:"计算PSLF路径 →",
+    pslf_about_text:"在合格雇主全职工作120次合格还款后，PSLF取消直接贷款余额。RAP在OBBBA 2025下符合PSLF条件。",
+    pslf_qualify_title:"符合条件的雇主：",
+    pslf_qualify_text:"联邦、州、地方、部落政府；符合条件的501(c)(3)非营利组织；美国国家服务队；和平队。",
+    pslf_plan_title:"符合条件的方案：",
+    pslf_plan_text:"RAP、IBR、PAYE、ICR和标准10年方案。分级和延长方案不符合条件。",
+    ap2_inbound_label:"AP2 导入 — 从 AL-13 / AL-17 加载",
+    ap2_inbound_desc:"粘贴另一个Apex Logics工具的AP2授权以预填贷款详情。",
+    ap2_load_btn:"加载 AP2 数据"
+  }
+};
+
+function t(key) {
+  return (STRINGS[currentLang] || STRINGS.en)[key] || (STRINGS.en[key] || key);
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  sessionStorage.setItem('apex_lang', lang);
+  const isAR = lang === 'ar';
+  document.documentElement.lang = lang;
+  document.documentElement.dir = isAR ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim().toLowerCase() === lang ||
+      (lang==='zh' && b.textContent.trim()==='中文') ||
+      (lang==='ar' && b.textContent.trim()==='AR') ||
+      (lang==='pt' && b.textContent.trim()==='PT') ||
+      (lang==='fr' && b.textContent.trim()==='FR') ||
+      (lang==='es' && b.textContent.trim()==='ES') ||
+      (lang==='en' && b.textContent.trim()==='EN'));
+  });
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    const val = t(key);
+    if (el.tagName === 'INPUT' && el.type !== 'button') return;
+    el.innerHTML = val;
+  });
+  updateManifest();
+}
+
+/* ── TOGGLE ── */
+function toggleSection(id) {
+  const body = document.getElementById(id);
+  const hdr = document.getElementById(id + '-hdr');
+  const open = body.classList.toggle('open');
+  hdr.classList.toggle('open', open);
+}
+
+/* ── TABS ── */
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.tab-btn')[name === 'compare' ? 0 : 1].classList.add('active');
+}
+
+/* ── LOAN TYPE ── */
+function setLoanType(type) {
+  loanType = type;
+  document.getElementById('type-ug').classList.toggle('active', type==='ug');
+  document.getElementById('type-gr').classList.toggle('active', type==='gr');
+}
+
+/* ── RAP FORMULA (OBBBA 2025) ── */
+// Sliding scale: 1% at ≤2.5x FPL, linear to 10% at ≥4.5x FPL
+// $10/month floor
+function calcRAPPayment(agi, familySize) {
+  const fplAmt = FPL[Math.min(8, Math.max(1, Math.round(familySize)))] || FPL[1];
+  const ratio = agi / fplAmt;
+  let pct;
+  if (ratio <= 2.5) {
+    pct = 0.01;
+  } else if (ratio >= 4.5) {
+    pct = 0.10;
+  } else {
+    pct = 0.01 + 0.09 * (ratio - 2.5) / 2.0;
+  }
+  const monthly = Math.max(10, (agi / 12) * pct);
+  return { monthly: monthly, pct: pct, ratio: ratio };
+}
+
+/* ── STANDARD PAYMENT ── */
+function stdPayment(principal, annualRate, months) {
+  const r = annualRate / 100 / 12;
+  if (r < 0.000001) return principal / months;
+  return principal * r * Math.pow(1+r, months) / (Math.pow(1+r, months) - 1);
+}
+
+/* ── PROJECT RAP 30 YEARS ── */
+function projectRAP(balance, annualRate, agi, familySize, incomeGrowthPct) {
+  const r = annualRate / 100 / 12;
+  let b = balance;
+  let totalPaid = 0;
+  let totalInterest = 0;
+  const yearSnapshots = []; // [year, balance, cumPaid]
+  for (let month = 0; month < 360; month++) {
+    const yearNum = Math.floor(month / 12);
+    const yearAGI = agi * Math.pow(1 + incomeGrowthPct / 100, yearNum);
+    const pmt = calcRAPPayment(yearAGI, familySize).monthly;
+    const interest = b * r;
+    totalInterest += interest;
+    b = b + interest - pmt;
+    if (b < 0) {
+      // paid off early — RAP can amortize early at high incomes
+      totalPaid += pmt + b; // refund over-payment
+      b = 0;
+      if ((month+1) % 12 === 0 || month === 0) yearSnapshots.push({ year: yearNum+1, bal: 0, paid: totalPaid });
+      break;
+    }
+    totalPaid += pmt;
+    if ((month+1) % 12 === 0) yearSnapshots.push({ year: yearNum+1, bal: Math.round(b), paid: Math.round(totalPaid) });
+  }
+  const forgiven = Math.max(0, b);
+  const paidOffMonth = b <= 0 ? yearSnapshots[yearSnapshots.length-1].year * 12 : 360;
+  return { totalPaid, totalInterest, forgiven, yearSnapshots, balance: b, months: paidOffMonth };
+}
+
+/* ── PROJECT STANDARD 10 YEARS ── */
+function projectStandard(balance, annualRate) {
+  const r = annualRate / 100 / 12;
+  const pmt = stdPayment(balance, annualRate, 120);
+  let b = balance;
+  let totalPaid = 0;
+  let totalInterest = 0;
+  const yearSnapshots = [];
+  for (let month = 0; month < 120; month++) {
+    const interest = b * r;
+    totalInterest += interest;
+    b = Math.max(0, b + interest - pmt);
+    totalPaid += (b === 0 && month < 119) ? (balance * Math.pow(1+r, month+1) - totalPaid) : pmt;
+    if ((month+1) % 12 === 0) yearSnapshots.push({ year: Math.floor(month/12)+1, bal: Math.round(b), paid: Math.round(totalPaid) });
+  }
+  return { totalPaid: pmt * 120, totalInterest, forgiven: 0, yearSnapshots, balance: 0, months: 120, pmt };
+}
+
+/* ── MAIN CALC ── */
+function calcCompare() {
+  const balance = parseFloat(document.getElementById('balance').value) || 0;
+  const rate = parseFloat(document.getElementById('rate').value) || 0;
+  const agi = parseFloat(document.getElementById('agi').value) || 0;
+  const family = parseInt(document.getElementById('family').value) || 1;
+  const incGrowth = parseFloat(document.getElementById('income_growth').value) || 0;
+  const employer = document.getElementById('employer_type').value;
+
+  if (!balance || !agi) return;
+
+  const rap = projectRAP(balance, rate, agi, family, incGrowth);
+  const std = projectStandard(balance, rate);
+  const rapPmt1 = calcRAPPayment(agi, family);
+  const pslfEligible = ['public','nonprofit'].includes(employer);
+
+  // AP2 export data
+  lastResult = { balance, rate, agi, family, incGrowth, employer, rap, std, rapPmt1, pslfEligible, timestamp: new Date().toISOString() };
+
+  // Render comparison cards
+  const panel = document.getElementById('comp-panel');
+  const rapWins = !pslfEligible && rap.totalPaid < std.totalPaid;
+  const pslfNote = pslfEligible ? `<div style="background:var(--teal3);border-radius:4px;padding:.4rem .6rem;font-size:.7rem;color:var(--teal);margin-top:.5rem;font-family:var(--font-mono)">PSLF track available — see Tab 2 for full analysis</div>` : '';
+
+  panel.innerHTML = `
+    <div class="comp-card ${rapWins ? 'winner' : ''}">
+      ${rapWins ? '<div class="winner-badge">Lower Total Cost</div>' : ''}
+      <div class="comp-card-label">RAP — Repayment Assistance Plan</div>
+      <div class="comp-stat"><span class="comp-stat-val">$${Math.round(rapPmt1.monthly).toLocaleString()}<span style="font-size:.7rem;color:var(--dim)">/mo (yr 1)</span></span><span class="comp-stat-lbl">Year 1 monthly payment (${(rapPmt1.pct*100).toFixed(1)}% of AGI)</span></div>
+      <div class="comp-stat"><span class="comp-stat-val" style="color:${rap.forgiven>0?'var(--green)':'#e8edf5'}">$${Math.round(rap.totalPaid).toLocaleString()}</span><span class="comp-stat-lbl">Total paid ${rap.forgiven>100?'(+ '+fmt$(rap.forgiven)+' forgiven)':'(fully amortized)'}</span></div>
+      <div class="comp-stat"><span class="comp-stat-val">${rap.months === 360 ? '30 yr' : Math.round(rap.months/12)+' yr'}</span><span class="comp-stat-lbl">Term / payoff</span></div>
+      ${pslfNote}
+    </div>
+    <div class="comp-card ${!rapWins && !pslfEligible ? 'winner' : ''}">
+      ${!rapWins && !pslfEligible ? '<div class="winner-badge" style="background:rgba(99,102,241,.15);border-color:#6366f1;color:#818cf8">Lower Total Cost</div>' : ''}
+      <div class="comp-card-label">Standard 10-Year Plan</div>
+      <div class="comp-stat"><span class="comp-stat-val">$${Math.round(std.pmt).toLocaleString()}<span style="font-size:.7rem;color:var(--dim)">/mo</span></span><span class="comp-stat-lbl">Fixed monthly payment</span></div>
+      <div class="comp-stat"><span class="comp-stat-val">$${Math.round(std.totalPaid).toLocaleString()}</span><span class="comp-stat-lbl">Total paid (no forgiveness)</span></div>
+      <div class="comp-stat"><span class="comp-stat-val">10 yr</span><span class="comp-stat-lbl">Term / payoff</span></div>
+    </div>`;
+
+  // Projection chart (10 years)
+  const maxBal = balance;
+  const chartEl = document.getElementById('proj-chart');
+  let chartHTML = `<div class="proj-hdr"><span>Year</span><span style="color:var(--teal)">▬ RAP</span><span style="color:#818cf8">▬ Standard</span></div>`;
+  for (let yr = 1; yr <= 10; yr++) {
+    const rapSnap = rap.yearSnapshots.find(s => s.year === yr);
+    const stdSnap = std.yearSnapshots.find(s => s.year === yr);
+    const rapBal = rapSnap ? rapSnap.bal : 0;
+    const stdBal = stdSnap ? stdSnap.bal : 0;
+    const rapW = Math.max(2, Math.round((rapBal / maxBal) * 180));
+    const stdW = Math.max(2, Math.round((stdBal / maxBal) * 180));
+    chartHTML += `<div class="proj-row">
+      <span style="color:var(--dim)">Yr ${yr}</span>
+      <span><span class="proj-bar rap" style="width:${rapW}px;display:inline-block;vertical-align:middle"></span> <span style="color:var(--teal)">${fmt$(rapBal)}</span></span>
+      <span><span class="proj-bar std" style="width:${stdW}px;display:inline-block;vertical-align:middle"></span> <span style="color:#818cf8">${stdBal > 0 ? fmt$(stdBal) : '—'}</span></span>
+    </div>`;
+  }
+  chartEl.innerHTML = chartHTML;
+
+  // Detail table
+  const tbody = document.getElementById('detail-tbody');
+  const rows = [
+    ['Year 1 monthly payment', fmt$(rapPmt1.monthly), fmt$(std.pmt)],
+    ['Year 1 payment as % of income', (rapPmt1.pct*100).toFixed(1)+'%', ((std.pmt*12/agi)*100).toFixed(1)+'%'],
+    ['Total paid (principal + interest)', fmt$(rap.totalPaid), fmt$(std.totalPaid)],
+    ['Total interest paid', fmt$(rap.totalInterest), fmt$(std.totalInterest)],
+    ['Balance forgiven', rap.forgiven > 100 ? fmt$(rap.forgiven) : '—', '—'],
+    ['Net cost (paid minus forgiven)', fmt$(rap.totalPaid - (rap.forgiven > 100 ? rap.forgiven : 0)), fmt$(std.totalPaid)],
+    ['Plan term', rap.months === 360 ? '30 yr' : Math.round(rap.months/12)+' yr (pays off early)', '10 yr'],
+    ['Tax on forgiveness (if non-PSLF)', rap.forgiven > 100 ? `~${fmt$(rap.forgiven * 0.22)} (22% est.)` : '—', '—'],
+    ['PSLF eligible', 'Yes (per OBBBA 2025)', 'Yes (no balance to forgive)']
+  ];
+  tbody.innerHTML = rows.map(([lbl, rapV, stdV]) =>
+    `<tr><td>${lbl}</td><td class="cell-green">${rapV}</td><td style="color:#818cf8">${stdV}</td></tr>`
+  ).join('');
+
+  // Recommendation box
+  const recEl = document.getElementById('rec-box');
+  let recTitle, recText, recClass;
+  if (pslfEligible) {
+    recClass = 'rec-rap';
+    recTitle = '★ Recommendation: RAP + PSLF Track';
+    recText = `You appear to be PSLF-eligible. Under RAP, your year-1 payment is ${fmt$(rapPmt1.monthly)}/month. If you make 120 qualifying payments under RAP, the remaining balance is forgiven tax-free. Run the PSLF Optimizer (Tab 2) for the full 10-year cost analysis and forgiveness estimate.`;
+  } else if (rap.forgiven > 100 && rap.totalPaid < std.totalPaid) {
+    recClass = 'rec-rap';
+    recTitle = '★ Recommendation: RAP';
+    recText = `At your income and loan size, RAP results in lower total net cost. Your year-1 payment is ${fmt$(rapPmt1.monthly)}/month vs. ${fmt$(std.pmt)}/month on Standard. RAP forgives ${fmt$(rap.forgiven)} at year 30 (note: forgiveness is taxable income unless PSLF). Net cost advantage: ${fmt$(std.totalPaid - rap.totalPaid + rap.forgiven)}.`;
+  } else if (rap.months < 360) {
+    recClass = 'rec-rap';
+    recTitle = '★ RAP Pays Off Early';
+    recText = `At your projected income growth rate, RAP payments accelerate over time and your loan pays off in approximately ${Math.round(rap.months/12)} years — no forgiveness needed, and total cost is ${fmt$(Math.abs(std.totalPaid - rap.totalPaid))} ${rap.totalPaid < std.totalPaid ? 'less' : 'more'} than Standard.`;
+  } else {
+    recClass = 'rec-standard';
+    recTitle = '★ Recommendation: Standard Plan';
+    recText = `At your income level (${(rapPmt1.pct*100).toFixed(1)}% of AGI = ${fmt$(rapPmt1.monthly)}/month), RAP does not reduce your payment meaningfully and accrues more interest over 30 years. Standard Plan costs ${fmt$(std.totalPaid - rap.totalPaid + rap.forgiven)} less in net cost. Consider Standard unless you pursue PSLF.`;
+  }
+  recEl.className = `rec-box ${recClass}`;
+  recEl.innerHTML = `<div class="rec-title">${recTitle}</div><p class="rec-text">${recText}</p>`;
+
+  document.getElementById('results-compare').classList.remove('results-hidden');
+
+  // Sync PSLF tab
+  document.getElementById('pslf_balance').value = balance;
+  document.getElementById('pslf_rate').value = rate;
+  document.getElementById('pslf_agi').value = agi;
+  document.getElementById('pslf_family').value = family;
+  document.getElementById('pslf_employer').value = employer;
+}
+
+/* ── PSLF CALC ── */
+function calcPSLF() {
+  const employer = document.getElementById('pslf_employer').value;
+  const made = parseInt(document.getElementById('payments_made').value) || 0;
+  const bal = parseFloat(document.getElementById('pslf_balance').value) || 0;
+  const rate = parseFloat(document.getElementById('pslf_rate').value) || 0;
+  const agi = parseFloat(document.getElementById('pslf_agi').value) || 0;
+  const family = parseInt(document.getElementById('pslf_family').value) || 1;
+
+  const qualifying = ['public','nonprofit'].includes(employer);
+  const panel = document.getElementById('pslf-result-panel');
+  document.getElementById('results-pslf').classList.remove('results-hidden');
+
+  if (!qualifying) {
+    panel.innerHTML = `<div class="pslf-ineligible"><strong>Not PSLF-Eligible</strong><br>Your employer type does not qualify for PSLF. PSLF requires full-time employment at a government agency or qualifying 501(c)(3) non-profit. If your employer changes, re-run this calculator.</div>`;
+    return;
+  }
+
+  const rapPmt = calcRAPPayment(agi, family).monthly;
+  const remaining = Math.max(0, 120 - made);
+  const yrsRemaining = remaining / 12;
+  const currentYear = new Date().getFullYear();
+  const forgiveYear = currentYear + Math.ceil(yrsRemaining);
+
+  // Simulate balance at PSLF
+  const r = rate / 100 / 12;
+  let b = bal;
+  for (let m = 0; m < remaining; m++) {
+    b = Math.max(0, b + b * r - rapPmt);
+  }
+  const forgiven = Math.max(0, b);
+  const totalPaidPSLF = rapPmt * (made + remaining);
+
+  // Standard comparison
+  const stdPmt = stdPayment(bal, rate, 120);
+  const stdTotal = stdPmt * 120;
+  const pslfSavings = stdTotal - totalPaidPSLF;
+
+  lastPSLFResult = { made, remaining, forgiveYear, forgiven, totalPaidPSLF, pslfSavings, employer, bal, rate, agi, family, rapPmt, timestamp: new Date().toISOString() };
+
+  panel.innerHTML = `
+    <div class="pslf-stat-row">
+      <div class="pslf-stat">
+        <span class="pslf-stat-val">${remaining}</span>
+        <span class="pslf-stat-lbl">Payments Remaining</span>
+      </div>
+      <div class="pslf-stat">
+        <span class="pslf-stat-val">${forgiveYear}</span>
+        <span class="pslf-stat-lbl">Est. Forgiveness Year</span>
+      </div>
+      <div class="pslf-stat">
+        <span class="pslf-stat-val" style="color:var(--green)">${fmt$(forgiven)}</span>
+        <span class="pslf-stat-lbl">Est. Balance Forgiven</span>
+      </div>
+    </div>
+    <div class="pslf-compare">
+      <div class="pslf-compare-row"><span>RAP monthly payment (current AGI)</span><span>${fmt$(rapPmt)}/mo</span></div>
+      <div class="pslf-compare-row"><span>Qualifying payments made</span><span>${made} of 120</span></div>
+      <div class="pslf-compare-row"><span>Qualifying payments remaining</span><span>${remaining}</span></div>
+      <div class="pslf-compare-row"><span>Total paid under RAP+PSLF track</span><span>${fmt$(totalPaidPSLF)}</span></div>
+      <div class="pslf-compare-row"><span>Total paid if Standard (10-yr payoff)</span><span>${fmt$(stdTotal)}</span></div>
+      <div class="pslf-compare-row" style="border-top:1px solid var(--border);padding-top:.4rem;margin-top:.2rem">
+        <span style="color:var(--green);font-weight:600">Est. RAP+PSLF savings vs. Standard</span>
+        <span style="color:var(--green);font-family:var(--font-mono)">${fmt$(Math.max(0, pslfSavings))}</span>
+      </div>
+    </div>
+    <p style="font-size:.72rem;color:var(--dim);margin-top:.7rem;line-height:1.5">PSLF forgiveness is tax-free (ARPA 2021). RAP qualifies as a PSLF plan under OBBBA 2025. Forgiveness estimate assumes consistent RAP payments at current AGI — actual payments vary with income growth. Verify eligibility at <a href="https://studentaid.gov/pslf/" target="_blank" rel="noopener">studentaid.gov/pslf</a>.</p>`;
+}
+
+/* ── FORMATTERS ── */
+function fmt$(n) { return '$' + Math.round(n).toLocaleString(); }
+
+/* ── EXPORT MARKDOWN ── */
+function exportMD() {
+  if (!lastResult) return;
+  const { balance, rate, agi, family, incGrowth, rap, std, rapPmt1, pslfEligible } = lastResult;
+  const ts = new Date().toLocaleDateString();
+  const md = `# RAP vs. Standard Decision Engine — Results\n\n**Generated:** ${ts} | AL-108 · ApexLogics\n\n## Inputs\n| Field | Value |\n|---|---|\n| Loan Balance | ${fmt$(balance)} |\n| Interest Rate | ${rate}% |\n| AGI | ${fmt$(agi)} |\n| Family Size | ${family} |\n| Income Growth | ${incGrowth}%/yr |\n\n## Comparison\n| Metric | RAP (30-yr) | Standard (10-yr) |\n|---|---|---|\n| Yr 1 Payment | ${fmt$(rapPmt1.monthly)}/mo | ${fmt$(std.pmt)}/mo |\n| Total Paid | ${fmt$(rap.totalPaid)} | ${fmt$(std.totalPaid)} |\n| Total Interest | ${fmt$(rap.totalInterest)} | ${fmt$(std.totalInterest)} |\n| Balance Forgiven | ${rap.forgiven > 100 ? fmt$(rap.forgiven) : '—'} | — |\n| Net Cost | ${fmt$(rap.totalPaid - (rap.forgiven > 100 ? rap.forgiven : 0))} | ${fmt$(std.totalPaid)} |\n| PSLF Eligible | Yes | Yes (no balance) |\n\n*RAP formula: OBBBA 2025 / HHS FPL 2026. Not financial advice.*\n`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'rap_vs_standard_results.md'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+function exportMD2() {
+  if (!lastPSLFResult) return;
+  const { made, remaining, forgiveYear, forgiven, totalPaidPSLF, pslfSavings, bal, rapPmt } = lastPSLFResult;
+  const md = `# RAP PSLF Analysis — Results\n\n**Generated:** ${new Date().toLocaleDateString()} | AL-108 · ApexLogics\n\n## PSLF Path\n| Metric | Value |\n|---|---|\n| RAP Monthly Payment | ${fmt$(rapPmt)}/mo |\n| Payments Made | ${made} of 120 |\n| Payments Remaining | ${remaining} |\n| Est. Forgiveness Year | ${forgiveYear} |\n| Est. Balance Forgiven | ${fmt$(forgiven)} |\n| Total Paid (RAP+PSLF) | ${fmt$(totalPaidPSLF)} |\n| Savings vs. Standard | ${fmt$(Math.max(0,pslfSavings))} |\n\n*PSLF forgiveness is tax-free. Verify at studentaid.gov/pslf.*\n`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'rap_pslf_results.md'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ── AP2 EXPORT ── */
+const validMandateTypes = ['rap_decision_record','loan_repayment_record','fafsa_sai_estimate','scholarship_roi_tracker','graduate_school_roi_record','grad_loan_gap_record'];
+
+function validateAP2(m) {
+  const errors = [];
+  if (!m.ap2_version) errors.push('missing ap2_version');
+  if (!m.mandate_type) errors.push('missing mandate_type');
+  if (!m.generated_at) errors.push('missing generated_at');
+  if (!m.inputs) errors.push('missing inputs');
+  if (m.mandate_type && !validMandateTypes.includes(m.mandate_type)) errors.push(`mandate_type "${m.mandate_type}" not recognized`);
+  return errors;
+}
+
+function exportAP2() {
+  const src = lastResult || lastPSLFResult;
+  if (!src) return;
+  const mandate = {
+    ap2_version: "2.0",
+    mandate_type: "rap_decision_record",
+    generated_at: new Date().toISOString(),
+    tool_id: "101-rap-vs-standard-decision-engine",
+    al_id: "AL-108",
+    inputs: {
+      loan_balance: src.balance || src.bal,
+      interest_rate_pct: src.rate,
+      agi: src.agi,
+      family_size: src.family,
+      income_growth_pct: src.incGrowth || 0,
+      employer_type: src.employer
+    },
+    summary: lastResult ? {
+      rap_yr1_payment: Math.round(lastResult.rapPmt1.monthly),
+      std_monthly_payment: Math.round(lastResult.std.pmt),
+      rap_total_paid: Math.round(lastResult.rap.totalPaid),
+      std_total_paid: Math.round(lastResult.std.totalPaid),
+      rap_forgiven: Math.round(lastResult.rap.forgiven),
+      pslf_eligible: lastResult.pslfEligible
+    } : {
+      pslf_payments_remaining: src.remaining,
+      pslf_forgive_year: src.forgiveYear,
+      rap_pmt: Math.round(src.rapPmt),
+      forgiven: Math.round(src.forgiven)
+    },
+    downstream_handoff_candidates: ["AL-97", "AL-26", "AL-17"]
+  };
+  const errors = validateAP2(mandate);
+  if (errors.length) { alert('AP2 validation error: ' + errors.join('; ')); return; }
+  const blob = new Blob([JSON.stringify(mandate, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'rap_decision_record.ap2.json'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ── AP2 INBOUND ── */
+function loadAP2Inbound() {
+  const raw = document.getElementById('ap2InText').value.trim();
+  if (!raw) return;
+  try {
+    const m = JSON.parse(raw);
+    const inputs = m.inputs || m.payload || {};
+    if (inputs.loan_balance) document.getElementById('balance').value = inputs.loan_balance;
+    if (inputs.interest_rate_pct) document.getElementById('rate').value = inputs.interest_rate_pct;
+    if (inputs.agi) document.getElementById('agi').value = inputs.agi;
+    if (inputs.family_size) document.getElementById('family').value = inputs.family_size;
+    if (inputs.employer_type) document.getElementById('employer_type').value = inputs.employer_type;
+    // Also sync PSLF tab
+    if (inputs.loan_balance) document.getElementById('pslf_balance').value = inputs.loan_balance;
+    if (inputs.interest_rate_pct) document.getElementById('pslf_rate').value = inputs.interest_rate_pct;
+    if (inputs.agi) document.getElementById('pslf_agi').value = inputs.agi;
+    if (inputs.family_size) document.getElementById('pslf_family').value = inputs.family_size;
+  } catch (e) { alert('Invalid AP2 JSON.'); }
+}
+
+function parseAP2Inbound() {
+  try {
+    const param = new URLSearchParams(window.location.search).get('ap2');
+    if (!param) return;
+    const decoded = decodeURIComponent(param);
+    const ta = document.getElementById('ap2InText');
+    if (ta) ta.value = decoded;
+    loadAP2Inbound();
+  } catch (e) { /* silent */ }
+}
+document.addEventListener('DOMContentLoaded', parseAP2Inbound);
+
+/* ── MANIFEST ── */
+function updateManifest() {
+  const el = document.getElementById('manifest-content');
+  if (el && document.getElementById('manifest').classList.contains('open')) {
+    el.textContent = JSON.stringify(getManifest(), null, 2);
+  }
+}
+function getManifest() {
+  return {
+    "tool_id": "101-rap-vs-standard-decision-engine",
+    "al_id": "AL-108",
+    "version": "1.0.0",
+    "title": "RAP vs. Standard Decision Engine",
+    "description": "Compares the Repayment Assistance Plan (RAP) vs. Standard 10-year plan for federal Direct Loans under OBBBA 2025 (effective July 1, 2026). RAP formula: 1–10% of AGI sliding scale (2.5x–4.5x FPL), $10 floor, 30-year forgiveness. Also models PSLF track under RAP. Entirely deterministic; no external API calls.",
+    "category": "student_finance_debt",
+    "journeys": ["education_path"],
+    "personas": ["student","working_professional","career_changer","counselor"],
+    "tags": ["RAP","student loans","OBBBA","repayment","federal loans","PSLF","forgiveness","income driven"],
+    "status": "shipped",
+    "maintenance": "zero",
+    "data_vintage": "OBBBA 2025 / HHS FPL 2026",
+    "ap2_export": true,
+    "ap2_mandate_types": ["rap_decision_record"],
+    "ap2_inbound_mandate_types": ["loan_repayment_record","fafsa_sai_estimate","scholarship_roi_tracker"],
+    "downstream_handoff_candidates": ["AL-97","AL-26","AL-17"],
+    "sister_suite": "https://ainumbers.co",
+    "consulting_site": "https://apexadvisory.site",
+    "license": "CC-BY-4.0",
+    "execution": {
+      "type": "browser-javascript",
+      "entry": "index.html",
+      "function_name": "calcCompare",
+      "secondary_function_names": ["calcPSLF"],
+      "timeout_ms": 5000
+    },
+    "mcp_tool_definition": {
+      "name": "rap_vs_standard_decision",
+      "description": "Compare RAP vs. Standard 10-year repayment for federal Direct Loans under OBBBA 2025. RAP: 1–10% of AGI sliding scale, $10 floor, 30-year forgiveness. Returns monthly payment, total cost, forgiveness amount, PSLF track if eligible.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["loan_balance","interest_rate_pct","agi"],
+        "properties": {
+          "loan_balance": {"type":"number","description":"Total federal loan balance"},
+          "interest_rate_pct": {"type":"number","description":"Weighted average annual rate %"},
+          "agi": {"type":"number","description":"Adjusted gross income"},
+          "family_size": {"type":"integer","default":1},
+          "income_growth_pct": {"type":"number","default":3},
+          "employer_type": {"type":"string","enum":["public","nonprofit","private"],"default":"private"}
+        }
+      }
+    }
+  };
+}
+
+/* ── MCP TOGGLE ── */
+function toggleMCP() {
+  const btn = document.getElementById('mcpToggleBtn');
+  const panel = document.getElementById('mcpPanel');
+  const pre = document.getElementById('mcpManifestPre');
+  const open = panel.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) pre.textContent = JSON.stringify(getManifest(), null, 2);
+}
+
+/* ── INIT ── */
+document.addEventListener('DOMContentLoaded', () => {
+  setLang(currentLang);
+  // toggle manifest on section open
+  document.getElementById('manifest').addEventListener('transitionend', updateManifest);
+  const origToggle = window.toggleSection;
+  window.toggleSection = function(id) {
+    origToggle(id);
+    if (id === 'manifest') updateManifest();
+  };
+});
+
+</script>
+</body>
+</html>
