@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Counter-Offer Decision Engine — ApexLogics</title>
+<meta name="description" content="You have a new offer and your employer countered. Model the 5-year NPV of each path, loyalty-tax risk, and career trajectory to make an evidence-based decision."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+:root {
+  --bg:#070B14; --surface:#0D1117; --surface2:#111827;
+  --accent:#60a5fa; --accent-dim:rgba(96,165,250,0.18); --accent-low:rgba(96,165,250,0.08);
+  --border:rgba(96,165,250,0.18); --border-focus:#60a5fa;
+  --text:#e2e8f0; --text-muted:#94a3b8; --text-dim:#64748b;
+  --green:#34d399; --amber:#fbbf24; --red:#f87171; --amber-brand:#E8A838;
+}
+html { font-size:16px; }
+body { background:var(--bg); color:var(--text); font-family:'Sora',sans-serif; line-height:1.6; min-height:100vh; }
+.nav { background:rgba(7,11,20,.92); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; }
+.nav-inner { max-width:1024px; margin:0 auto; display:flex; align-items:center; gap:16px; padding:0 24px; min-height:64px; height:auto; }
+.logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+.logo-mark { width:32px; height:32px; flex-shrink:0; }
+.logo-mark svg { width:100%; height:100%; }
+.logo-text { display:flex; flex-direction:column; gap:2px; }
+.logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text); letter-spacing:-.02em; line-height:1; }
+.logo-apex { color:#E8A838; }
+.logo-org { color:var(--text-dim); font-size:.8rem; }
+.nav-spacer { flex:1; }
+.nav-right { display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+.nav-pill { background:none; border:1px solid var(--border); border-radius:6px; color:var(--text-muted); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+.nav-pill:hover { border-color:#E8A838; color:var(--text); }
+.nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+.lang-inner { display:flex; gap:4px; }
+.lang-btn { background:none; border:1px solid transparent; color:var(--text-dim); font-family:'JetBrains Mono',monospace; font-size:.72rem; padding:3px 8px; border-radius:4px; cursor:pointer; transition:all .15s; }
+.lang-btn:hover { color:var(--text-muted); border-color:var(--border); }
+.lang-btn.active { color:var(--accent); border-color:var(--accent); background:var(--accent-low); }
+.pii-banner { max-width:1024px; margin:1.25rem auto 0; padding:0 24px; }
+.pii-inner { background:rgba(255,255,255,.03); border:1px solid var(--border); border-left:3px solid #E8A838; border-radius:6px; padding:.7rem 1rem; font-size:.76rem; color:var(--text-muted); display:flex; gap:.5rem; align-items:flex-start; }
+.tool-wrapper { max-width:1024px; margin:0 auto; padding:40px 24px 80px; }
+.tool-eyebrow { font-family:'JetBrains Mono',monospace; font-size:.72rem; color:#E8A838; letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px; }
+.tool-title { font-family:'DM Serif Display',serif; font-size:2.4rem; line-height:1.15; margin-bottom:16px; }
+.tool-desc { color:var(--text-muted); font-size:.97rem; max-width:760px; margin-bottom:10px; }
+.tool-vintage { display:inline-flex; align-items:center; gap:.4rem; background:rgba(232,168,56,.1); border:1px solid #E8A838; border-radius:6px; padding:.3rem .7rem; font-family:'JetBrains Mono',monospace; font-size:.65rem; color:#E8A838; margin-bottom:1.25rem; }
+.card { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:24px 28px; margin-bottom:16px; }
+.card-title { font-family:'JetBrains Mono',monospace; font-size:.78rem; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:20px; }
+.form-grid { display:grid; gap:14px; }
+.form-grid.two { grid-template-columns:1fr 1fr; }
+.form-grid.three { grid-template-columns:1fr 1fr 1fr; }
+.field { display:flex; flex-direction:column; gap:5px; }
+label { font-size:.78rem; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
+input[type="text"], input[type="number"], select { background:var(--surface); border:1px solid var(--border); color:var(--text); padding:9px 12px; border-radius:6px; font-family:'Sora',sans-serif; font-size:.9rem; width:100%; transition:border-color .2s; }
+input:focus, select:focus { outline:none; border-color:var(--border-focus); }
+.field-hint { font-size:.7rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace; }
+.checkbox-row { display:flex; align-items:center; gap:10px; padding:8px 0; }
+.checkbox-row input[type="checkbox"] { width:16px; height:16px; accent-color:var(--accent); cursor:pointer; }
+.checkbox-row label { font-size:.85rem; color:var(--text-muted); font-family:'Sora',sans-serif; cursor:pointer; }
+.conditional-field { display:none; }
+.conditional-field.show { display:grid; }
+.run-btn { background:var(--accent); color:#000; border:none; padding:14px 40px; border-radius:8px; font-size:1rem; font-family:'Sora',sans-serif; font-weight:600; cursor:pointer; width:100%; margin:8px 0 24px; transition:opacity .2s; }
+.run-btn:hover { opacity:.88; }
+.results-section { display:none; }
+.results-section.visible { display:block; }
+.result-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:20px 24px; margin-bottom:14px; }
+.result-label { font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; }
+.result-value { font-size:1.6rem; font-weight:600; color:var(--text); }
+.result-value.green { color:var(--green); }
+.result-value.amber { color:var(--amber); }
+.result-value.red { color:var(--red); }
+.result-sub { font-size:.82rem; color:var(--text-muted); margin-top:4px; }
+.results-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+.results-grid.two { grid-template-columns:1fr 1fr; }
+.results-export-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:24px; padding-top:20px; border-top:1px solid var(--border); }
+.export-btn { display:flex; align-items:center; gap:7px; padding:9px 18px; border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:.75rem; cursor:pointer; transition:all .18s; }
+.export-btn:hover { border-color:var(--accent); color:var(--accent); }
+.export-btn.ap2 { border-color:rgba(96,165,250,0.4); color:var(--accent); }
+.mcp-toggle { background:none; border:1px solid var(--border); border-radius:6px; color:var(--text-dim); font-size:.72rem; font-family:'JetBrains Mono',monospace; padding:.35rem .7rem; cursor:pointer; margin-top:2rem; transition:all .15s; }
+.mcp-toggle:hover { border-color:var(--accent); color:var(--accent); }
+.mcp-panel { display:none; margin-top:1rem; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px; }
+.mcp-panel.open { display:block; }
+.mcp-panel pre { font-size:.72rem; font-family:'JetBrains Mono',monospace; color:var(--text-muted); white-space:pre-wrap; word-break:break-all; }
+.tool-footer { border-top:1px solid var(--border); padding:1.75rem 1.5rem; margin-top:3rem; font-size:.78rem; color:var(--text-muted); font-family:'JetBrains Mono',monospace; text-align:center; }
+.tool-footer a { color:var(--text-muted); text-decoration:none; }
+.tool-footer a:hover { color:var(--text); }
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#7f1d1d; border:1px solid var(--red); color:#fecaca; padding:12px 22px; border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:.8rem; z-index:200; display:none; }
+.toast.show { display:block; }
+.insight-row { background:rgba(96,165,250,0.06); border:1px solid rgba(96,165,250,0.2); border-radius:8px; padding:14px 18px; margin-bottom:10px; font-size:.88rem; color:var(--text-muted); }
+.insight-row strong { color:var(--text); }
+.warning-row { background:rgba(248,113,113,0.06); border:1px solid rgba(248,113,113,0.3); border-radius:8px; padding:14px 18px; margin-bottom:10px; font-size:.88rem; color:var(--text-muted); }
+.warning-row strong { color:var(--red); }
+.compare-table { width:100%; border-collapse:collapse; font-size:.85rem; margin-top:8px; }
+.compare-table th { font-family:'JetBrains Mono',monospace; font-size:.7rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; padding:8px 12px; text-align:right; border-bottom:1px solid var(--border); }
+.compare-table th:first-child { text-align:left; }
+.compare-table td { padding:9px 12px; text-align:right; border-bottom:1px solid rgba(96,165,250,0.07); color:var(--text-muted); }
+.compare-table td:first-child { text-align:left; font-family:'JetBrains Mono',monospace; font-size:.8rem; color:var(--text-dim); }
+.compare-table .green-val { color:var(--green); font-weight:600; }
+.compare-table .amber-val { color:var(--amber); }
+.compare-table .bold-row td { font-weight:600; color:var(--text); border-top:1px solid var(--border); }
+.recommendation-card { background:rgba(52,211,153,0.07); border:2px solid rgba(52,211,153,0.35); border-radius:12px; padding:20px 24px; margin-bottom:16px; }
+.recommendation-card.counter { background:rgba(251,191,36,0.07); border-color:rgba(251,191,36,0.35); }
+.rec-label { font-family:'JetBrains Mono',monospace; font-size:.72rem; text-transform:uppercase; letter-spacing:.1em; margin-bottom:8px; }
+.rec-label.green { color:var(--green); }
+.rec-label.amber { color:var(--amber); }
+.rec-headline { font-family:'DM Serif Display',serif; font-size:1.4rem; margin-bottom:8px; }
+.rec-body { font-size:.88rem; color:var(--text-muted); }
+@media(max-width:700px){.form-grid.two,.form-grid.three{grid-template-columns:1fr;}.results-grid{grid-template-columns:1fr 1fr;}.results-grid.two{grid-template-columns:1fr;}.tool-title{font-size:1.8rem;}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="6" fill="#0D1117"/>
+          <path d="M16 5L28 26H4L16 5Z" fill="none" stroke="#E8A838" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M10 20h12" stroke="#E8A838" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-name"><span class="logo-apex">Apex</span> Logics</span>
+        <span class="logo-org">apexlogics.org</span>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent" data-i18n="all_tools">&#8592; All Tools</a>
+      <div class="lang-inner">
+        <button class="lang-btn" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('es')">ES</button>
+        <button class="lang-btn" onclick="setLang('fr')">FR</button>
+        <button class="lang-btn" onclick="setLang('ar')">AR</button>
+        <button class="lang-btn" onclick="setLang('pt')">PT</button>
+        <button class="lang-btn" onclick="setLang('zh')">&#20013;&#25991;</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="pii-banner">
+  <div class="pii-inner">
+    <span>&#128274;</span><span data-i18n="pii">All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+  <div class="tool-eyebrow">CAREER PLANNING &middot; #90</div>
+  <h1 class="tool-title">Counter-Offer Decision Engine</h1>
+  <p class="tool-desc">You have a new offer and your employer countered. Model the 5-year NPV of each path, loyalty-tax risk, and career trajectory to make an evidence-based decision.</p>
+  <div class="tool-vintage">&#128203; Data: Labor market research 2024</div>
+
+  <div class="card">
+    <div class="card-title">Salary Inputs</div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="currentSalary">Current Base Salary ($)</label>
+        <input type="number" id="currentSalary" value="90000" min="0" step="1000"/>
+      </div>
+      <div class="field">
+        <label for="counterSalary">Counter-Offer Salary ($)</label>
+        <input type="number" id="counterSalary" value="100000" min="0" step="1000"/>
+      </div>
+      <div class="field">
+        <label for="newOfferSalary">New Employer Offer ($)</label>
+        <input type="number" id="newOfferSalary" value="105000" min="0" step="1000"/>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Growth &amp; Benefits</div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="yearsAtCurrent">Years at Current Employer</label>
+        <input type="number" id="yearsAtCurrent" value="3" min="0" max="40" step="1"/>
+      </div>
+      <div class="field">
+        <label for="signingBonus">New Employer Signing Bonus ($)</label>
+        <input type="number" id="signingBonus" value="0" min="0" step="500"/>
+      </div>
+      <div class="field">
+        <label for="currentRaiseRate">Annual Raise Rate — Current Employer (%)</label>
+        <input type="number" id="currentRaiseRate" value="3" min="0" max="30" step="0.5"/>
+        <span class="field-hint">Typical range: 2–4% at established employers</span>
+      </div>
+      <div class="field">
+        <label for="newRaiseRate">Annual Raise Rate — New Employer (%)</label>
+        <input type="number" id="newRaiseRate" value="5" min="0" max="30" step="0.5"/>
+        <span class="field-hint">Typically higher at growth-stage companies</span>
+      </div>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="hasRetentionBonus" onchange="toggleRetention()"/>
+      <label for="hasRetentionBonus">Current employer is offering a retention bonus</label>
+    </div>
+    <div class="form-grid two conditional-field" id="retentionFields">
+      <div class="field">
+        <label for="retentionMonths">Retention Bonus Vesting (months)</label>
+        <input type="number" id="retentionMonths" value="12" min="1" max="60" step="1"/>
+      </div>
+      <div class="field">
+        <label for="retentionAmount">Retention Bonus Amount ($)</label>
+        <input type="number" id="retentionAmount" value="10000" min="0" step="500"/>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Financial Parameters</div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="fedTaxRate">Federal Tax Rate (%)</label>
+        <input type="number" id="fedTaxRate" value="32" min="0" max="50" step="1"/>
+      </div>
+      <div class="field">
+        <label for="discountRate">NPV Discount Rate (%)</label>
+        <input type="number" id="discountRate" value="5" min="1" max="20" step="0.5"/>
+        <span class="field-hint">Personal rate of return / opportunity cost of capital</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Run 5-Year Analysis</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div id="recommendationContainer"></div>
+
+    <div class="card">
+      <div class="card-title">5-Year NPV Comparison</div>
+      <div class="results-grid two">
+        <div class="result-card">
+          <div class="result-label">Counter-Offer NPV (5yr)</div>
+          <div class="result-value amber" id="counterNPV">—</div>
+          <div class="result-sub" id="counterCumulative">—</div>
+        </div>
+        <div class="result-card">
+          <div class="result-label">New Offer NPV (5yr)</div>
+          <div class="result-value green" id="newNPV">—</div>
+          <div class="result-sub" id="newCumulative">—</div>
+        </div>
+      </div>
+      <div class="results-grid two">
+        <div class="result-card">
+          <div class="result-label">NPV Advantage (New Offer)</div>
+          <div class="result-value" id="npvAdvantage">—</div>
+          <div class="result-sub">Discounted over 5 years</div>
+        </div>
+        <div class="result-card">
+          <div class="result-label">Break-Even Year</div>
+          <div class="result-value" id="breakEvenYear">—</div>
+          <div class="result-sub">New offer cumulative income surpasses counter-offer</div>
+        </div>
+      </div>
+      <div id="insightRows"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">5-Year Income Comparison Table</div>
+      <table class="compare-table" id="compareTable">
+        <thead>
+          <tr>
+            <th>Year</th>
+            <th>Counter-Offer Salary</th>
+            <th>New Offer Salary</th>
+            <th>Annual Delta</th>
+            <th>Cumulative Delta</th>
+          </tr>
+        </thead>
+        <tbody id="compareBody"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Loyalty-Tax Analysis</div>
+      <div id="loyaltyWarnings"></div>
+    </div>
+
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">&#8595; Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">&#8595; AP2 JSON</button>
+    </div>
+
+    <button class="mcp-toggle" onclick="document.getElementById('mcpPanel').classList.toggle('open')">{ } MCP Manifest</button>
+    <div class="mcp-panel" id="mcpPanel"><pre id="mcpPre"></pre></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> &middot; CC BY 4.0 &middot; AL-97 &middot; Data: Labor market research 2024
+</footer>
+
+<script>
+const I18N_CHROME = {
+  en: { pii: 'All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.', all_tools: '\u2190 All Tools' },
+  es: { pii: 'Todas las entradas se procesan localmente en su navegador. Nada se transmite, almacena ni registra. Las entradas desaparecen al cerrar la pesta\u00f1a.', all_tools: '\u2190 Todas las herramientas' },
+  fr: { pii: "Toutes les donn\u00e9es sont trait\u00e9es localement dans votre navigateur. Rien n'est transmis, stock\u00e9 ni enregistr\u00e9. Les donn\u00e9es disparaissent \u00e0 la fermeture de l'onglet.", all_tools: '\u2190 Tous les outils' },
+  ar: { pii: '\u062a\u062a\u0645 \u0645\u0639\u0627\u0644\u062c\u0629 \u062c\u0645\u064a\u0639 \u0627\u0644\u0645\u062f\u062e\u0644\u0627\u062a \u0645\u062d\u0644\u064a\u064b\u0627 \u0641\u064a \u0645\u062a\u0635\u0641\u062d\u0643.', all_tools: '\u2190 \u0643\u0644 \u0627\u0644\u0623\u062f\u0648\u0627\u062a' },
+  pt: { pii: 'Todas as entradas s\u00e3o processadas localmente no seu navegador. Nada \u00e9 transmitido, armazenado ou registado.', all_tools: '\u2190 Todas as ferramentas' },
+  zh: { pii: '\u6240\u6709\u8f93\u5165\u5747\u5728\u60a8\u7684\u6d4f\u89c8\u5668\u4e2d\u672c\u5730\u5904\u7406\u3002', all_tools: '\u2190 \u6240\u6709\u5de5\u5177' },
+};
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '\u4e2d\u6587' && lang === 'zh'));
+  });
+  const s = Object.assign({}, I18N_CHROME.en, I18N_CHROME[lang] || {});
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (s[k] !== undefined) el.textContent = s[k];
+  });
+}
+(function(){
+  const s = sessionStorage.getItem('apex_lang');
+  setLang(s || ({en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'})[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+
+const AP2Schema = {
+  validMandateTypes: ['sales_comp_record','counter_offer_record','relocation_package_record','dual_career_record'],
+  validate(payload) {
+    if (!payload || typeof payload !== 'object') return { valid:false, error:'Payload must be an object.' };
+    if (!payload.mandate_type) return { valid:false, error:'Missing mandate_type.' };
+    if (!this.validMandateTypes.includes(payload.mandate_type)) return { valid:false, error:'Invalid mandate_type: '+payload.mandate_type };
+    if (!payload.tool_id) return { valid:false, error:'Missing tool_id.' };
+    if (!payload.generated_at) return { valid:false, error:'Missing generated_at.' };
+    return { valid:true };
+  }
+};
+
+const manifest = {
+  "al_id": "AL-97",
+  "version": "1.0.0",
+  "title": "Counter-Offer Decision Engine",
+  "slug": "90-counter-offer-decision-engine",
+  "file_path": "tools/90-counter-offer-decision-engine/index.html",
+  "description": "Model the 5-year NPV of staying vs. leaving when your employer counters a competing offer.",
+  "category": "career_planning",
+  "journeys": ["career_navigation","compensation_optimization"],
+  "personas": ["working_professional","career_changer"],
+  "tags": ["counter-offer","job-change","salary","negotiation","career","retention"],
+  "status": "shipped",
+  "maintenance": "low",
+  "data_vintage": "Labor market research 2024",
+  "ap2_export": true,
+  "ap2_mandate_types": ["counter_offer_record"],
+  "downstream_handoff_candidates": [],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+document.getElementById('mcpPre').textContent = JSON.stringify(manifest, null, 2);
+
+function toggleRetention() {
+  const checked = document.getElementById('hasRetentionBonus').checked;
+  document.getElementById('retentionFields').classList.toggle('show', checked);
+}
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+
+let lastPayload = null;
+let lastTableData = null;
+
+function npv(cashflows, rate) {
+  return cashflows.reduce((acc, cf, i) => acc + cf / Math.pow(1 + rate / 100, i + 1), 0);
+}
+
+function calculate() {
+  const current = parseFloat(document.getElementById('currentSalary').value) || 0;
+  const counter = parseFloat(document.getElementById('counterSalary').value) || 0;
+  const newOffer = parseFloat(document.getElementById('newOfferSalary').value) || 0;
+  const yearsAtCurrent = parseInt(document.getElementById('yearsAtCurrent').value) || 0;
+  const signingBonus = parseFloat(document.getElementById('signingBonus').value) || 0;
+  const currentRaise = parseFloat(document.getElementById('currentRaiseRate').value) || 3;
+  const newRaise = parseFloat(document.getElementById('newRaiseRate').value) || 5;
+  const fedTax = parseFloat(document.getElementById('fedTaxRate').value) || 32;
+  const discountRate = parseFloat(document.getElementById('discountRate').value) || 5;
+  const hasRetention = document.getElementById('hasRetentionBonus').checked;
+  const retentionMonths = hasRetention ? (parseInt(document.getElementById('retentionMonths').value) || 0) : 0;
+  const retentionAmt = hasRetention ? (parseFloat(document.getElementById('retentionAmount').value) || 0) : 0;
+
+  if (counter <= current) { showToast('Counter-offer should be higher than your current salary.'); }
+  if (newOffer <= 0 || counter <= 0) { showToast('Please enter valid salary figures.'); return; }
+
+  // Build 5-year salary streams
+  const counterStream = [];
+  const newStream = [];
+  let cSalary = counter;
+  let nSalary = newOffer;
+  for (let yr = 1; yr <= 5; yr++) {
+    let cAmt = cSalary;
+    let nAmt = nSalary;
+    if (yr === 1) { nAmt += signingBonus; }
+    // Add retention bonus to counter in Year 1 if vesting < 12 months, else Year 2
+    if (hasRetention && retentionAmt > 0) {
+      if (yr === 1 && retentionMonths <= 12) cAmt += retentionAmt;
+      else if (yr === 2 && retentionMonths > 12 && retentionMonths <= 24) cAmt += retentionAmt;
+    }
+    counterStream.push(cAmt);
+    newStream.push(nAmt);
+    cSalary *= (1 + currentRaise / 100);
+    nSalary *= (1 + newRaise / 100);
+  }
+
+  const counterNPV = npv(counterStream, discountRate);
+  const newNPV = npv(newStream, discountRate);
+  const npvAdv = newNPV - counterNPV;
+
+  // Cumulative to find break-even
+  let cCum = 0, nCum = 0;
+  let breakEven = null;
+  const tableRows = [];
+  for (let i = 0; i < 5; i++) {
+    cCum += counterStream[i];
+    nCum += newStream[i];
+    const delta = newStream[i] - counterStream[i];
+    const cumDelta = nCum - cCum;
+    if (breakEven === null && nCum >= cCum) breakEven = i + 1;
+    tableRows.push({ yr: i + 1, cSal: counterStream[i], nSal: newStream[i], delta, cumDelta });
+  }
+  lastTableData = tableRows;
+
+  // Render top summary
+  document.getElementById('counterNPV').textContent = fmt(counterNPV);
+  document.getElementById('counterCumulative').textContent = '5-yr cumulative: ' + fmt(counterStream.reduce((a,b)=>a+b,0));
+  document.getElementById('newNPV').textContent = fmt(newNPV);
+  document.getElementById('newCumulative').textContent = '5-yr cumulative: ' + fmt(newStream.reduce((a,b)=>a+b,0));
+
+  const advEl = document.getElementById('npvAdvantage');
+  advEl.textContent = (npvAdv >= 0 ? '+' : '') + fmt(npvAdv);
+  advEl.className = 'result-value ' + (npvAdv >= 0 ? 'green' : 'red');
+
+  document.getElementById('breakEvenYear').textContent = breakEven ? 'Year ' + breakEven : 'Beyond Year 5';
+
+  // Recommendation
+  const recContainer = document.getElementById('recommendationContainer');
+  const recIsNew = npvAdv > 0;
+  recContainer.innerHTML = '';
+  const recCard = document.createElement('div');
+  recCard.className = 'recommendation-card' + (recIsNew ? '' : ' counter');
+  const recLabel = document.createElement('div');
+  recLabel.className = 'rec-label ' + (recIsNew ? 'green' : 'amber');
+  recLabel.textContent = recIsNew ? 'Recommendation: Accept New Offer' : 'Recommendation: Counter-Offer May Have Merit';
+  const recHead = document.createElement('div');
+  recHead.className = 'rec-headline';
+  recHead.textContent = recIsNew
+    ? 'The new offer generates ' + fmt(Math.abs(npvAdv)) + ' more NPV over 5 years.'
+    : 'The counter-offer outperforms over 5 years — but weigh the loyalty tax.';
+  const recBody = document.createElement('div');
+  recBody.className = 'rec-body';
+  recBody.textContent = recIsNew
+    ? 'Even accounting for the higher raise rate at your current employer, the new offer's higher starting salary and ' + newRaise + '% growth rate create a compounding advantage. Year 1 delta alone is ' + fmt(newStream[0] - counterStream[0]) + '.'
+    : 'On pure financials, the counter-offer wins by ' + fmt(Math.abs(npvAdv)) + ' NPV. However, research consistently shows that 50–80% of counter-offer acceptors leave within 18 months. Weight these figures against career trajectory and role quality.';
+  recCard.appendChild(recLabel); recCard.appendChild(recHead); recCard.appendChild(recBody);
+  recContainer.appendChild(recCard);
+
+  // Insights
+  const insights = document.getElementById('insightRows');
+  insights.innerHTML = '';
+  const yr1Delta = newStream[0] - counterStream[0];
+  const i1 = document.createElement('div'); i1.className = 'insight-row';
+  i1.innerHTML = 'Year 1 immediate delta: <strong>' + (yr1Delta >= 0 ? '+' : '') + fmt(yr1Delta) + '</strong> in favor of the ' + (yr1Delta >= 0 ? 'new offer' : 'counter-offer') + (signingBonus > 0 ? ' (includes ' + fmt(signingBonus) + ' signing bonus)' : '') + '.';
+  insights.appendChild(i1);
+
+  if (yearsAtCurrent >= 5) {
+    const i2 = document.createElement('div'); i2.className = 'insight-row';
+    i2.innerHTML = 'With <strong>' + yearsAtCurrent + ' years</strong> at your current employer, you have likely been underpaid relative to market for several years. The counter-offer may be correcting a gap that should have been addressed earlier — not a sign of your true market value.';
+    insights.appendChild(i2);
+  }
+
+  // Loyalty tax section
+  const lw = document.getElementById('loyaltyWarnings');
+  lw.innerHTML = '';
+  const w1 = document.createElement('div'); w1.className = 'warning-row';
+  w1.innerHTML = '<strong>Loyalty Tax:</strong> Research (Korn Ferry, HBR) shows employees who accept counter-offers typically leave within 12–18 months. The underlying reasons for considering a move rarely change.';
+  lw.appendChild(w1);
+  const w2 = document.createElement('div'); w2.className = 'warning-row';
+  w2.innerHTML = '<strong>Promotion Risk:</strong> Employers who issue counter-offers often begin managing the employee out or pass them over for promotions, viewing them as a flight risk. Your leverage may be highest right now — before you accept the counter.';
+  lw.appendChild(w2);
+  if (yearsAtCurrent >= 3) {
+    const w3 = document.createElement('div'); w3.className = 'insight-row';
+    w3.innerHTML = 'You have <strong>' + yearsAtCurrent + ' years</strong> at your current employer. The counter-offer represents a <strong>' + (((counter - current) / current) * 100).toFixed(1) + '% raise</strong> — which is meaningful, but it is worth asking why this adjustment was not made proactively.';
+    lw.appendChild(w3);
+  }
+
+  // Table
+  const tbody = document.getElementById('compareBody');
+  tbody.innerHTML = '';
+  tableRows.forEach(row => {
+    const tr = document.createElement('tr');
+    const dClass = row.delta >= 0 ? 'green-val' : 'amber-val';
+    const cdClass = row.cumDelta >= 0 ? 'green-val' : 'amber-val';
+    tr.innerHTML = '<td>Year ' + row.yr + '</td><td>' + fmt(row.cSal) + '</td><td>' + fmt(row.nSal) + '</td><td class="' + dClass + '">' + (row.delta >= 0 ? '+' : '') + fmt(row.delta) + '</td><td class="' + cdClass + '">' + (row.cumDelta >= 0 ? '+' : '') + fmt(row.cumDelta) + '</td>';
+    tbody.appendChild(tr);
+  });
+  const totRow = document.createElement('tr'); totRow.className = 'bold-row';
+  const cTotal = counterStream.reduce((a,b)=>a+b,0);
+  const nTotal = newStream.reduce((a,b)=>a+b,0);
+  const totDelta = nTotal - cTotal;
+  totRow.innerHTML = '<td>TOTAL</td><td>' + fmt(cTotal) + '</td><td>' + fmt(nTotal) + '</td><td class="' + (totDelta>=0?'green-val':'amber-val') + '">' + (totDelta>=0?'+':'') + fmt(totDelta) + '</td><td></td>';
+  tbody.appendChild(totRow);
+
+  const rec = npvAdv >= 0 ? 'accept_new_offer' : 'accept_counter_offer';
+  lastPayload = {
+    mandate_type: 'counter_offer_record',
+    tool_id: 'AL-97',
+    generated_at: new Date().toISOString(),
+    current_salary: current,
+    counter_offer_salary: counter,
+    new_offer_salary: newOffer,
+    years_at_current: yearsAtCurrent,
+    counter_npv_5yr: Math.round(counterNPV),
+    new_offer_npv_5yr: Math.round(newNPV),
+    npv_advantage_new_offer: Math.round(npvAdv),
+    breakeven_year: breakEven,
+    recommendation: rec
+  };
+
+  document.getElementById('resultsSection').classList.add('visible');
+}
+
+function exportMarkdown() {
+  if (!lastPayload || !lastTableData) return;
+  const p = lastPayload;
+  let rows = lastTableData.map(r =>
+    '| Year ' + r.yr + ' | ' + fmt(r.cSal) + ' | ' + fmt(r.nSal) + ' | ' + (r.delta>=0?'+':'') + fmt(r.delta) + ' | ' + (r.cumDelta>=0?'+':'') + fmt(r.cumDelta) + ' |'
+  ).join('\n');
+  const md = '# Counter-Offer Decision Analysis\nGenerated: ' + new Date().toLocaleString() + '\n\n' +
+    '## Salary Comparison\n- Current: ' + fmt(p.current_salary) + '\n- Counter-Offer: ' + fmt(p.counter_offer_salary) + '\n- New Offer: ' + fmt(p.new_offer_salary) + '\n\n' +
+    '## 5-Year NPV\n- Counter-Offer NPV: ' + fmt(p.counter_npv_5yr) + '\n- New Offer NPV: ' + fmt(p.new_offer_npv_5yr) + '\n- NPV Advantage (New Offer): ' + (p.npv_advantage_new_offer>=0?'+':'') + fmt(p.npv_advantage_new_offer) + '\n- Break-Even Year: ' + (p.breakeven_year ? 'Year ' + p.breakeven_year : 'Beyond Year 5') + '\n\n' +
+    '## Year-by-Year Comparison\n| Year | Counter-Offer | New Offer | Annual Delta | Cumulative Delta |\n|---|---|---|---|---|\n' + rows + '\n\n' +
+    '## Recommendation\n**' + (p.recommendation === 'accept_new_offer' ? 'Accept New Offer' : 'Counter-Offer Has Financial Merit') + '**\n\n' +
+    '### Loyalty-Tax Warning\nResearch shows 50–80% of counter-offer acceptors leave within 18 months. The underlying reasons for considering a move rarely resolve after accepting a counter.\n\n' +
+    '*Generated by ApexLogics Counter-Offer Decision Engine (AL-97) — apexlogics.org*';
+  download('counter-offer-analysis.md', md, 'text/markdown');
+}
+
+function exportAP2() {
+  if (!lastPayload) return;
+  const result = AP2Schema.validate(lastPayload);
+  if (!result.valid) { showToast('AP2 validation failed: ' + result.error); return; }
+  download('counter-offer-ap2.json', JSON.stringify(lastPayload, null, 2), 'application/json');
+}
+
+function download(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>

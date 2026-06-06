@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Sales OTE &amp; Commission Analyzer — ApexLogics</title>
+<meta name="description" content="Model your real W-2 outcome from an OTE offer: base/variable split, quota attainment scenarios, accelerator tiers, and draw/clawback risk."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+:root {
+  --bg:#070B14; --surface:#0D1117; --surface2:#111827;
+  --accent:#60a5fa; --accent-dim:rgba(96,165,250,0.18); --accent-low:rgba(96,165,250,0.08);
+  --border:rgba(96,165,250,0.18); --border-focus:#60a5fa;
+  --text:#e2e8f0; --text-muted:#94a3b8; --text-dim:#64748b;
+  --green:#34d399; --amber:#fbbf24; --red:#f87171; --amber-brand:#E8A838;
+}
+html { font-size:16px; }
+body { background:var(--bg); color:var(--text); font-family:'Sora',sans-serif; line-height:1.6; min-height:100vh; }
+.nav { background:rgba(7,11,20,.92); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; }
+.nav-inner { max-width:1024px; margin:0 auto; display:flex; align-items:center; gap:16px; padding:0 24px; min-height:64px; height:auto; }
+.logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+.logo-mark { width:32px; height:32px; flex-shrink:0; }
+.logo-mark svg { width:100%; height:100%; }
+.logo-text { display:flex; flex-direction:column; gap:2px; }
+.logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text); letter-spacing:-.02em; line-height:1; }
+.logo-apex { color:#E8A838; }
+.logo-org { color:var(--text-dim); font-size:.8rem; }
+.logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim); font-family:'JetBrains Mono',monospace; line-height:1; }
+.nav-spacer { flex:1; }
+.nav-right { display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+.nav-pill { background:none; border:1px solid var(--border); border-radius:6px; color:var(--text-muted); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+.nav-pill:hover { border-color:#E8A838; color:var(--text); }
+.nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+.lang-inner { display:flex; gap:4px; }
+.lang-btn { background:none; border:1px solid transparent; color:var(--text-dim); font-family:'JetBrains Mono',monospace; font-size:.72rem; padding:3px 8px; border-radius:4px; cursor:pointer; transition:all .15s; }
+.lang-btn:hover { color:var(--text-muted); border-color:var(--border); }
+.lang-btn.active { color:var(--accent); border-color:var(--accent); background:var(--accent-low); }
+.pii-banner { max-width:1024px; margin:1.25rem auto 0; padding:0 24px; }
+.pii-inner { background:rgba(255,255,255,.03); border:1px solid var(--border); border-left:3px solid #E8A838; border-radius:6px; padding:.7rem 1rem; font-size:.76rem; color:var(--text-muted); display:flex; gap:.5rem; align-items:flex-start; }
+.tool-wrapper { max-width:1024px; margin:0 auto; padding:40px 24px 80px; }
+.tool-eyebrow { font-family:'JetBrains Mono',monospace; font-size:.72rem; color:#E8A838; letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px; }
+.tool-title { font-family:'DM Serif Display',serif; font-size:2.4rem; line-height:1.15; margin-bottom:16px; }
+.tool-desc { color:var(--text-muted); font-size:.97rem; max-width:760px; margin-bottom:10px; }
+.tool-vintage { display:inline-flex; align-items:center; gap:.4rem; background:rgba(232,168,56,.1); border:1px solid #E8A838; border-radius:6px; padding:.3rem .7rem; font-family:'JetBrains Mono',monospace; font-size:.65rem; color:#E8A838; margin-bottom:1.25rem; }
+.card { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:24px 28px; margin-bottom:16px; }
+.card-title { font-family:'JetBrains Mono',monospace; font-size:.78rem; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:20px; }
+.form-grid { display:grid; gap:14px; }
+.form-grid.two { grid-template-columns:1fr 1fr; }
+.form-grid.three { grid-template-columns:1fr 1fr 1fr; }
+.field { display:flex; flex-direction:column; gap:5px; }
+label { font-size:.78rem; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
+input[type="text"], input[type="number"], select { background:var(--surface); border:1px solid var(--border); color:var(--text); padding:9px 12px; border-radius:6px; font-family:'Sora',sans-serif; font-size:.9rem; width:100%; transition:border-color .2s; }
+input:focus, select:focus { outline:none; border-color:var(--border-focus); }
+input[type="range"] { width:100%; accent-color:var(--accent); cursor:pointer; }
+.field-hint { font-size:.7rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace; }
+.checkbox-row { display:flex; align-items:center; gap:10px; padding:10px 0; }
+.checkbox-row input[type="checkbox"] { width:16px; height:16px; accent-color:var(--accent); cursor:pointer; }
+.checkbox-row label { font-size:.85rem; color:var(--text-muted); font-family:'Sora',sans-serif; cursor:pointer; }
+.conditional-field { display:none; }
+.conditional-field.show { display:grid; }
+.run-btn { background:var(--accent); color:#000; border:none; padding:14px 40px; border-radius:8px; font-size:1rem; font-family:'Sora',sans-serif; font-weight:600; cursor:pointer; width:100%; margin:8px 0 24px; transition:opacity .2s; }
+.run-btn:hover { opacity:.88; }
+.results-section { display:none; }
+.results-section.visible { display:block; }
+.result-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:20px 24px; margin-bottom:14px; }
+.result-label { font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; }
+.result-value { font-size:1.6rem; font-weight:600; color:var(--text); }
+.result-value.green { color:var(--green); }
+.result-value.amber { color:var(--amber); }
+.result-value.red { color:var(--red); }
+.result-sub { font-size:.82rem; color:var(--text-muted); margin-top:4px; }
+.results-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+.results-export-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:24px; padding-top:20px; border-top:1px solid var(--border); }
+.export-btn { display:flex; align-items:center; gap:7px; padding:9px 18px; border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:.75rem; cursor:pointer; transition:all .18s; }
+.export-btn:hover { border-color:var(--accent); color:var(--accent); }
+.export-btn.ap2 { border-color:rgba(96,165,250,0.4); color:var(--accent); }
+.mcp-toggle { background:none; border:1px solid var(--border); border-radius:6px; color:var(--text-dim); font-size:.72rem; font-family:'JetBrains Mono',monospace; padding:.35rem .7rem; cursor:pointer; margin-top:2rem; transition:all .15s; }
+.mcp-toggle:hover { border-color:var(--accent); color:var(--accent); }
+.mcp-panel { display:none; margin-top:1rem; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px; }
+.mcp-panel.open { display:block; }
+.mcp-panel pre { font-size:.72rem; font-family:'JetBrains Mono',monospace; color:var(--text-muted); white-space:pre-wrap; word-break:break-all; }
+.tool-footer { border-top:1px solid var(--border); padding:1.75rem 1.5rem; margin-top:3rem; font-size:.78rem; color:var(--text-muted); font-family:'JetBrains Mono',monospace; text-align:center; }
+.tool-footer a { color:var(--text-muted); text-decoration:none; }
+.tool-footer a:hover { color:var(--text); }
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#7f1d1d; border:1px solid var(--red); color:#fecaca; padding:12px 22px; border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:.8rem; z-index:200; display:none; }
+.toast.show { display:block; }
+.insight-row { background:rgba(96,165,250,0.06); border:1px solid rgba(96,165,250,0.2); border-radius:8px; padding:14px 18px; margin-bottom:10px; font-size:.88rem; color:var(--text-muted); }
+.insight-row strong { color:var(--text); }
+.attainment-table { width:100%; border-collapse:collapse; font-size:.85rem; margin-top:8px; }
+.attainment-table th { font-family:'JetBrains Mono',monospace; font-size:.7rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; padding:8px 12px; text-align:right; border-bottom:1px solid var(--border); }
+.attainment-table th:first-child { text-align:left; }
+.attainment-table td { padding:9px 12px; text-align:right; border-bottom:1px solid rgba(96,165,250,0.07); color:var(--text-muted); }
+.attainment-table td:first-child { text-align:left; font-family:'JetBrains Mono',monospace; font-size:.8rem; color:var(--text-dim); }
+.attainment-table tr.highlight td { background:rgba(96,165,250,0.07); color:var(--text); font-weight:600; }
+.attainment-table .green-val { color:var(--green); }
+.attainment-table .amber-val { color:var(--amber); }
+.attainment-table .red-val { color:var(--red); }
+.slider-val { font-family:'JetBrains Mono',monospace; font-size:.85rem; color:var(--accent); font-weight:600; margin-top:4px; }
+@media(max-width:700px){.form-grid.two,.form-grid.three{grid-template-columns:1fr;}.results-grid{grid-template-columns:1fr 1fr;}.tool-title{font-size:1.8rem;}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="6" fill="#0D1117"/>
+          <path d="M16 5L28 26H4L16 5Z" fill="none" stroke="#E8A838" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M10 20h12" stroke="#E8A838" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-name"><span class="logo-apex">Apex</span> Logics</span>
+        <span class="logo-org">apexlogics.org</span>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent" data-i18n="all_tools">&#8592; All Tools</a>
+      <div class="lang-inner">
+        <button class="lang-btn" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('es')">ES</button>
+        <button class="lang-btn" onclick="setLang('fr')">FR</button>
+        <button class="lang-btn" onclick="setLang('ar')">AR</button>
+        <button class="lang-btn" onclick="setLang('pt')">PT</button>
+        <button class="lang-btn" onclick="setLang('zh')">&#20013;&#25991;</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="pii-banner">
+  <div class="pii-inner">
+    <span>&#128274;</span><span data-i18n="pii">All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+  <div class="tool-eyebrow">COMPENSATION &middot; #89</div>
+  <h1 class="tool-title">Sales OTE &amp; Commission Analyzer</h1>
+  <p class="tool-desc">Model your real W-2 outcome from an OTE offer: base/variable split, quota attainment scenarios, accelerator tiers, and draw/clawback risk.</p>
+  <div class="tool-vintage">&#128203; Data: BLS OEWS 2024 &middot; Internal sales comp benchmarks</div>
+
+  <!-- Inputs -->
+  <div class="card">
+    <div class="card-title">OTE Structure</div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="baseSalary">Base Salary ($)</label>
+        <input type="number" id="baseSalary" value="75000" min="0" step="1000"/>
+      </div>
+      <div class="field">
+        <label for="ote">OTE — On-Target Earnings ($)</label>
+        <input type="number" id="ote" value="150000" min="0" step="1000"/>
+      </div>
+      <div class="field">
+        <label for="quota">Annual Quota ($)</label>
+        <input type="number" id="quota" value="1000000" min="1" step="10000"/>
+      </div>
+      <div class="field">
+        <label for="federalTax">Federal Tax Rate (%)</label>
+        <input type="number" id="federalTax" value="32" min="0" max="50" step="1"/>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Attainment &amp; Accelerators</div>
+    <div class="form-grid">
+      <div class="field">
+        <label for="attainment">Current Year Attainment (%)</label>
+        <input type="range" id="attainment" min="0" max="200" step="5" value="100" oninput="document.getElementById('attainmentVal').textContent=this.value+'%'"/>
+        <div class="slider-val" id="attainmentVal">100%</div>
+      </div>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="hasAccelerator" checked onchange="toggleAccelerator()"/>
+      <label for="hasAccelerator">Commission rate accelerates above quota threshold</label>
+    </div>
+    <div class="form-grid two conditional-field show" id="acceleratorFields">
+      <div class="field">
+        <label for="accelThreshold">Accelerator Threshold (%)</label>
+        <input type="number" id="accelThreshold" value="100" min="50" max="200" step="5"/>
+        <span class="field-hint">Commission rate increases above this attainment %</span>
+      </div>
+      <div class="field">
+        <label for="accelMultiplier">Accelerator Multiplier (x)</label>
+        <input type="number" id="accelMultiplier" value="1.5" min="1.1" max="5" step="0.1"/>
+        <span class="field-hint">E.g. 1.5 = 150% of base commission rate above threshold</span>
+      </div>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="hasDraw" onchange="toggleDraw()"/>
+      <label for="hasDraw">Recoverable draw applies</label>
+    </div>
+    <div class="form-grid two conditional-field" id="drawFields">
+      <div class="field">
+        <label for="drawMonthly">Draw Amount per Month ($)</label>
+        <input type="number" id="drawMonthly" value="5000" min="0" step="500"/>
+        <span class="field-hint">Amount advanced against future commissions</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Calculate Commission Scenarios</button>
+
+  <!-- Results -->
+  <div class="results-section" id="resultsSection">
+    <div class="card">
+      <div class="card-title">At-Target Results (100% Quota)</div>
+      <div class="results-grid">
+        <div class="result-card">
+          <div class="result-label">Variable at Target</div>
+          <div class="result-value green" id="resVariable">—</div>
+          <div class="result-sub" id="resCommRate">—</div>
+        </div>
+        <div class="result-card">
+          <div class="result-label">Total W-2 at Target</div>
+          <div class="result-value" id="resTotalW2">—</div>
+          <div class="result-sub" id="resSplit">—</div>
+        </div>
+        <div class="result-card">
+          <div class="result-label">After-Tax at Target</div>
+          <div class="result-value amber" id="resAfterTax">—</div>
+          <div class="result-sub" id="resAfterTaxSub">—</div>
+        </div>
+      </div>
+
+      <div id="insightRows"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Attainment Scenario Table</div>
+      <table class="attainment-table" id="attainmentTable">
+        <thead>
+          <tr>
+            <th>Attainment</th>
+            <th>Variable ($)</th>
+            <th>Total W-2 ($)</th>
+            <th>After-Tax ($)</th>
+            <th>vs. OTE</th>
+          </tr>
+        </thead>
+        <tbody id="attainmentBody"></tbody>
+      </table>
+    </div>
+
+    <div id="drawSection" style="display:none">
+      <div class="card">
+        <div class="card-title">Draw / Clawback Risk</div>
+        <div id="drawInsights"></div>
+      </div>
+    </div>
+
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">&#8595; Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">&#8595; AP2 JSON</button>
+    </div>
+
+    <button class="mcp-toggle" onclick="document.getElementById('mcpPanel').classList.toggle('open')">{ } MCP Manifest</button>
+    <div class="mcp-panel" id="mcpPanel"><pre id="mcpPre"></pre></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> &middot; CC BY 4.0 &middot; AL-96 &middot; Data: BLS OEWS 2024
+</footer>
+
+<script>
+const I18N_CHROME = {
+  en: { pii: 'All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.', all_tools: '\u2190 All Tools' },
+  es: { pii: 'Todas las entradas se procesan localmente en su navegador. Nada se transmite, almacena ni registra. Las entradas desaparecen al cerrar la pesta\u00f1a.', all_tools: '\u2190 Todas las herramientas' },
+  fr: { pii: "Toutes les donn\u00e9es sont trait\u00e9es localement dans votre navigateur. Rien n'est transmis, stock\u00e9 ni enregistr\u00e9. Les donn\u00e9es disparaissent \u00e0 la fermeture de l'onglet.", all_tools: '\u2190 Tous les outils' },
+  ar: { pii: '\u062a\u062a\u0645 \u0645\u0639\u0627\u0644\u062c\u0629 \u062c\u0645\u064a\u0639 \u0627\u0644\u0645\u062f\u062e\u0644\u0627\u062a \u0645\u062d\u0644\u064a\u064b\u0627 \u0641\u064a \u0645\u062a\u0635\u0641\u062d\u0643. \u0644\u0627 \u064a\u064f\u0646\u0642\u064e\u0644 \u0623\u064a \u0634\u064a\u0621 \u0623\u0648 \u064a\u064f\u062e\u0632\u064e\u0651\u0646 \u0623\u0648 \u064a\u064f\u0633\u064e\u062c\u064e\u0651\u0644. \u062a\u062e\u062a\u0641\u064a \u0627\u0644\u0645\u062f\u062e\u0644\u0627\u062a \u0639\u0646\u062f \u0625\u063a\u0644\u0627\u0642 \u0639\u0644\u0627\u0645\u0629 \u0627\u0644\u062a\u0628\u0648\u064a\u0628.', all_tools: '\u2190 \u0643\u0644 \u0627\u0644\u0623\u062f\u0648\u0627\u062a' },
+  pt: { pii: 'Todas as entradas s\u00e3o processadas localmente no seu navegador. Nada \u00e9 transmitido, armazenado ou registado. As entradas desaparecem ao fechar este separador.', all_tools: '\u2190 Todas as ferramentas' },
+  zh: { pii: '\u6240\u6709\u8f93\u5165\u5747\u5728\u60a8\u7684\u6d4f\u89c8\u5668\u4e2d\u672c\u5730\u5904\u7406\u3002\u4e0d\u4f1a\u4f20\u8f93\u3001\u5b58\u50a8\u6216\u8bb0\u5f55\u4efb\u4f55\u5185\u5bb9\u3002\u5173\u95ed\u6807\u7b7e\u9875\u540e\u8f93\u5165\u5185\u5bb9\u5373\u6d88\u5931\u3002', all_tools: '\u2190 \u6240\u6709\u5de5\u5177' },
+};
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '\u4e2d\u6587' && lang === 'zh'));
+  });
+  const s = Object.assign({}, I18N_CHROME.en, I18N_CHROME[lang] || {});
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (s[k] !== undefined) el.textContent = s[k];
+  });
+}
+(function(){
+  const s = sessionStorage.getItem('apex_lang');
+  setLang(s || ({en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'})[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+
+const AP2Schema = {
+  validMandateTypes: ['sales_comp_record','counter_offer_record','relocation_package_record','dual_career_record'],
+  validate(payload) {
+    if (!payload || typeof payload !== 'object') return { valid:false, error:'Payload must be an object.' };
+    if (!payload.mandate_type) return { valid:false, error:'Missing mandate_type.' };
+    if (!this.validMandateTypes.includes(payload.mandate_type)) return { valid:false, error:'Invalid mandate_type: '+payload.mandate_type };
+    if (!payload.tool_id) return { valid:false, error:'Missing tool_id.' };
+    if (!payload.generated_at) return { valid:false, error:'Missing generated_at.' };
+    return { valid:true };
+  }
+};
+
+const manifest = {
+  "al_id": "AL-96",
+  "version": "1.0.0",
+  "title": "Sales OTE & Commission Analyzer",
+  "slug": "89-sales-ote-commission-analyzer",
+  "file_path": "tools/89-sales-ote-commission-analyzer/index.html",
+  "description": "Model your real W-2 outcome from an OTE offer: base/variable split, quota attainment scenarios, accelerator tiers, and draw/clawback risk.",
+  "category": "compensation_benefits",
+  "journeys": ["career_navigation","compensation_optimization"],
+  "personas": ["working_professional","career_changer"],
+  "tags": ["sales","ote","commission","quota","compensation","w2","accelerator"],
+  "status": "shipped",
+  "maintenance": "low",
+  "data_vintage": "BLS OEWS 2024 · Internal sales comp benchmarks",
+  "ap2_export": true,
+  "ap2_mandate_types": ["sales_comp_record"],
+  "downstream_handoff_candidates": [],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+document.getElementById('mcpPre').textContent = JSON.stringify(manifest, null, 2);
+
+function toggleAccelerator() {
+  const checked = document.getElementById('hasAccelerator').checked;
+  const fields = document.getElementById('acceleratorFields');
+  fields.classList.toggle('show', checked);
+}
+function toggleDraw() {
+  const checked = document.getElementById('hasDraw').checked;
+  const fields = document.getElementById('drawFields');
+  fields.classList.toggle('show', checked);
+}
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+function fmtPct(n) { return n.toFixed(1) + '%'; }
+
+let lastPayload = null;
+
+function computeVariable(attPct, base, quota, ote, hasAccel, accelThresh, accelMult) {
+  const baseCommRate = (ote - base) / quota;
+  const targetVar = ote - base;
+  if (!hasAccel || attPct <= accelThresh) {
+    return (attPct / 100) * targetVar;
+  } else {
+    const threshVar = (accelThresh / 100) * targetVar;
+    const excessRevenue = ((attPct - accelThresh) / 100) * quota;
+    const accelVar = excessRevenue * baseCommRate * accelMult;
+    return threshVar + accelVar;
+  }
+}
+
+function calculate() {
+  const base = parseFloat(document.getElementById('baseSalary').value) || 0;
+  const ote = parseFloat(document.getElementById('ote').value) || 0;
+  const quota = parseFloat(document.getElementById('quota').value) || 1;
+  const attainment = parseFloat(document.getElementById('attainment').value) || 100;
+  const fedTax = parseFloat(document.getElementById('federalTax').value) || 32;
+  const hasAccel = document.getElementById('hasAccelerator').checked;
+  const accelThresh = parseFloat(document.getElementById('accelThreshold').value) || 100;
+  const accelMult = parseFloat(document.getElementById('accelMultiplier').value) || 1.5;
+  const hasDraw = document.getElementById('hasDraw').checked;
+  const drawMonthly = parseFloat(document.getElementById('drawMonthly').value) || 0;
+
+  if (ote <= base) { showToast('OTE must be greater than base salary.'); return; }
+  if (base <= 0) { showToast('Base salary must be positive.'); return; }
+
+  const baseCommRate = (ote - base) / quota;
+  const varAtTarget = computeVariable(100, base, quota, ote, hasAccel, accelThresh, accelMult);
+  const totalAtTarget = base + varAtTarget;
+  const afterTaxAtTarget = totalAtTarget * (1 - fedTax / 100);
+  const baseSplit = (base / ote) * 100;
+  const varSplit = 100 - baseSplit;
+
+  document.getElementById('resVariable').textContent = fmt(varAtTarget);
+  document.getElementById('resCommRate').textContent = 'Base commission rate: ' + (baseCommRate * 100).toFixed(2) + '%';
+  document.getElementById('resTotalW2').textContent = fmt(totalAtTarget);
+  document.getElementById('resSplit').textContent = 'Base/Var split: ' + baseSplit.toFixed(0) + '%/' + varSplit.toFixed(0) + '%';
+  document.getElementById('resAfterTax').textContent = fmt(afterTaxAtTarget);
+  document.getElementById('resAfterTaxSub').textContent = 'After ' + fedTax + '% federal rate';
+
+  // Risk profile
+  let riskLabel = varSplit >= 60 ? 'high' : varSplit >= 40 ? 'moderate' : 'low';
+  let riskColor = varSplit >= 60 ? 'var(--red)' : varSplit >= 40 ? 'var(--amber)' : 'var(--green)';
+
+  const insights = document.getElementById('insightRows');
+  insights.innerHTML = '';
+  const i1 = document.createElement('div'); i1.className = 'insight-row';
+  i1.innerHTML = 'At 100% quota, your variable is <strong>' + fmt(varAtTarget) + '</strong>, total W-2 is <strong>' + fmt(totalAtTarget) + '</strong>.';
+  insights.appendChild(i1);
+  const i2 = document.createElement('div'); i2.className = 'insight-row';
+  i2.innerHTML = 'Your base/variable split is <strong>' + baseSplit.toFixed(0) + '%/' + varSplit.toFixed(0) + '%</strong> — <strong style="color:' + riskColor + '">' + riskLabel + ' risk</strong> profile. ' + (varSplit >= 60 ? 'High variable concentration means earnings are highly sensitive to quota attainment.' : varSplit >= 40 ? 'Moderate variable exposure — income fluctuates meaningfully with quota performance.' : 'Low variable share — base-heavy structure provides income stability.');
+  insights.appendChild(i2);
+  if (hasAccel) {
+    const varAt150 = computeVariable(150, base, quota, ote, true, accelThresh, accelMult);
+    const i3 = document.createElement('div'); i3.className = 'insight-row';
+    i3.innerHTML = 'At 150% attainment with ' + accelMult + 'x accelerator above ' + accelThresh + '%, total W-2 reaches <strong>' + fmt(base + varAt150) + '</strong>.';
+    insights.appendChild(i3);
+  }
+
+  // Attainment table
+  const levels = [50, 75, 100, 125, 150, 200];
+  const tbody = document.getElementById('attainmentBody');
+  tbody.innerHTML = '';
+  levels.forEach(lv => {
+    const vari = computeVariable(lv, base, quota, ote, hasAccel, accelThresh, accelMult);
+    const total = base + vari;
+    const afterTax = total * (1 - fedTax / 100);
+    const vsOte = ((total - ote) / ote) * 100;
+    const tr = document.createElement('tr');
+    if (Math.round(attainment / 25) * 25 === lv || lv === 100) tr.className = 'highlight';
+    const vsClass = vsOte >= 0 ? 'green-val' : 'red-val';
+    tr.innerHTML = '<td>' + lv + '%</td><td>' + fmt(vari) + '</td><td>' + fmt(total) + '</td><td>' + fmt(afterTax) + '</td><td class="' + vsClass + '">' + (vsOte >= 0 ? '+' : '') + vsOte.toFixed(1) + '%</td>';
+    tbody.appendChild(tr);
+  });
+
+  // Draw section
+  const drawSec = document.getElementById('drawSection');
+  if (hasDraw && drawMonthly > 0) {
+    drawSec.style.display = 'block';
+    const annualDraw = drawMonthly * 12;
+    const monthsToPayback = varAtTarget > 0 ? (annualDraw / (varAtTarget / 12)).toFixed(1) : 'N/A';
+    const di = document.getElementById('drawInsights');
+    di.innerHTML = '';
+    const d1 = document.createElement('div'); d1.className = 'insight-row';
+    d1.innerHTML = 'Draw of <strong>' + fmt(drawMonthly) + '/mo</strong> (' + fmt(annualDraw) + '/yr) must be earned back against commissions. At 100% quota, payback takes approximately <strong>' + monthsToPayback + ' months</strong>.';
+    di.appendChild(d1);
+    if (parseFloat(monthsToPayback) > 6) {
+      const d2 = document.createElement('div'); d2.className = 'insight-row';
+      d2.style.borderColor = 'rgba(248,113,113,0.4)';
+      d2.innerHTML = '<strong style="color:var(--red)">Clawback risk is elevated.</strong> If you leave before the draw is fully earned back, you may owe the difference. Verify clawback terms in your offer letter.';
+      di.appendChild(d2);
+    }
+  } else {
+    drawSec.style.display = 'none';
+  }
+
+  lastPayload = {
+    mandate_type: 'sales_comp_record',
+    tool_id: 'AL-96',
+    generated_at: new Date().toISOString(),
+    base_salary: base,
+    ote: ote,
+    quota: quota,
+    attainment_pct: attainment,
+    variable_at_target: Math.round(varAtTarget),
+    total_at_target: Math.round(totalAtTarget),
+    after_tax_at_target: Math.round(afterTaxAtTarget),
+    has_accelerator: hasAccel,
+    has_draw: hasDraw,
+    base_variable_split_pct: parseFloat(baseSplit.toFixed(1))
+  };
+
+  document.getElementById('resultsSection').classList.add('visible');
+}
+
+function exportMarkdown() {
+  if (!lastPayload) return;
+  const p = lastPayload;
+  const base = p.base_salary, ote = p.ote, quota = p.quota;
+  const hasAccel = document.getElementById('hasAccelerator').checked;
+  const accelThresh = parseFloat(document.getElementById('accelThreshold').value) || 100;
+  const accelMult = parseFloat(document.getElementById('accelMultiplier').value) || 1.5;
+  const fedTax = parseFloat(document.getElementById('federalTax').value) || 32;
+  const levels = [50, 75, 100, 125, 150, 200];
+  let rows = levels.map(lv => {
+    const v = computeVariable(lv, base, quota, ote, hasAccel, accelThresh, accelMult);
+    const total = base + v;
+    const at = total * (1 - fedTax / 100);
+    return '| ' + lv + '% | ' + fmt(v) + ' | ' + fmt(total) + ' | ' + fmt(at) + ' |';
+  }).join('\n');
+  const md = '# Sales OTE & Commission Analysis\nGenerated: ' + new Date().toLocaleString() + '\n\n' +
+    '## Structure\n- Base Salary: ' + fmt(base) + '\n- OTE: ' + fmt(ote) + '\n- Annual Quota: ' + fmt(quota) + '\n- Base commission rate: ' + (((ote - base) / quota) * 100).toFixed(2) + '%\n\n' +
+    '## At-Target (100%)\n- Variable: ' + fmt(p.variable_at_target) + '\n- Total W-2: ' + fmt(p.total_at_target) + '\n- After-Tax: ' + fmt(p.after_tax_at_target) + '\n- Base/Var Split: ' + p.base_variable_split_pct + '%/' + (100 - p.base_variable_split_pct).toFixed(1) + '%\n\n' +
+    '## Attainment Scenarios\n| Attainment | Variable | Total W-2 | After-Tax |\n|---|---|---|---|\n' + rows + '\n\n' +
+    (hasAccel ? '## Accelerator\n- Threshold: ' + accelThresh + '%\n- Multiplier: ' + accelMult + 'x\n\n' : '') +
+    '*Generated by ApexLogics Sales OTE & Commission Analyzer (AL-96) — apexlogics.org*';
+  download('sales-comp-analysis.md', md, 'text/markdown');
+}
+
+function exportAP2() {
+  if (!lastPayload) return;
+  const result = AP2Schema.validate(lastPayload);
+  if (!result.valid) { showToast('AP2 validation failed: ' + result.error); return; }
+  download('sales-comp-ap2.json', JSON.stringify(lastPayload, null, 2), 'application/json');
+}
+
+function download(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>

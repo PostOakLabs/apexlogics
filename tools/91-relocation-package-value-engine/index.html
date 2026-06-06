@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Relocation Package True Value Engine — ApexLogics</title>
+<meta name="description" content="Strip the gross-up illusion from your employer relocation offer. Model lump sum vs. managed relo net value after taxes, actual moving costs, and housing delta."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+:root {
+  --bg:#070B14; --surface:#0D1117; --surface2:#111827;
+  --accent:#60a5fa; --accent-dim:rgba(96,165,250,0.18); --accent-low:rgba(96,165,250,0.08);
+  --border:rgba(96,165,250,0.18); --border-focus:#60a5fa;
+  --text:#e2e8f0; --text-muted:#94a3b8; --text-dim:#64748b;
+  --green:#34d399; --amber:#fbbf24; --red:#f87171; --amber-brand:#E8A838;
+}
+html { font-size:16px; }
+body { background:var(--bg); color:var(--text); font-family:'Sora',sans-serif; line-height:1.6; min-height:100vh; }
+.nav { background:rgba(7,11,20,.92); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; }
+.nav-inner { max-width:1024px; margin:0 auto; display:flex; align-items:center; gap:16px; padding:0 24px; min-height:64px; height:auto; }
+.logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+.logo-mark { width:32px; height:32px; flex-shrink:0; }
+.logo-mark svg { width:100%; height:100%; }
+.logo-text { display:flex; flex-direction:column; gap:2px; }
+.logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text); letter-spacing:-.02em; line-height:1; }
+.logo-apex { color:#E8A838; }
+.logo-org { color:var(--text-dim); font-size:.8rem; }
+.nav-spacer { flex:1; }
+.nav-right { display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+.nav-pill { background:none; border:1px solid var(--border); border-radius:6px; color:var(--text-muted); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+.nav-pill:hover { border-color:#E8A838; color:var(--text); }
+.nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+.lang-inner { display:flex; gap:4px; }
+.lang-btn { background:none; border:1px solid transparent; color:var(--text-dim); font-family:'JetBrains Mono',monospace; font-size:.72rem; padding:3px 8px; border-radius:4px; cursor:pointer; transition:all .15s; }
+.lang-btn:hover { color:var(--text-muted); border-color:var(--border); }
+.lang-btn.active { color:var(--accent); border-color:var(--accent); background:var(--accent-low); }
+.pii-banner { max-width:1024px; margin:1.25rem auto 0; padding:0 24px; }
+.pii-inner { background:rgba(255,255,255,.03); border:1px solid var(--border); border-left:3px solid #E8A838; border-radius:6px; padding:.7rem 1rem; font-size:.76rem; color:var(--text-muted); display:flex; gap:.5rem; align-items:flex-start; }
+.tool-wrapper { max-width:1024px; margin:0 auto; padding:40px 24px 80px; }
+.tool-eyebrow { font-family:'JetBrains Mono',monospace; font-size:.72rem; color:#E8A838; letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px; }
+.tool-title { font-family:'DM Serif Display',serif; font-size:2.4rem; line-height:1.15; margin-bottom:16px; }
+.tool-desc { color:var(--text-muted); font-size:.97rem; max-width:760px; margin-bottom:10px; }
+.tool-vintage { display:inline-flex; align-items:center; gap:.4rem; background:rgba(232,168,56,.1); border:1px solid #E8A838; border-radius:6px; padding:.3rem .7rem; font-family:'JetBrains Mono',monospace; font-size:.65rem; color:#E8A838; margin-bottom:1.25rem; }
+.tab-bar { display:flex; gap:4px; margin-bottom:20px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:4px; }
+.tab-btn { flex:1; padding:10px 16px; background:none; border:none; color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:.75rem; cursor:pointer; border-radius:7px; transition:all .18s; text-align:center; letter-spacing:.04em; }
+.tab-btn.active { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+.tab-pane { display:none; }
+.tab-pane.active { display:block; }
+.card { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:24px 28px; margin-bottom:16px; }
+.card-title { font-family:'JetBrains Mono',monospace; font-size:.78rem; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:20px; }
+.form-grid { display:grid; gap:14px; }
+.form-grid.two { grid-template-columns:1fr 1fr; }
+.form-grid.three { grid-template-columns:1fr 1fr 1fr; }
+.field { display:flex; flex-direction:column; gap:5px; }
+label { font-size:.78rem; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
+input[type="text"], input[type="number"], select { background:var(--surface); border:1px solid var(--border); color:var(--text); padding:9px 12px; border-radius:6px; font-family:'Sora',sans-serif; font-size:.9rem; width:100%; transition:border-color .2s; }
+input:focus, select:focus { outline:none; border-color:var(--border-focus); }
+.field-hint { font-size:.7rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace; }
+.checkbox-row { display:flex; align-items:center; gap:10px; padding:8px 0; }
+.checkbox-row input[type="checkbox"] { width:16px; height:16px; accent-color:var(--accent); cursor:pointer; }
+.checkbox-row label { font-size:.85rem; color:var(--text-muted); font-family:'Sora',sans-serif; cursor:pointer; }
+.run-btn { background:var(--accent); color:#000; border:none; padding:14px 40px; border-radius:8px; font-size:1rem; font-family:'Sora',sans-serif; font-weight:600; cursor:pointer; width:100%; margin:8px 0 24px; transition:opacity .2s; }
+.run-btn:hover { opacity:.88; }
+.results-section { display:none; }
+.results-section.visible { display:block; }
+.result-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:20px 24px; margin-bottom:14px; }
+.result-label { font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; }
+.result-value { font-size:1.6rem; font-weight:600; color:var(--text); }
+.result-value.green { color:var(--green); }
+.result-value.amber { color:var(--amber); }
+.result-value.red { color:var(--red); }
+.result-sub { font-size:.82rem; color:var(--text-muted); margin-top:4px; }
+.results-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+.results-grid.two { grid-template-columns:1fr 1fr; }
+.results-export-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:24px; padding-top:20px; border-top:1px solid var(--border); }
+.export-btn { display:flex; align-items:center; gap:7px; padding:9px 18px; border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:.75rem; cursor:pointer; transition:all .18s; }
+.export-btn:hover { border-color:var(--accent); color:var(--accent); }
+.export-btn.ap2 { border-color:rgba(96,165,250,0.4); color:var(--accent); }
+.mcp-toggle { background:none; border:1px solid var(--border); border-radius:6px; color:var(--text-dim); font-size:.72rem; font-family:'JetBrains Mono',monospace; padding:.35rem .7rem; cursor:pointer; margin-top:2rem; transition:all .15s; }
+.mcp-toggle:hover { border-color:var(--accent); color:var(--accent); }
+.mcp-panel { display:none; margin-top:1rem; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px; }
+.mcp-panel.open { display:block; }
+.mcp-panel pre { font-size:.72rem; font-family:'JetBrains Mono',monospace; color:var(--text-muted); white-space:pre-wrap; word-break:break-all; }
+.tool-footer { border-top:1px solid var(--border); padding:1.75rem 1.5rem; margin-top:3rem; font-size:.78rem; color:var(--text-muted); font-family:'JetBrains Mono',monospace; text-align:center; }
+.tool-footer a { color:var(--text-muted); text-decoration:none; }
+.tool-footer a:hover { color:var(--text); }
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#7f1d1d; border:1px solid var(--red); color:#fecaca; padding:12px 22px; border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:.8rem; z-index:200; display:none; }
+.toast.show { display:block; }
+.insight-row { background:rgba(96,165,250,0.06); border:1px solid rgba(96,165,250,0.2); border-radius:8px; padding:14px 18px; margin-bottom:10px; font-size:.88rem; color:var(--text-muted); }
+.insight-row strong { color:var(--text); }
+.warning-row { background:rgba(248,113,113,0.06); border:1px solid rgba(248,113,113,0.3); border-radius:8px; padding:14px 18px; margin-bottom:10px; font-size:.88rem; color:var(--text-muted); }
+.breakdown-table { width:100%; border-collapse:collapse; font-size:.85rem; margin-top:8px; }
+.breakdown-table th { font-family:'JetBrains Mono',monospace; font-size:.7rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; padding:8px 12px; text-align:right; border-bottom:1px solid var(--border); }
+.breakdown-table th:first-child { text-align:left; }
+.breakdown-table td { padding:9px 12px; text-align:right; border-bottom:1px solid rgba(96,165,250,0.07); color:var(--text-muted); }
+.breakdown-table td:first-child { text-align:left; font-family:'JetBrains Mono',monospace; font-size:.8rem; }
+.breakdown-table .total-row td { font-weight:600; color:var(--text); border-top:1px solid var(--border); }
+.section-divider { height:1px; background:var(--border); margin:20px 0; }
+@media(max-width:700px){.form-grid.two,.form-grid.three{grid-template-columns:1fr;}.results-grid{grid-template-columns:1fr 1fr;}.results-grid.two{grid-template-columns:1fr;}.tool-title{font-size:1.8rem;}.tab-btn{font-size:.65rem;padding:8px 6px;}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="6" fill="#0D1117"/>
+          <path d="M16 5L28 26H4L16 5Z" fill="none" stroke="#E8A838" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M10 20h12" stroke="#E8A838" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-name"><span class="logo-apex">Apex</span> Logics</span>
+        <span class="logo-org">apexlogics.org</span>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent" data-i18n="all_tools">&#8592; All Tools</a>
+      <div class="lang-inner">
+        <button class="lang-btn" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('es')">ES</button>
+        <button class="lang-btn" onclick="setLang('fr')">FR</button>
+        <button class="lang-btn" onclick="setLang('ar')">AR</button>
+        <button class="lang-btn" onclick="setLang('pt')">PT</button>
+        <button class="lang-btn" onclick="setLang('zh')">&#20013;&#25991;</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="pii-banner">
+  <div class="pii-inner">
+    <span>&#128274;</span><span data-i18n="pii">All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+  <div class="tool-eyebrow">CAREER PLANNING &middot; #91</div>
+  <h1 class="tool-title">Relocation Package True Value Engine</h1>
+  <p class="tool-desc">Strip the gross-up illusion from your employer relocation offer. Model lump sum vs. managed relo net value after taxes, actual moving costs, and housing delta.</p>
+  <div class="tool-vintage">&#128203; Data: ATTOM moving cost data 2024 &middot; IRS Publication 521</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('tab1',this)">Tab 1: Package Valuation</button>
+    <button class="tab-btn" onclick="switchTab('tab2',this)">Tab 2: Salary Adjustment</button>
+  </div>
+
+  <!-- TAB 1 -->
+  <div class="tab-pane active" id="tab1">
+    <div class="card">
+      <div class="card-title">Relocation Package Details</div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="reloType">Package Type</label>
+          <select id="reloType" onchange="toggleReloType()">
+            <option value="lump_sum">Lump Sum</option>
+            <option value="managed">Managed Relocation</option>
+            <option value="neither">Neither / No Package</option>
+          </select>
+        </div>
+        <div class="field" id="packageAmtField">
+          <label for="packageAmt">Package Amount ($)</label>
+          <input type="number" id="packageAmt" value="10000" min="0" step="500"/>
+        </div>
+      </div>
+      <div class="checkbox-row" id="grossUpRow">
+        <input type="checkbox" id="isGrossedUp"/>
+        <label for="isGrossedUp">Package is grossed-up (employer covers the tax)</label>
+      </div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="fedTaxRelo">Federal Tax Rate (%)</label>
+          <input type="number" id="fedTaxRelo" value="32" min="0" max="50" step="1"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Moving Cost Estimate</div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="movingCosts">Estimated Moving Costs ($)</label>
+          <input type="number" id="movingCosts" value="8000" min="0" step="500"/>
+          <span class="field-hint">Average interstate move: $7,000–$10,000 (ATTOM 2024)</span>
+        </div>
+        <div class="field">
+          <label for="tempHousingDays">Temporary Housing Days</label>
+          <input type="number" id="tempHousingDays" value="30" min="0" step="1"/>
+        </div>
+        <div class="field">
+          <label for="tempHousingRate">Temp Housing per Night ($)</label>
+          <input type="number" id="tempHousingRate" value="120" min="0" step="10"/>
+          <span class="field-hint">Extended-stay rates typically $90–$160/night</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="run-btn" onclick="calculateTab1()">Calculate Package Value</button>
+
+    <div class="results-section" id="tab1Results">
+      <div class="card">
+        <div class="card-title">Package True Value</div>
+        <div class="results-grid">
+          <div class="result-card">
+            <div class="result-label">After-Tax Package</div>
+            <div class="result-value" id="afterTaxPackage">—</div>
+            <div class="result-sub" id="grossUpNote">—</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Total Moving Expense</div>
+            <div class="result-value amber" id="totalMovingExp">—</div>
+            <div class="result-sub" id="movingBreakdown">—</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Net Surplus / Shortfall</div>
+            <div class="result-value" id="netSurplus">—</div>
+            <div class="result-sub" id="coveragePct">—</div>
+          </div>
+        </div>
+        <div id="tab1Insights"></div>
+        <div class="section-divider"></div>
+        <table class="breakdown-table">
+          <thead>
+            <tr><th>Item</th><th>Amount</th></tr>
+          </thead>
+          <tbody id="breakdownBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2 -->
+  <div class="tab-pane" id="tab2">
+    <div class="card">
+      <div class="card-title">Cost of Living Salary Adjustment</div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="currentSalaryCol">Current Salary ($)</label>
+          <input type="number" id="currentSalaryCol" value="100000" min="0" step="1000"/>
+        </div>
+        <div class="field">
+          <label for="newSalaryCol">New Salary at Destination ($)</label>
+          <input type="number" id="newSalaryCol" value="110000" min="0" step="1000"/>
+        </div>
+        <div class="field">
+          <label for="originCity">Origin City</label>
+          <select id="originCity">
+            <option value="100">New York City (COL 100)</option>
+            <option value="98">San Francisco (COL 98)</option>
+            <option value="87">Boston (COL 87)</option>
+            <option value="84">Washington DC (COL 84)</option>
+            <option value="75">Chicago (COL 75)</option>
+            <option value="73">Miami (COL 73)</option>
+            <option value="72">Austin (COL 72)</option>
+            <option value="70">Denver (COL 70)</option>
+            <option value="70">Dallas (COL 70)</option>
+            <option value="68">Atlanta (COL 68)</option>
+            <option value="67">Phoenix (COL 67)</option>
+            <option value="65">Houston (COL 65)</option>
+          </select>
+          <span class="field-hint">COL index: NYC=100 baseline</span>
+        </div>
+        <div class="field">
+          <label for="destCity">Destination City</label>
+          <select id="destCity">
+            <option value="100">New York City (COL 100)</option>
+            <option value="98">San Francisco (COL 98)</option>
+            <option value="87">Boston (COL 87)</option>
+            <option value="84">Washington DC (COL 84)</option>
+            <option value="75" selected>Chicago (COL 75)</option>
+            <option value="73">Miami (COL 73)</option>
+            <option value="72">Austin (COL 72)</option>
+            <option value="70">Denver (COL 70)</option>
+            <option value="70">Dallas (COL 70)</option>
+            <option value="68">Atlanta (COL 68)</option>
+            <option value="67">Phoenix (COL 67)</option>
+            <option value="65">Houston (COL 65)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button class="run-btn" onclick="calculateTab2()">Calculate COL Adjustment</button>
+
+    <div class="results-section" id="tab2Results">
+      <div class="card">
+        <div class="card-title">COL-Adjusted Salary Analysis</div>
+        <div class="results-grid">
+          <div class="result-card">
+            <div class="result-label">COL-Adjusted New Salary</div>
+            <div class="result-value" id="colAdjusted">—</div>
+            <div class="result-sub" id="colAdjSub">—</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Effective Raise / Cut</div>
+            <div class="result-value" id="effectiveRaise">—</div>
+            <div class="result-sub" id="effectiveRaisePct">—</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Nominal Raise</div>
+            <div class="result-value amber" id="nominalRaise">—</div>
+            <div class="result-sub">Before COL adjustment</div>
+          </div>
+        </div>
+        <div id="tab2Insights"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="results-section" id="exportSection">
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">&#8595; Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">&#8595; AP2 JSON</button>
+    </div>
+    <button class="mcp-toggle" onclick="document.getElementById('mcpPanel').classList.toggle('open')">{ } MCP Manifest</button>
+    <div class="mcp-panel" id="mcpPanel"><pre id="mcpPre"></pre></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> &middot; CC BY 4.0 &middot; AL-98 &middot; Data: ATTOM 2024 &middot; IRS Pub. 521
+</footer>
+
+<script>
+const I18N_CHROME = {
+  en: { pii: 'All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.', all_tools: '\u2190 All Tools' },
+  es: { pii: 'Todas las entradas se procesan localmente en su navegador. Nada se transmite, almacena ni registra. Las entradas desaparecen al cerrar la pesta\u00f1a.', all_tools: '\u2190 Todas las herramientas' },
+  fr: { pii: "Toutes les donn\u00e9es sont trait\u00e9es localement dans votre navigateur. Rien n'est transmis.", all_tools: '\u2190 Tous les outils' },
+  ar: { pii: '\u062a\u062a\u0645 \u0645\u0639\u0627\u0644\u062c\u0629 \u062c\u0645\u064a\u0639 \u0627\u0644\u0645\u062f\u062e\u0644\u0627\u062a \u0645\u062d\u0644\u064a\u064b\u0627 \u0641\u064a \u0645\u062a\u0635\u0641\u062d\u0643.', all_tools: '\u2190 \u0643\u0644 \u0627\u0644\u0623\u062f\u0648\u0627\u062a' },
+  pt: { pii: 'Todas as entradas s\u00e3o processadas localmente no seu navegador.', all_tools: '\u2190 Todas as ferramentas' },
+  zh: { pii: '\u6240\u6709\u8f93\u5165\u5747\u5728\u60a8\u7684\u6d4f\u89c8\u5668\u4e2d\u672c\u5730\u5904\u7406\u3002', all_tools: '\u2190 \u6240\u6709\u5de5\u5177' },
+};
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '\u4e2d\u6587' && lang === 'zh'));
+  });
+  const s = Object.assign({}, I18N_CHROME.en, I18N_CHROME[lang] || {});
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (s[k] !== undefined) el.textContent = s[k];
+  });
+}
+(function(){
+  const s = sessionStorage.getItem('apex_lang');
+  setLang(s || ({en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'})[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+
+const AP2Schema = {
+  validMandateTypes: ['sales_comp_record','counter_offer_record','relocation_package_record','dual_career_record'],
+  validate(payload) {
+    if (!payload || typeof payload !== 'object') return { valid:false, error:'Payload must be an object.' };
+    if (!payload.mandate_type) return { valid:false, error:'Missing mandate_type.' };
+    if (!this.validMandateTypes.includes(payload.mandate_type)) return { valid:false, error:'Invalid mandate_type: '+payload.mandate_type };
+    if (!payload.tool_id) return { valid:false, error:'Missing tool_id.' };
+    if (!payload.generated_at) return { valid:false, error:'Missing generated_at.' };
+    return { valid:true };
+  }
+};
+
+const manifest = {
+  "al_id": "AL-98",
+  "version": "1.0.0",
+  "title": "Relocation Package True Value Engine",
+  "slug": "91-relocation-package-value-engine",
+  "file_path": "tools/91-relocation-package-value-engine/index.html",
+  "description": "Strip the gross-up illusion from your employer relocation offer. Model lump sum vs. managed relo net value after taxes, actual moving costs, and housing delta.",
+  "category": "career_planning",
+  "journeys": ["career_navigation","compensation_optimization"],
+  "personas": ["working_professional","career_changer"],
+  "tags": ["relocation","moving","job-offer","cost-of-living","salary","package"],
+  "status": "shipped",
+  "maintenance": "low",
+  "data_vintage": "ATTOM moving cost data 2024 · IRS Publication 521",
+  "ap2_export": true,
+  "ap2_mandate_types": ["relocation_package_record"],
+  "downstream_handoff_candidates": [],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+document.getElementById('mcpPre').textContent = JSON.stringify(manifest, null, 2);
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function toggleReloType() {
+  const type = document.getElementById('reloType').value;
+  document.getElementById('packageAmtField').style.display = type === 'lump_sum' ? 'flex' : 'none';
+  document.getElementById('grossUpRow').style.display = type === 'lump_sum' ? 'flex' : 'none';
+}
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+function fmtPct(n) { return n.toFixed(1) + '%'; }
+
+let lastPayload = null;
+let tab1Data = null;
+let tab2Data = null;
+
+function calculateTab1() {
+  const type = document.getElementById('reloType').value;
+  const amt = parseFloat(document.getElementById('packageAmt').value) || 0;
+  const isGrossedUp = document.getElementById('isGrossedUp').checked;
+  const fedTax = parseFloat(document.getElementById('fedTaxRelo').value) || 32;
+  const movingCosts = parseFloat(document.getElementById('movingCosts').value) || 0;
+  const tempDays = parseFloat(document.getElementById('tempHousingDays').value) || 0;
+  const tempRate = parseFloat(document.getElementById('tempHousingRate').value) || 0;
+
+  let grossAmt = (type === 'lump_sum') ? amt : 0;
+  let afterTaxAmt = 0;
+  let grossUpNote = '';
+
+  if (type === 'lump_sum') {
+    if (isGrossedUp) {
+      afterTaxAmt = grossAmt;
+      grossUpNote = 'Grossed-up — employer covers tax obligation';
+    } else {
+      afterTaxAmt = grossAmt * (1 - fedTax / 100);
+      grossUpNote = 'Taxed at ' + fedTax + '% — you net ' + fmtPct(100 - fedTax) + ' of gross';
+    }
+  } else if (type === 'managed') {
+    afterTaxAmt = 0;
+    grossUpNote = 'Managed relo: employer pays vendors directly — no cash to you';
+    grossAmt = 0;
+  } else {
+    afterTaxAmt = 0;
+    grossUpNote = 'No package provided';
+    grossAmt = 0;
+  }
+
+  const tempHousingTotal = tempDays * tempRate;
+  const totalMovingExp = movingCosts + tempHousingTotal;
+  const netSurplusShortfall = afterTaxAmt - totalMovingExp;
+  const coveragePct = totalMovingExp > 0 ? (afterTaxAmt / totalMovingExp) * 100 : 0;
+
+  document.getElementById('afterTaxPackage').textContent = fmt(afterTaxAmt);
+  document.getElementById('grossUpNote').textContent = grossUpNote;
+  document.getElementById('totalMovingExp').textContent = fmt(totalMovingExp);
+  document.getElementById('movingBreakdown').textContent = 'Move: ' + fmt(movingCosts) + ' + Temp housing: ' + fmt(tempHousingTotal);
+  const nsEl = document.getElementById('netSurplus');
+  nsEl.textContent = (netSurplusShortfall >= 0 ? '+' : '') + fmt(netSurplusShortfall);
+  nsEl.className = 'result-value ' + (netSurplusShortfall >= 0 ? 'green' : 'red');
+  document.getElementById('coveragePct').textContent = 'Package covers ' + fmtPct(Math.min(coveragePct, 100)) + ' of estimated relocation costs';
+
+  // Breakdown table
+  const tbody = document.getElementById('breakdownBody');
+  tbody.innerHTML = '';
+  const rows = [
+    ['Gross package amount', fmt(grossAmt)],
+    ['Tax withheld', type === 'lump_sum' && !isGrossedUp ? '-' + fmt(grossAmt * (fedTax/100)) : '$0'],
+    ['After-tax package', fmt(afterTaxAmt)],
+    ['Moving company / truck', '-' + fmt(movingCosts)],
+    ['Temporary housing (' + tempDays + ' nights @ ' + fmt(tempRate) + ')', '-' + fmt(tempHousingTotal)],
+    ['NET SURPLUS / SHORTFALL', (netSurplusShortfall >= 0 ? '+' : '') + fmt(netSurplusShortfall)]
+  ];
+  rows.forEach((row, i) => {
+    const tr = document.createElement('tr');
+    if (i === rows.length - 1) tr.className = 'total-row';
+    tr.innerHTML = '<td>' + row[0] + '</td><td>' + row[1] + '</td>';
+    tbody.appendChild(tr);
+  });
+
+  // Insights
+  const ins = document.getElementById('tab1Insights');
+  ins.innerHTML = '';
+  const i1 = document.createElement('div'); i1.className = 'insight-row';
+  i1.innerHTML = 'Your package covers <strong>' + fmtPct(Math.min(coveragePct, 999)) + '</strong> of estimated relocation costs.';
+  ins.appendChild(i1);
+
+  if (type === 'lump_sum' && !isGrossedUp && grossAmt > 0) {
+    const taxCost = grossAmt * (fedTax / 100);
+    const i2 = document.createElement('div'); i2.className = 'warning-row';
+    i2.innerHTML = '<strong>Gross-up alert:</strong> Your lump sum is <em>not</em> grossed up. You owe <strong>' + fmt(taxCost) + '</strong> in federal tax on this payment. Always negotiate for gross-up — it is standard practice for employer-initiated relocations.';
+    ins.appendChild(i2);
+  }
+  if (netSurplusShortfall < 0) {
+    const i3 = document.createElement('div'); i3.className = 'warning-row';
+    i3.innerHTML = 'You are <strong>' + fmt(Math.abs(netSurplusShortfall)) + ' short</strong> after this package. Factor this into your offer negotiation or expect out-of-pocket expenses.';
+    ins.appendChild(i3);
+  }
+
+  tab1Data = { type, gross_amount: grossAmt, is_grossed_up: isGrossedUp, net_package_value: Math.round(afterTaxAmt), moving_expense_estimate: Math.round(totalMovingExp), net_surplus_shortfall: Math.round(netSurplusShortfall) };
+
+  buildPayload();
+  document.getElementById('tab1Results').classList.add('visible');
+  document.getElementById('exportSection').classList.add('visible');
+}
+
+function calculateTab2() {
+  const currentSal = parseFloat(document.getElementById('currentSalaryCol').value) || 0;
+  const newSal = parseFloat(document.getElementById('newSalaryCol').value) || 0;
+  const originCOL = parseFloat(document.getElementById('originCity').value) || 100;
+  const destCOL = parseFloat(document.getElementById('destCity').value) || 100;
+  const originLabel = document.getElementById('originCity').options[document.getElementById('originCity').selectedIndex].text;
+  const destLabel = document.getElementById('destCity').options[document.getElementById('destCity').selectedIndex].text;
+
+  if (!currentSal || !newSal) { showToast('Please enter both current and new salary.'); return; }
+
+  // COL-adjusted: what the new salary is worth in origin-city terms
+  const colAdjusted = newSal * (originCOL / destCOL);
+  const effectiveRaise = colAdjusted - currentSal;
+  const effectivePct = (effectiveRaise / currentSal) * 100;
+  const nominalRaise = newSal - currentSal;
+  const nominalPct = (nominalRaise / currentSal) * 100;
+
+  const adjEl = document.getElementById('colAdjusted');
+  adjEl.textContent = fmt(colAdjusted);
+  adjEl.className = 'result-value ' + (colAdjusted >= currentSal ? 'green' : 'red');
+  document.getElementById('colAdjSub').textContent = 'In ' + originLabel.split(' (')[0] + ' purchasing-power terms';
+
+  const erEl = document.getElementById('effectiveRaise');
+  erEl.textContent = (effectiveRaise >= 0 ? '+' : '') + fmt(effectiveRaise);
+  erEl.className = 'result-value ' + (effectiveRaise >= 0 ? 'green' : 'red');
+  document.getElementById('effectiveRaisePct').textContent = (effectivePct >= 0 ? '+' : '') + effectivePct.toFixed(1) + '% COL-adjusted';
+
+  document.getElementById('nominalRaise').textContent = (nominalRaise >= 0 ? '+' : '') + fmt(nominalRaise);
+
+  const ins = document.getElementById('tab2Insights');
+  ins.innerHTML = '';
+  const i1 = document.createElement('div'); i1.className = 'insight-row';
+  i1.innerHTML = 'COL-adjusted, your <strong>' + fmt(newSal) + '</strong> offer in ' + destLabel.split(' (')[0] + ' is worth <strong>' + fmt(colAdjusted) + '</strong> in ' + originLabel.split(' (')[0] + ' terms — a <strong>' + (effectivePct >= 0 ? '+' : '') + effectivePct.toFixed(1) + '%</strong> real change.';
+  ins.appendChild(i1);
+
+  if (nominalRaise > 0 && effectiveRaise < 0) {
+    const i2 = document.createElement('div'); i2.className = 'warning-row';
+    i2.innerHTML = '<strong>COL trap:</strong> Nominal raise of <strong>+' + fmtPct(nominalPct) + '</strong> actually represents a <strong>' + fmtPct(Math.abs(effectivePct)) + ' purchasing-power cut</strong> after accounting for the higher cost of living in ' + destLabel.split(' (')[0] + '.';
+    ins.appendChild(i2);
+  }
+
+  tab2Data = { current_salary: currentSal, new_salary: newSal, origin_col: originCOL, dest_col: destCOL, col_adjusted_salary: Math.round(colAdjusted), effective_raise_pct: parseFloat(effectivePct.toFixed(2)) };
+
+  buildPayload();
+  document.getElementById('tab2Results').classList.add('visible');
+  document.getElementById('exportSection').classList.add('visible');
+}
+
+function buildPayload() {
+  lastPayload = {
+    mandate_type: 'relocation_package_record',
+    tool_id: 'AL-98',
+    generated_at: new Date().toISOString(),
+    package_type: tab1Data ? tab1Data.type : null,
+    gross_amount: tab1Data ? tab1Data.gross_amount : null,
+    is_grossed_up: tab1Data ? tab1Data.is_grossed_up : null,
+    net_package_value: tab1Data ? tab1Data.net_package_value : null,
+    moving_expense_estimate: tab1Data ? tab1Data.moving_expense_estimate : null,
+    net_surplus_shortfall: tab1Data ? tab1Data.net_surplus_shortfall : null,
+    current_salary: tab2Data ? tab2Data.current_salary : null,
+    new_salary: tab2Data ? tab2Data.new_salary : null,
+    col_adjusted_salary: tab2Data ? tab2Data.col_adjusted_salary : null,
+    effective_raise_pct: tab2Data ? tab2Data.effective_raise_pct : null
+  };
+}
+
+function exportMarkdown() {
+  const lines = ['# Relocation Package True Value Analysis', 'Generated: ' + new Date().toLocaleString(), ''];
+  if (tab1Data) {
+    lines.push('## Package Valuation');
+    lines.push('- Type: ' + tab1Data.type);
+    lines.push('- Gross Amount: ' + fmt(tab1Data.gross_amount));
+    lines.push('- Grossed-Up: ' + (tab1Data.is_grossed_up ? 'Yes' : 'No'));
+    lines.push('- After-Tax Net: ' + fmt(tab1Data.net_package_value));
+    lines.push('- Total Moving Expense: ' + fmt(tab1Data.moving_expense_estimate));
+    lines.push('- Net Surplus/Shortfall: ' + (tab1Data.net_surplus_shortfall >= 0 ? '+' : '') + fmt(tab1Data.net_surplus_shortfall));
+    lines.push('');
+  }
+  if (tab2Data) {
+    lines.push('## COL Salary Adjustment');
+    lines.push('- Current Salary: ' + fmt(tab2Data.current_salary));
+    lines.push('- New Salary: ' + fmt(tab2Data.new_salary));
+    lines.push('- COL-Adjusted New Salary: ' + fmt(tab2Data.col_adjusted_salary));
+    lines.push('- Effective Raise (COL-adjusted): ' + (tab2Data.effective_raise_pct >= 0 ? '+' : '') + tab2Data.effective_raise_pct + '%');
+    lines.push('');
+  }
+  lines.push('*Generated by ApexLogics Relocation Package True Value Engine (AL-98) — apexlogics.org*');
+  download('relocation-analysis.md', lines.join('\n'), 'text/markdown');
+}
+
+function exportAP2() {
+  if (!lastPayload) return;
+  const result = AP2Schema.validate(lastPayload);
+  if (!result.valid) { showToast('AP2 validation failed: ' + result.error); return; }
+  download('relocation-ap2.json', JSON.stringify(lastPayload, null, 2), 'application/json');
+}
+
+function download(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+toggleReloType();
+</script>
+</body>
+</html>

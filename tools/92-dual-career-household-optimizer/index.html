@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Dual-Career Household Income Optimizer — ApexLogics</title>
+<meta name="description" content="Two incomes, one household. Model childcare break-even salary, part-time sabbatical cost, and geographic relocation trade-offs for dual-earner couples."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+:root {
+  --bg:#070B14; --surface:#0D1117; --surface2:#111827;
+  --accent:#60a5fa; --accent-dim:rgba(96,165,250,0.18); --accent-low:rgba(96,165,250,0.08);
+  --border:rgba(96,165,250,0.18); --border-focus:#60a5fa;
+  --text:#e2e8f0; --text-muted:#94a3b8; --text-dim:#64748b;
+  --green:#34d399; --amber:#fbbf24; --red:#f87171; --amber-brand:#E8A838;
+}
+html { font-size:16px; }
+body { background:var(--bg); color:var(--text); font-family:'Sora',sans-serif; line-height:1.6; min-height:100vh; }
+.nav { background:rgba(7,11,20,.92); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; }
+.nav-inner { max-width:1024px; margin:0 auto; display:flex; align-items:center; gap:16px; padding:0 24px; min-height:64px; height:auto; }
+.logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+.logo-mark { width:32px; height:32px; flex-shrink:0; }
+.logo-mark svg { width:100%; height:100%; }
+.logo-text { display:flex; flex-direction:column; gap:2px; }
+.logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text); letter-spacing:-.02em; line-height:1; }
+.logo-apex { color:#E8A838; }
+.logo-org { color:var(--text-dim); font-size:.8rem; }
+.nav-spacer { flex:1; }
+.nav-right { display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+.nav-pill { background:none; border:1px solid var(--border); border-radius:6px; color:var(--text-muted); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+.nav-pill:hover { border-color:#E8A838; color:var(--text); }
+.nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+.lang-inner { display:flex; gap:4px; }
+.lang-btn { background:none; border:1px solid transparent; color:var(--text-dim); font-family:'JetBrains Mono',monospace; font-size:.72rem; padding:3px 8px; border-radius:4px; cursor:pointer; transition:all .15s; }
+.lang-btn:hover { color:var(--text-muted); border-color:var(--border); }
+.lang-btn.active { color:var(--accent); border-color:var(--accent); background:var(--accent-low); }
+.pii-banner { max-width:1024px; margin:1.25rem auto 0; padding:0 24px; }
+.pii-inner { background:rgba(255,255,255,.03); border:1px solid var(--border); border-left:3px solid #E8A838; border-radius:6px; padding:.7rem 1rem; font-size:.76rem; color:var(--text-muted); display:flex; gap:.5rem; align-items:flex-start; }
+.tool-wrapper { max-width:1024px; margin:0 auto; padding:40px 24px 80px; }
+.tool-eyebrow { font-family:'JetBrains Mono',monospace; font-size:.72rem; color:#E8A838; letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px; }
+.tool-title { font-family:'DM Serif Display',serif; font-size:2.4rem; line-height:1.15; margin-bottom:16px; }
+.tool-desc { color:var(--text-muted); font-size:.97rem; max-width:760px; margin-bottom:10px; }
+.tool-vintage { display:inline-flex; align-items:center; gap:.4rem; background:rgba(232,168,56,.1); border:1px solid #E8A838; border-radius:6px; padding:.3rem .7rem; font-family:'JetBrains Mono',monospace; font-size:.65rem; color:#E8A838; margin-bottom:1.25rem; }
+.tab-bar { display:flex; gap:4px; margin-bottom:20px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:4px; }
+.tab-btn { flex:1; padding:10px 12px; background:none; border:none; color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:.7rem; cursor:pointer; border-radius:7px; transition:all .18s; text-align:center; letter-spacing:.03em; }
+.tab-btn.active { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+.tab-pane { display:none; }
+.tab-pane.active { display:block; }
+.card { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:24px 28px; margin-bottom:16px; }
+.card-title { font-family:'JetBrains Mono',monospace; font-size:.78rem; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:20px; }
+.form-grid { display:grid; gap:14px; }
+.form-grid.two { grid-template-columns:1fr 1fr; }
+.form-grid.three { grid-template-columns:1fr 1fr 1fr; }
+.field { display:flex; flex-direction:column; gap:5px; }
+label { font-size:.78rem; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
+input[type="text"], input[type="number"], select { background:var(--surface); border:1px solid var(--border); color:var(--text); padding:9px 12px; border-radius:6px; font-family:'Sora',sans-serif; font-size:.9rem; width:100%; transition:border-color .2s; }
+input:focus, select:focus { outline:none; border-color:var(--border-focus); }
+.field-hint { font-size:.7rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace; }
+.run-btn { background:var(--accent); color:#000; border:none; padding:14px 40px; border-radius:8px; font-size:1rem; font-family:'Sora',sans-serif; font-weight:600; cursor:pointer; width:100%; margin:8px 0 24px; transition:opacity .2s; }
+.run-btn:hover { opacity:.88; }
+.results-section { display:none; }
+.results-section.visible { display:block; }
+.result-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:20px 24px; margin-bottom:14px; }
+.result-label { font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; }
+.result-value { font-size:1.6rem; font-weight:600; color:var(--text); }
+.result-value.green { color:var(--green); }
+.result-value.amber { color:var(--amber); }
+.result-value.red { color:var(--red); }
+.result-sub { font-size:.82rem; color:var(--text-muted); margin-top:4px; }
+.results-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+.results-grid.two { grid-template-columns:1fr 1fr; }
+.results-grid.four { grid-template-columns:1fr 1fr 1fr 1fr; }
+.results-export-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:24px; padding-top:20px; border-top:1px solid var(--border); }
+.export-btn { display:flex; align-items:center; gap:7px; padding:9px 18px; border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:.75rem; cursor:pointer; transition:all .18s; }
+.export-btn:hover { border-color:var(--accent); color:var(--accent); }
+.export-btn.ap2 { border-color:rgba(96,165,250,0.4); color:var(--accent); }
+.mcp-toggle { background:none; border:1px solid var(--border); border-radius:6px; color:var(--text-dim); font-size:.72rem; font-family:'JetBrains Mono',monospace; padding:.35rem .7rem; cursor:pointer; margin-top:2rem; transition:all .15s; }
+.mcp-toggle:hover { border-color:var(--accent); color:var(--accent); }
+.mcp-panel { display:none; margin-top:1rem; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px; }
+.mcp-panel.open { display:block; }
+.mcp-panel pre { font-size:.72rem; font-family:'JetBrains Mono',monospace; color:var(--text-muted); white-space:pre-wrap; word-break:break-all; }
+.tool-footer { border-top:1px solid var(--border); padding:1.75rem 1.5rem; margin-top:3rem; font-size:.78rem; color:var(--text-muted); font-family:'JetBrains Mono',monospace; text-align:center; }
+.tool-footer a { color:var(--text-muted); text-decoration:none; }
+.tool-footer a:hover { color:var(--text); }
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#7f1d1d; border:1px solid var(--red); color:#fecaca; padding:12px 22px; border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:.8rem; z-index:200; display:none; }
+.toast.show { display:block; }
+.insight-row { background:rgba(96,165,250,0.06); border:1px solid rgba(96,165,250,0.2); border-radius:8px; padding:14px 18px; margin-bottom:10px; font-size:.88rem; color:var(--text-muted); }
+.insight-row strong { color:var(--text); }
+.warning-row { background:rgba(248,113,113,0.06); border:1px solid rgba(248,113,113,0.3); border-radius:8px; padding:14px 18px; margin-bottom:10px; font-size:.88rem; color:var(--text-muted); }
+.warning-row strong { color:var(--red); }
+.cost-table { width:100%; border-collapse:collapse; font-size:.85rem; margin-top:8px; }
+.cost-table th { font-family:'JetBrains Mono',monospace; font-size:.7rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; padding:8px 12px; text-align:right; border-bottom:1px solid var(--border); }
+.cost-table th:first-child { text-align:left; }
+.cost-table td { padding:9px 12px; text-align:right; border-bottom:1px solid rgba(96,165,250,0.07); color:var(--text-muted); }
+.cost-table td:first-child { text-align:left; font-family:'JetBrains Mono',monospace; font-size:.8rem; }
+.cost-table .total-row td { font-weight:600; color:var(--text); border-top:1px solid var(--border); }
+.cost-table .green-val { color:var(--green); }
+.cost-table .red-val { color:var(--red); }
+@media(max-width:700px){.form-grid.two,.form-grid.three{grid-template-columns:1fr;}.results-grid,.results-grid.four{grid-template-columns:1fr 1fr;}.results-grid.two{grid-template-columns:1fr;}.tool-title{font-size:1.8rem;}.tab-btn{font-size:.62rem;padding:8px 4px;}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="6" fill="#0D1117"/>
+          <path d="M16 5L28 26H4L16 5Z" fill="none" stroke="#E8A838" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M10 20h12" stroke="#E8A838" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-name"><span class="logo-apex">Apex</span> Logics</span>
+        <span class="logo-org">apexlogics.org</span>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent" data-i18n="all_tools">&#8592; All Tools</a>
+      <div class="lang-inner">
+        <button class="lang-btn" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('es')">ES</button>
+        <button class="lang-btn" onclick="setLang('fr')">FR</button>
+        <button class="lang-btn" onclick="setLang('ar')">AR</button>
+        <button class="lang-btn" onclick="setLang('pt')">PT</button>
+        <button class="lang-btn" onclick="setLang('zh')">&#20013;&#25991;</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="pii-banner">
+  <div class="pii-inner">
+    <span>&#128274;</span><span data-i18n="pii">All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+  <div class="tool-eyebrow">COMPENSATION &middot; #92</div>
+  <h1 class="tool-title">Dual-Career Household Income Optimizer</h1>
+  <p class="tool-desc">Two incomes, one household. Model childcare break-even salary, part-time sabbatical cost, and geographic relocation trade-offs for dual-earner couples.</p>
+  <div class="tool-vintage">&#128203; Data: BLS CES 2024 &middot; ChildCare Aware of America 2024</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('tab1',this)">Tab 1: Childcare Break-Even</button>
+    <button class="tab-btn" onclick="switchTab('tab2',this)">Tab 2: Sabbatical Cost</button>
+    <button class="tab-btn" onclick="switchTab('tab3',this)">Tab 3: Geo Relocation</button>
+  </div>
+
+  <!-- TAB 1: Childcare Break-Even -->
+  <div class="tab-pane active" id="tab1">
+    <div class="card">
+      <div class="card-title">Household Incomes</div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="partnerASalary">Partner A Gross Salary ($)</label>
+          <input type="number" id="partnerASalary" value="110000" min="0" step="1000"/>
+        </div>
+        <div class="field">
+          <label for="partnerBSalary">Partner B Gross Salary ($)</label>
+          <input type="number" id="partnerBSalary" value="75000" min="0" step="1000"/>
+          <span class="field-hint">Enter Partner B's actual salary to assess break-even</span>
+        </div>
+        <div class="field">
+          <label for="combinedTaxRate">Combined Federal Effective Tax Rate (%)</label>
+          <input type="number" id="combinedTaxRate" value="28" min="0" max="50" step="1"/>
+          <span class="field-hint">Effective (not marginal) rate on household income</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Childcare Costs</div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="annualChildcareCost">Annual Childcare Cost per Child ($)</label>
+          <input type="number" id="annualChildcareCost" value="25000" min="0" step="500"/>
+          <span class="field-hint">Avg US infant full-time care ~$25,000/yr (ChildCare Aware 2024)</span>
+        </div>
+        <div class="field">
+          <label for="numChildren">Number of Children in Childcare</label>
+          <input type="number" id="numChildren" value="1" min="1" max="6" step="1"/>
+        </div>
+      </div>
+    </div>
+
+    <button class="run-btn" onclick="calculateTab1()">Calculate Childcare Break-Even</button>
+
+    <div class="results-section" id="tab1Results">
+      <div class="card">
+        <div class="card-title">Childcare Break-Even Analysis</div>
+        <div class="results-grid">
+          <div class="result-card">
+            <div class="result-label">Childcare Break-Even Salary</div>
+            <div class="result-value amber" id="breakEvenSalary">—</div>
+            <div class="result-sub">Partner B must earn above this to net-positive from working</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Net Contribution (Partner B)</div>
+            <div class="result-value" id="netContribution">—</div>
+            <div class="result-sub" id="netContribSub">After tax and childcare</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Total Childcare Cost</div>
+            <div class="result-value red" id="totalChildcare">—</div>
+            <div class="result-sub" id="childcareSub">—</div>
+          </div>
+        </div>
+        <div class="results-grid two" style="margin-top:0;">
+          <div class="result-card">
+            <div class="result-label">Household Net (Both Working)</div>
+            <div class="result-value green" id="householdBoth">—</div>
+            <div class="result-sub">After combined taxes and childcare</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Household Net (One Stops)</div>
+            <div class="result-value" id="householdOne">—</div>
+            <div class="result-sub">Partner A only, no childcare cost</div>
+          </div>
+        </div>
+        <div id="tab1Insights"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: Sabbatical Cost -->
+  <div class="tab-pane" id="tab2">
+    <div class="card">
+      <div class="card-title">Sabbatical / Step-Down Parameters</div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="sabbaticalSalary">Stepping-Down Partner Salary ($)</label>
+          <input type="number" id="sabbaticalSalary" value="95000" min="0" step="1000"/>
+        </div>
+        <div class="field">
+          <label for="sabbaticalReduction">Work Reduction</label>
+          <select id="sabbaticalReduction">
+            <option value="100">Full Stop (100% reduction)</option>
+            <option value="80">80% FTE (20% reduction)</option>
+            <option value="60">60% FTE (40% reduction)</option>
+            <option value="50">50% FTE / Part-Time</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="sabbaticalMonths">Duration (months)</label>
+          <input type="number" id="sabbaticalMonths" value="12" min="1" max="60" step="1"/>
+        </div>
+        <div class="field">
+          <label for="match401k">Employer 401k Match (%)</label>
+          <input type="number" id="match401k" value="4" min="0" max="10" step="0.5"/>
+          <span class="field-hint">% of salary matched by employer</span>
+        </div>
+        <div class="field">
+          <label for="incomeGrowthRate">Annual Income Growth Rate (%)</label>
+          <input type="number" id="incomeGrowthRate" value="3" min="0" max="20" step="0.5"/>
+          <span class="field-hint">For 10-year opportunity cost calculation</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="run-btn" onclick="calculateTab2()">Calculate Sabbatical True Cost</button>
+
+    <div class="results-section" id="tab2Results">
+      <div class="card">
+        <div class="card-title">Sabbatical Cost Breakdown</div>
+        <div class="results-grid">
+          <div class="result-card">
+            <div class="result-label">Direct Income Lost</div>
+            <div class="result-value amber" id="directIncomeLost">—</div>
+            <div class="result-sub" id="directLostSub">—</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">401k Match Lost</div>
+            <div class="result-value" id="matchLost">—</div>
+            <div class="result-sub">Employer match foregone</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">10-Year Opportunity Cost</div>
+            <div class="result-value red" id="opportunityCost">—</div>
+            <div class="result-sub" id="oppCostSub">Compounding income gap</div>
+          </div>
+        </div>
+        <div class="result-card" style="border-color:rgba(248,113,113,0.3);">
+          <div class="result-label">Total True Cost of Sabbatical</div>
+          <div class="result-value red" id="totalTrueCost">—</div>
+          <div class="result-sub">Direct loss + 401k + 10-yr compounding opportunity cost</div>
+        </div>
+        <div id="tab2Insights"></div>
+        <table class="cost-table" id="sabbaticalTable" style="margin-top:16px;">
+          <thead><tr><th>Cost Component</th><th>Amount</th></tr></thead>
+          <tbody id="sabbaticalBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: Geo Relocation -->
+  <div class="tab-pane" id="tab3">
+    <div class="card">
+      <div class="card-title">Dual-Income Relocation Analysis</div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="geoACurrentSalary">Partner A — Current Salary ($)</label>
+          <input type="number" id="geoACurrentSalary" value="110000" min="0" step="1000"/>
+        </div>
+        <div class="field">
+          <label for="geoANewSalary">Partner A — New Salary Post-Move ($)</label>
+          <input type="number" id="geoANewSalary" value="120000" min="0" step="1000"/>
+        </div>
+        <div class="field">
+          <label for="geoBCurrentSalary">Partner B — Current Salary ($)</label>
+          <input type="number" id="geoBCurrentSalary" value="75000" min="0" step="1000"/>
+        </div>
+        <div class="field">
+          <label for="geoBNewSalary">Partner B — Expected Salary Post-Move ($)</label>
+          <input type="number" id="geoBNewSalary" value="65000" min="0" step="1000"/>
+          <span class="field-hint">Enter 0 if no job lined up yet</span>
+        </div>
+        <div class="field">
+          <label for="geoOriginCity">Origin City</label>
+          <select id="geoOriginCity">
+            <option value="100">New York City (COL 100)</option>
+            <option value="98">San Francisco (COL 98)</option>
+            <option value="87">Boston (COL 87)</option>
+            <option value="84">Washington DC (COL 84)</option>
+            <option value="75">Chicago (COL 75)</option>
+            <option value="73">Miami (COL 73)</option>
+            <option value="72">Austin (COL 72)</option>
+            <option value="70">Denver (COL 70)</option>
+            <option value="70">Dallas (COL 70)</option>
+            <option value="68">Atlanta (COL 68)</option>
+            <option value="67">Phoenix (COL 67)</option>
+            <option value="65">Houston (COL 65)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="geoDestCity">Destination City</label>
+          <select id="geoDestCity">
+            <option value="100">New York City (COL 100)</option>
+            <option value="98">San Francisco (COL 98)</option>
+            <option value="87">Boston (COL 87)</option>
+            <option value="84">Washington DC (COL 84)</option>
+            <option value="75" selected>Chicago (COL 75)</option>
+            <option value="73">Miami (COL 73)</option>
+            <option value="72">Austin (COL 72)</option>
+            <option value="70">Denver (COL 70)</option>
+            <option value="70">Dallas (COL 70)</option>
+            <option value="68">Atlanta (COL 68)</option>
+            <option value="67">Phoenix (COL 67)</option>
+            <option value="65">Houston (COL 65)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button class="run-btn" onclick="calculateTab3()">Analyze Household Relocation Impact</button>
+
+    <div class="results-section" id="tab3Results">
+      <div class="card">
+        <div class="card-title">Household Relocation Impact</div>
+        <div class="results-grid two">
+          <div class="result-card">
+            <div class="result-label">Nominal Household Income Change</div>
+            <div class="result-value" id="nominalHouseholdChange">—</div>
+            <div class="result-sub" id="nominalHouseholdSub">—</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">COL-Adjusted Household Change</div>
+            <div class="result-value" id="colHouseholdChange">—</div>
+            <div class="result-sub" id="colHouseholdSub">Purchasing power equivalent</div>
+          </div>
+        </div>
+        <div class="results-grid two" style="margin-top:0;">
+          <div class="result-card">
+            <div class="result-label">Current Household Income</div>
+            <div class="result-value amber" id="currentHousehold">—</div>
+            <div class="result-sub">Pre-move combined</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">New Household Income</div>
+            <div class="result-value" id="newHousehold">—</div>
+            <div class="result-sub">Post-move combined</div>
+          </div>
+        </div>
+        <div class="result-card" id="breakEvenMonthsCard" style="display:none;">
+          <div class="result-label">Partner B Break-Even (Months to Replace Income)</div>
+          <div class="result-value amber" id="breakEvenMonths">—</div>
+          <div class="result-sub">Estimated months for Partner B to find equivalent salary</div>
+        </div>
+        <div id="tab3Insights"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export section always visible at bottom -->
+  <div class="results-section" id="exportSection">
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">&#8595; Markdown</button>
+      <button class="export-btn ap2" onclick="exportAP2()">&#8595; AP2 JSON</button>
+    </div>
+    <button class="mcp-toggle" onclick="document.getElementById('mcpPanel').classList.toggle('open')">{ } MCP Manifest</button>
+    <div class="mcp-panel" id="mcpPanel"><pre id="mcpPre"></pre></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> &middot; CC BY 4.0 &middot; AL-99 &middot; Data: BLS CES 2024 &middot; ChildCare Aware 2024
+</footer>
+
+<script>
+const I18N_CHROME = {
+  en: { pii: 'All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.', all_tools: '\u2190 All Tools' },
+  es: { pii: 'Todas las entradas se procesan localmente en su navegador. Nada se transmite, almacena ni registra. Las entradas desaparecen al cerrar la pesta\u00f1a.', all_tools: '\u2190 Todas las herramientas' },
+  fr: { pii: "Toutes les donn\u00e9es sont trait\u00e9es localement dans votre navigateur. Rien n'est transmis.", all_tools: '\u2190 Tous les outils' },
+  ar: { pii: '\u062a\u062a\u0645 \u0645\u0639\u0627\u0644\u062c\u0629 \u062c\u0645\u064a\u0639 \u0627\u0644\u0645\u062f\u062e\u0644\u0627\u062a \u0645\u062d\u0644\u064a\u064b\u0627.', all_tools: '\u2190 \u0643\u0644 \u0627\u0644\u0623\u062f\u0648\u0627\u062a' },
+  pt: { pii: 'Todas as entradas s\u00e3o processadas localmente no seu navegador.', all_tools: '\u2190 Todas as ferramentas' },
+  zh: { pii: '\u6240\u6709\u8f93\u5165\u5747\u5728\u60a8\u7684\u6d4f\u89c8\u5668\u4e2d\u672c\u5730\u5904\u7406\u3002', all_tools: '\u2190 \u6240\u6709\u5de5\u5177' },
+};
+function setLang(lang) {
+  sessionStorage.setItem('apex_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    const t = b.textContent.trim();
+    b.classList.toggle('active', t === lang.toUpperCase() || (t === '\u4e2d\u6587' && lang === 'zh'));
+  });
+  const s = Object.assign({}, I18N_CHROME.en, I18N_CHROME[lang] || {});
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (s[k] !== undefined) el.textContent = s[k];
+  });
+}
+(function(){
+  const s = sessionStorage.getItem('apex_lang');
+  setLang(s || ({en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'})[(navigator.language||'en').slice(0,2)] || 'en');
+})();
+
+const AP2Schema = {
+  validMandateTypes: ['sales_comp_record','counter_offer_record','relocation_package_record','dual_career_record'],
+  validate(payload) {
+    if (!payload || typeof payload !== 'object') return { valid:false, error:'Payload must be an object.' };
+    if (!payload.mandate_type) return { valid:false, error:'Missing mandate_type.' };
+    if (!this.validMandateTypes.includes(payload.mandate_type)) return { valid:false, error:'Invalid mandate_type: '+payload.mandate_type };
+    if (!payload.tool_id) return { valid:false, error:'Missing tool_id.' };
+    if (!payload.generated_at) return { valid:false, error:'Missing generated_at.' };
+    return { valid:true };
+  }
+};
+
+const manifest = {
+  "al_id": "AL-99",
+  "version": "1.0.0",
+  "title": "Dual-Career Household Income Optimizer",
+  "slug": "92-dual-career-household-optimizer",
+  "file_path": "tools/92-dual-career-household-optimizer/index.html",
+  "description": "Two incomes, one household. Model childcare break-even salary, part-time sabbatical cost, and geographic relocation trade-offs for dual-earner couples.",
+  "category": "compensation_benefits",
+  "journeys": ["career_navigation","compensation_optimization","family_planning"],
+  "personas": ["working_professional","parent"],
+  "tags": ["dual-income","household","childcare","sabbatical","relocation","salary"],
+  "status": "shipped",
+  "maintenance": "low",
+  "data_vintage": "BLS CES 2024 · ChildCare Aware of America 2024",
+  "ap2_export": true,
+  "ap2_mandate_types": ["dual_career_record"],
+  "downstream_handoff_candidates": [],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+document.getElementById('mcpPre').textContent = JSON.stringify(manifest, null, 2);
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+function fmtPct(n) { return n.toFixed(1) + '%'; }
+
+let lastPayload = null;
+let tab1Data = null;
+let tab2Data = null;
+let tab3Data = null;
+
+function calculateTab1() {
+  const salA = parseFloat(document.getElementById('partnerASalary').value) || 0;
+  const salB = parseFloat(document.getElementById('partnerBSalary').value) || 0;
+  const taxRate = parseFloat(document.getElementById('combinedTaxRate').value) || 28;
+  const childcareCost = parseFloat(document.getElementById('annualChildcareCost').value) || 0;
+  const numChildren = parseInt(document.getElementById('numChildren').value) || 1;
+
+  if (!salA || !salB) { showToast('Enter both partner salaries.'); return; }
+
+  const totalChildcare = childcareCost * numChildren;
+  const breakEvenSalary = totalChildcare / (1 - taxRate / 100);
+  const partnerBAfterTax = salB * (1 - taxRate / 100);
+  const netContrib = partnerBAfterTax - totalChildcare;
+  const householdBothAfterTax = (salA + salB) * (1 - taxRate / 100) - totalChildcare;
+  const householdOneAfterTax = salA * (1 - taxRate / 100);
+  const netGainBothWorking = householdBothAfterTax - householdOneAfterTax;
+
+  document.getElementById('breakEvenSalary').textContent = fmt(breakEvenSalary);
+  const ncEl = document.getElementById('netContribution');
+  ncEl.textContent = (netContrib >= 0 ? '+' : '') + fmt(netContrib);
+  ncEl.className = 'result-value ' + (netContrib >= 0 ? 'green' : 'red');
+  document.getElementById('netContribSub').textContent = (netContrib >= 0 ? 'Partner B generates positive household value' : 'Partner B costs the household net — revisit childcare options');
+  document.getElementById('totalChildcare').textContent = fmt(totalChildcare);
+  document.getElementById('childcareSub').textContent = numChildren + ' child' + (numChildren > 1 ? 'ren' : '') + ' × ' + fmt(childcareCost) + '/yr';
+  document.getElementById('householdBoth').textContent = fmt(householdBothAfterTax);
+  document.getElementById('householdOne').textContent = fmt(householdOneAfterTax);
+
+  const ins = document.getElementById('tab1Insights');
+  ins.innerHTML = '';
+  if (salB < breakEvenSalary) {
+    const w = document.createElement('div'); w.className = 'warning-row';
+    w.innerHTML = '<strong>Below break-even:</strong> Partner B's salary of <strong>' + fmt(salB) + '</strong> is <strong>' + fmt(breakEvenSalary - salB) + ' below</strong> the break-even threshold of <strong>' + fmt(breakEvenSalary) + '</strong>. Consider negotiating a salary increase, changing childcare arrangements, or exploring tax credits (Child and Dependent Care Credit).';
+    ins.appendChild(w);
+  } else {
+    const g = document.createElement('div'); g.className = 'insight-row';
+    g.innerHTML = '<strong>Above break-even:</strong> Partner B's salary exceeds the childcare break-even by <strong>' + fmt(salB - breakEvenSalary) + '</strong>. Both-working generates <strong>+' + fmt(netGainBothWorking) + '</strong> more household net income annually.';
+    ins.appendChild(g);
+  }
+  const i2 = document.createElement('div'); i2.className = 'insight-row';
+  i2.innerHTML = 'Both-working household net: <strong>' + fmt(householdBothAfterTax) + '</strong> vs. one-income: <strong>' + fmt(householdOneAfterTax) + '</strong> — a difference of <strong>' + (netGainBothWorking >= 0 ? '+' : '') + fmt(netGainBothWorking) + '/yr</strong>.';
+  ins.appendChild(i2);
+
+  tab1Data = { partner_a_salary: salA, partner_b_salary: salB, childcare_annual: totalChildcare, childcare_breakeven_salary: Math.round(breakEvenSalary), household_net_both_working: Math.round(householdBothAfterTax), household_net_one_stops: Math.round(householdOneAfterTax), net_household_gain_from_both_working: Math.round(netGainBothWorking) };
+  buildPayload();
+  document.getElementById('tab1Results').classList.add('visible');
+  document.getElementById('exportSection').classList.add('visible');
+}
+
+function calculateTab2() {
+  const salary = parseFloat(document.getElementById('sabbaticalSalary').value) || 0;
+  const reduction = parseFloat(document.getElementById('sabbaticalReduction').value) || 100;
+  const months = parseFloat(document.getElementById('sabbaticalMonths').value) || 12;
+  const matchPct = parseFloat(document.getElementById('match401k').value) || 4;
+  const growthRate = parseFloat(document.getElementById('incomeGrowthRate').value) || 3;
+
+  if (!salary) { showToast('Enter the stepping-down partner salary.'); return; }
+
+  const annualReduction = salary * (reduction / 100);
+  const monthlyReduction = annualReduction / 12;
+  const directLost = monthlyReduction * months;
+  const matchLost = directLost * (matchPct / 100);
+
+  // 10-year opportunity cost: income lost compounding
+  // Each year the gap compounds. Simplified: gap in first year * future value factor for 10 years
+  const annualGap = (months / 12) * annualReduction;
+  let oppCost = 0;
+  for (let yr = 1; yr <= 10; yr++) {
+    oppCost += annualGap * Math.pow(1 + growthRate / 100, yr);
+  }
+  // Subtract the direct loss already counted
+  oppCost = oppCost - directLost;
+
+  const totalTrueCost = directLost + matchLost + oppCost;
+
+  document.getElementById('directIncomeLost').textContent = fmt(directLost);
+  document.getElementById('directLostSub').textContent = fmt(monthlyReduction) + '/mo × ' + months + ' months (' + reduction + '% reduction)';
+  document.getElementById('matchLost').textContent = fmt(matchLost);
+  document.getElementById('opportunityCost').textContent = fmt(oppCost);
+  document.getElementById('oppCostSub').textContent = 'At ' + growthRate + '% annual income growth over 10 years';
+  document.getElementById('totalTrueCost').textContent = fmt(totalTrueCost);
+
+  // Table
+  const tbody = document.getElementById('sabbaticalBody');
+  tbody.innerHTML = '';
+  [
+    ['Direct income lost (' + months + ' months)', fmt(directLost)],
+    ['401k match lost (' + matchPct + '% match)', fmt(matchLost)],
+    ['10-year compounding opportunity cost', fmt(oppCost)],
+    ['TOTAL TRUE COST', fmt(totalTrueCost)]
+  ].forEach((row, i) => {
+    const tr = document.createElement('tr');
+    if (i === 3) tr.className = 'total-row';
+    tr.innerHTML = '<td>' + row[0] + '</td><td class="' + (i===3?'red-val':'') + '">' + row[1] + '</td>';
+    tbody.appendChild(tr);
+  });
+
+  const ins = document.getElementById('tab2Insights');
+  ins.innerHTML = '';
+  const i1 = document.createElement('div'); i1.className = 'insight-row';
+  i1.innerHTML = 'The true cost of a <strong>' + months + '-month</strong> sabbatical at ' + reduction + '% reduction is <strong>' + fmt(totalTrueCost) + '</strong> — mostly driven by the compounding income gap over time, not just the immediate lost wages.';
+  ins.appendChild(i1);
+  if (totalTrueCost > salary) {
+    const i2 = document.createElement('div'); i2.className = 'warning-row';
+    i2.innerHTML = '<strong>Long-term cost is substantial:</strong> The true cost exceeds one full year's salary. Phased return, part-time rather than full stop, and salary negotiation on return can significantly reduce this figure.';
+    ins.appendChild(i2);
+  }
+
+  tab2Data = { sabbatical_salary: salary, reduction_pct: reduction, months, direct_income_lost: Math.round(directLost), match_lost: Math.round(matchLost), opportunity_cost_10yr: Math.round(oppCost), total_true_cost: Math.round(totalTrueCost) };
+  buildPayload();
+  document.getElementById('tab2Results').classList.add('visible');
+  document.getElementById('exportSection').classList.add('visible');
+}
+
+function calculateTab3() {
+  const aCurrentSal = parseFloat(document.getElementById('geoACurrentSalary').value) || 0;
+  const aNewSal = parseFloat(document.getElementById('geoANewSalary').value) || 0;
+  const bCurrentSal = parseFloat(document.getElementById('geoBCurrentSalary').value) || 0;
+  const bNewSal = parseFloat(document.getElementById('geoBNewSalary').value) || 0;
+  const originCOL = parseFloat(document.getElementById('geoOriginCity').value) || 100;
+  const destCOL = parseFloat(document.getElementById('geoDestCity').value) || 100;
+  const originLabel = document.getElementById('geoOriginCity').options[document.getElementById('geoOriginCity').selectedIndex].text.split(' (')[0];
+  const destLabel = document.getElementById('geoDestCity').options[document.getElementById('geoDestCity').selectedIndex].text.split(' (')[0];
+
+  if (!aCurrentSal || !aNewSal) { showToast('Enter Partner A salaries.'); return; }
+
+  const currentHousehold = aCurrentSal + bCurrentSal;
+  const newHousehold = aNewSal + bNewSal;
+  const nominalChange = newHousehold - currentHousehold;
+  const nominalPct = (nominalChange / currentHousehold) * 100;
+
+  // COL-adjust new household to origin terms
+  const colAdjNewHousehold = newHousehold * (originCOL / destCOL);
+  const colChange = colAdjNewHousehold - currentHousehold;
+  const colPct = (colChange / currentHousehold) * 100;
+
+  document.getElementById('currentHousehold').textContent = fmt(currentHousehold);
+  document.getElementById('newHousehold').textContent = fmt(newHousehold);
+
+  const nomEl = document.getElementById('nominalHouseholdChange');
+  nomEl.textContent = (nominalChange >= 0 ? '+' : '') + fmt(nominalChange);
+  nomEl.className = 'result-value ' + (nominalChange >= 0 ? 'green' : 'red');
+  document.getElementById('nominalHouseholdSub').textContent = (nominalPct >= 0 ? '+' : '') + nominalPct.toFixed(1) + '% nominal change';
+
+  const colEl = document.getElementById('colHouseholdChange');
+  colEl.textContent = (colChange >= 0 ? '+' : '') + fmt(colChange);
+  colEl.className = 'result-value ' + (colChange >= 0 ? 'green' : 'red');
+  document.getElementById('colHouseholdSub').textContent = (colPct >= 0 ? '+' : '') + colPct.toFixed(1) + '% in ' + originLabel + ' terms';
+
+  // Partner B break-even if they take a cut
+  const bBreakEvenCard = document.getElementById('breakEvenMonthsCard');
+  if (bNewSal < bCurrentSal) {
+    const salCut = bCurrentSal - bNewSal;
+    // Assume 3 months average job search per $10k salary band
+    const breakEvenMonths = Math.round((salCut / 10000) * 3);
+    document.getElementById('breakEvenMonths').textContent = breakEvenMonths + ' months';
+    bBreakEvenCard.style.display = 'block';
+  } else {
+    bBreakEvenCard.style.display = 'none';
+  }
+
+  const ins = document.getElementById('tab3Insights');
+  ins.innerHTML = '';
+  const i1 = document.createElement('div'); i1.className = 'insight-row';
+  i1.innerHTML = 'Moving from <strong>' + originLabel + '</strong> (COL ' + originCOL + ') to <strong>' + destLabel + '</strong> (COL ' + destCOL + '): your nominal household income changes by <strong>' + (nominalPct >= 0 ? '+' : '') + nominalPct.toFixed(1) + '%</strong>, but COL-adjusted purchasing power changes by <strong>' + (colPct >= 0 ? '+' : '') + colPct.toFixed(1) + '%</strong>.';
+  ins.appendChild(i1);
+
+  if (nominalChange > 0 && colChange < 0) {
+    const w = document.createElement('div'); w.className = 'warning-row';
+    w.innerHTML = '<strong>COL trap:</strong> Nominal household gain of <strong>+' + fmtPct(nominalPct) + '</strong> is actually a <strong>' + fmtPct(Math.abs(colPct)) + ' real loss</strong> in purchasing power due to higher cost of living in ' + destLabel + '.';
+    ins.appendChild(w);
+  }
+
+  if (bNewSal === 0) {
+    const w2 = document.createElement('div'); w2.className = 'warning-row';
+    w2.innerHTML = '<strong>Partner B has no job lined up.</strong> The household absorbs the full income gap until Partner B is employed. Model the transition period using the Sabbatical Cost tab.';
+    ins.appendChild(w2);
+  }
+
+  tab3Data = { a_current: aCurrentSal, a_new: aNewSal, b_current: bCurrentSal, b_new: bNewSal, origin_col: originCOL, dest_col: destCOL, current_household: currentHousehold, new_household: newHousehold, nominal_change: Math.round(nominalChange), col_adjusted_change: Math.round(colChange) };
+  buildPayload();
+  document.getElementById('tab3Results').classList.add('visible');
+  document.getElementById('exportSection').classList.add('visible');
+}
+
+function buildPayload() {
+  const d = tab1Data || {};
+  lastPayload = {
+    mandate_type: 'dual_career_record',
+    tool_id: 'AL-99',
+    generated_at: new Date().toISOString(),
+    partner_a_salary: d.partner_a_salary || null,
+    partner_b_salary: d.partner_b_salary || null,
+    childcare_annual: d.childcare_annual || null,
+    childcare_breakeven_salary: d.childcare_breakeven_salary || null,
+    household_net_both_working: d.household_net_both_working || null,
+    household_net_one_stops: d.household_net_one_stops || null,
+    net_household_gain_from_both_working: d.net_household_gain_from_both_working || null
+  };
+}
+
+function exportMarkdown() {
+  const lines = ['# Dual-Career Household Income Analysis', 'Generated: ' + new Date().toLocaleString(), ''];
+  if (tab1Data) {
+    const d = tab1Data;
+    lines.push('## Tab 1: Childcare Break-Even');
+    lines.push('- Partner A Salary: ' + fmt(d.partner_a_salary));
+    lines.push('- Partner B Salary: ' + fmt(d.partner_b_salary));
+    lines.push('- Total Childcare: ' + fmt(d.childcare_annual));
+    lines.push('- Break-Even Salary (Partner B): ' + fmt(d.childcare_breakeven_salary));
+    lines.push('- Household Net (Both Working): ' + fmt(d.household_net_both_working));
+    lines.push('- Household Net (One Stops): ' + fmt(d.household_net_one_stops));
+    lines.push('- Net Annual Gain from Both Working: ' + (d.net_household_gain_from_both_working >= 0 ? '+' : '') + fmt(d.net_household_gain_from_both_working));
+    lines.push('');
+  }
+  if (tab2Data) {
+    const d = tab2Data;
+    lines.push('## Tab 2: Sabbatical True Cost');
+    lines.push('- Salary: ' + fmt(d.sabbatical_salary) + ' (' + d.reduction_pct + '% reduction)');
+    lines.push('- Duration: ' + d.months + ' months');
+    lines.push('- Direct Income Lost: ' + fmt(d.direct_income_lost));
+    lines.push('- 401k Match Lost: ' + fmt(d.match_lost));
+    lines.push('- 10-Year Opportunity Cost: ' + fmt(d.opportunity_cost_10yr));
+    lines.push('- **Total True Cost: ' + fmt(d.total_true_cost) + '**');
+    lines.push('');
+  }
+  if (tab3Data) {
+    const d = tab3Data;
+    lines.push('## Tab 3: Geographic Relocation');
+    lines.push('- Current Household: ' + fmt(d.current_household));
+    lines.push('- New Household: ' + fmt(d.new_household));
+    lines.push('- Nominal Change: ' + (d.nominal_change >= 0 ? '+' : '') + fmt(d.nominal_change));
+    lines.push('- COL-Adjusted Change: ' + (d.col_adjusted_change >= 0 ? '+' : '') + fmt(d.col_adjusted_change));
+    lines.push('');
+  }
+  lines.push('*Generated by ApexLogics Dual-Career Household Income Optimizer (AL-99) — apexlogics.org*');
+  download('dual-career-analysis.md', lines.join('\n'), 'text/markdown');
+}
+
+function exportAP2() {
+  if (!lastPayload) return;
+  const result = AP2Schema.validate(lastPayload);
+  if (!result.valid) { showToast('AP2 validation failed: ' + result.error); return; }
+  download('dual-career-ap2.json', JSON.stringify(lastPayload, null, 2), 'application/json');
+}
+
+function download(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>

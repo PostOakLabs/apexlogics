@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Game Theory Payoff Matrix Builder | Apex Logics</title>
+<meta name="description" content="Build 2×2 or 3×3 strategic payoff matrices, solve for Nash equilibria and dominant strategies, classify game types, and generate lesson-ready analysis."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#070B14;--surface:#0D1117;--surface2:#111827;
+  --accent:#60a5fa;--accent-dim:rgba(96,165,250,0.18);--accent-low:rgba(96,165,250,0.08);
+  --border:rgba(96,165,250,0.18);--border-focus:#60a5fa;
+  --text:#e2e8f0;--text-muted:#94a3b8;--text-dim:#64748b;
+  --green:#34d399;--amber:#fbbf24;--red:#f87171;--amber-brand:#E8A838;
+  --eco:#4ade80;
+}
+html{font-size:16px;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;line-height:1.6;min-height:100vh;}
+.nav{background:rgba(7,11,20,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.nav-inner{max-width:1024px;margin:0 auto;display:flex;align-items:center;gap:16px;padding:0 24px;min-height:64px;height:auto;}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.logo-mark{width:32px;height:32px;flex-shrink:0;}
+.logo-mark svg{width:100%;height:100%;}
+.logo-text{display:flex;flex-direction:column;gap:2px;}
+.logo-name{font-family:'JetBrains Mono',monospace;font-size:.95rem;font-weight:500;color:var(--text);letter-spacing:-.02em;line-height:1;}
+.logo-apex{color:#E8A838;}
+.logo-org{color:var(--text-dim);font-size:.8rem;}
+.nav-spacer{flex:1;}
+.nav-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+.nav-pill{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-muted);font-size:.62rem;padding:.3rem .65rem;font-family:'JetBrains Mono',monospace;letter-spacing:.04em;text-decoration:none;transition:border-color .15s,color .15s;}
+.nav-pill:hover{border-color:#E8A838;color:var(--text);}
+.lang-inner{display:flex;gap:4px;}
+.lang-btn{background:none;border:1px solid transparent;color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:.72rem;padding:3px 8px;border-radius:4px;cursor:pointer;transition:all .15s;}
+.lang-btn:hover{color:var(--text-muted);border-color:var(--border);}
+.lang-btn.active{color:var(--accent);border-color:var(--accent);background:var(--accent-low);}
+.pii-banner{max-width:1024px;margin:1.25rem auto 0;padding:0 24px;}
+.pii-inner{background:rgba(255,255,255,.03);border:1px solid var(--border);border-left:3px solid #E8A838;border-radius:6px;padding:.7rem 1rem;font-size:.76rem;color:var(--text-muted);display:flex;gap:.5rem;align-items:flex-start;}
+.tool-wrapper{max-width:1024px;margin:0 auto;padding:40px 24px 80px;}
+.tool-eyebrow{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:#E8A838;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
+.tool-title{font-family:'DM Serif Display',serif;font-size:2.4rem;line-height:1.15;margin-bottom:16px;}
+.tool-desc{color:var(--text-muted);font-size:.97rem;max-width:760px;margin-bottom:10px;}
+.tool-vintage{display:inline-flex;align-items:center;gap:.4rem;background:rgba(232,168,56,.1);border:1px solid #E8A838;border-radius:6px;padding:.3rem .7rem;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:#E8A838;margin-bottom:1.25rem;}
+.tabs{display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0;}
+.tab-btn{background:none;border:none;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'JetBrains Mono',monospace;font-size:.78rem;padding:10px 18px;cursor:pointer;transition:all .15s;margin-bottom:-1px;}
+.tab-btn.active{color:var(--eco);border-bottom-color:var(--eco);}
+.tab-btn:hover:not(.active){color:var(--text-muted);border-bottom-color:var(--border);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:24px 28px;margin-bottom:16px;}
+.card-title{font-family:'JetBrains Mono',monospace;font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin-bottom:20px;}
+.form-grid{display:grid;gap:14px;}
+.form-grid.two{grid-template-columns:1fr 1fr;}
+.form-grid.three{grid-template-columns:1fr 1fr 1fr;}
+.field{display:flex;flex-direction:column;gap:5px;}
+label{font-size:.78rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;}
+input[type="text"],input[type="number"],select{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:6px;font-family:'Sora',sans-serif;font-size:.9rem;width:100%;transition:border-color .2s;}
+input:focus,select:focus{outline:none;border-color:var(--border-focus);}
+.field-hint{font-size:.7rem;color:var(--text-dim);font-family:'JetBrains Mono',monospace;}
+.run-btn{background:var(--eco);color:#000;border:none;padding:14px 40px;border-radius:8px;font-size:1rem;font-family:'Sora',sans-serif;font-weight:600;cursor:pointer;width:100%;margin:8px 0 24px;transition:opacity .2s;}
+.run-btn:hover{opacity:.88;}
+.results-section{display:none;}
+.results-section.visible{display:block;}
+.result-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:14px;}
+.result-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+.result-value{font-size:1.6rem;font-weight:600;color:var(--text);}
+.result-value.green{color:var(--green);}
+.result-value.amber{color:var(--amber);}
+.result-value.red{color:var(--red);}
+.result-sub{font-size:.82rem;color:var(--text-muted);margin-top:4px;}
+.results-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
+.export-btn{display:flex;align-items:center;gap:7px;padding:9px 18px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);font-family:'JetBrains Mono',monospace;font-size:.75rem;cursor:pointer;transition:all .18s;}
+.export-btn:hover{border-color:var(--accent);color:var(--accent);}
+.export-btn.ap2{border-color:rgba(96,165,250,0.4);color:var(--accent);}
+.mcp-toggle{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-size:.72rem;font-family:'JetBrains Mono',monospace;padding:.35rem .7rem;cursor:pointer;margin-top:2rem;transition:all .15s;}
+.mcp-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.mcp-panel{display:none;margin-top:1rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.mcp-panel.open{display:block;}
+.mcp-panel pre{font-size:.72rem;font-family:'JetBrains Mono',monospace;color:var(--text-muted);white-space:pre-wrap;word-break:break-all;}
+.tool-footer{border-top:1px solid var(--border);padding:1.75rem 1.5rem;margin-top:3rem;font-size:.78rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;text-align:center;}
+.tool-footer a{color:var(--text-muted);text-decoration:none;}
+.tool-footer a:hover{color:var(--text);}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#7f1d1d;border:1px solid var(--red);color:#fecaca;padding:12px 22px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:.8rem;z-index:200;display:none;}
+.toast.show{display:block;}
+.insight-row{background:rgba(96,165,250,0.06);border:1px solid rgba(96,165,250,0.2);border-radius:8px;padding:14px 18px;margin-bottom:10px;font-size:.88rem;color:var(--text-muted);}
+.insight-row strong{color:var(--text);}
+/* Matrix grid */
+.matrix-setup{display:grid;gap:12px;margin-bottom:20px;}
+.matrix-strategies{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.matrix-visual{overflow-x:auto;margin-top:20px;}
+.payoff-grid{display:inline-grid;gap:2px;background:var(--border);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.payoff-header{background:var(--surface2);padding:10px 14px;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text-muted);text-align:center;font-weight:500;}
+.payoff-row-label{background:var(--surface2);padding:10px 14px;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text-muted);display:flex;align-items:center;justify-content:center;}
+.payoff-cell{background:var(--surface);padding:8px 12px;min-width:110px;}
+.payoff-cell.ne{background:rgba(74,222,128,0.12);border:2px solid var(--eco);}
+.payoff-inputs{display:flex;gap:6px;align-items:center;}
+.payoff-inputs input{width:56px;padding:5px 7px;font-family:'JetBrains Mono',monospace;font-size:.82rem;text-align:center;}
+.payoff-sep{color:var(--text-dim);font-size:.75rem;font-family:'JetBrains Mono',monospace;}
+.p1-val{color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:.82rem;}
+.p2-val{color:var(--amber);font-family:'JetBrains Mono',monospace;font-size:.82rem;}
+.matrix-legend{display:flex;gap:16px;margin-top:10px;font-size:.75rem;color:var(--text-dim);font-family:'JetBrains Mono',monospace;}
+.legend-dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;}
+.ne-badge{display:inline-block;padding:3px 9px;background:rgba(74,222,128,0.15);border:1px solid var(--eco);color:var(--eco);border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.72rem;}
+.dom-badge{display:inline-block;padding:3px 9px;background:rgba(251,191,36,0.12);border:1px solid var(--amber);color:var(--amber);border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.72rem;margin-left:6px;}
+.game-type-badge{display:inline-block;padding:4px 12px;background:rgba(96,165,250,0.1);border:1px solid var(--accent);color:var(--accent);border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:.78rem;margin-bottom:12px;}
+/* Classic games */
+.classic-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px 22px;margin-bottom:12px;}
+.classic-card h4{font-family:'DM Serif Display',serif;font-size:1.15rem;color:var(--text);margin-bottom:6px;}
+.classic-card p{font-size:.87rem;color:var(--text-muted);margin-bottom:10px;}
+.classic-mini-matrix{display:inline-grid;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:6px;overflow:hidden;font-family:'JetBrains Mono',monospace;font-size:.75rem;margin-top:8px;}
+.cm-cell{background:var(--surface);padding:6px 12px;text-align:center;color:var(--text-muted);}
+.cm-header{background:var(--surface2);padding:5px 12px;text-align:center;color:var(--text-dim);font-size:.68rem;}
+.cm-ne{background:rgba(74,222,128,0.1);color:var(--eco);}
+.load-btn{background:none;border:1px solid rgba(74,222,128,0.4);color:var(--eco);font-family:'JetBrains Mono',monospace;font-size:.72rem;padding:6px 14px;border-radius:5px;cursor:pointer;margin-top:10px;transition:all .15s;}
+.load-btn:hover{background:rgba(74,222,128,0.1);}
+@media(max-width:700px){.form-grid.two,.form-grid.three{grid-template-columns:1fr;}.results-grid{grid-template-columns:1fr 1fr;}.tool-title{font-size:1.8rem;}.matrix-strategies{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="6" fill="#0D1117"/>
+          <path d="M16 5L28 26H4L16 5Z" fill="none" stroke="#E8A838" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M10 20h12" stroke="#E8A838" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-name"><span class="logo-apex">Apex</span> Logics</span>
+        <span class="logo-org">apexlogics.org</span>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill" data-i18n="all_tools">← All Tools</a>
+      <div class="lang-inner">
+        <button class="lang-btn" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('es')">ES</button>
+        <button class="lang-btn" onclick="setLang('fr')">FR</button>
+        <button class="lang-btn" onclick="setLang('ar')">AR</button>
+        <button class="lang-btn" onclick="setLang('pt')">PT</button>
+        <button class="lang-btn" onclick="setLang('zh')">中文</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="pii-banner">
+  <div class="pii-inner">
+    <span>🔒</span>
+    <span data-i18n="pii">All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+  <div class="tool-eyebrow">ECONOMICS · #100</div>
+  <h1 class="tool-title">Game Theory Payoff Matrix Builder</h1>
+  <p class="tool-desc">Build 2×2 or 3×3 strategic payoff matrices, solve for pure-strategy Nash equilibria and dominant strategies, classify the game type, and generate a lesson-ready analysis.</p>
+  <div class="tool-vintage">📐 Economic Theory (Timeless)</div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('builder',this)">Matrix Builder</button>
+    <button class="tab-btn" onclick="switchTab('results',this)">Analysis Results</button>
+    <button class="tab-btn" onclick="switchTab('library',this)">Classic Games Library</button>
+  </div>
+
+  <!-- TAB 1: Builder -->
+  <div id="tab-builder" class="tab-panel active">
+    <div class="card">
+      <div class="card-title">Matrix Configuration</div>
+      <div class="form-grid two" style="margin-bottom:16px;">
+        <div class="field">
+          <label>Matrix Size</label>
+          <select id="matrix-size" onchange="buildMatrix()">
+            <option value="2" selected>2×2</option>
+            <option value="3">3×3</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Game Preset</label>
+          <select id="preset" onchange="loadPreset()">
+            <option value="custom">Custom</option>
+            <option value="prisoners">Prisoner's Dilemma</option>
+            <option value="battle">Battle of the Sexes</option>
+            <option value="stag">Stag Hunt</option>
+            <option value="chicken">Chicken</option>
+            <option value="coord">Coordination Game</option>
+            <option value="pennies">Matching Pennies</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Player 1 Name</label>
+          <input type="text" id="p1-name" value="Player 1" maxlength="20"/>
+        </div>
+        <div class="field">
+          <label>Player 2 Name</label>
+          <input type="text" id="p2-name" value="Player 2" maxlength="20"/>
+        </div>
+      </div>
+      <div id="strategy-inputs" class="matrix-strategies"></div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text-dim);margin-bottom:10px;">Enter payoffs as (P1, P2) in each cell — <span style="color:var(--accent)">blue = Player 1</span>, <span style="color:var(--amber)">amber = Player 2</span></div>
+      <div class="matrix-visual" id="matrix-visual"></div>
+      <div class="matrix-legend">
+        <span><span class="legend-dot" style="background:rgba(74,222,128,0.3);border:1px solid var(--eco);"></span>Nash Equilibrium cell</span>
+      </div>
+    </div>
+    <button class="run-btn" onclick="runAnalysis()">Solve Matrix</button>
+  </div>
+
+  <!-- TAB 2: Results -->
+  <div id="tab-results" class="tab-panel">
+    <div id="results-placeholder" style="color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:.85rem;padding:40px 0;text-align:center;">Run the matrix solver first (Tab 1) to see results.</div>
+    <div class="results-section" id="analysis-results">
+      <div class="results-grid" id="analysis-kpi"></div>
+      <div class="card" id="ne-card">
+        <div class="card-title">Nash Equilibria (Pure Strategy)</div>
+        <div id="ne-output"></div>
+      </div>
+      <div class="card" id="dom-card">
+        <div class="card-title">Dominant Strategy Analysis</div>
+        <div id="dom-output"></div>
+      </div>
+      <div class="card" id="pareto-card">
+        <div class="card-title">Pareto Optimality</div>
+        <div id="pareto-output"></div>
+      </div>
+      <div id="analysis-insights"></div>
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportAnalysisMD()">⬇ Markdown</button>
+        <button class="export-btn ap2" onclick="exportAnalysisAP2()">⬇ AP2 JSON</button>
+      </div>
+      <button class="mcp-toggle" onclick="document.getElementById('mcp-analysis').classList.toggle('open')">MCP / Agent JSON</button>
+      <div class="mcp-panel" id="mcp-analysis"><pre id="mcp-analysis-pre"></pre></div>
+    </div>
+  </div>
+
+  <!-- TAB 3: Library -->
+  <div id="tab-library" class="tab-panel">
+    <div id="library-content"></div>
+  </div>
+</div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-107 · Data: Economic Theory (timeless)
+</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── I18N ──────────────────────────────────────────────────────────────
+const I18N_CHROME = {
+  en:{pii:'All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.',all_tools:'← All Tools'},
+  es:{pii:'Todas las entradas se procesan localmente en su navegador. Nada se transmite, almacena ni registra. Las entradas desaparecen al cerrar la pestaña.',all_tools:'← Todas las herramientas'},
+  fr:{pii:"Toutes les données sont traitées localement dans votre navigateur. Rien n'est transmis, stocké ni enregistré. Les données disparaissent à la fermeture de l'onglet.",all_tools:'← Tous les outils'},
+  ar:{pii:'تتم معالجة جميع المدخلات محليًا في متصفحك. لا يُنقل أي شيء أو يُخزَّن أو يُسجَّل. تختفي المدخلات عند إغلاق علامة التبويب.',all_tools:'← كل الأدوات'},
+  pt:{pii:'Todas as entradas são processadas localmente no seu navegador. Nada é transmitido, armazenado ou registado. As entradas desaparecem ao fechar este separador.',all_tools:'← Todas as ferramentas'},
+  zh:{pii:'所有输入均在您的浏览器中本地处理。不会传输、存储或记录任何内容。关闭标签页后输入内容即消失。',all_tools:'← 所有工具'},
+};
+function setLang(lang){
+  sessionStorage.setItem('apex_lang',lang);
+  document.documentElement.lang=lang;
+  document.documentElement.dir=lang==='ar'?'rtl':'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b=>{
+    const t=b.textContent.trim();
+    b.classList.toggle('active',t===lang.toUpperCase()||(t==='中文'&&lang==='zh'));
+  });
+  const s=Object.assign({},I18N_CHROME.en,I18N_CHROME[lang]||{});
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.getAttribute('data-i18n');
+    if(s[k]!==undefined)el.textContent=s[k];
+  });
+}
+(function(){
+  const s=sessionStorage.getItem('apex_lang');
+  setLang(s||({en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'})[(navigator.language||'en').slice(0,2)]||'en');
+})();
+
+// ── AP2 Schema ─────────────────────────────────────────────────────────
+const AP2Schema={
+  validMandateTypes:['nursing_career_record','side_hustle_transition_record','l1_interference_spanish_record','game_theory_record'],
+  validate(payload){
+    if(!payload||typeof payload!=='object')return{valid:false,error:'Payload must be an object.'};
+    if(!payload.mandate_type)return{valid:false,error:'Missing mandate_type.'};
+    if(!this.validMandateTypes.includes(payload.mandate_type))return{valid:false,error:`Invalid mandate_type: ${payload.mandate_type}`};
+    if(!payload.tool_id)return{valid:false,error:'Missing tool_id.'};
+    if(!payload.generated_at)return{valid:false,error:'Missing generated_at.'};
+    return{valid:true};
+  }
+};
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);}
+
+// ── Presets ────────────────────────────────────────────────────────────
+const PRESETS = {
+  prisoners:{name:"Prisoner's Dilemma",size:2,p1strats:['Cooperate','Defect'],p2strats:['Cooperate','Defect'],payoffs:[[[3,3],[0,5]],[[5,0],[1,1]]],significance:"The most famous game in game theory. Individually rational defection leads to a collectively suboptimal outcome. Models arms races, price wars, and public goods provision."},
+  battle:{name:'Battle of the Sexes',size:2,p1strats:['Opera','Football'],p2strats:['Opera','Football'],payoffs:[[[2,1],[0,0]],[[0,0],[1,2]]],significance:'A coordination game with two Nash equilibria, each preferred by a different player. Models situations where parties want to coordinate but have conflicting preferences.'},
+  stag:{name:'Stag Hunt',size:2,p1strats:['Stag','Hare'],p2strats:['Stag','Hare'],payoffs:[[[4,4],[0,3]],[[3,0],[2,2]]],significance:'Models the tension between social cooperation and individual safety. Both players must commit to cooperation to achieve the best outcome; either can guarantee a smaller safe payoff alone.'},
+  chicken:{name:'Chicken (Hawk-Dove)',size:2,p1strats:['Straight','Swerve'],p2strats:['Straight','Swerve'],payoffs:[[[-10,-10],[1,-1]],[[-1,1],[0,0]]],significance:'Models brinkmanship and conflict escalation. Neither player wants to back down, but mutual stubbornness is catastrophic. Used to analyze nuclear deterrence, labor negotiations, and duopoly pricing.'},
+  coord:{name:'Coordination Game',size:2,p1strats:['Option A','Option B'],p2strats:['Option A','Option B'],payoffs:[[[2,2],[0,0]],[[0,0],[2,2]]],significance:'Pure coordination with two equilibria of equal value. Models technology standards, language choice, driving side conventions. Any equilibrium is equally good — the challenge is coordination.'},
+  pennies:{name:'Matching Pennies',size:2,p1strats:['Heads','Tails'],p2strats:['Heads','Tails'],payoffs:[[[1,-1],[-1,1]],[[-1,1],[1,-1]]],significance:'A zero-sum game with no pure-strategy Nash equilibrium. Illustrates the need for mixed strategies. Models penalty kicks in soccer, inspection games, and competitive advertising timing.'},
+};
+
+const CLASSIC_LIBRARY = Object.values(PRESETS);
+
+// ── State ──────────────────────────────────────────────────────────────
+let matrixSize = 2;
+let analysisState = null;
+
+// ── Tab Logic ──────────────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(btn) btn.classList.add('active');
+  else document.querySelectorAll('.tab-btn')[['builder','results','library'].indexOf(tab)].classList.add('active');
+}
+
+// ── Matrix Builder ─────────────────────────────────────────────────────
+function buildMatrix() {
+  matrixSize = parseInt(document.getElementById('matrix-size').value);
+  document.getElementById('preset').value='custom';
+  renderStrategyInputs();
+  renderPayoffGrid([]);
+}
+
+function renderStrategyInputs() {
+  const n = matrixSize;
+  const p1 = document.getElementById('p1-name').value||'Player 1';
+  const p2 = document.getElementById('p2-name').value||'Player 2';
+  let html = '';
+  for(let i=0;i<n;i++) html += `<div class="field"><label>${p1} — Strategy ${i+1}</label><input type="text" id="p1s${i}" value="S${i+1}" maxlength="16"/></div>`;
+  for(let j=0;j<n;j++) html += `<div class="field"><label>${p2} — Strategy ${j+1}</label><input type="text" id="p2s${j}" value="S${j+1}" maxlength="16"/></div>`;
+  document.getElementById('strategy-inputs').innerHTML = html;
+  renderPayoffGrid([]);
+}
+
+function getStrategies() {
+  const n = matrixSize;
+  const p1s=[], p2s=[];
+  for(let i=0;i<n;i++) p1s.push(document.getElementById('p1s'+i)?.value||('S'+(i+1)));
+  for(let j=0;j<n;j++) p2s.push(document.getElementById('p2s'+j)?.value||('S'+(j+1)));
+  return {p1s, p2s};
+}
+
+function renderPayoffGrid(neSet) {
+  const n = matrixSize;
+  const {p1s, p2s} = getStrategies();
+  const p1 = document.getElementById('p1-name').value||'Player 1';
+  const p2 = document.getElementById('p2-name').value||'Player 2';
+
+  // Grid: 1 blank + n col headers + n*(1 row label + n cells)
+  const cols = 1 + n;
+  let gridHtml = `<div class="payoff-grid" style="grid-template-columns:repeat(${cols},auto);">`;
+  // Header row
+  gridHtml += `<div class="payoff-header" style="font-size:.65rem;color:var(--text-dim);">${p1} \\ ${p2}</div>`;
+  for(let j=0;j<n;j++) gridHtml += `<div class="payoff-header">${p2s[j]}</div>`;
+  // Data rows
+  for(let i=0;i<n;i++) {
+    gridHtml += `<div class="payoff-row-label">${p1s[i]}</div>`;
+    for(let j=0;j<n;j++) {
+      const isNE = neSet.some(ne=>ne[0]===i&&ne[1]===j);
+      gridHtml += `<div class="payoff-cell${isNE?' ne':''}">
+        <div class="payoff-inputs">
+          <input type="number" id="cell_${i}_${j}_p1" value="${getCellVal(i,j,1)}" step="1" style="border-color:rgba(96,165,250,0.3);" title="${p1} payoff"/>
+          <span class="payoff-sep">,</span>
+          <input type="number" id="cell_${i}_${j}_p2" value="${getCellVal(i,j,2)}" step="1" style="border-color:rgba(251,191,36,0.3);" title="${p2} payoff"/>
+        </div>
+      </div>`;
+    }
+  }
+  gridHtml += '</div>';
+  document.getElementById('matrix-visual').innerHTML = gridHtml;
+}
+
+// Store last-set payoffs to preserve across re-renders
+let lastPayoffs = {};
+function getCellVal(i,j,player) {
+  const key = `${i}_${j}_p${player}`;
+  const el = document.getElementById(`cell_${i}_${j}_p${player}`);
+  if(el) return parseFloat(el.value)||0;
+  return lastPayoffs[key]!==undefined ? lastPayoffs[key] : 0;
+}
+
+function collectPayoffs() {
+  const n = matrixSize;
+  const payoffs = [];
+  for(let i=0;i<n;i++) {
+    payoffs.push([]);
+    for(let j=0;j<n;j++) {
+      const p1v = parseFloat(document.getElementById(`cell_${i}_${j}_p1`)?.value)||0;
+      const p2v = parseFloat(document.getElementById(`cell_${i}_${j}_p2`)?.value)||0;
+      payoffs[i].push([p1v,p2v]);
+      lastPayoffs[`${i}_${j}_p1`] = p1v;
+      lastPayoffs[`${i}_${j}_p2`] = p2v;
+    }
+  }
+  return payoffs;
+}
+
+function loadPreset() {
+  const key = document.getElementById('preset').value;
+  if(key==='custom') return;
+  const p = PRESETS[key];
+  matrixSize = p.size;
+  document.getElementById('matrix-size').value = p.size;
+  renderStrategyInputs();
+  // Fill strategy names
+  p.p1strats.forEach((s,i)=>{ const el=document.getElementById('p1s'+i); if(el) el.value=s; });
+  p.p2strats.forEach((s,j)=>{ const el=document.getElementById('p2s'+j); if(el) el.value=s; });
+  // Fill payoffs
+  for(let i=0;i<p.size;i++) for(let j=0;j<p.size;j++) {
+    const ep1=document.getElementById(`cell_${i}_${j}_p1`);
+    const ep2=document.getElementById(`cell_${i}_${j}_p2`);
+    if(ep1) ep1.value=p.payoffs[i][j][0];
+    if(ep2) ep2.value=p.payoffs[i][j][1];
+    lastPayoffs[`${i}_${j}_p1`]=p.payoffs[i][j][0];
+    lastPayoffs[`${i}_${j}_p2`]=p.payoffs[i][j][1];
+  }
+  renderPayoffGrid([]);
+}
+
+// ── Nash Equilibrium Solver ────────────────────────────────────────────
+function findNashEquilibria(payoffs, n) {
+  const neList = [];
+  for(let i=0;i<n;i++) {
+    for(let j=0;j<n;j++) {
+      const p1Here = payoffs[i][j][0];
+      const p2Here = payoffs[i][j][1];
+      // P1 best response to col j?
+      let p1BR = true;
+      for(let ii=0;ii<n;ii++) if(payoffs[ii][j][0] > p1Here) { p1BR=false; break; }
+      // P2 best response to row i?
+      let p2BR = true;
+      for(let jj=0;jj<n;jj++) if(payoffs[i][jj][1] > p2Here) { p2BR=false; break; }
+      if(p1BR && p2BR) neList.push([i,j]);
+    }
+  }
+  return neList;
+}
+
+function findDominantStrategies(payoffs, n) {
+  const result = {p1:{strict:null,weak:null}, p2:{strict:null,weak:null}};
+  // P1: row dominance
+  for(let i=0;i<n;i++) {
+    let strictDom=true, weakDom=true, atLeastOneStrict=false;
+    for(let ii=0;ii<n;ii++) {
+      if(ii===i) continue;
+      for(let j=0;j<n;j++) {
+        if(payoffs[i][j][0] <= payoffs[ii][j][0]) strictDom=false;
+        if(payoffs[i][j][0] < payoffs[ii][j][0]) weakDom=false;
+        if(payoffs[i][j][0] > payoffs[ii][j][0]) atLeastOneStrict=true;
+      }
+    }
+    if(strictDom) { result.p1.strict=i; break; }
+    if(weakDom && atLeastOneStrict && result.p1.weak===null) result.p1.weak=i;
+  }
+  // P2: col dominance
+  for(let j=0;j<n;j++) {
+    let strictDom=true, weakDom=true, atLeastOneStrict=false;
+    for(let jj=0;jj<n;jj++) {
+      if(jj===j) continue;
+      for(let i=0;i<n;i++) {
+        if(payoffs[i][j][1] <= payoffs[i][jj][1]) strictDom=false;
+        if(payoffs[i][j][1] < payoffs[i][jj][1]) weakDom=false;
+        if(payoffs[i][j][1] > payoffs[i][jj][1]) atLeastOneStrict=true;
+      }
+    }
+    if(strictDom) { result.p2.strict=j; break; }
+    if(weakDom && atLeastOneStrict && result.p2.weak===null) result.p2.weak=j;
+  }
+  return result;
+}
+
+function findParetoOptimal(payoffs, n) {
+  const pareto = [];
+  for(let i=0;i<n;i++) for(let j=0;j<n;j++) {
+    let dominated = false;
+    for(let ii=0;ii<n;ii++) for(let jj=0;jj<n;jj++) {
+      if(ii===i && jj===j) continue;
+      if(payoffs[ii][jj][0] >= payoffs[i][j][0] && payoffs[ii][jj][1] >= payoffs[i][j][1] &&
+         (payoffs[ii][jj][0] > payoffs[i][j][0] || payoffs[ii][jj][1] > payoffs[i][j][1])) {
+        dominated=true; break;
+      }
+    }
+    if(!dominated) pareto.push([i,j]);
+  }
+  return pareto;
+}
+
+function classifyGame(payoffs, n, neList, domStrats) {
+  // Check zero-sum
+  let zeroSum = true;
+  for(let i=0;i<n;i++) for(let j=0;j<n;j++) if(payoffs[i][j][0]+payoffs[i][j][1]!==0) { zeroSum=false; break; }
+  if(zeroSum) return 'Zero-Sum Game';
+
+  // Check pure coordination (payoffs identical for both players in each cell)
+  let coordGame = true;
+  for(let i=0;i<n;i++) for(let j=0;j<n;j++) if(payoffs[i][j][0]!==payoffs[i][j][1]) { coordGame=false; break; }
+  if(coordGame) return 'Pure Coordination Game';
+
+  if(neList.length===0) return 'No Pure-Strategy Nash Equilibrium';
+  if(neList.length===1) {
+    // Prisoner's Dilemma pattern: single NE but Pareto-dominated?
+    const pOpt = findParetoOptimal(payoffs, n);
+    const neIsPareto = pOpt.some(p=>p[0]===neList[0][0]&&p[1]===neList[0][1]);
+    if(!neIsPareto) return "Social Dilemma (NE is Pareto-suboptimal)";
+    return 'Single Nash Equilibrium Game';
+  }
+  if(neList.length>1) return 'Multiple Nash Equilibria (Coordination Problem)';
+  return 'Strategic Form Game';
+}
+
+// ── Run Analysis ───────────────────────────────────────────────────────
+function runAnalysis() {
+  const n = matrixSize;
+  const payoffs = collectPayoffs();
+  const {p1s, p2s} = getStrategies();
+  const p1 = document.getElementById('p1-name').value||'Player 1';
+  const p2 = document.getElementById('p2-name').value||'Player 2';
+
+  const neList = findNashEquilibria(payoffs, n);
+  const domStrats = findDominantStrategies(payoffs, n);
+  const pareto = findParetoOptimal(payoffs, n);
+  const gameType = classifyGame(payoffs, n, neList, domStrats);
+
+  analysisState = {n, payoffs, p1s, p2s, p1, p2, neList, domStrats, pareto, gameType};
+
+  // Re-render grid with NE highlighted
+  renderPayoffGrid(neList);
+
+  // KPI
+  document.getElementById('analysis-kpi').innerHTML = `
+    <div class="result-card"><div class="result-label">Nash Equilibria (Pure)</div><div class="result-value ${neList.length>0?'green':'red'}">${neList.length}</div><div class="result-sub">${neList.length===0?'No pure-strategy NE — mixed strategies exist':neList.map(ne=>`(${p1s[ne[0]]}, ${p2s[ne[1]]})`).join('; ')}</div></div>
+    <div class="result-card"><div class="result-label">Dominant Strategy (P1)</div><div class="result-value amber">${domStrats.p1.strict!==null?p1s[domStrats.p1.strict]:domStrats.p1.weak!==null?p1s[domStrats.p1.weak]+' (weak)':'None'}</div><div class="result-sub">${domStrats.p1.strict!==null?'Strictly dominant':'Weakly dominant or none'}</div></div>
+    <div class="result-card"><div class="result-label">Game Classification</div><div class="result-value" style="font-size:1rem;">${gameType}</div><div class="result-sub">${n}×${n} payoff matrix</div></div>
+  `;
+
+  // NE detail
+  const neEl = document.getElementById('ne-output');
+  if(neList.length===0) {
+    neEl.innerHTML = `<div class="insight-row">No pure-strategy Nash equilibrium exists. At least one player always wants to deviate from any outcome. A mixed-strategy NE (randomization) exists by Nash's theorem for finite games.</div>`;
+  } else {
+    neEl.innerHTML = neList.map(ne=>`
+      <div style="margin-bottom:12px;">
+        <span class="ne-badge">NE: (${p1s[ne[0]]}, ${p2s[ne[1]]})</span>
+        <div class="insight-row" style="margin-top:8px;">
+          <strong>${p1}</strong> earns <strong>${payoffs[ne[0]][ne[1]][0]}</strong> · <strong>${p2}</strong> earns <strong>${payoffs[ne[0]][ne[1]][1]}</strong>.<br/>
+          ${p1} has no incentive to deviate: best response to ${p2}'s ${p2s[ne[1]]} is ${p1s[ne[0]]}.<br/>
+          ${p2} has no incentive to deviate: best response to ${p1}'s ${p1s[ne[0]]} is ${p2s[ne[1]]}.
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Dominant strategies
+  const domEl = document.getElementById('dom-output');
+  let domHtml = '';
+  if(domStrats.p1.strict!==null) domHtml += `<div class="insight-row"><strong>${p1}</strong> has a <span class="ne-badge">strictly dominant</span> strategy: <strong>${p1s[domStrats.p1.strict]}</strong> — it yields a higher payoff than all alternatives regardless of ${p2}'s choice.</div>`;
+  else if(domStrats.p1.weak!==null) domHtml += `<div class="insight-row"><strong>${p1}</strong> has a <span class="dom-badge">weakly dominant</span> strategy: <strong>${p1s[domStrats.p1.weak]}</strong> — at least as good as alternatives in all cases, strictly better in at least one.</div>`;
+  else domHtml += `<div class="insight-row"><strong>${p1}</strong> has no dominant strategy — optimal play depends on ${p2}'s choice.</div>`;
+
+  if(domStrats.p2.strict!==null) domHtml += `<div class="insight-row"><strong>${p2}</strong> has a <span class="ne-badge">strictly dominant</span> strategy: <strong>${p2s[domStrats.p2.strict]}</strong>.</div>`;
+  else if(domStrats.p2.weak!==null) domHtml += `<div class="insight-row"><strong>${p2}</strong> has a <span class="dom-badge">weakly dominant</span> strategy: <strong>${p2s[domStrats.p2.weak]}</strong>.</div>`;
+  else domHtml += `<div class="insight-row"><strong>${p2}</strong> has no dominant strategy — optimal play depends on ${p1}'s choice.</div>`;
+  domEl.innerHTML = domHtml;
+
+  // Pareto
+  const paretoEl = document.getElementById('pareto-output');
+  paretoEl.innerHTML = `
+    <div class="insight-row">
+      <strong>Pareto-optimal outcomes:</strong> ${pareto.map(p=>`(${p1s[p[0]]}, ${p2s[p[1]]}) = [${payoffs[p[0]][p[1]][0]}, ${payoffs[p[0]][p[1]][1]}]`).join(' · ')}<br/>
+      These outcomes cannot be improved for one player without making the other worse off.
+      ${neList.length>0 && !pareto.some(p=>p[0]===neList[0][0]&&p[1]===neList[0][1]) ? '<br/><strong style="color:var(--red);">⚠ The Nash Equilibrium is NOT Pareto-optimal — this is a social dilemma (e.g., Prisoner\'s Dilemma structure).</strong>' : ''}
+    </div>`;
+
+  // Insights
+  document.getElementById('analysis-insights').innerHTML = `
+    <div class="insight-row"><strong>Game type: ${gameType}.</strong> ${getGameInsight(gameType, neList, domStrats, p1s, p2s, p1, p2)}</div>
+    ${neList.length===0?'<div class="insight-row"><strong>Mixed strategies:</strong> When no pure NE exists, rational players randomize between strategies. The equilibrium mixed strategy makes the opponent indifferent between their pure strategies.</div>':''}
+  `;
+
+  document.getElementById('results-placeholder').style.display='none';
+  document.getElementById('analysis-results').classList.add('visible');
+  document.getElementById('mcp-analysis-pre').textContent = JSON.stringify(buildAnalysisAP2(), null, 2);
+
+  // Switch to results tab
+  switchTab('results', null);
+  document.querySelectorAll('.tab-btn')[1].classList.add('active');
+  document.querySelectorAll('.tab-btn')[0].classList.remove('active');
+}
+
+function getGameInsight(type, neList, dom, p1s, p2s, p1, p2) {
+  if(type.includes('Dilemma')) return `Individual rationality leads to a collectively suboptimal outcome. Both players would be better off cooperating, but each has an incentive to defect.`;
+  if(type.includes('Zero-Sum')) return `Every gain for ${p1} is a loss for ${p2}. Competitive, adversarial setting — no mutually beneficial outcome exists.`;
+  if(type.includes('Pure Coordination')) return `Players have identical interests. The challenge is selecting among multiple equilibria, not conflict. Social conventions, standards, and focal points solve this.`;
+  if(type.includes('Multiple')) return `Multiple equilibria exist — a coordination problem. Players need a focal point, pre-play communication, or convention to coordinate on the same equilibrium.`;
+  if(type.includes('Single')) return `A unique Nash Equilibrium provides a clear prediction of rational play outcome.`;
+  if(type.includes('No Pure')) return `No pure-strategy equilibrium exists. Mixed strategies are necessary for equilibrium.`;
+  return 'Analyze the payoff structure to determine optimal strategies.';
+}
+
+// ── AP2 + Exports ──────────────────────────────────────────────────────
+function buildAnalysisAP2() {
+  if(!analysisState) return {};
+  const s=analysisState;
+  return {
+    mandate_type:'game_theory_record',
+    tool_id:'AL-107',
+    generated_at:new Date().toISOString(),
+    matrix_size:s.n,
+    player1_name:s.p1,
+    player2_name:s.p2,
+    player1_strategies:s.p1s,
+    player2_strategies:s.p2s,
+    payoffs:s.payoffs,
+    nash_equilibria:s.neList,
+    dominant_strategies:{
+      player1_strict:s.domStrats.p1.strict!==null?s.p1s[s.domStrats.p1.strict]:null,
+      player1_weak:s.domStrats.p1.weak!==null?s.p1s[s.domStrats.p1.weak]:null,
+      player2_strict:s.domStrats.p2.strict!==null?s.p2s[s.domStrats.p2.strict]:null,
+      player2_weak:s.domStrats.p2.weak!==null?s.p2s[s.domStrats.p2.weak]:null,
+    },
+    pareto_optimal:s.pareto,
+    game_classification:s.gameType,
+  };
+}
+
+function exportAnalysisMD() {
+  if(!analysisState){showToast('Run the solver first.');return;}
+  const s=analysisState;
+  const ts=new Date().toISOString();
+  let md=`# Game Theory Matrix Analysis\n_Generated: ${ts} | AL-107 | apexlogics.org_\n\n`;
+  md+=`## Players & Strategies\n- **${s.p1}**: ${s.p1s.join(', ')}\n- **${s.p2}**: ${s.p2s.join(', ')}\n\n`;
+  md+=`## Payoff Matrix\n| ${s.p1}\\${s.p2} | ${s.p2s.join(' | ')} |\n|${Array(s.n+2).fill('---').join('|')}|\n`;
+  for(let i=0;i<s.n;i++){md+=`| ${s.p1s[i]} | ${s.payoffs[i].map(c=>`(${c[0]}, ${c[1]})`).join(' | ')} |\n`;}
+  md+=`\n## Analysis\n`;
+  md+=`- **Game Classification:** ${s.gameType}\n`;
+  md+=`- **Nash Equilibria (Pure):** ${s.neList.length===0?'None (no pure-strategy NE)':s.neList.map(ne=>`(${s.p1s[ne[0]]}, ${s.p2s[ne[1]]})`).join(', ')}\n`;
+  md+=`- **P1 Dominant Strategy:** ${s.domStrats.p1.strict!==null?s.p1s[s.domStrats.p1.strict]+' (strict)':s.domStrats.p1.weak!==null?s.p1s[s.domStrats.p1.weak]+' (weak)':'None'}\n`;
+  md+=`- **P2 Dominant Strategy:** ${s.domStrats.p2.strict!==null?s.p2s[s.domStrats.p2.strict]+' (strict)':s.domStrats.p2.weak!==null?s.p2s[s.domStrats.p2.weak]+' (weak)':'None'}\n`;
+  md+=`- **Pareto-Optimal Outcomes:** ${s.pareto.map(p=>`(${s.p1s[p[0]]}, ${s.p2s[p[1]]})`).join(', ')}\n`;
+  const blob=new Blob([md],{type:'text/markdown'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='game-theory-matrix-analysis.md';
+  a.click();
+}
+
+function exportAnalysisAP2() {
+  if(!analysisState){showToast('Run the solver first.');return;}
+  const payload=buildAnalysisAP2();
+  const result=AP2Schema.validate(payload);
+  if(!result.valid){showToast('AP2 validation failed: '+result.error);return;}
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='game-theory-matrix-ap2.json';
+  a.click();
+}
+
+// ── Classic Games Library ──────────────────────────────────────────────
+function buildLibrary() {
+  const el = document.getElementById('library-content');
+  el.innerHTML = CLASSIC_LIBRARY.map((g,idx)=>{
+    const n=g.size;
+    // Find NE for mini display
+    const ne = findNashEquilibria(g.payoffs, n);
+    let miniMatrix=`<div class="classic-mini-matrix" style="grid-template-columns:repeat(${n+1},auto);">`;
+    miniMatrix+=`<div class="cm-header">P1\\P2</div>`;
+    for(let j=0;j<n;j++) miniMatrix+=`<div class="cm-header">${g.p2strats[j]}</div>`;
+    for(let i=0;i<n;i++){
+      miniMatrix+=`<div class="cm-header">${g.p1strats[i]}</div>`;
+      for(let j=0;j<n;j++){
+        const isNE=ne.some(e=>e[0]===i&&e[1]===j);
+        miniMatrix+=`<div class="cm-cell${isNE?' cm-ne':''}">(${g.payoffs[i][j][0]},${g.payoffs[i][j][1]})</div>`;
+      }
+    }
+    miniMatrix+='</div>';
+    const neStr = ne.length===0?'None (mixed strategy only)':ne.map(e=>`(${g.p1strats[e[0]]}, ${g.p2strats[e[1]]})`).join(', ');
+    return `<div class="classic-card">
+      <h4>${g.name}</h4>
+      <p>${g.significance}</p>
+      ${miniMatrix}
+      <div style="margin-top:10px;font-size:.8rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">Nash Equilibrium: <span style="color:var(--eco);">${neStr}</span></div>
+      <button class="load-btn" onclick="loadClassic(${idx})">Load into Builder →</button>
+    </div>`;
+  }).join('');
+}
+
+function loadClassic(idx) {
+  const presetKeys = ['prisoners','battle','stag','chicken','coord','pennies'];
+  document.getElementById('preset').value = presetKeys[idx];
+  loadPreset();
+  switchTab('builder', null);
+  document.querySelectorAll('.tab-btn')[0].classList.add('active');
+  document.querySelectorAll('.tab-btn')[2].classList.remove('active');
+}
+
+// ── Init ───────────────────────────────────────────────────────────────
+buildMatrix();
+buildLibrary();
+</script>
+</body>
+</html>
