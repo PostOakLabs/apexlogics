@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RSU Withholding Gap Calculator | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--amber);text-decoration:none}
+a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--amber);border-color:var(--amber);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:860px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:620px}
+.pii-banner{max-width:860px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:860px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.grid-2{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--amber)}
+.hint{font-size:12px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--amber);color:#000}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-sec:hover{border-color:var(--amber);color:var(--amber)}
+.result-hidden{display:none}
+.gap-banner{background:rgba(232,85,85,.1);border:2px solid rgba(232,85,85,.3);border-radius:10px;padding:18px;margin-bottom:20px}
+.gap-banner .gap-amount{font-family:var(--font-mono);font-size:36px;font-weight:500;color:var(--danger);margin:4px 0}
+.gap-banner .gap-label{font-size:14px;color:var(--muted)}
+.gap-banner.no-gap{background:rgba(76,175,125,.1);border-color:rgba(76,175,125,.3)}
+.gap-banner.no-gap .gap-amount{color:var(--success)}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:22px;font-weight:500;color:var(--amber);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+.metric-card .sub{font-size:12px;color:var(--muted);margin-top:4px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:14px}
+td.mono{font-family:var(--font-mono)}
+tr.total-row td{font-weight:600;background:rgba(232,168,56,.07)}
+.action-box{background:var(--surface2);border-left:3px solid var(--danger);border-radius:0 6px 6px 0;padding:14px 16px;font-size:14px;margin:16px 0}
+.action-box.ok{border-left-color:var(--success)}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.mcp-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px}
+.mcp-panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.mcp-endpoint{font-family:var(--font-mono);font-size:12px;color:var(--amber);background:var(--bg);padding:8px 12px;border-radius:6px;word-break:break-all}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.tag-amber{background:rgba(232,168,56,.15);color:var(--amber)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}
+footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-amber">Compensation &amp; Benefits</span></div>
+  <h1>RSU Withholding Gap Calculator</h1>
+  <p>The 22% federal supplemental rate almost always under-withholds at higher incomes. Know your gap before vest day — not at tax time.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<div class="card">
+  <h2>RSU Vest Details</h2>
+  <div class="grid-2">
+    <div class="field">
+      <label>FMV at Vest (per share $)</label>
+      <input type="number" id="fmv" value="125.00" min="0.01" step="0.01">
+    </div>
+    <div class="field">
+      <label>Shares Vesting</label>
+      <input type="number" id="shares" value="500" min="1" step="1">
+    </div>
+    <div class="field">
+      <label>Additional Vest Events This Year</label>
+      <input type="number" id="moreVests" value="0" min="0" max="20" step="1">
+      <div class="hint">Same size vest events remaining in the tax year.</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Income &amp; Tax Profile</h2>
+  <div class="grid-2">
+    <div class="field">
+      <label>Base Salary ($)</label>
+      <input type="number" id="salary" value="210000" min="0" step="1000">
+    </div>
+    <div class="field">
+      <label>Filing Status</label>
+      <select id="filingStatus">
+        <option value="single" selected>Single / MFS</option>
+        <option value="mfj">Married Filing Jointly</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>YTD Income Before This Vest ($)</label>
+      <input type="number" id="ytdIncome" value="105000" min="0" step="1000">
+      <div class="hint">Your salary/bonus received so far this year.</div>
+    </div>
+    <div class="field">
+      <label>YTD SS Wages ($)</label>
+      <input type="number" id="ytdSS" value="105000" min="0" step="1000">
+      <div class="hint">SS wages withheld against $184,500 wage base.</div>
+    </div>
+    <div class="field">
+      <label>State</label>
+      <select id="state">
+        <optgroup label="No State Income Tax">
+          <option value="none">TX, FL, WA, NV, WY, SD, AK, NH, TN (0%)</option>
+        </optgroup>
+        <optgroup label="Low Rate States">
+          <option value="low">IN, PA, OH, KY, MI, IL, CO — ~3% avg</option>
+        </optgroup>
+        <optgroup label="Mid Rate States">
+          <option value="mid">NY, VA, MA, GA, AZ, MD, NC — ~5% avg</option>
+        </optgroup>
+        <optgroup label="High Rate States">
+          <option value="high" selected>CA, MN, OR, NJ, HI, VT — ~9.3% avg</option>
+        </optgroup>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div style="display:flex;gap:12px;margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calcRSUGap()">Calculate Gap →</button>
+</div>
+
+<div id="results" class="result-hidden">
+
+  <div id="gapBanner" class="gap-banner">
+    <div class="gap-label">Total Tax Underpayment (This Vest)</div>
+    <div class="gap-amount" id="gapAmount">—</div>
+    <div class="gap-label" id="gapSub">—</div>
+  </div>
+
+  <div class="card">
+    <h2>Withholding Breakdown</h2>
+    <div class="summary-grid">
+      <div class="metric-card">
+        <div class="val" id="vestIncome">—</div>
+        <div class="lbl">RSU Ordinary Income</div>
+        <div class="sub" id="vestIncomeSub"></div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="withheld">—</div>
+        <div class="lbl">Tax Withheld at Vest</div>
+        <div class="sub">22% federal + state + FICA</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="actualTax">—</div>
+        <div class="lbl">Actual Tax Owed</div>
+        <div class="sub">At true marginal rates</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="marginalFed">—</div>
+        <div class="lbl">Federal Marginal Rate</div>
+        <div class="sub" id="suppRateSub">vs. 22% supplemental</div>
+      </div>
+    </div>
+
+    <table>
+      <thead><tr><th>Tax Component</th><th>Withheld at 22%+FICA</th><th>Actual Owed</th><th>Gap</th></tr></thead>
+      <tbody id="gapTable"></tbody>
+    </table>
+  </div>
+
+  <div id="actionBox" class="action-box">—</div>
+
+  <div class="card">
+    <h2>Export Results</h2>
+    <div class="results-export-row">
+      <button class="btn btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+  <div class="mcp-panel">
+    <h3>MCP Integration</h3>
+    <div class="mcp-endpoint">GET https://apexlogics.org/.well-known/mcp.json → tool: rsu_withholding_gap_calculator</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Downstream: Freelance Quarterly Tax (AL-123) · Tax-Advantaged Benefits (AL-01) · ISO AMT (AL-116)</p>
+  </div>
+
+</div>
+</div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-122 · Data: IRS 2026
+</footer>
+
+<script>
+const SS_WAGE_BASE = 184500;
+const SS_SUPP = 0.062; // employee SS supplemental
+const MC_SUPP = 0.0145; // employee Medicare base
+const MC_SURCHARGE = 0.009; // additional Medicare above $200K (single) / $250K (mfj)
+const NIIT_THRESHOLD = {single: 200000, mfj: 250000};
+const STATE_RATES = {none: 0, low: 0.03, mid: 0.05, high: 0.093};
+const FED_SUPP = 0.22; // federal supplemental withholding rate
+
+function calcFedMarginal(income, status){
+  const B = status==='mfj'
+    ? [[24800,.10],[100800,.12],[211400,.22],[403550,.24],[512450,.32],[768700,.35],[Infinity,.37]]
+    : [[12400,.10],[50400,.12],[105700,.22],[201775,.24],[256225,.32],[640600,.35],[Infinity,.37]];
+  for(const [top,r] of B){ if(income<=top) return r; }
+  return .37;
+}
+
+function fmt(n){ return '$'+Math.round(n).toLocaleString(); }
+
+let _lastResult=null;
+
+function calcRSUGap(){
+  const fmv=+document.getElementById('fmv').value||125;
+  const shares=+document.getElementById('shares').value||500;
+  const moreVests=+document.getElementById('moreVests').value||0;
+  const salary=+document.getElementById('salary').value||210000;
+  const status=document.getElementById('filingStatus').value;
+  const ytdIncome=+document.getElementById('ytdIncome').value||105000;
+  const ytdSS=+document.getElementById('ytdSS').value||105000;
+  const stateKey=document.getElementById('state').value;
+  const stateRate=STATE_RATES[stateKey]||0;
+
+  const vestIncome=fmv*shares;
+  const totalIncome=ytdIncome+vestIncome;
+
+  // Federal: actual marginal rate at (ytdIncome + vestIncome) point
+  const fedMarginal=calcFedMarginal(totalIncome,status);
+
+  // FICA at vest
+  // SS: applicable on amount up to wage base
+  const ssRoom=Math.max(0,SS_WAGE_BASE-ytdSS);
+  const ssApplied=Math.min(vestIncome,ssRoom)*SS_SUPP;
+  // Medicare: always applies + surcharge above threshold
+  const mcBase=vestIncome*MC_SUPP;
+  const niitThresh=NIIT_THRESHOLD[status];
+  const mcSurcharge=Math.max(0,totalIncome-niitThresh)*MC_SURCHARGE-(Math.max(0,ytdIncome-niitThresh)*MC_SURCHARGE);
+  const ficaActual=ssApplied+mcBase+Math.max(0,mcSurcharge);
+
+  // State
+  const stateActual=vestIncome*stateRate;
+
+  // Actual federal tax on RSU income (incremental above ytd)
+  const fedActual=vestIncome*fedMarginal;
+  const totalActual=fedActual+ficaActual+stateActual;
+
+  // Withheld: 22% fed + same FICA + state at 22% approx (often same rate used)
+  const fedWithheld=vestIncome*FED_SUPP;
+  const ficaWithheld=ficaActual; // FICA same regardless of supp rate
+  const stateWithheld=vestIncome*stateRate; // state withheld at actual rate (employer uses actual)
+  const totalWithheld=fedWithheld+ficaWithheld+stateWithheld;
+
+  const fedGap=fedActual-fedWithheld;
+  const totalGap=fedGap; // state and FICA are typically withheld correctly; gap is federal
+
+  _lastResult={fmv,shares,moreVests,salary,status,ytdIncome,ytdSS,stateKey,stateRate,
+    vestIncome,totalIncome,fedMarginal,ssApplied,mcBase,mcSurcharge:Math.max(0,mcSurcharge),
+    ficaActual,stateActual,fedActual,totalActual,fedWithheld,ficaWithheld,stateWithheld,
+    totalWithheld,fedGap,totalGap};
+
+  // Banner
+  const banner=document.getElementById('gapBanner');
+  if(totalGap>0){
+    banner.className='gap-banner';
+    document.getElementById('gapAmount').textContent=fmt(totalGap);
+    document.getElementById('gapSub').textContent=`Federal marginal rate ${(fedMarginal*100).toFixed(0)}% vs. 22% withheld — ${fmt(fedGap)} shortfall on this vest`;
+  } else {
+    banner.className='gap-banner no-gap';
+    document.getElementById('gapAmount').textContent=fmt(Math.abs(totalGap));
+    document.getElementById('gapSub').textContent='Overwithholding — refund expected on RSU income';
+  }
+
+  document.getElementById('vestIncome').textContent=fmt(vestIncome);
+  document.getElementById('vestIncomeSub').textContent=`${shares} shs × $${fmv.toFixed(2)}`;
+  document.getElementById('withheld').textContent=fmt(totalWithheld);
+  document.getElementById('actualTax').textContent=fmt(totalActual);
+  document.getElementById('marginalFed').textContent=(fedMarginal*100).toFixed(0)+'%';
+  document.getElementById('suppRateSub').textContent=`vs. 22% supplemental (gap: ${(fedMarginal-FED_SUPP>0?'+':'')}${((fedMarginal-FED_SUPP)*100).toFixed(0)} pp)`;
+
+  // Table
+  const rows=[
+    ['Federal Income Tax',fmt(fedWithheld),fmt(fedActual),fmt(fedGap)],
+    ['SS (6.2%)',fmt(ssApplied),fmt(ssApplied),'$0'],
+    ['Medicare (1.45%)',fmt(mcBase),fmt(mcBase),'$0'],
+    [`Medicare Surcharge (0.9%)`,fmt(0),fmt(Math.max(0,mcSurcharge)),fmt(Math.max(0,mcSurcharge))],
+    [`State (${(stateRate*100).toFixed(1)}%)`,fmt(stateWithheld),fmt(stateActual),'$0'],
+    ['Total',fmt(totalWithheld),fmt(totalActual),fmt(totalGap)],
+  ];
+  document.getElementById('gapTable').innerHTML=rows.map((r,i)=>
+    `<tr${i===rows.length-1?' class="total-row"':''}><td>${r[0]}</td><td class="mono">${r[1]}</td><td class="mono">${r[2]}</td><td class="mono" style="color:${parseFloat(r[3].replace(/[$,]/g,''))>0?'var(--danger)':'var(--muted)'}">${r[3]}</td></tr>`
+  ).join('');
+
+  // Action box
+  const actionBox=document.getElementById('actionBox');
+  if(totalGap>500){
+    actionBox.className='action-box';
+    const totalYearGap=totalGap*(1+moreVests);
+    actionBox.innerHTML=`<strong>Action needed:</strong> Set aside ${fmt(totalGap)} for this vest. ` +
+      (moreVests>0?`With ${moreVests} additional vest events, total year gap ≈ ${fmt(totalYearGap)}. `:'') +
+      `Consider filing Form W-4 to increase withholding, or make a Q${Math.min(4,Math.ceil((new Date().getMonth()+1)/3))} estimated payment.`;
+  } else {
+    actionBox.className='action-box ok';
+    actionBox.textContent='✓ Withholding gap is small or nonexistent. No immediate action required.';
+  }
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+function getManifest(){return{tool_id:"115-rsu-withholding-gap",al_id:"AL-122",version:"1.0.0",
+  title:"RSU Withholding Gap Calculator",category:"compensation_benefits",display_number:115,
+  ap2_export:true,ap2_mandate_types:["rsu_withholding_record"],
+  sister_suite:"https://ainumbers.co",consulting_site:"https://apexadvisory.site",
+  license:"CC-BY-4.0",mcp_annotations:{readOnlyHint:true,idempotentHint:true}};}
+
+function exportMarkdown(){
+  if(!_lastResult){alert('Run the calculator first.');return;}
+  const r=_lastResult;
+  const md=`# RSU Withholding Gap Report — AL-122\n\n`+
+    `**Vest Income:** ${fmt(r.vestIncome)} (${r.shares} shares @ $${r.fmv.toFixed(2)}) | **State:** ${r.stateKey}\n\n`+
+    `| Tax Item | Withheld | Actual | Gap |\n|---|---|---|---|\n`+
+    `| Federal | ${fmt(r.fedWithheld)} | ${fmt(r.fedActual)} | ${fmt(r.fedGap)} |\n`+
+    `| FICA | ${fmt(r.ficaActual)} | ${fmt(r.ficaActual)} | $0 |\n`+
+    `| State | ${fmt(r.stateWithheld)} | ${fmt(r.stateActual)} | $0 |\n`+
+    `| **Total** | **${fmt(r.totalWithheld)}** | **${fmt(r.totalActual)}** | **${fmt(r.totalGap)}** |\n\n`+
+    `**Federal marginal rate:** ${(r.fedMarginal*100).toFixed(0)}% vs. 22% supplemental\n\n`+
+    `---\n*Generated by ApexLogics AL-122 · apexlogics.org · Data: IRS 2026*`;
+  const blob=new Blob([md],{type:'text/markdown'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rsu-gap-AL122.md';a.click();
+}
+
+function exportAP2(){
+  if(!_lastResult){alert('Run the calculator first.');return;}
+  const r=_lastResult;
+  const payload={
+    ap2_version:"2.0",mandate_type:"rsu_withholding_record",
+    generated_at:new Date().toISOString(),al_id:"AL-122",
+    inputs:{rsu_fmv_at_vest:r.fmv,shares_vesting:r.shares,base_salary:r.salary,
+      filing_status:r.status,ytd_income:r.ytdIncome,ytd_ss_wages:r.ytdSS,
+      state:r.stateKey,additional_vest_events:r.moreVests},
+    summary:{vest_income:Math.round(r.vestIncome),federal_withheld:Math.round(r.fedWithheld),
+      federal_actual_owed:Math.round(r.fedActual),federal_gap:Math.round(r.fedGap),
+      total_withheld:Math.round(r.totalWithheld),total_actual:Math.round(r.totalActual),
+      total_gap:Math.round(r.totalGap),federal_marginal_rate_pct:+(r.fedMarginal*100).toFixed(0)},
+    downstream_handoff_candidates:["AL-123","AL-01","AL-116"]
+  };
+  const AP2Schema={validate:p=>p.ap2_version&&p.mandate_type&&p.al_id&&p.inputs&&p.summary};
+  if(!AP2Schema.validate(payload)){alert('AP2 validation failed.');return;}
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rsu-gap-AL122.ap2.json';a.click();
+}
+</script>
+</body>
+</html>

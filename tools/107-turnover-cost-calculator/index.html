@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Turnover Cost Calculator | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--amber-dim:#b07e28;
+  --text:#e8eaf0;--muted:#8891a8;--danger:#e85555;--success:#4caf7d;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--amber);text-decoration:none}
+a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--amber);border-color:var(--amber);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:860px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:620px}
+.pii-banner{margin:0 24px 0;max-width:860px;margin-left:auto;margin-right:auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:860px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.grid-2{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input[type=number]:focus,select:focus{outline:none;border-color:var(--amber)}
+.hint{font-size:12px;color:var(--muted)}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border);margin-top:8px}
+.toggle-label{font-size:14px}
+.toggle{position:relative;display:inline-block;width:42px;height:24px}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:var(--border);border-radius:12px;cursor:pointer;transition:.3s}
+.slider:before{content:'';position:absolute;width:16px;height:16px;left:4px;bottom:4px;background:#fff;border-radius:50%;transition:.3s}
+input:checked+.slider{background:var(--amber)}
+input:checked+.slider:before{transform:translateX(18px)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--amber);color:#000}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-sec:hover{border-color:var(--amber);color:var(--amber)}
+.result-hidden{display:none}
+#results{margin-top:0}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:24px;font-weight:500;color:var(--amber);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+.metric-card .sub{font-size:12px;color:var(--muted);margin-top:4px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:14px}
+tr:last-child td{border-bottom:none;font-weight:600}
+.bar-wrap{height:12px;background:var(--border);border-radius:6px;overflow:hidden;margin-top:6px}
+.bar-fill{height:100%;background:var(--amber);border-radius:6px;transition:width .5s}
+.shrm-band{font-size:12px;color:var(--muted);margin-top:8px}
+.shrm-band span{color:var(--amber)}
+.savings-row{display:flex;align-items:center;gap:12px;margin-top:16px}
+.savings-row input[type=range]{flex:1;accent-color:var(--amber)}
+.savings-val{font-family:var(--font-mono);font-size:14px;color:var(--amber);min-width:90px;text-align:right}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.mcp-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px}
+.mcp-panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.mcp-endpoint{font-family:var(--font-mono);font-size:12px;color:var(--amber);background:var(--bg);padding:8px 12px;border-radius:6px;word-break:break-all}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.tag-amber{background:rgba(232,168,56,.15);color:var(--amber)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}
+footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-amber">Career &amp; Workforce</span></div>
+  <h1>Turnover Cost Calculator</h1>
+  <p>Itemize the full cost of a single departure — separation, vacancy coverage, recruitment, and onboarding — by role level and salary.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<div class="card">
+  <h2>Role &amp; Cost Inputs</h2>
+  <div class="grid-2">
+    <div class="field">
+      <label>Annual Salary ($)</label>
+      <input type="number" id="salary" value="85000" min="20000" max="1000000" step="1000">
+    </div>
+    <div class="field">
+      <label>Role Level</label>
+      <select id="roleLevel">
+        <option value="IC">Individual Contributor</option>
+        <option value="Manager" selected>Manager</option>
+        <option value="Director">Director</option>
+        <option value="VP">VP / Senior Director</option>
+        <option value="C-Suite">C-Suite / Executive</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Industry</label>
+      <select id="industry">
+        <option value="General" selected>General (default)</option>
+        <option value="Tech">Technology</option>
+        <option value="Healthcare">Healthcare</option>
+        <option value="Finance">Finance / Banking</option>
+        <option value="Retail">Retail / Hospitality</option>
+        <option value="Manufacturing">Manufacturing</option>
+        <option value="Education">Education / Nonprofit</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Annual Attrition Rate (%)</label>
+      <input type="number" id="attritionPct" value="15" min="1" max="80" step="1">
+      <div class="hint">Used to annualize cost across your team.</div>
+    </div>
+    <div class="field">
+      <label>Team Headcount</label>
+      <input type="number" id="headcount" value="20" min="1" max="10000" step="1">
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Cost Parameters <span style="font-size:13px;font-weight:400;color:var(--muted)">(defaults by role; override as needed)</span></h2>
+  <div class="grid-2">
+    <div class="field">
+      <label>Time-to-Fill (weeks)</label>
+      <input type="number" id="timeToFill" value="8" min="1" max="52" step="1">
+    </div>
+    <div class="field">
+      <label>OT / Temp Coverage (% of weekly salary)</label>
+      <input type="number" id="otPct" value="15" min="0" max="100" step="5">
+    </div>
+    <div class="field">
+      <label>Recruitment Cost ($)</label>
+      <input type="number" id="recruitCost" value="7000" min="0" max="200000" step="500">
+      <div class="hint">Includes job boards, agency fees, interviews.</div>
+    </div>
+    <div class="field">
+      <label>Ramp Period (weeks)</label>
+      <input type="number" id="rampWeeks" value="12" min="1" max="52" step="1">
+    </div>
+    <div class="field">
+      <label>Ramp Productivity Level (%)</label>
+      <input type="number" id="rampProductivity" value="50" min="10" max="90" step="5">
+      <div class="hint">New hire's output vs. full productivity during ramp.</div>
+    </div>
+    <div class="field">
+      <label>Severance / Admin Separation ($)</label>
+      <input type="number" id="separationFixed" value="500" min="0" max="50000" step="500">
+    </div>
+  </div>
+  <div class="toggle-row">
+    <span class="toggle-label">Include soft costs (+20% for morale, knowledge loss, manager time)</span>
+    <label class="toggle">
+      <input type="checkbox" id="softCosts" checked>
+      <span class="slider"></span>
+    </label>
+  </div>
+</div>
+
+<div style="display:flex;gap:12px;margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calcTurnoverCost()">Calculate Cost →</button>
+  <button class="btn btn-sec" onclick="setDefaults()">Reset Defaults by Level</button>
+</div>
+
+<div id="results" class="result-hidden">
+
+  <div class="card">
+    <h2>Cost Summary</h2>
+    <div class="summary-grid">
+      <div class="metric-card">
+        <div class="val" id="totalCostVal">—</div>
+        <div class="lbl">Total Cost per Departure</div>
+        <div class="sub" id="pctSalaryVal"></div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="annualCostVal">—</div>
+        <div class="lbl">Annual Turnover Cost</div>
+        <div class="sub" id="annualDeparturesVal"></div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="hardCostVal">—</div>
+        <div class="lbl">Hard Costs Only</div>
+        <div class="sub">Before soft-cost multiplier</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Cost Component</th><th>Amount</th><th>% of Total</th></tr>
+      </thead>
+      <tbody id="costTable"></tbody>
+    </table>
+
+    <div class="shrm-band">SHRM benchmark: turnover costs <span>50–200% of annual salary</span> depending on role complexity. Your result: <span id="shrmbandResult"></span>.</div>
+  </div>
+
+  <div class="card">
+    <h2>Attrition Savings Slider</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Drag to see how much you save by reducing attrition from <span id="baseAttrSlider"></span>%.</p>
+    <div class="savings-row">
+      <span style="font-size:13px;color:var(--muted)">Reduce by</span>
+      <input type="range" id="reductionSlider" min="1" max="15" value="5" oninput="updateSavings()">
+      <span id="sliderLabel" style="font-size:14px;color:var(--text);min-width:40px">5 pp</span>
+      <span class="savings-val" id="savingsAmt">—</span>
+    </div>
+    <div style="font-size:13px;color:var(--muted);margin-top:8px">Annual savings if attrition drops from <span id="fromRate"></span>% → <span id="toRate"></span>% (<span id="fewerDeps"></span> fewer departures/yr)</div>
+  </div>
+
+  <div class="card">
+    <h2>Export Results</h2>
+    <div class="results-export-row">
+      <button class="btn btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+  <div class="mcp-panel">
+    <h3>MCP Integration</h3>
+    <div class="mcp-endpoint">GET https://apexlogics.org/.well-known/mcp.json → tool: turnover_cost_calculator</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Downstream: Retention Investment ROI (AL-115) · Training Payback (AL-113) · Career Advance ROI (AL-02)</p>
+  </div>
+
+</div>
+</div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-114 · Data: SHRM 2025
+</footer>
+
+<script>
+const LEVEL_DEFAULTS = {
+  IC:       { ttf: 6,  recruit: 3500,  ramp: 8,  sep: 500 },
+  Manager:  { ttf: 8,  recruit: 7000,  ramp: 12, sep: 500 },
+  Director: { ttf: 12, recruit: 15000, ramp: 16, sep: 1000 },
+  VP:       { ttf: 16, recruit: 30000, ramp: 20, sep: 2000 },
+  'C-Suite':{ ttf: 24, recruit: 50000, ramp: 26, sep: 5000 }
+};
+
+const INDUSTRY_RECRUIT_MULT = {
+  General: 1, Tech: 1.4, Healthcare: 1.2, Finance: 1.3,
+  Retail: 0.7, Manufacturing: 0.9, Education: 0.6
+};
+
+function fmt(n){ return '$' + Math.round(n).toLocaleString(); }
+function pct(n,t){ return t>0 ? (n/t*100).toFixed(1)+'%' : '0%'; }
+
+function setDefaults(){
+  const lvl = document.getElementById('roleLevel').value;
+  const d = LEVEL_DEFAULTS[lvl];
+  document.getElementById('timeToFill').value = d.ttf;
+  document.getElementById('recruitCost').value = d.recruit;
+  document.getElementById('rampWeeks').value = d.ramp;
+  document.getElementById('separationFixed').value = d.sep;
+}
+
+document.getElementById('roleLevel').addEventListener('change', setDefaults);
+
+let _lastResult = null;
+
+function calcTurnoverCost(){
+  const salary = +document.getElementById('salary').value || 85000;
+  const level = document.getElementById('roleLevel').value;
+  const industry = document.getElementById('industry').value;
+  const attritionPct = +document.getElementById('attritionPct').value || 15;
+  const headcount = +document.getElementById('headcount').value || 20;
+  const timeToFill = +document.getElementById('timeToFill').value || 8;
+  const otPct = +document.getElementById('otPct').value / 100 || 0.15;
+  const recruitBase = +document.getElementById('recruitCost').value || 7000;
+  const rampWeeks = +document.getElementById('rampWeeks').value || 12;
+  const rampProd = +document.getElementById('rampProductivity').value / 100 || 0.50;
+  const separationFixed = +document.getElementById('separationFixed').value || 500;
+  const softOn = document.getElementById('softCosts').checked;
+
+  const indMult = INDUSTRY_RECRUIT_MULT[industry] || 1;
+  const weekSalary = salary / 52;
+
+  // Components
+  const separation = separationFixed;
+  const vacancy = timeToFill * weekSalary * otPct;
+  const recruitment = recruitBase * indMult;
+  const onboarding = rampWeeks * weekSalary * (1 - rampProd);
+
+  const hardTotal = separation + vacancy + recruitment + onboarding;
+  const total = softOn ? hardTotal * 1.20 : hardTotal;
+  const pctSalary = total / salary * 100;
+
+  const annualDepartures = Math.round(headcount * attritionPct / 100);
+  const annualCost = total * annualDepartures;
+
+  _lastResult = { salary, level, industry, attritionPct, headcount,
+    timeToFill, otPct: otPct*100, recruitBase, rampWeeks, rampProd: rampProd*100,
+    separationFixed, softOn, separation, vacancy, recruitment, onboarding,
+    hardTotal, total, pctSalary, annualDepartures, annualCost };
+
+  // Render
+  document.getElementById('totalCostVal').textContent = fmt(total);
+  document.getElementById('pctSalaryVal').textContent = pctSalary.toFixed(0) + '% of annual salary';
+  document.getElementById('annualCostVal').textContent = fmt(annualCost);
+  document.getElementById('annualDeparturesVal').textContent = annualDepartures + ' departures/yr at ' + attritionPct + '% attrition';
+  document.getElementById('hardCostVal').textContent = fmt(hardTotal);
+
+  const rows = [
+    ['Separation / Admin', separation],
+    ['Vacancy Coverage (OT/Temp)', vacancy],
+    ['Recruitment', recruitment],
+    ['Onboarding / Ramp Loss', onboarding],
+  ];
+  if(softOn){ rows.push(['Soft Costs (+20%)', hardTotal * 0.20]); }
+  rows.push(['Total', total]);
+
+  const tbody = document.getElementById('costTable');
+  tbody.innerHTML = rows.map((r,i) =>
+    `<tr><td>${r[0]}</td><td>${fmt(r[1])}</td><td>${i<rows.length-1 ? pct(r[1],total) : '100%'}</td></tr>`
+  ).join('');
+
+  const bandText = pctSalary < 50 ? 'below band (verify inputs)' :
+    pctSalary <= 200 ? 'within SHRM 50–200% band ✓' : 'above band (high-complexity role)';
+  document.getElementById('shrmbandResult').textContent = pctSalary.toFixed(0) + '% — ' + bandText;
+
+  // Slider setup
+  const maxReduction = Math.min(15, attritionPct - 1);
+  const slider = document.getElementById('reductionSlider');
+  slider.max = maxReduction;
+  slider.value = Math.min(5, maxReduction);
+  document.getElementById('baseAttrSlider').textContent = attritionPct;
+  updateSavings();
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+function updateSavings(){
+  if(!_lastResult) return;
+  const r = _lastResult;
+  const reduction = +document.getElementById('reductionSlider').value;
+  document.getElementById('sliderLabel').textContent = reduction + ' pp';
+  const newAttr = r.attritionPct - reduction;
+  const newDeps = Math.round(r.headcount * newAttr / 100);
+  const fewerDeps = r.annualDepartures - newDeps;
+  const savings = fewerDeps * r.total;
+  document.getElementById('savingsAmt').textContent = fmt(savings) + '/yr';
+  document.getElementById('fromRate').textContent = r.attritionPct;
+  document.getElementById('toRate').textContent = newAttr;
+  document.getElementById('fewerDeps').textContent = fewerDeps;
+}
+
+function getManifest(){
+  return {
+    tool_id:"107-turnover-cost-calculator",al_id:"AL-114",version:"1.0.0",
+    title:"Turnover Cost Calculator",category:"career_workforce",display_number:107,
+    ap2_export:true,ap2_mandate_types:["turnover_cost_record"],
+    sister_suite:"https://ainumbers.co",consulting_site:"https://apexadvisory.site",
+    license:"CC-BY-4.0",mcp_annotations:{readOnlyHint:true,idempotentHint:true}
+  };
+}
+
+function exportMarkdown(){
+  if(!_lastResult){ alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const md = `# Turnover Cost Report — AL-114\n\n` +
+    `**Role:** ${r.level} | **Salary:** ${fmt(r.salary)} | **Industry:** ${r.industry}\n\n` +
+    `## Cost Breakdown\n\n` +
+    `| Component | Amount |\n|---|---|\n` +
+    `| Separation / Admin | ${fmt(r.separation)} |\n` +
+    `| Vacancy Coverage | ${fmt(r.vacancy)} |\n` +
+    `| Recruitment | ${fmt(r.recruitment)} |\n` +
+    `| Onboarding / Ramp | ${fmt(r.onboarding)} |\n` +
+    (r.softOn ? `| Soft Costs (+20%) | ${fmt(r.hardTotal*0.20)} |\n` : '') +
+    `| **Total** | **${fmt(r.total)}** |\n\n` +
+    `**Total as % of Salary:** ${r.pctSalary.toFixed(0)}%\n` +
+    `**Annual Cost (${r.attritionPct}% attrition, ${r.headcount} headcount):** ${fmt(r.annualCost)}\n\n` +
+    `---\n*Generated by ApexLogics AL-114 · apexlogics.org*`;
+  const blob = new Blob([md], {type:'text/markdown'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'turnover-cost-AL114.md';
+  a.click();
+}
+
+function exportAP2(){
+  if(!_lastResult){ alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version:"2.0",
+    mandate_type:"turnover_cost_record",
+    generated_at:new Date().toISOString(),
+    al_id:"AL-114",
+    inputs:{
+      annual_salary:r.salary,
+      role_level:r.level,
+      industry:r.industry,
+      time_to_fill_weeks:r.timeToFill,
+      ot_coverage_pct:r.otPct,
+      recruitment_cost:r.recruitBase,
+      ramp_weeks:r.rampWeeks,
+      ramp_productivity_pct:r.rampProd,
+      separation_fixed:r.separationFixed,
+      include_soft_costs:r.softOn,
+      annual_attrition_pct:r.attritionPct,
+      headcount:r.headcount
+    },
+    summary:{
+      separation_cost:Math.round(r.separation),
+      vacancy_cost:Math.round(r.vacancy),
+      recruitment_cost:Math.round(r.recruitment),
+      onboarding_cost:Math.round(r.onboarding),
+      hard_total:Math.round(r.hardTotal),
+      total_cost_per_departure:Math.round(r.total),
+      pct_of_salary:+r.pctSalary.toFixed(1),
+      annual_departures:r.annualDepartures,
+      annual_turnover_cost:Math.round(r.annualCost),
+      soft_costs_applied:r.softOn
+    },
+    downstream_handoff_candidates:["AL-115","AL-113","AL-02"]
+  };
+  const AP2Schema = {
+    validate: function(p){ return p.ap2_version && p.mandate_type && p.al_id && p.inputs && p.summary; }
+  };
+  if(!AP2Schema.validate(payload)){ alert('AP2 validation failed.'); return; }
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'turnover-cost-AL114.ap2.json';
+  a.click();
+}
+</script>
+</body>
+</html>

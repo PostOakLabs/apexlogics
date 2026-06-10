@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSLF Qualifying Payment Counter | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--amber);text-decoration:none}
+a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--amber);border-color:var(--amber);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:860px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:620px}
+.pii-banner{max-width:860px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:860px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.grid-2{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--amber)}
+.hint{font-size:12px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--amber);color:#000}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-sec:hover{border-color:var(--amber);color:var(--amber)}
+.result-hidden{display:none}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:22px;font-weight:500;color:var(--amber);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+.metric-card .sub{font-size:12px;color:var(--muted);margin-top:4px}
+.metric-card.success .val{color:var(--success)}
+.progress-bar{height:14px;background:var(--surface2);border-radius:7px;overflow:hidden;margin:12px 0 6px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--amber),var(--success));border-radius:7px;transition:width .5s}
+.progress-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:14px}
+td.mono{font-family:var(--font-mono)}
+.info-box{background:var(--surface2);border-left:3px solid var(--amber);border-radius:0 6px 6px 0;padding:12px 16px;font-size:13px;color:var(--muted);margin:0 0 20px}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.mcp-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px}
+.mcp-panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.mcp-endpoint{font-family:var(--font-mono);font-size:12px;color:var(--amber);background:var(--bg);padding:8px 12px;border-radius:6px;word-break:break-all}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.tag-teal{background:rgba(76,175,125,.15);color:#4caf7d}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}
+footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-teal">Student Finance &amp; Debt</span></div>
+  <h1>PSLF Qualifying Payment Counter</h1>
+  <p>Project your path to Public Service Loan Forgiveness: qualifying payments made vs. remaining, monthly payment under RAP/IBR/PAYE, and estimated forgiveness amount.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<div class="info-box">
+  <strong>2026 parameters:</strong> HHS FPL (family of 1) $15,960 · RAP (OBBBA): 1% of AGI up to 150% FPL → sliding to 10% above 450% FPL · IBR: 10% of discretionary income above 150% FPL (new borrowers) · PAYE: 10% of discretionary income above 150% FPL · PSLF: 120 qualifying payments required
+</div>
+
+<div class="card">
+  <h2>Loan &amp; Employment Details</h2>
+  <div class="grid-2">
+    <div class="field">
+      <label>Current Federal Loan Balance ($)</label>
+      <input type="number" id="balance" value="65000" min="1000" max="500000" step="1000">
+    </div>
+    <div class="field">
+      <label>Loan Interest Rate (%)</label>
+      <input type="number" id="rate" value="6.5" min="0" max="15" step="0.1">
+    </div>
+    <div class="field">
+      <label>Repayment Plan</label>
+      <select id="plan">
+        <option value="RAP" selected>RAP (OBBBA 2025 — new plan)</option>
+        <option value="IBR">IBR — Income-Based Repayment</option>
+        <option value="PAYE">PAYE — Pay As You Earn</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Qualifying Payments Made So Far</label>
+      <input type="number" id="paymentsMade" value="24" min="0" max="120" step="1">
+    </div>
+    <div class="field">
+      <label>Employer Type</label>
+      <select id="employer">
+        <option value="nonprofit">501(c)(3) Nonprofit</option>
+        <option value="federal">Federal Government</option>
+        <option value="state">State Government</option>
+        <option value="local">Local Government</option>
+        <option value="other_public">Other Public Service</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Direct Loan?</label>
+      <select id="directLoan">
+        <option value="yes" selected>Yes — Direct Loan (qualifies)</option>
+        <option value="no">No — FFEL or other (must consolidate)</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Income &amp; Family</h2>
+  <div class="grid-2">
+    <div class="field">
+      <label>Adjusted Gross Income (AGI, $)</label>
+      <input type="number" id="agi" value="72000" min="0" max="500000" step="1000">
+    </div>
+    <div class="field">
+      <label>Family Size</label>
+      <input type="number" id="familySize" value="1" min="1" max="10" step="1">
+    </div>
+    <div class="field">
+      <label>Expected Annual Income Growth (%)</label>
+      <input type="number" id="incomeGrowth" value="3" min="0" max="10" step="0.5">
+    </div>
+  </div>
+</div>
+
+<div style="display:flex;gap:12px;margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calcPSLF()">Project PSLF →</button>
+</div>
+
+<div id="results" class="result-hidden">
+
+  <div class="card">
+    <h2>PSLF Progress</h2>
+    <div class="summary-grid">
+      <div class="metric-card">
+        <div class="val" id="paymentsLeft">—</div>
+        <div class="lbl">Payments Remaining</div>
+        <div class="sub" id="paymentsMadeSub"></div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="monthlyPmt">—</div>
+        <div class="lbl">Est. Monthly Payment</div>
+        <div class="sub" id="planName"></div>
+      </div>
+      <div class="metric-card success">
+        <div class="val" id="forgivenessAmt">—</div>
+        <div class="lbl">Est. Forgiveness Amount</div>
+        <div class="sub" id="forgivenessDate"></div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="totalPaid">—</div>
+        <div class="lbl">Total Est. Paid to Forgiveness</div>
+        <div class="sub" id="forgSavings"></div>
+      </div>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div class="progress-label">
+      <span id="progressLeft"></span>
+      <span id="progressRight"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Payment Schedule</h2>
+    <table>
+      <thead><tr><th>Year</th><th>AGI</th><th>Monthly Payment</th><th>Annual Paid</th><th>Balance (est.)</th><th>Remaining Pmts</th></tr></thead>
+      <tbody id="schedTable"></tbody>
+    </table>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">* Balance estimates assume current interest rate and do not account for all PSLF eligibility nuances. Consult studentaid.gov for official tracking.</p>
+  </div>
+
+  <div class="card">
+    <h2>PSLF Eligibility Checklist</h2>
+    <div id="checklistDiv"></div>
+  </div>
+
+  <div class="card">
+    <h2>Export Results</h2>
+    <div class="results-export-row">
+      <button class="btn btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+  <div class="mcp-panel">
+    <h3>MCP Integration</h3>
+    <div class="mcp-endpoint">GET https://apexlogics.org/.well-known/mcp.json → tool: pslf_qualifying_payment_counter</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Inbound: RAP Decision (AL-108) · Downstream: Loan Refi (AL-121) · Loan Repayment (AL-26)</p>
+  </div>
+
+</div>
+</div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-120 · Data: HHS FPL 2026; OBBBA RAP
+</footer>
+
+<script>
+// 2026 FPL base (48 states)
+const FPL_BASE = 15960;
+const FPL_ADD = 4480; // per additional family member
+
+function fpl(familySize){ return FPL_BASE + (familySize-1)*FPL_ADD; }
+
+function calcRAPPayment(agi, familySize){
+  // OBBBA RAP: sliding scale 1%–10% based on AGI/FPL ratio
+  const fplAmt = fpl(familySize);
+  const ratio = agi / fplAmt; // ratio to FPL
+  let rate;
+  if(ratio <= 1.5) rate = 0.01;
+  else if(ratio <= 2.0) rate = 0.02;
+  else if(ratio <= 2.5) rate = 0.04;
+  else if(ratio <= 3.0) rate = 0.06;
+  else if(ratio <= 3.5) rate = 0.08;
+  else if(ratio <= 4.5) rate = 0.10;
+  else rate = 0.10;
+  return Math.max(0, agi * rate / 12);
+}
+
+function calcIBRPayment(agi, familySize){
+  const disc = Math.max(0, agi - 1.5 * fpl(familySize));
+  return disc * 0.10 / 12;
+}
+
+function calcPAYEPayment(agi, familySize){
+  const disc = Math.max(0, agi - 1.5 * fpl(familySize));
+  return disc * 0.10 / 12;
+}
+
+function getMonthlyPayment(plan, agi, familySize){
+  if(plan==='RAP') return calcRAPPayment(agi, familySize);
+  if(plan==='IBR') return calcIBRPayment(agi, familySize);
+  if(plan==='PAYE') return calcPAYEPayment(agi, familySize);
+  return calcIBRPayment(agi, familySize);
+}
+
+function fmt(n){ return '$' + Math.round(n).toLocaleString(); }
+
+let _lastResult = null;
+
+function calcPSLF(){
+  const balance = +document.getElementById('balance').value || 65000;
+  const rate = +document.getElementById('rate').value / 100 / 12;
+  const plan = document.getElementById('plan').value;
+  const paymentsMade = +document.getElementById('paymentsMade').value || 0;
+  const employer = document.getElementById('employer').value;
+  const directLoan = document.getElementById('directLoan').value === 'yes';
+  const agi = +document.getElementById('agi').value || 72000;
+  const familySize = +document.getElementById('familySize').value || 1;
+  const incomeGrowth = +document.getElementById('incomeGrowth').value / 100 || 0.03;
+
+  const TOTAL_QUALIFYING = 120;
+  const paymentsLeft = Math.max(0, TOTAL_QUALIFYING - paymentsMade);
+  const monthlyPmt = getMonthlyPayment(plan, agi, familySize);
+
+  // Project balance at forgiveness (run schedule)
+  const rows = [];
+  let currentBalance = balance;
+  let currentAGI = agi;
+  let pmtsMadeLocal = paymentsMade;
+  let totalPaidLocal = 0;
+  const yearsLeft = Math.ceil(paymentsLeft / 12);
+
+  for(let y = 1; y <= Math.max(yearsLeft, 1); y++){
+    const annualPmt = getMonthlyPayment(plan, currentAGI, familySize);
+    const interestAdded = currentBalance * rate * 12;
+    const principalPaid = Math.max(0, annualPmt * 12 - interestAdded);
+    currentBalance = Math.max(0, currentBalance + interestAdded - annualPmt * 12);
+    totalPaidLocal += annualPmt * 12;
+    const remPmts = Math.max(0, TOTAL_QUALIFYING - pmtsMadeLocal - y * 12);
+    rows.push({ y, agi: currentAGI, monthly: annualPmt, annual: annualPmt*12, balance: currentBalance, remPmts: Math.max(0, paymentsLeft - y*12) });
+    currentAGI *= (1 + incomeGrowth);
+  }
+  const forgivenessAmt = Math.max(0, currentBalance);
+  const forgivenessMonths = paymentsLeft;
+  const nowDate = new Date();
+  const forgDate = new Date(nowDate.getFullYear(), nowDate.getMonth() + forgivenessMonths, 1);
+  const standardPayoff = balance * rate > 0
+    ? -balance * Math.log(1 - balance * rate / monthlyPmt) / Math.log(1 + rate) / 12 * monthlyPmt * 12
+    : balance;
+  const forgSavings = Math.max(0, forgivenessAmt + totalPaidLocal - balance);
+
+  _lastResult = { balance, rate: rate*12*100, plan, paymentsMade, paymentsLeft, employer, directLoan,
+    agi, familySize, incomeGrowth: incomeGrowth*100, monthlyPmt, forgivenessAmt, totalPaidLocal,
+    forgDate: forgDate.toLocaleDateString('en-US',{month:'short',year:'numeric'}),
+    rows, forgSavings };
+
+  // Render
+  document.getElementById('paymentsLeft').textContent = paymentsLeft;
+  document.getElementById('paymentsMadeSub').textContent = paymentsMade + ' of 120 qualifying payments logged';
+  document.getElementById('monthlyPmt').textContent = fmt(monthlyPmt);
+  document.getElementById('planName').textContent = plan + ' plan (2026 formula)';
+  document.getElementById('forgivenessAmt').textContent = fmt(forgivenessAmt);
+  document.getElementById('forgivenessDate').textContent = 'Est. ' + _lastResult.forgDate;
+  document.getElementById('totalPaid').textContent = fmt(totalPaidLocal);
+  document.getElementById('forgSavings').textContent = 'vs. standard 10-yr payoff';
+
+  const progress = paymentsMade / 120;
+  document.getElementById('progressFill').style.width = (progress*100) + '%';
+  document.getElementById('progressLeft').textContent = paymentsMade + ' payments logged (' + (progress*100).toFixed(0) + '%)';
+  document.getElementById('progressRight').textContent = paymentsLeft + ' remaining';
+
+  // Schedule table
+  document.getElementById('schedTable').innerHTML = rows.slice(0,10).map(r=>
+    `<tr><td>Year ${r.y}</td><td class="mono">${fmt(r.agi)}</td><td class="mono">${fmt(r.monthly)}/mo</td><td class="mono">${fmt(r.annual)}</td><td class="mono">${fmt(r.balance)}</td><td class="mono">${Math.max(0,r.remPmts)}</td></tr>`
+  ).join('');
+
+  // Checklist
+  const checks = [
+    [directLoan, 'Direct Loans (or consolidated)', !directLoan ? 'FFEL/Perkins must be consolidated into Direct Loan to qualify' : null],
+    [true, 'IDR-qualifying plan selected ✓', null],
+    ['nonprofit|federal|state|local|other_public'.split('|').includes(employer), 'Qualifying employer type', null],
+    [paymentsMade >= 0, '120 payments required; current count: ' + paymentsMade, null],
+    [true, 'Payments must be on-time and full amount', null],
+  ];
+  document.getElementById('checklistDiv').innerHTML = checks.map(([pass, label, note])=>
+    `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px">
+      <span style="color:${pass?'var(--success)':'var(--danger)'}">${pass?'✓':'✗'}</span>
+      <div><div>${label}</div>${note?`<div style="font-size:12px;color:var(--muted)">${note}</div>`:''}</div>
+    </div>`
+  ).join('');
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+function getManifest(){return{tool_id:"113-pslf-qualifying-payment-counter",al_id:"AL-120",version:"1.0.0",
+  title:"PSLF Qualifying Payment Counter",category:"student_finance_debt",display_number:113,
+  ap2_export:true,ap2_mandate_types:["pslf_progress_record"],
+  sister_suite:"https://ainumbers.co",consulting_site:"https://apexadvisory.site",
+  license:"CC-BY-4.0",mcp_annotations:{readOnlyHint:true,idempotentHint:true}};}
+
+function exportMarkdown(){
+  if(!_lastResult){alert('Run the calculator first.');return;}
+  const r=_lastResult;
+  const md=`# PSLF Progress Report — AL-120\n\n`+
+    `**Plan:** ${r.plan} | **AGI:** ${fmt(r.agi)} | **Family Size:** ${r.familySize}\n\n`+
+    `| Item | Value |\n|---|---|\n`+
+    `| Qualifying Payments Made | ${r.paymentsMade} / 120 |\n`+
+    `| Payments Remaining | ${r.paymentsLeft} |\n`+
+    `| Monthly Payment | ${fmt(r.monthlyPmt)} |\n`+
+    `| Estimated Forgiveness | ${fmt(r.forgivenessAmt)} |\n`+
+    `| Est. Forgiveness Date | ${r.forgDate} |\n`+
+    `| Total Est. Paid | ${fmt(r.totalPaidLocal)} |\n\n`+
+    `---\n*Generated by ApexLogics AL-120 · apexlogics.org · Data: HHS FPL 2026; OBBBA RAP*`;
+  const blob=new Blob([md],{type:'text/markdown'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='pslf-AL120.md';a.click();
+}
+
+function exportAP2(){
+  if(!_lastResult){alert('Run the calculator first.');return;}
+  const r=_lastResult;
+  const payload={
+    ap2_version:"2.0",mandate_type:"pslf_progress_record",
+    generated_at:new Date().toISOString(),al_id:"AL-120",
+    inputs:{loan_balance:r.balance,agi:r.agi,family_size:r.familySize,
+      qualifying_payments_made:r.paymentsMade,repayment_plan:r.plan,
+      is_direct_loan:r.directLoan,employer_type:r.employer,income_growth_pct:r.incomeGrowth},
+    summary:{payments_remaining:r.paymentsLeft,monthly_payment:Math.round(r.monthlyPmt),
+      estimated_forgiveness:Math.round(r.forgivenessAmt),estimated_total_paid:Math.round(r.totalPaidLocal),
+      forgiveness_date:r.forgDate,pct_progress:+(r.paymentsMade/120*100).toFixed(1)},
+    downstream_handoff_candidates:["AL-108","AL-121","AL-26"]
+  };
+  const AP2Schema={validate:p=>p.ap2_version&&p.mandate_type&&p.al_id&&p.inputs&&p.summary};
+  if(!AP2Schema.validate(payload)){alert('AP2 validation failed.');return;}
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='pslf-AL120.ap2.json';a.click();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HDHP vs. PPO Break-Even Calculator · #105 · AL-112 · ApexLogics</title>
+<meta name="description" content="Find the annual medical-spend level where an HDHP+HSA beats a PPO. Plots the full cost curve, identifies the break-even point, and models the HSA tax shield.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#070B14;--bg2:#0d1321;--bg3:#111827;--bg4:#1a2233;
+  --body:#c8d0e0;--dim:#7a8499;--border:#1e2d45;
+  --accent:#0d9488;--accent2:#0f766e;--accent3:#134e4a;
+  --indigo:#6366f1;--indigo2:#4f46e5;--indigo3:rgba(99,102,241,.08);
+  --amber:#E8A838;--red:#ef4444;--green:#22c55e;
+  --font-serif:'DM Serif Display',serif;--font-sans:'Sora',sans-serif;--font-mono:'JetBrains Mono',monospace;
+  --radius:10px;--radius-sm:6px;
+}
+html{font-size:15px;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--body);font-family:var(--font-sans);font-size:.875rem;line-height:1.6;min-height:100vh}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+button{font-family:var(--font-sans);cursor:pointer}input,select{font-family:var(--font-sans)}
+nav{position:sticky;top:0;z-index:100;background:rgba(7,11,20,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:1024px;margin:0 auto;padding:.6rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.logo{display:flex;align-items:center;gap:.55rem;text-decoration:none}
+.logo-mark{width:32px;height:32px;flex-shrink:0}.logo-mark svg{width:100%;height:100%}
+.logo-text{display:flex;flex-direction:column;line-height:1.1}
+.logo-name{font-family:var(--font-mono);font-size:.95rem;color:var(--body)}
+.logo-name .apex{color:#E8A838}.logo-name .org{color:var(--dim)}
+.logo-tag{font-family:var(--font-mono);font-size:.5rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+.nav-pill{background:none;border:1px solid var(--border);border-radius:6px;color:var(--body);font-size:.62rem;padding:.3rem .65rem;font-family:var(--font-mono);letter-spacing:.04em;text-decoration:none;transition:border-color .15s}
+.nav-pill:hover{border-color:var(--amber)}.nav-pill.accent{border-color:rgba(232,168,56,.5);color:var(--amber)}
+.container{max-width:1024px;margin:0 auto;padding:2rem 1.5rem 4rem}
+.pii-notice{background:rgba(255,255,255,.03);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:var(--radius-sm);padding:.7rem 1rem;font-size:.76rem;color:var(--dim);display:flex;gap:.5rem;align-items:flex-start;margin-bottom:1.5rem}
+.eyebrow{font-family:var(--font-mono);font-size:.62rem;letter-spacing:.1em;color:var(--amber);margin-bottom:.5rem}
+.tool-title{font-family:var(--font-serif);font-size:2rem;color:#e8edf5;margin-bottom:.4rem;line-height:1.2}
+.tool-desc{color:var(--dim);font-size:.85rem;max-width:680px;margin-bottom:.5rem}
+.vintage-banner{display:inline-flex;align-items:center;gap:.4rem;font-family:var(--font-mono);font-size:.6rem;letter-spacing:.06em;color:var(--dim);background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:.2rem .55rem;margin-bottom:1.5rem}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+@media(max-width:680px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem}
+.card-title{font-family:var(--font-mono);font-size:.65rem;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-bottom:.9rem}
+.field{margin-bottom:.85rem}
+.field label{display:block;font-size:.75rem;color:var(--dim);margin-bottom:.3rem;font-family:var(--font-mono);letter-spacing:.04em}
+.field input,.field select{width:100%;padding:.5rem .7rem;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--body);font-size:.85rem;transition:border-color .15s}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent)}
+.field .hint{font-size:.68rem;color:var(--dim);margin-top:.2rem}
+.plan-badge{display:inline-block;font-family:var(--font-mono);font-size:.6rem;letter-spacing:.08em;padding:.15rem .5rem;border-radius:4px;text-transform:uppercase;margin-bottom:.6rem}
+.badge-hdhp{background:rgba(13,148,136,.15);border:1px solid var(--accent3);color:var(--accent)}
+.badge-ppo{background:var(--indigo3);border:1px solid rgba(99,102,241,.3);color:var(--indigo)}
+.run-btn{width:100%;padding:.72rem;background:var(--accent);border:none;border-radius:var(--radius-sm);color:#fff;font-family:var(--font-mono);font-size:.8rem;letter-spacing:.08em;font-weight:500;cursor:pointer;transition:background .15s;margin-top:.75rem}
+.run-btn:hover{background:var(--accent2)}
+.results-section{display:none;margin-top:2rem}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1.25rem}
+@media(max-width:560px){.stat-grid{grid-template-columns:1fr 1fr}}
+.stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.85rem;text-align:center}
+.stat-card.winner{border-color:var(--accent);background:rgba(13,148,136,.06)}
+.stat-val{display:block;font-family:var(--font-mono);font-size:1.3rem;color:#e8edf5;margin-bottom:.2rem}
+.stat-lbl{font-size:.65rem;color:var(--dim)}
+.winner-badge{display:inline-block;background:var(--accent3);color:var(--accent);font-family:var(--font-mono);font-size:.52rem;letter-spacing:.1em;padding:.15rem .5rem;border-radius:20px;border:1px solid var(--accent);text-transform:uppercase;margin-bottom:.4rem}
+.chart-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
+.chart-canvas{width:100%;height:220px;position:relative}
+.chart-svg{width:100%;height:220px}
+.rec-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-top:1rem}
+.rec-box.rec-hdhp{border-color:var(--accent);background:rgba(13,148,136,.06)}
+.rec-box.rec-ppo{border-color:var(--indigo);background:var(--indigo3)}
+.rec-box.rec-neutral{border-color:var(--amber);background:rgba(232,168,56,.05)}
+.rec-title{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:.4rem}
+.rec-box.rec-hdhp .rec-title{color:var(--accent)}.rec-box.rec-ppo .rec-title{color:var(--indigo)}.rec-box.rec-neutral .rec-title{color:var(--amber)}
+.rec-text{font-size:.82rem;color:var(--body);line-height:1.6}
+.detail-table{width:100%;border-collapse:collapse;font-size:.77rem;margin-top:.75rem}
+.detail-table th{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.06em;color:var(--dim);text-transform:uppercase;padding:.5rem .6rem;border-bottom:1px solid var(--border);text-align:right}
+.detail-table th:first-child{text-align:left}
+.detail-table td{padding:.45rem .6rem;border-bottom:1px solid rgba(30,45,69,.4);text-align:right;font-family:var(--font-mono)}
+.detail-table td:first-child{text-align:left;color:var(--body)}
+.cell-green{color:var(--green)}.cell-amber{color:var(--amber)}.cell-indigo{color:var(--indigo)}
+.hsa-box{background:#0a1400;border:1px solid #3a5f00;border-radius:var(--radius-sm);padding:.85rem 1rem;margin-top:1rem;font-size:.8rem;color:#9dc060;line-height:1.6}
+.hsa-box strong{color:#a3e635}
+.results-export-row{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border)}
+.export-btn{font-family:var(--font-mono);font-size:.65rem;padding:.35rem .75rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--dim);letter-spacing:.05em;cursor:pointer;transition:all .15s}
+.export-btn:hover{border-color:var(--accent);color:var(--accent)}
+.mcp-section{margin-top:1.25rem}
+.mcp-toggle{font-family:var(--font-mono);font-size:.62rem;color:var(--dim);background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.35rem .7rem;letter-spacing:.06em;cursor:pointer;transition:all .15s}
+.mcp-toggle:hover{border-color:var(--accent);color:var(--accent)}
+.mcp-panel{display:none;margin-top:.5rem;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.75rem;overflow-x:auto}
+.mcp-panel.open{display:block}
+.mcp-panel pre{font-family:var(--font-mono);font-size:.63rem;color:var(--dim);white-space:pre-wrap}
+.tool-footer{border-top:1px solid var(--border);padding:1.75rem 1.5rem;margin-top:3rem;font-size:.78rem;color:var(--dim);font-family:var(--font-mono);text-align:center}
+.tool-footer a{color:var(--dim);text-decoration:none}.tool-footer a:hover{color:var(--body)}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <span class="logo-mark"><svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="7" fill="#0d1321"/><path d="M7 24L13 8l6 10 4-6 2 4" stroke="#E8A838" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="22" r="2.5" fill="#E8A838" opacity=".7"/></svg></span>
+      <span class="logo-text">
+        <span class="logo-name"><span class="apex">Apex</span> <span class="org">Logics.org</span></span>
+        <span class="logo-tag">Career &amp; Education Tools</span>
+      </span>
+    </a>
+    <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="pii-notice" role="note">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    <span>🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+  </div>
+
+  <div class="eyebrow">COMPENSATION &amp; BENEFITS · AL-112 · #105</div>
+  <h1 class="tool-title">HDHP vs. PPO Break-Even Calculator</h1>
+  <p class="tool-desc">Model the total annual cost of an HDHP+HSA vs. a PPO at any spending level, accounting for the HSA tax shield. Find the exact spend where HDHP flips cheaper.</p>
+  <div class="vintage-banner">
+    <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3.5l2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    Data: IRS Rev. Proc. 2025-32 · HSA limits 2026
+  </div>
+
+  <!-- INPUTS -->
+  <div class="grid-2" style="margin-bottom:1rem">
+    <div class="card">
+      <div class="card-title">Plan Details</div>
+      <div class="field">
+        <label for="coverage">Coverage Type</label>
+        <select id="coverage" onchange="updateHSAHints()">
+          <option value="individual">Individual</option>
+          <option value="family">Family</option>
+        </select>
+      </div>
+      <div style="margin-bottom:.5rem"><span class="plan-badge badge-hdhp">HDHP + HSA</span></div>
+      <div class="grid-2" style="gap:.6rem;margin-bottom:.5rem">
+        <div class="field" style="margin:0">
+          <label for="hdhpPrem">Monthly Premium ($)</label>
+          <input type="number" id="hdhpPrem" value="180" min="0" step="1">
+        </div>
+        <div class="field" style="margin:0">
+          <label for="hdhpDed">Deductible ($)</label>
+          <input type="number" id="hdhpDed" value="2800" min="0" step="100">
+        </div>
+      </div>
+      <div class="grid-2" style="gap:.6rem;margin-bottom:1rem">
+        <div class="field" style="margin:0">
+          <label for="hdhpOop">OOP Max ($)</label>
+          <input type="number" id="hdhpOop" value="7000" min="0" step="100">
+        </div>
+        <div class="field" style="margin:0">
+          <label for="coinHdhp">Coinsurance (%)</label>
+          <input type="number" id="coinHdhp" value="20" min="0" max="100" step="1">
+        </div>
+      </div>
+      <div style="margin-bottom:.5rem"><span class="plan-badge badge-ppo">PPO</span></div>
+      <div class="grid-2" style="gap:.6rem;margin-bottom:.5rem">
+        <div class="field" style="margin:0">
+          <label for="ppoPrem">Monthly Premium ($)</label>
+          <input type="number" id="ppoPrem" value="380" min="0" step="1">
+        </div>
+        <div class="field" style="margin:0">
+          <label for="ppoDed">Deductible ($)</label>
+          <input type="number" id="ppoDed" value="500" min="0" step="100">
+        </div>
+      </div>
+      <div class="grid-2" style="gap:.6rem">
+        <div class="field" style="margin:0">
+          <label for="ppoOop">OOP Max ($)</label>
+          <input type="number" id="ppoOop" value="5000" min="0" step="100">
+        </div>
+        <div class="field" style="margin:0">
+          <label for="coinPpo">Coinsurance (%)</label>
+          <input type="number" id="coinPpo" value="20" min="0" max="100" step="1">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">HSA &amp; Usage</div>
+      <div class="field">
+        <label for="empHSA">Employer HSA Contribution ($/yr)</label>
+        <input type="number" id="empHSA" value="500" min="0" step="100">
+        <div class="hint">Your company contributes this to your HSA annually (common: $500–$1,500).</div>
+      </div>
+      <div class="field">
+        <label for="addlHSA">Your Additional HSA Contribution ($/yr)</label>
+        <input type="number" id="addlHSA" value="1500" min="0" step="100">
+        <div class="hint" id="hsaLimitHint">2026 individual limit: $4,300 total (incl. employer); family: $8,550. Age 55+: add $1,000.</div>
+      </div>
+      <div class="field">
+        <label for="margRate">Marginal Tax Rate (%)</label>
+        <input type="number" id="margRate" value="22" min="0" max="50" step="1">
+        <div class="hint">Federal + state marginal rate. Used to compute HSA tax shield.</div>
+      </div>
+      <div class="field">
+        <label for="expSpend">Expected Annual Medical Spend ($)</label>
+        <input type="number" id="expSpend" value="2000" min="0" max="20000" step="100">
+        <div class="hint">Your best guess: Low ≈ $1,500 · Moderate ≈ $5,000 · High ≈ $12,000+</div>
+      </div>
+      <button class="run-btn" onclick="calcBreakEven()">&#9654; Calculate Break-Even</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-section" id="results">
+
+    <div class="stat-grid">
+      <div class="stat-card" id="beCard">
+        <div class="stat-val" id="beVal">—</div>
+        <div class="stat-lbl">Break-Even Medical Spend</div>
+      </div>
+      <div class="stat-card" id="hdhpCard">
+        <div class="stat-val" id="hdhpTotalVal">—</div>
+        <div class="stat-lbl" id="hdhpCardLbl">HDHP Total @ Expected Spend</div>
+      </div>
+      <div class="stat-card" id="ppoCard">
+        <div class="stat-val" id="ppoTotalVal">—</div>
+        <div class="stat-lbl" id="ppoCardLbl">PPO Total @ Expected Spend</div>
+      </div>
+    </div>
+
+    <!-- Cost Curve Chart -->
+    <div class="chart-wrap">
+      <div class="card-title" style="margin-bottom:.75rem">Annual Total Cost Curve ($0–$20k Medical Spend)</div>
+      <div class="chart-canvas">
+        <svg class="chart-svg" id="costChart" viewBox="0 0 700 220" preserveAspectRatio="none"></svg>
+      </div>
+      <div style="display:flex;gap:1.25rem;margin-top:.5rem;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:.4rem;font-family:var(--font-mono);font-size:.65rem;color:var(--dim)"><div style="width:12px;height:3px;background:var(--accent);border-radius:2px"></div>HDHP+HSA</div>
+        <div style="display:flex;align-items:center;gap:.4rem;font-family:var(--font-mono);font-size:.65rem;color:var(--dim)"><div style="width:12px;height:3px;background:var(--indigo);border-radius:2px"></div>PPO</div>
+        <div style="display:flex;align-items:center;gap:.4rem;font-family:var(--font-mono);font-size:.65rem;color:var(--dim)"><div style="width:2px;height:12px;background:var(--amber);border-radius:1px"></div>Break-Even</div>
+      </div>
+    </div>
+
+    <!-- Comparison Table -->
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title">Cost at Key Spend Levels</div>
+      <div style="overflow-x:auto">
+        <table class="detail-table" id="compTable"></table>
+      </div>
+    </div>
+
+    <!-- HSA Recommendation -->
+    <div class="hsa-box" id="hsaBox"></div>
+
+    <!-- Recommendation -->
+    <div class="rec-box" id="recBox">
+      <div class="rec-title" id="recTitle">—</div>
+      <p class="rec-text" id="recText"></p>
+    </div>
+
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">&#8595; Markdown</button>
+      <button class="export-btn" onclick="exportAP2()">&#8595; AP2 JSON</button>
+    </div>
+    <div class="mcp-section">
+      <button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false">&#123; &#125; MCP Manifest</button>
+      <div class="mcp-panel" id="mcpPanel"><pre id="mcpManifestPre"></pre></div>
+    </div>
+  </div>
+</div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> &middot; CC BY 4.0 &middot; AL-112 &middot; Data: IRS 2026
+</footer>
+
+<script>
+// 2026 HSA limits (IRS Rev. Proc. 2025-32)
+const HSA_LIMITS = { individual: 4300, family: 8550, catchup: 1000 };
+
+let lastResult = null;
+
+function updateHSAHints() {
+  const cov = document.getElementById('coverage').value;
+  const lim = cov === 'family' ? 8550 : 4300;
+  document.getElementById('hsaLimitHint').textContent = `2026 ${cov} limit: $${lim.toLocaleString()} total (incl. employer); age 55+: add $1,000.`;
+}
+
+function planOOP(spend, deductible, coinsurance, oopMax) {
+  // Out-of-pocket for a given medical spend level (excluding premium)
+  const aboveDed = Math.max(0, spend - deductible);
+  const coinsAmt = Math.min(aboveDed * coinsurance / 100, oopMax - deductible);
+  const oop = Math.min(spend, deductible) + Math.max(0, coinsAmt);
+  return Math.min(oop, oopMax);
+}
+
+function hdhpTotal(spend, inputs) {
+  const oop = planOOP(spend, inputs.hdhpDed, inputs.coinHdhp, inputs.hdhpOop);
+  const hsaTaxShield = Math.min(inputs.empHSA + inputs.addlHSA, HSA_LIMITS[inputs.cov]) * inputs.margRate / 100;
+  return inputs.hdhpPremAnn + oop - hsaTaxShield;
+}
+
+function ppoTotal(spend, inputs) {
+  const oop = planOOP(spend, inputs.ppoDed, inputs.coinPpo, inputs.ppoOop);
+  return inputs.ppoPremAnn + oop;
+}
+
+function calcBreakEven() {
+  const cov = document.getElementById('coverage').value;
+  const hdhpPremAnn = parseFloat(document.getElementById('hdhpPrem').value) * 12 || 0;
+  const hdhpDed = parseFloat(document.getElementById('hdhpDed').value) || 0;
+  const hdhpOop = parseFloat(document.getElementById('hdhpOop').value) || 0;
+  const coinHdhp = parseFloat(document.getElementById('coinHdhp').value) || 20;
+  const ppoPremAnn = parseFloat(document.getElementById('ppoPrem').value) * 12 || 0;
+  const ppoDed = parseFloat(document.getElementById('ppoDed').value) || 0;
+  const ppoOop = parseFloat(document.getElementById('ppoOop').value) || 0;
+  const coinPpo = parseFloat(document.getElementById('coinPpo').value) || 20;
+  const empHSA = parseFloat(document.getElementById('empHSA').value) || 0;
+  const addlHSA = parseFloat(document.getElementById('addlHSA').value) || 0;
+  const margRate = parseFloat(document.getElementById('margRate').value) / 100 || 0.22;
+  const expSpend = parseFloat(document.getElementById('expSpend').value) || 2000;
+
+  const inp = { cov, hdhpPremAnn, hdhpDed, hdhpOop, coinHdhp, ppoPremAnn, ppoDed, ppoOop, coinPpo, empHSA, addlHSA, margRate };
+
+  // Find break-even (brute force $0–$20k)
+  let beSpend = null;
+  for (let s = 0; s <= 20000; s += 50) {
+    if (hdhpTotal(s, inp) <= ppoTotal(s, inp)) { beSpend = s; break; }
+  }
+
+  const hdhpAt = hdhpTotal(expSpend, inp);
+  const ppoAt = ppoTotal(expSpend, inp);
+  const hdhpWins = hdhpAt < ppoAt;
+  const savings = Math.abs(hdhpAt - ppoAt);
+
+  // Update stat cards
+  document.getElementById('beVal').textContent = beSpend !== null ? '$' + beSpend.toLocaleString() : 'HDHP never cheaper';
+  document.getElementById('hdhpTotalVal').textContent = '$' + Math.round(hdhpAt).toLocaleString();
+  document.getElementById('ppoTotalVal').textContent = '$' + Math.round(ppoAt).toLocaleString();
+  document.getElementById('hdhpCard').className = 'stat-card' + (hdhpWins ? ' winner' : '');
+  document.getElementById('ppoCard').className = 'stat-card' + (!hdhpWins ? ' winner' : '');
+  if (hdhpWins) {
+    document.getElementById('hdhpCard').innerHTML = '<div class="winner-badge">&#10003; Cheaper</div><div class="stat-val">$' + Math.round(hdhpAt).toLocaleString() + '</div><div class="stat-lbl">HDHP Total @ Expected Spend</div>';
+  } else {
+    document.getElementById('ppoCard').innerHTML = '<div class="winner-badge">&#10003; Cheaper</div><div class="stat-val">$' + Math.round(ppoAt).toLocaleString() + '</div><div class="stat-lbl">PPO Total @ Expected Spend</div>';
+  }
+
+  // Cost curve chart
+  const steps = 20; const maxSpend = 20000;
+  const chartPts_hdhp = [], chartPts_ppo = [];
+  for (let i = 0; i <= steps; i++) {
+    const s = i * maxSpend / steps;
+    chartPts_hdhp.push({ x: s, y: hdhpTotal(s, inp) });
+    chartPts_ppo.push({ x: s, y: ppoTotal(s, inp) });
+  }
+  const allY = [...chartPts_hdhp.map(p => p.y), ...chartPts_ppo.map(p => p.y)];
+  const maxY = Math.max(...allY) * 1.05;
+  const minY = Math.min(0, ...allY);
+  const svgW = 700, svgH = 220, padL = 60, padR = 20, padT = 10, padB = 30;
+  const plotW = svgW - padL - padR, plotH = svgH - padT - padB;
+  const tx = s => padL + (s / maxSpend) * plotW;
+  const ty = y => padT + plotH - ((y - minY) / (maxY - minY)) * plotH;
+
+  const pathPts = (pts) => pts.map((p, i) => (i === 0 ? 'M' : 'L') + tx(p.x).toFixed(1) + ',' + ty(p.y).toFixed(1)).join(' ');
+
+  let svg = `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+plotH}" stroke="#1e2d45" stroke-width="1"/>`;
+  svg += `<line x1="${padL}" y1="${padT+plotH}" x2="${padL+plotW}" y2="${padT+plotH}" stroke="#1e2d45" stroke-width="1"/>`;
+  // Grid lines
+  for (let i = 1; i <= 4; i++) {
+    const y = minY + i * (maxY - minY) / 5;
+    const sy = ty(y);
+    svg += `<line x1="${padL}" y1="${sy.toFixed(1)}" x2="${padL+plotW}" y2="${sy.toFixed(1)}" stroke="#1e2d45" stroke-width=".5" stroke-dasharray="3,3"/>`;
+    svg += `<text x="${padL-5}" y="${sy+4}" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a8499">$${Math.round(y/1000)}k</text>`;
+  }
+  // X axis labels
+  [0,5000,10000,15000,20000].forEach(s => {
+    svg += `<text x="${tx(s)}" y="${padT+plotH+16}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a8499">$${s/1000}k</text>`;
+  });
+  // Break-even line
+  if (beSpend !== null) {
+    const bx = tx(beSpend);
+    svg += `<line x1="${bx.toFixed(1)}" y1="${padT}" x2="${bx.toFixed(1)}" y2="${padT+plotH}" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="5,3"/>`;
+  }
+  // Expected spend marker
+  const ex = tx(expSpend);
+  svg += `<line x1="${ex.toFixed(1)}" y1="${padT}" x2="${ex.toFixed(1)}" y2="${padT+plotH}" stroke="#c8d0e0" stroke-width="1" stroke-dasharray="2,4" opacity=".4"/>`;
+  // Paths
+  svg += `<path d="${pathPts(chartPts_hdhp)}" fill="none" stroke="#0d9488" stroke-width="2" stroke-linejoin="round"/>`;
+  svg += `<path d="${pathPts(chartPts_ppo)}" fill="none" stroke="#6366f1" stroke-width="2" stroke-linejoin="round"/>`;
+  document.getElementById('costChart').innerHTML = svg;
+
+  // Comparison table
+  const spends = [0, 1500, 3000, 5000, expSpend, 10000, 15000, 20000];
+  const uniqueSpends = [...new Set(spends)].sort((a, b) => a - b);
+  let tbl = '<thead><tr><th style="text-align:left">Medical Spend</th><th>HDHP+HSA Total</th><th>PPO Total</th><th>HDHP Saves</th></tr></thead><tbody>';
+  tbl += uniqueSpends.map(s => {
+    const h = hdhpTotal(s, inp), p = ppoTotal(s, inp);
+    const diff = p - h;
+    const isExp = s === expSpend;
+    const diffHtml = diff >= 0
+      ? `<td class="cell-green">$${Math.round(diff).toLocaleString()}</td>`
+      : `<td class="cell-indigo">(PPO saves $${Math.round(Math.abs(diff)).toLocaleString()})</td>`;
+    return `<tr style="${isExp ? 'background:rgba(255,255,255,.03)' : ''}">
+      <td>${isExp ? '★ ' : ''}$${s.toLocaleString()}${isExp ? ' (expected)' : ''}</td>
+      <td>$${Math.round(h).toLocaleString()}</td>
+      <td>$${Math.round(p).toLocaleString()}</td>
+      ${diffHtml}
+    </tr>`;
+  }).join('');
+  tbl += '</tbody>';
+  document.getElementById('compTable').innerHTML = tbl;
+
+  // HSA box
+  const totalHSA = Math.min(empHSA + addlHSA, HSA_LIMITS[cov]);
+  const hsaShield = totalHSA * margRate;
+  const hsaLim = HSA_LIMITS[cov];
+  document.getElementById('hsaBox').innerHTML = `<strong>HSA Recommendation (2026):</strong> ${cov === 'family' ? 'Family' : 'Individual'} HSA limit: <strong>$${hsaLim.toLocaleString()}</strong>. Your employer contributes $${empHSA.toLocaleString()}, leaving room for <strong>$${Math.max(0, hsaLim - empHSA).toLocaleString()}</strong> in your own pre-tax contributions. At your ${(margRate*100).toFixed(0)}% rate, maxing the HSA saves <strong>$${Math.round(hsaLim * margRate).toLocaleString()}/yr</strong> in taxes. HSA funds roll over indefinitely — invest unused balances for tax-free growth.`;
+
+  // Recommendation
+  const recBox = document.getElementById('recBox');
+  let recCls, recTtl, recTxt;
+  if (beSpend === null) {
+    recCls = 'rec-box rec-ppo'; recTtl = '★ PPO is cheaper at all spend levels';
+    recTxt = `With your premium difference ($${Math.round((ppoPremAnn - hdhpPremAnn) / 12).toLocaleString()}/month) and cost-sharing structure, the PPO is more cost-effective even at zero medical spend. Consider HDHP only if you value the HSA investment account and expect spending to drop significantly.`;
+  } else if (expSpend < beSpend) {
+    recCls = 'rec-box rec-ppo'; recTtl = '★ PPO is likely cheaper at your expected spend';
+    recTxt = `You expect $${expSpend.toLocaleString()} in medical costs, below the $${beSpend.toLocaleString()} break-even. The PPO saves $${Math.round(savings).toLocaleString()} at this spend level. If you're healthy and expect minimal care, the HDHP becomes advantageous above $${beSpend.toLocaleString()}/yr.`;
+  } else {
+    recCls = 'rec-box rec-hdhp'; recTtl = '★ HDHP+HSA is the better choice';
+    recTxt = `At your expected $${expSpend.toLocaleString()} in medical costs — above the $${beSpend.toLocaleString()} break-even — the HDHP+HSA saves $${Math.round(savings).toLocaleString()}/yr. Maximize your HSA contribution ($${hsaLim.toLocaleString()} limit) for an additional $${Math.round(hsaLim * margRate).toLocaleString()} in tax savings.`;
+  }
+  recBox.className = recCls;
+  document.getElementById('recTitle').textContent = recTtl;
+  document.getElementById('recText').textContent = recTxt;
+
+  lastResult = { cov, hdhpPremAnn, hdhpDed, hdhpOop, coinHdhp, ppoPremAnn, ppoDed, ppoOop, coinPpo, empHSA, addlHSA, margRate: margRate * 100, expSpend, beSpend, hdhpAt, ppoAt, savings, hdhpWins, timestamp: new Date().toISOString() };
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function exportMarkdown() {
+  if (!lastResult) return;
+  const r = lastResult;
+  const md = `# HDHP vs. PPO Break-Even Analysis
+**Generated:** ${r.timestamp}
+**Coverage:** ${r.cov === 'family' ? 'Family' : 'Individual'}
+
+## Plan Summary
+| | HDHP+HSA | PPO |
+|---|---|---|
+| Annual Premium | $${Math.round(r.hdhpPremAnn).toLocaleString()} | $${Math.round(r.ppoPremAnn).toLocaleString()} |
+| Deductible | $${r.hdhpDed.toLocaleString()} | $${r.ppoDed.toLocaleString()} |
+| OOP Max | $${r.hdhpOop.toLocaleString()} | $${r.ppoOop.toLocaleString()} |
+
+## Results
+- **Break-even spend:** ${r.beSpend !== null ? '$' + r.beSpend.toLocaleString() : 'HDHP never cheaper'}
+- **At expected spend ($${r.expSpend.toLocaleString()}):** HDHP total $${Math.round(r.hdhpAt).toLocaleString()} · PPO total $${Math.round(r.ppoAt).toLocaleString()}
+- **Winner:** ${r.hdhpWins ? 'HDHP+HSA saves $' + Math.round(r.savings).toLocaleString() : 'PPO saves $' + Math.round(r.savings).toLocaleString()}
+
+---
+*Source: IRS Rev. Proc. 2025-32 · 2026 HSA limits · ApexLogics.org AL-112*
+`;
+  dl(md, 'hdhp_ppo_breakeven.md', 'text/markdown');
+}
+
+function exportAP2() {
+  if (!lastResult) return;
+  const r = lastResult;
+  const mandate = {
+    ap2_version: '2.0',
+    mandate_type: 'health_plan_breakeven_record',
+    generated_at: r.timestamp,
+    al_id: 'AL-112',
+    inputs: {
+      coverage: r.cov,
+      hdhp_premium_monthly: r.hdhpPremAnn / 12,
+      hdhp_deductible: r.hdhpDed,
+      hdhp_oop_max: r.hdhpOop,
+      ppo_premium_monthly: r.ppoPremAnn / 12,
+      ppo_deductible: r.ppoDed,
+      ppo_oop_max: r.ppoOop,
+      employer_hsa: r.empHSA,
+      marginal_tax_rate_pct: r.margRate,
+      expected_annual_spend: r.expSpend
+    },
+    summary: {
+      break_even_spend: r.beSpend,
+      hdhp_total_at_expected: Math.round(r.hdhpAt),
+      ppo_total_at_expected: Math.round(r.ppoAt),
+      recommended_plan: r.hdhpWins ? 'HDHP' : 'PPO',
+      annual_savings: Math.round(r.savings)
+    },
+    downstream_handoff_candidates: ['AL-23', 'AL-01']
+  };
+  const errs = [];
+  if (!mandate.ap2_version) errs.push('missing ap2_version');
+  if (mandate.mandate_type !== 'health_plan_breakeven_record') errs.push('unexpected mandate_type');
+  if (!mandate.generated_at) errs.push('missing generated_at');
+  if (!mandate.inputs) errs.push('missing inputs');
+  if (errs.length) { alert('AP2 validation error: ' + errs.join('; ')); return; }
+  const blob = new Blob([JSON.stringify(mandate, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'health_plan_breakeven_record.ap2.json'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+function dl(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); URL.revokeObjectURL(a.href);
+}
+
+function getManifest() {
+  return { "tool_id":"105-hdhp-vs-ppo-break-even","al_id":"AL-112","version":"1.0.0","title":"HDHP vs. PPO Break-Even Calculator","category":"compensation_benefits","status":"shipped","maintenance":"very_low","data_vintage":"IRS HSA limits 2026","ap2_export":true,"ap2_mandate_types":["health_plan_breakeven_record"],"downstream_handoff_candidates":["AL-23","AL-01"],"sister_suite":"https://ainumbers.co","consulting_site":"https://apexadvisory.site","license":"CC-BY-4.0","mcp_annotations":{"readOnlyHint":true,"idempotentHint":true} };
+}
+function toggleMCP() {
+  const panel = document.getElementById('mcpPanel');
+  const btn = document.getElementById('mcpToggleBtn');
+  const pre = document.getElementById('mcpManifestPre');
+  const open = panel.classList.toggle('open');
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) pre.textContent = JSON.stringify(getManifest(), null, 2);
+}
+</script>
+</body>
+</html>

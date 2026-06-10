@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Freelance Quarterly Estimated Tax Calculator | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--amber);text-decoration:none}
+a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--amber);border-color:var(--amber);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:860px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:620px}
+.pii-banner{max-width:860px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:860px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.grid-2{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--amber)}
+.hint{font-size:12px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--amber);color:#000}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-sec:hover{border-color:var(--amber);color:var(--amber)}
+.result-hidden{display:none}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:22px;font-weight:500;color:var(--amber);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+.metric-card .sub{font-size:12px;color:var(--muted);margin-top:4px}
+.quarter-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+@media(max-width:700px){.quarter-grid{grid-template-columns:repeat(2,1fr)}}
+.q-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.q-card.current{border-color:var(--amber)}
+.q-card .q-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.q-card .q-amt{font-family:var(--font-mono);font-size:24px;font-weight:500;color:var(--amber);margin-bottom:4px}
+.q-card .q-date{font-size:12px;color:var(--muted)}
+.q-card .q-status{font-size:11px;margin-top:6px;padding:2px 8px;border-radius:10px;display:inline-block}
+.status-due{background:rgba(232,168,56,.15);color:var(--amber)}
+.status-past{background:rgba(76,175,125,.15);color:var(--success)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:14px}
+td.mono{font-family:var(--font-mono)}
+tr.total-row td{font-weight:600;background:rgba(232,168,56,.07)}
+.safe-harbor-box{background:var(--surface2);border-left:3px solid var(--amber);border-radius:0 6px 6px 0;padding:14px 16px;font-size:13px;margin-top:16px}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.mcp-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px}
+.mcp-panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.mcp-endpoint{font-family:var(--font-mono);font-size:12px;color:var(--amber);background:var(--bg);padding:8px 12px;border-radius:6px;word-break:break-all}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.tag-amber{background:rgba(232,168,56,.15);color:var(--amber)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}
+footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-amber">Career &amp; Workforce</span></div>
+  <h1>Freelance Quarterly Estimated Tax</h1>
+  <p>Calculate quarterly IRS estimated payments for self-employed income. Covers federal income tax, SE tax, and state — with safe-harbor amounts and 2026 due dates.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<div class="card">
+  <h2>Income &amp; Expenses</h2>
+  <div class="grid-2">
+    <div class="field">
+      <label>Annual Gross Freelance / SE Income ($)</label>
+      <input type="number" id="grossIncome" value="120000" min="1000" max="2000000" step="1000">
+    </div>
+    <div class="field">
+      <label>Business Expenses ($)</label>
+      <input type="number" id="expenses" value="15000" min="0" max="500000" step="500">
+      <div class="hint">Software, home office, equipment, professional fees, etc.</div>
+    </div>
+    <div class="field">
+      <label>Other Income (W-2, interest, dividends $)</label>
+      <input type="number" id="otherIncome" value="0" min="0" step="1000">
+    </div>
+    <div class="field">
+      <label>Filing Status</label>
+      <select id="filingStatus">
+        <option value="single" selected>Single / MFS</option>
+        <option value="mfj">Married Filing Jointly</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>State Tax Rate</label>
+      <select id="state">
+        <option value="none">No State Income Tax (TX, FL, WA, NV, WY, SD, AK, NH)</option>
+        <option value="low">Low (~3%) — IN, PA, OH, KY, MI, IL, CO</option>
+        <option value="mid">Mid (~5%) — NY, VA, MA, GA, AZ, MD, NC</option>
+        <option value="high" selected>High (~9.3%) — CA, MN, OR, NJ, HI</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Prior Year Federal Tax ($)</label>
+      <input type="number" id="priorYearTax" value="0" min="0" step="500">
+      <div class="hint">From last year's Form 1040, line 24. Used for safe-harbor calculation.</div>
+    </div>
+    <div class="field">
+      <label>YTD Estimated Payments Made ($)</label>
+      <input type="number" id="ytdPaid" value="0" min="0" step="500">
+    </div>
+  </div>
+</div>
+
+<div style="display:flex;gap:12px;margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calcFreelanceTax()">Calculate Estimates →</button>
+</div>
+
+<div id="results" class="result-hidden">
+
+  <div class="card">
+    <h2>Annual Tax Summary</h2>
+    <div class="summary-grid">
+      <div class="metric-card">
+        <div class="val" id="netSEVal">—</div>
+        <div class="lbl">Net SE Income</div>
+        <div class="sub" id="netSESub"></div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="seTaxVal">—</div>
+        <div class="lbl">Self-Employment Tax</div>
+        <div class="sub">SS + Medicare</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="fedTaxVal">—</div>
+        <div class="lbl">Federal Income Tax</div>
+        <div class="sub" id="fedRateSub"></div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="totalTaxVal">—</div>
+        <div class="lbl">Total Annual Tax</div>
+        <div class="sub" id="effRateSub"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2026 Quarterly Payments</h2>
+    <div class="quarter-grid" id="quarterGrid"></div>
+    <div class="safe-harbor-box" id="safeHarborBox"></div>
+  </div>
+
+  <div class="card">
+    <h2>Tax Breakdown</h2>
+    <table>
+      <thead><tr><th>Component</th><th>Amount</th><th>Rate / Notes</th></tr></thead>
+      <tbody id="breakdownTable"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Export Results</h2>
+    <div class="results-export-row">
+      <button class="btn btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+  <div class="mcp-panel">
+    <h3>MCP Integration</h3>
+    <div class="mcp-endpoint">GET https://apexlogics.org/.well-known/mcp.json → tool: freelance_quarterly_estimated_tax</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Inbound: S-Corp Break-Even (AL-118) · Downstream: Solo 401(k) vs. SEP-IRA (AL-119) · RSU Gap (AL-122)</p>
+  </div>
+
+</div>
+</div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-123 · Data: IRS 2026
+</footer>
+
+<script>
+// 2026 IRS constants
+const SS_WAGE_BASE = 184500;
+const SE_FACTOR = 0.9235;
+const SS_RATE = 0.124;
+const MC_RATE = 0.029;
+const STD_DEDUCTION = { single: 16100, mfj: 32200 };
+const STATE_RATES = { none: 0, low: 0.03, mid: 0.05, high: 0.093 };
+
+// 2026 estimated tax due dates
+const Q_DATES = [
+  { label: 'Q1', due: 'Apr 15, 2026', isoDate: '2026-04-15' },
+  { label: 'Q2', due: 'Jun 16, 2026', isoDate: '2026-06-16' },
+  { label: 'Q3', due: 'Sep 15, 2026', isoDate: '2026-09-15' },
+  { label: 'Q4', due: 'Jan 15, 2027', isoDate: '2027-01-15' },
+];
+
+function calcIncomeTax(taxableIncome, status) {
+  const B = status === 'mfj'
+    ? [[24800,.10],[100800,.12],[211400,.22],[403550,.24],[512450,.32],[768700,.35],[Infinity,.37]]
+    : [[12400,.10],[50400,.12],[105700,.22],[201775,.24],[256225,.32],[640600,.35],[Infinity,.37]];
+  let tax = 0, prev = 0;
+  for (const [top, rate] of B) {
+    if (taxableIncome <= prev) break;
+    tax += (Math.min(taxableIncome, top) - prev) * rate;
+    prev = top;
+  }
+  return tax;
+}
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+
+let _lastResult = null;
+
+function calcFreelanceTax() {
+  const gross = +document.getElementById('grossIncome').value || 120000;
+  const expenses = +document.getElementById('expenses').value || 0;
+  const otherIncome = +document.getElementById('otherIncome').value || 0;
+  const status = document.getElementById('filingStatus').value;
+  const stateKey = document.getElementById('state').value;
+  const stateRate = STATE_RATES[stateKey] || 0;
+  const priorYearTax = +document.getElementById('priorYearTax').value || 0;
+  const ytdPaid = +document.getElementById('ytdPaid').value || 0;
+
+  const netSE = gross - expenses;
+  const netSESubject = netSE * SE_FACTOR;
+
+  // SE tax
+  const ssTax = Math.min(netSESubject, SS_WAGE_BASE) * SS_RATE;
+  const mcTax = netSESubject * MC_RATE;
+  const seTax = ssTax + mcTax;
+
+  // Federal income tax
+  const halfSE = seTax / 2;
+  const agi = netSE + otherIncome - halfSE;
+  const stdDed = STD_DEDUCTION[status];
+  const taxableIncome = Math.max(0, agi - stdDed);
+  const fedIncomeTax = calcIncomeTax(taxableIncome, status);
+  const effectiveFedRate = agi > 0 ? fedIncomeTax / agi : 0;
+
+  // State tax (applied to netSE + otherIncome approximately)
+  const stateTax = (netSE + otherIncome) * stateRate;
+
+  // Total federal (income + SE)
+  const totalFed = fedIncomeTax + seTax;
+  const totalTax = totalFed + stateTax;
+  const effectiveTotal = (netSE + otherIncome) > 0 ? totalTax / (netSE + otherIncome) : 0;
+
+  // Quarterly amounts — equal quarters
+  const perQtr = totalTax / 4;
+  const remaining = Math.max(0, totalTax - ytdPaid);
+
+  // Safe harbor: lesser of 100% prior year tax OR 90% current year
+  const safeHarborPriorYear = priorYearTax;
+  const safeHarborCurrentYear = totalFed * 0.90; // IRS 90% rule
+  const safeHarborAmt = priorYearTax > 0
+    ? Math.min(safeHarborPriorYear, safeHarborCurrentYear)
+    : safeHarborCurrentYear;
+  const safeHarborQtr = safeHarborAmt / 4;
+
+  _lastResult = { gross, expenses, otherIncome, status, stateKey, stateRate, priorYearTax, ytdPaid,
+    netSE, seTax, ssTax, mcTax, agi, taxableIncome, fedIncomeTax, effectiveFedRate,
+    stateTax, totalFed, totalTax, effectiveTotal, perQtr, remaining, safeHarborAmt, safeHarborQtr };
+
+  // Render summary
+  document.getElementById('netSEVal').textContent = fmt(netSE);
+  document.getElementById('netSESub').textContent = fmt(gross) + ' gross − ' + fmt(expenses) + ' expenses';
+  document.getElementById('seTaxVal').textContent = fmt(seTax);
+  document.getElementById('fedTaxVal').textContent = fmt(fedIncomeTax);
+  document.getElementById('fedRateSub').textContent = 'Effective: ' + (effectiveFedRate * 100).toFixed(1) + '% of AGI';
+  document.getElementById('totalTaxVal').textContent = fmt(totalTax);
+  document.getElementById('effRateSub').textContent = 'Effective: ' + (effectiveTotal * 100).toFixed(1) + '% of gross SE';
+
+  // Quarter cards
+  const today = new Date();
+  document.getElementById('quarterGrid').innerHTML = Q_DATES.map((q, i) => {
+    const dueDate = new Date(q.isoDate);
+    const isPast = today > dueDate;
+    return `<div class="q-card${i === 0 && !isPast ? ' current' : ''}">
+      <div class="q-label">${q.label} Payment</div>
+      <div class="q-amt">${fmt(perQtr)}</div>
+      <div class="q-date">Due: ${q.due}</div>
+      <div class="q-status ${isPast ? 'status-past' : 'status-due'}">${isPast ? 'Past due' : 'Upcoming'}</div>
+    </div>`;
+  }).join('');
+
+  // Safe harbor
+  const shBox = document.getElementById('safeHarborBox');
+  shBox.innerHTML = `<strong>Safe Harbor:</strong> To avoid underpayment penalty, pay at least ${fmt(safeHarborAmt)} total for the year ` +
+    `(${fmt(safeHarborQtr)}/quarter). ` +
+    (priorYearTax > 0
+      ? `Based on lesser of 90% of ${fmt(totalFed)} (current year) or 100% of ${fmt(priorYearTax)} (prior year).`
+      : `Based on 90% of estimated current-year federal tax. Enter your prior-year tax for a more precise safe-harbor amount.`) +
+    (ytdPaid > 0 ? ` You've paid ${fmt(ytdPaid)} YTD. Remaining: ${fmt(remaining)}.` : '');
+
+  // Breakdown table
+  const rows = [
+    ['Gross SE Income', fmt(gross), ''],
+    ['Business Expenses', '− ' + fmt(expenses), ''],
+    ['Net SE Income', fmt(netSE), ''],
+    ['SE Tax (SS + Medicare)', fmt(seTax), (seTax / netSE * 100).toFixed(1) + '% of net SE'],
+    ['½ SE Tax Deduction', '− ' + fmt(halfSE), 'Above-the-line deduction'],
+    ['AGI', fmt(agi), ''],
+    ['Standard Deduction', '− ' + fmt(stdDed), status === 'mfj' ? 'MFJ 2026' : 'Single 2026'],
+    ['Taxable Income', fmt(taxableIncome), ''],
+    ['Federal Income Tax', fmt(fedIncomeTax), (effectiveFedRate * 100).toFixed(1) + '% effective rate'],
+    ['State Income Tax', fmt(stateTax), (stateRate * 100).toFixed(1) + '%'],
+    ['Total Annual Tax', fmt(totalTax), (effectiveTotal * 100).toFixed(1) + '% of gross'],
+    ['Per Quarter (÷4)', fmt(perQtr), 'Equal installments'],
+  ];
+  document.getElementById('breakdownTable').innerHTML = rows.map((r, i) =>
+    `<tr${i >= rows.length - 2 ? ' class="total-row"' : ''}><td>${r[0]}</td><td class="mono">${r[1]}</td><td style="font-size:12px;color:var(--muted)">${r[2]}</td></tr>`
+  ).join('');
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+function getManifest() {
+  return {
+    tool_id: "116-freelance-quarterly-estimated-tax", al_id: "AL-123", version: "1.0.0",
+    title: "Freelance Quarterly Estimated Tax Calculator", category: "career_workforce", display_number: 116,
+    ap2_export: true, ap2_mandate_types: ["freelance_quarterly_record"],
+    sister_suite: "https://ainumbers.co", consulting_site: "https://apexadvisory.site",
+    license: "CC-BY-4.0", mcp_annotations: { readOnlyHint: true, idempotentHint: true }
+  };
+}
+
+function exportMarkdown() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const md = `# Freelance Quarterly Tax Report — AL-123\n\n` +
+    `**Net SE Income:** ${fmt(r.netSE)} | **Status:** ${r.status} | **State:** ${r.stateKey}\n\n` +
+    `## Annual Tax Summary\n\n` +
+    `| Component | Amount |\n|---|---|\n` +
+    `| SE Tax (SS + Medicare) | ${fmt(r.seTax)} |\n` +
+    `| Federal Income Tax | ${fmt(r.fedIncomeTax)} |\n` +
+    `| State Income Tax | ${fmt(r.stateTax)} |\n` +
+    `| **Total Annual Tax** | **${fmt(r.totalTax)}** |\n` +
+    `| **Per Quarter** | **${fmt(r.perQtr)}** |\n\n` +
+    `## 2026 Due Dates\n\n` +
+    `| Quarter | Amount | Due Date |\n|---|---|---|\n` +
+    Q_DATES.map(q => `| ${q.label} | ${fmt(r.perQtr)} | ${q.due} |`).join('\n') +
+    `\n\n**Safe Harbor:** ${fmt(r.safeHarborAmt)} total / ${fmt(r.safeHarborQtr)} per quarter\n\n` +
+    `---\n*Generated by ApexLogics AL-123 · apexlogics.org · Data: IRS 2026*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'freelance-tax-AL123.md';
+  a.click();
+}
+
+function exportAP2() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version: "2.0", mandate_type: "freelance_quarterly_record",
+    generated_at: new Date().toISOString(), al_id: "AL-123",
+    inputs: {
+      annual_gross_income: r.gross, business_expenses: r.expenses,
+      filing_status: r.status, other_income: r.otherIncome,
+      prior_year_tax: r.priorYearTax, state: r.stateKey, ytd_payments_made: r.ytdPaid
+    },
+    summary: {
+      net_se_income: Math.round(r.netSE), se_tax: Math.round(r.seTax),
+      federal_income_tax: Math.round(r.fedIncomeTax), state_tax: Math.round(r.stateTax),
+      total_annual_tax: Math.round(r.totalTax), per_quarter: Math.round(r.perQtr),
+      safe_harbor_quarterly: Math.round(r.safeHarborQtr),
+      effective_total_rate_pct: +(r.effectiveTotal * 100).toFixed(1),
+      due_dates: Q_DATES.map(q => ({ quarter: q.label, due: q.due, amount: Math.round(r.perQtr) }))
+    },
+    downstream_handoff_candidates: ["AL-118", "AL-119", "AL-122"]
+  };
+  const AP2Schema = { validate: p => p.ap2_version && p.mandate_type && p.al_id && p.inputs && p.summary };
+  if (!AP2Schema.validate(payload)) { alert('AP2 validation failed.'); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'freelance-tax-AL123.ap2.json';
+  a.click();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Caregiver Income Impact & Lost Earnings | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;
+  --teal:#4caf7d;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--amber);text-decoration:none}
+a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--amber);border-color:var(--amber);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:860px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:620px}
+.pii-banner{max-width:860px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:860px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.grid-2{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--amber)}
+.hint{font-size:12px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--amber);color:#000}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-sec:hover{border-color:var(--amber);color:var(--amber)}
+.result-hidden{display:none}
+.impact-total{background:linear-gradient(135deg,rgba(232,85,85,.12),rgba(232,168,56,.08));border:2px solid rgba(232,85,85,.3);border-radius:12px;padding:24px;margin-bottom:20px;text-align:center}
+.impact-total .big-num{font-family:var(--font-mono);font-size:48px;font-weight:500;color:var(--danger);margin:8px 0}
+.impact-total .label{font-size:14px;color:var(--muted)}
+.impact-total .sublabel{font-size:13px;color:var(--muted);margin-top:4px}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:22px;font-weight:500;color:var(--amber);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+.metric-card .sub{font-size:12px;color:var(--muted);margin-top:4px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:14px}
+td.mono{font-family:var(--font-mono)}
+tr.total-row td{font-weight:600;background:rgba(232,85,85,.07)}
+.strategy-box{background:var(--surface2);border-left:3px solid var(--amber);border-radius:0 6px 6px 0;padding:14px 16px;font-size:14px;margin-top:16px}
+.strategy-box ul{padding-left:18px;margin-top:6px}
+.strategy-box li{margin-bottom:4px;font-size:13px;color:var(--muted)}
+.routing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.routing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:flex-start;gap:10px}
+.routing-card .r-icon{font-size:20px}
+.routing-card .r-text{font-size:13px}
+.routing-card .r-title{font-weight:600;color:var(--amber);margin-bottom:2px}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.mcp-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px}
+.mcp-panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.mcp-endpoint{font-family:var(--font-mono);font-size:12px;color:var(--amber);background:var(--bg);padding:8px 12px;border-radius:6px;word-break:break-all}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.tag-amber{background:rgba(232,168,56,.15);color:var(--amber)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}
+footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-amber">Career &amp; Workforce</span></div>
+  <h1>Caregiver Income Impact &amp; Lost Earnings</h1>
+  <p>Quantify the full financial cost of unpaid caregiving: direct income loss, retirement savings gap, and estimated Social Security reduction — so caregivers can plan with eyes open.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<div class="card">
+  <h2>Your Situation</h2>
+  <div class="grid-2">
+    <div class="field">
+      <label>Current Annual Salary ($)</label>
+      <input type="number" id="salary" value="90000" min="10000" max="1000000" step="1000">
+    </div>
+    <div class="field">
+      <label>Current Age</label>
+      <input type="number" id="currentAge" value="42" min="18" max="65" step="1">
+    </div>
+    <div class="field">
+      <label>Expected Retirement Age</label>
+      <input type="number" id="retirementAge" value="67" min="55" max="75" step="1">
+    </div>
+    <div class="field">
+      <label>Caregiving Duration (years)</label>
+      <input type="number" id="careYears" value="5" min="0.5" max="30" step="0.5">
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Caregiving Impact</h2>
+  <div class="grid-2">
+    <div class="field">
+      <label>Income Reduction (%)</label>
+      <input type="number" id="incomeReduction" value="50" min="0" max="100" step="5">
+      <div class="hint">E.g., 100% = full leave, 50% = part-time, 20% = reduced hours.</div>
+    </div>
+    <div class="field">
+      <label>Career Setback After Caregiving</label>
+      <select id="careerSetback">
+        <option value="0">None — resume same salary</option>
+        <option value="5">Mild (−5% vs. uninterrupted path)</option>
+        <option value="10" selected>Moderate (−10% vs. peers)</option>
+        <option value="20">Significant (−20% — reentry difficulty)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Annual 401(k) Contribution (%)</label>
+      <input type="number" id="contrib401k" value="6" min="0" max="20" step="1">
+    </div>
+    <div class="field">
+      <label>Investment Return (% annual)</label>
+      <input type="number" id="returnRate" value="7" min="1" max="12" step="0.5">
+    </div>
+    <div class="field">
+      <label>Marginal Tax Rate (%)</label>
+      <input type="number" id="marginalRate" value="22" min="10" max="37" step="1">
+    </div>
+  </div>
+</div>
+
+<div style="display:flex;gap:12px;margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calcCaregiverImpact()">Calculate Impact →</button>
+</div>
+
+<div id="results" class="result-hidden">
+
+  <div class="impact-total">
+    <div class="label">Estimated Total Financial Impact of Caregiving</div>
+    <div class="big-num" id="totalImpact">—</div>
+    <div class="sublabel" id="totalImpactSub">—</div>
+  </div>
+
+  <div class="card">
+    <h2>Impact Breakdown</h2>
+    <div class="summary-grid">
+      <div class="metric-card">
+        <div class="val" id="directLossVal">—</div>
+        <div class="lbl">Direct Income Loss</div>
+        <div class="sub" id="directLossSub"></div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="retirementGapVal">—</div>
+        <div class="lbl">Retirement Savings Gap</div>
+        <div class="sub">Lost compounding on missed 401(k)</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="ssGapVal">—</div>
+        <div class="lbl">Est. SS Reduction</div>
+        <div class="sub">Annual benefit reduction at FRA</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="setbackVal">—</div>
+        <div class="lbl">Career Setback Cost</div>
+        <div class="sub">Cumulative earnings gap to retirement</div>
+      </div>
+    </div>
+
+    <table>
+      <thead><tr><th>Cost Category</th><th>Amount</th><th>Notes</th></tr></thead>
+      <tbody id="breakdownTable"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Mitigation Strategies</h2>
+    <div class="strategy-box">
+      <strong>Financial actions that can reduce this impact:</strong>
+      <ul id="strategyList"></ul>
+    </div>
+
+    <h3 style="font-family:var(--font-serif);font-size:16px;margin:20px 0 12px">Planning Resources</h3>
+    <div class="routing-grid">
+      <div class="routing-card">
+        <div class="r-icon">📈</div>
+        <div class="r-text"><div class="r-title">Career Advance ROI</div><a href="../02-career-advance-roi/index.html">AL-02 — Model reentry upskill ROI</a></div>
+      </div>
+      <div class="routing-card">
+        <div class="r-icon">💼</div>
+        <div class="r-text"><div class="r-title">Negotiation Simulator</div><a href="../07-negotiation-simulator/index.html">AL-07 — Recover salary gap</a></div>
+      </div>
+      <div class="routing-card">
+        <div class="r-icon">🎯</div>
+        <div class="r-text"><div class="r-title">Career Path ROI</div><a href="../06-career-path-roi/index.html">AL-06 — Compare reentry paths</a></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Export Results</h2>
+    <div class="results-export-row">
+      <button class="btn btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+  <div class="mcp-panel">
+    <h3>MCP Integration</h3>
+    <div class="mcp-endpoint">GET https://apexlogics.org/.well-known/mcp.json → tool: caregiver_income_impact</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Downstream: Career Advance ROI (AL-02) · Negotiation Simulator (AL-07) · Career Path ROI (AL-06)</p>
+  </div>
+
+</div>
+</div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-124 · Data: SSA 2025; general wage data
+</footer>
+
+<script>
+function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+
+let _lastResult = null;
+
+function fv(pmt, r, n) {
+  // Future value of annual payment pmt at annual rate r over n years
+  if (r === 0) return pmt * n;
+  return pmt * (Math.pow(1 + r, n) - 1) / r;
+}
+
+function calcCaregiverImpact() {
+  const salary = +document.getElementById('salary').value || 90000;
+  const currentAge = +document.getElementById('currentAge').value || 42;
+  const retirementAge = +document.getElementById('retirementAge').value || 67;
+  const careYears = +document.getElementById('careYears').value || 5;
+  const incomeReductionPct = +document.getElementById('incomeReduction').value / 100 || 0.5;
+  const setbackPct = +document.getElementById('careerSetback').value / 100 || 0.10;
+  const contrib401k = +document.getElementById('contrib401k').value / 100 || 0.06;
+  const returnRate = +document.getElementById('returnRate').value / 100 || 0.07;
+  const marginalRate = +document.getElementById('marginalRate').value / 100 || 0.22;
+
+  const yearsToRetirement = retirementAge - currentAge;
+  const yearsAfterCare = Math.max(0, yearsToRetirement - careYears);
+
+  // 1. Direct income loss during caregiving
+  const annualIncomeLoss = salary * incomeReductionPct;
+  const directIncomeLoss = annualIncomeLoss * careYears;
+
+  // 2. Retirement savings gap: missed 401k contributions compounded to retirement
+  const annual401kLost = salary * incomeReductionPct * contrib401k; // contribution on reduced portion
+  // These contributions would have grown for yearsToRetirement → careYears (avg midpoint)
+  // Simplified: lost contributions compounded from midpoint of caregiving to retirement
+  const yearsFromMidCare = Math.max(0, yearsToRetirement - careYears / 2);
+  const retirementGap = fv(annual401kLost, returnRate, careYears) * Math.pow(1 + returnRate, yearsAfterCare);
+
+  // 3. Career setback: post-care salary permanently lower by setbackPct
+  const annualSetbackLoss = salary * setbackPct;
+  const setbackCost = fv(annualSetbackLoss, 0.02, yearsAfterCare); // salary grows ~2% but still gap
+
+  // 4. SS reduction: simplified — each year of lower earnings reduces SS by ~1.5% of annual benefit
+  // Average SS benefit ~$23k/yr; reduction ≈ (avg earnings gap / $184,500) × benefit × years
+  const avgSSBenefit = 23000;
+  const ssReducFraction = (salary * incomeReductionPct) / 184500;
+  const annualSSReduction = avgSSBenefit * ssReducFraction * Math.min(careYears / 35, 0.15);
+
+  const totalImpact = directIncomeLoss + retirementGap + setbackCost;
+  const totalImpactWithSS = totalImpact + annualSSReduction * 20; // ~20 yr SS draw
+
+  _lastResult = { salary, currentAge, retirementAge, careYears, incomeReductionPct, setbackPct,
+    contrib401k, returnRate, marginalRate, yearsToRetirement, yearsAfterCare,
+    directIncomeLoss, retirementGap, setbackCost, annualSSReduction,
+    totalImpact, totalImpactWithSS, annualIncomeLoss, annual401kLost };
+
+  // Total
+  document.getElementById('totalImpact').textContent = fmt(totalImpactWithSS);
+  document.getElementById('totalImpactSub').textContent =
+    `Direct income: ${fmt(directIncomeLoss)} · Retirement gap: ${fmt(retirementGap)} · Career setback: ${fmt(setbackCost)} · SS impact: ${fmt(annualSSReduction * 20)}`;
+
+  // Metrics
+  document.getElementById('directLossVal').textContent = fmt(directIncomeLoss);
+  document.getElementById('directLossSub').textContent = fmt(annualIncomeLoss) + '/yr × ' + careYears + ' yrs';
+  document.getElementById('retirementGapVal').textContent = fmt(retirementGap);
+  document.getElementById('ssGapVal').textContent = fmt(annualSSReduction) + '/yr';
+  document.getElementById('setbackVal').textContent = fmt(setbackCost);
+
+  // Breakdown table
+  const rows = [
+    ['Direct Income Loss During Caregiving', fmt(directIncomeLoss), careYears + ' yr × ' + fmt(annualIncomeLoss) + '/yr'],
+    ['Lost 401(k) Contributions + Growth', fmt(retirementGap), fmt(annual401kLost) + '/yr, compounded to retirement'],
+    ['Career Setback (post-care salary gap)', fmt(setbackCost), (setbackPct * 100).toFixed(0) + '% of salary × ' + yearsAfterCare + ' yrs remaining'],
+    ['SS Lifetime Reduction (est.)', fmt(annualSSReduction * 20), fmt(annualSSReduction) + '/yr × 20-yr draw est.'],
+    ['Total Financial Impact', fmt(totalImpactWithSS), ''],
+  ];
+  document.getElementById('breakdownTable').innerHTML = rows.map((r, i) =>
+    `<tr${i === rows.length - 1 ? ' class="total-row"' : ''}><td>${r[0]}</td><td class="mono">${r[1]}</td><td style="font-size:12px;color:var(--muted)">${r[2]}</td></tr>`
+  ).join('');
+
+  // Strategies
+  const strategies = [
+    `Max IRA/401(k) during and after caregiving period (even small contributions compound significantly over ${yearsAfterCare} yrs)`,
+    `Consider spousal IRA contributions if applicable (allows retirement savings even with zero income)`,
+    `Negotiate phased re-entry or remote arrangements to limit career setback to ${(setbackPct * 100).toFixed(0)}%`,
+    `Caregiver Agreement with family if shared caregiving — can provide modest taxable income to maintain SS record`,
+    `Review employer EAP, FMLA, and caregiver benefits before reducing hours — explore all options first`,
+  ];
+  if (setbackPct > 0.05) strategies.push(`Invest in a credential or certification during/after caregiving to offset ${(setbackPct * 100).toFixed(0)}% setback (see Career Advance ROI, AL-02)`);
+  document.getElementById('strategyList').innerHTML = strategies.map(s => `<li>${s}</li>`).join('');
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+function getManifest() {
+  return {
+    tool_id: "117-caregiver-income-impact", al_id: "AL-124", version: "1.0.0",
+    title: "Caregiver Income Impact & Lost Earnings Estimator", category: "career_workforce", display_number: 117,
+    ap2_export: true, ap2_mandate_types: ["caregiver_impact_record"],
+    sister_suite: "https://ainumbers.co", consulting_site: "https://apexadvisory.site",
+    license: "CC-BY-4.0", mcp_annotations: { readOnlyHint: true, idempotentHint: true }
+  };
+}
+
+function exportMarkdown() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const md = `# Caregiver Income Impact Report — AL-124\n\n` +
+    `**Current Salary:** ${fmt(r.salary)} | **Age:** ${r.currentAge} | **Caregiving:** ${r.careYears} yrs at ${(r.incomeReductionPct * 100).toFixed(0)}% reduction\n\n` +
+    `## Impact Summary\n\n` +
+    `| Category | Amount |\n|---|---|\n` +
+    `| Direct Income Loss | ${fmt(r.directIncomeLoss)} |\n` +
+    `| Lost 401(k) Growth | ${fmt(r.retirementGap)} |\n` +
+    `| Career Setback | ${fmt(r.setbackCost)} |\n` +
+    `| SS Lifetime Reduction | ${fmt(r.annualSSReduction * 20)} |\n` +
+    `| **Total Financial Impact** | **${fmt(r.totalImpactWithSS)}** |\n\n` +
+    `**Annual SS benefit reduction at FRA:** ${fmt(r.annualSSReduction)}/yr\n\n` +
+    `---\n*Generated by ApexLogics AL-124 · apexlogics.org · Data: SSA 2025*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'caregiver-impact-AL124.md';
+  a.click();
+}
+
+function exportAP2() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version: "2.0", mandate_type: "caregiver_impact_record",
+    generated_at: new Date().toISOString(), al_id: "AL-124",
+    inputs: {
+      current_salary: r.salary, caregiving_years: r.careYears,
+      income_reduction_pct: +(r.incomeReductionPct * 100).toFixed(0),
+      current_age: r.currentAge, retirement_age: r.retirementAge,
+      annual_401k_contribution_pct: +(r.contrib401k * 100).toFixed(0),
+      investment_return_pct: +(r.returnRate * 100).toFixed(1),
+      career_setback_pct: +(r.setbackPct * 100).toFixed(0)
+    },
+    summary: {
+      direct_income_loss: Math.round(r.directIncomeLoss),
+      retirement_savings_gap: Math.round(r.retirementGap),
+      career_setback_cost: Math.round(r.setbackCost),
+      annual_ss_reduction: Math.round(r.annualSSReduction),
+      ss_lifetime_reduction: Math.round(r.annualSSReduction * 20),
+      total_financial_impact: Math.round(r.totalImpactWithSS),
+      years_to_retirement: r.yearsToRetirement
+    },
+    downstream_handoff_candidates: ["AL-02", "AL-07", "AL-06"]
+  };
+  const AP2Schema = { validate: p => p.ap2_version && p.mandate_type && p.al_id && p.inputs && p.summary };
+  if (!AP2Schema.validate(payload)) { alert('AP2 validation failed.'); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'caregiver-impact-AL124.ap2.json';
+  a.click();
+}
+</script>
+</body>
+</html>

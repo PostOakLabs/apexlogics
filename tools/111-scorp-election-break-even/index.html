@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S-Corp Election Break-Even Modeler | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--text:#e8eaf0;--muted:#8891a8;--danger:#e85555;--success:#4caf7d;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--amber);text-decoration:none}
+a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--amber);border-color:var(--amber);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:860px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:620px}
+.pii-banner{max-width:860px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:860px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.grid-2{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--amber)}
+.hint{font-size:12px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--amber);color:#000}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-sec:hover{border-color:var(--amber);color:var(--amber)}
+.result-hidden{display:none}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:22px;font-weight:500;color:var(--amber);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+.metric-card .sub{font-size:12px;color:var(--muted);margin-top:4px}
+.metric-card.success .val{color:var(--success)}
+.metric-card.danger .val{color:var(--danger)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:14px}
+td.mono{font-family:var(--font-mono)}
+tr.highlight td{background:rgba(232,168,56,.07);font-weight:600}
+tr:last-child td{border-bottom:none}
+.chart-wrap{position:relative;height:200px;margin:16px 0}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.mcp-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px}
+.mcp-panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.mcp-endpoint{font-family:var(--font-mono);font-size:12px;color:var(--amber);background:var(--bg);padding:8px 12px;border-radius:6px;word-break:break-all}
+.info-box{background:var(--surface2);border-left:3px solid var(--amber);border-radius:0 6px 6px 0;padding:12px 16px;font-size:13px;color:var(--muted);margin:0 0 16px}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.tag-amber{background:rgba(232,168,56,.15);color:var(--amber)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}
+footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-amber">Career &amp; Workforce</span></div>
+  <h1>S-Corp Election Break-Even Modeler</h1>
+  <p>Find the net self-employment income level at which S-Corp election SE tax savings exceed the added accounting and payroll admin costs.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<div class="info-box">
+  <strong>2026 parameters:</strong> SS wage base $184,500 · SS rate 12.4% (employer + employee) · Medicare 2.9% (no cap) + 0.9% NIIT above $200K single / $250K MFJ · SE tax = 0.9235 × 15.3% (SS+Medicare) on net SE income, capped at SS wage base for SS portion.
+</div>
+
+<div class="card">
+  <h2>Business Inputs</h2>
+  <div class="grid-2">
+    <div class="field">
+      <label>Net SE Income ($)</label>
+      <input type="number" id="netIncome" value="150000" min="20000" max="2000000" step="5000">
+    </div>
+    <div class="field">
+      <label>Reasonable Salary (% of net income)</label>
+      <input type="number" id="salaryPct" value="50" min="20" max="100" step="5">
+      <div class="hint">IRS requires "reasonable compensation." Typical: 40–60% for service businesses.</div>
+    </div>
+    <div class="field">
+      <label>Annual S-Corp Admin Cost ($)</label>
+      <input type="number" id="adminCost" value="3000" min="500" max="30000" step="500">
+      <div class="hint">CPA/payroll fees above sole-prop baseline (~$1,500–$5,000 typical).</div>
+    </div>
+    <div class="field">
+      <label>Owner Health Insurance Premium (annual $)</label>
+      <input type="number" id="healthPremium" value="0" min="0" step="500">
+      <div class="hint">S-Corp can deduct 100% if added to W-2. Include annual amount or 0.</div>
+    </div>
+    <div class="field">
+      <label>Filing Status</label>
+      <select id="filingStatus">
+        <option value="single" selected>Single / MFS</option>
+        <option value="mfj">Married Filing Jointly</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div style="display:flex;gap:12px;margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calcSCorpBreakEven()">Calculate Break-Even →</button>
+</div>
+
+<div id="results" class="result-hidden">
+
+  <div class="card">
+    <h2>S-Corp vs. Sole Proprietor</h2>
+    <div class="summary-grid">
+      <div class="metric-card" id="savingsCard">
+        <div class="val" id="annualSavingsVal">—</div>
+        <div class="lbl">Annual Net Savings</div>
+        <div class="sub" id="savingsSub"></div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="breakEvenVal">—</div>
+        <div class="lbl">Break-Even Income</div>
+        <div class="sub">Minimum net income for S-Corp to win</div>
+      </div>
+      <div class="metric-card success">
+        <div class="val" id="fiveYrVal">—</div>
+        <div class="lbl">5-Year Savings</div>
+        <div class="sub">Cumulative, not discounted</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="salaryVal">—</div>
+        <div class="lbl">Reasonable W-2 Salary</div>
+        <div class="sub" id="distributionVal"></div>
+      </div>
+    </div>
+
+    <table>
+      <thead><tr><th>Tax Item</th><th>Sole Prop</th><th>S-Corp</th><th>Difference</th></tr></thead>
+      <tbody id="compTable"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Break-Even Curve</h2>
+    <div class="chart-wrap">
+      <svg id="breakChart" viewBox="0 0 700 180" preserveAspectRatio="none" style="width:100%;height:100%"></svg>
+    </div>
+    <p id="chartNote" style="font-size:13px;color:var(--muted)"></p>
+  </div>
+
+  <div class="card">
+    <h2>Income Scenarios</h2>
+    <table>
+      <thead><tr><th>Net SE Income</th><th>Sole Prop SE Tax</th><th>S-Corp SE Tax</th><th>SE Savings</th><th>Net Savings (after admin)</th></tr></thead>
+      <tbody id="scenTable"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Export Results</h2>
+    <div class="results-export-row">
+      <button class="btn btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+  <div class="mcp-panel">
+    <h3>MCP Integration</h3>
+    <div class="mcp-endpoint">GET https://apexlogics.org/.well-known/mcp.json → tool: scorp_election_break_even</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Downstream: Solo 401(k) vs. SEP-IRA (AL-119) · Freelance Quarterly Tax (AL-123) · Tax-Advantaged Benefits (AL-01)</p>
+  </div>
+
+</div>
+</div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-118 · Data: IRS 2026
+</footer>
+
+<script>
+const SS_WAGE_BASE = 184500;
+const SS_RATE = 0.124;
+const MC_RATE = 0.029;
+const SE_FACTOR = 0.9235; // net earnings subject to SE tax
+
+function calcSETax(netIncome){
+  const netSE = netIncome * SE_FACTOR;
+  const ssTax = Math.min(netSE, SS_WAGE_BASE) * SS_RATE;
+  const mcTax = netSE * MC_RATE;
+  return ssTax + mcTax;
+}
+
+function calcSCorpSETax(salary){
+  // SE tax applies only to salary, not distributions
+  const salarySubj = salary * SE_FACTOR;
+  const ss = Math.min(salarySubj, SS_WAGE_BASE) * SS_RATE;
+  const mc = salarySubj * MC_RATE;
+  return ss + mc;
+}
+
+function fmt(n){ return '$' + Math.round(n).toLocaleString(); }
+
+let _lastResult = null;
+
+function calcSCorpBreakEven(){
+  const netIncome = +document.getElementById('netIncome').value || 150000;
+  const salaryPct = +document.getElementById('salaryPct').value / 100 || 0.5;
+  const adminCost = +document.getElementById('adminCost').value || 3000;
+  const healthPremium = +document.getElementById('healthPremium').value || 0;
+  const status = document.getElementById('filingStatus').value;
+
+  const salary = netIncome * salaryPct;
+  const distribution = netIncome - salary;
+
+  // Sole prop SE tax
+  const spSETax = calcSETax(netIncome);
+  // Deduction for half of SE tax
+  const spHalfSEDeduction = spSETax / 2;
+
+  // S-Corp: SE tax only on salary
+  const scSETax = calcSCorpSETax(salary);
+  // Employer portion of payroll taxes
+  const scEmployerTax = scSETax / 2;
+
+  // SE savings
+  const seSavings = spSETax - scSETax;
+  const netSavings = seSavings - adminCost;
+  const fiveYrSavings = netSavings * 5;
+
+  // Break-even: find income where seSavings = adminCost
+  // seSavings(income) = calcSETax(income) - calcSCorpSETax(income * salaryPct)
+  let breakEvenIncome = null;
+  for(let inc = 30000; inc <= 1000000; inc += 500){
+    const savings = calcSETax(inc) - calcSCorpSETax(inc * salaryPct);
+    if(savings >= adminCost){ breakEvenIncome = inc; break; }
+  }
+
+  _lastResult = { netIncome, salaryPct, adminCost, healthPremium, status,
+    salary, distribution, spSETax, scSETax, seSavings, netSavings, fiveYrSavings,
+    breakEvenIncome, scEmployerTax };
+
+  // Metrics
+  document.getElementById('annualSavingsVal').textContent = fmt(netSavings);
+  document.getElementById('savingsSub').textContent = fmt(seSavings) + ' SE savings − ' + fmt(adminCost) + ' admin';
+  document.getElementById('savingsCard').className = 'metric-card ' + (netSavings >= 0 ? 'success' : 'danger');
+
+  document.getElementById('breakEvenVal').textContent = breakEvenIncome ? fmt(breakEvenIncome) : 'N/A';
+  document.getElementById('fiveYrVal').textContent = fmt(fiveYrSavings);
+  document.getElementById('salaryVal').textContent = fmt(salary);
+  document.getElementById('distributionVal').textContent = fmt(distribution) + ' as distribution (no SE)';
+
+  // Comparison table
+  const rows = [
+    ['Net SE Income Subject to Tax (×0.9235)', fmt(netIncome*SE_FACTOR), fmt(salary*SE_FACTOR), ''],
+    ['SS Tax (12.4%)', fmt(Math.min(netIncome*SE_FACTOR,SS_WAGE_BASE)*SS_RATE), fmt(Math.min(salary*SE_FACTOR,SS_WAGE_BASE)*SS_RATE), ''],
+    ['Medicare Tax (2.9%)', fmt(netIncome*SE_FACTOR*MC_RATE), fmt(salary*SE_FACTOR*MC_RATE), ''],
+    ['Total SE / Payroll Tax', fmt(spSETax), fmt(scSETax), fmt(spSETax-scSETax)+' saved'],
+    ['Admin Overhead', '$0', fmt(adminCost), '− '+fmt(adminCost)],
+    ['Net Savings vs. Sole Prop', '—', fmt(netSavings), ''],
+  ];
+  document.getElementById('compTable').innerHTML = rows.map((r,i)=>
+    `<tr${i===rows.length-1?' class="highlight"':''}><td>${r[0]}</td><td class="mono">${r[1]}</td><td class="mono">${r[2]}</td><td class="mono" style="color:${r[3].includes('−')?'var(--danger)':r[3]?'var(--success)':'var(--muted)'}">${r[3]||'—'}</td></tr>`
+  ).join('');
+
+  // Income scenario table
+  const incomes = [50000,75000,100000,150000,200000,300000,500000];
+  document.getElementById('scenTable').innerHTML = incomes.map(inc=>{
+    const sp=calcSETax(inc);
+    const sc=calcSCorpSETax(inc*salaryPct);
+    const seSav=sp-sc;
+    const net=seSav-adminCost;
+    const isCurrent=inc===Math.round(netIncome/1000)*1000;
+    return `<tr${inc===netIncome?' class="highlight"':''}>
+      <td>${fmt(inc)}</td>
+      <td class="mono">${fmt(sp)}</td>
+      <td class="mono">${fmt(sc)}</td>
+      <td class="mono" style="color:var(--success)">${fmt(seSav)}</td>
+      <td class="mono" style="color:${net>=0?'var(--success)':'var(--danger)'}">${net>=0?'+':''}${fmt(net)}</td>
+    </tr>`;
+  }).join('');
+
+  // Draw chart
+  drawBreakChart(salaryPct, adminCost);
+
+  document.getElementById('chartNote').textContent =
+    `Break-even net SE income: ${breakEvenIncome ? fmt(breakEvenIncome) : 'not reached within model range'}.` +
+    ` At your input of ${fmt(netIncome)}, S-Corp saves a net ${fmt(netSavings)} per year.`;
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+function drawBreakChart(salaryPct, adminCost){
+  const W=700,H=180,pad=40;
+  const incomes=[50000,75000,100000,125000,150000,175000,200000,250000,300000,400000,500000];
+  const savs=incomes.map(inc=>calcSETax(inc)-calcSCorpSETax(inc*salaryPct)-adminCost);
+  const minS=Math.min(...savs,-1);
+  const maxS=Math.max(...savs,1);
+  const xi=i=>pad+(i/(incomes.length-1))*(W-pad*2);
+  const ys=v=>H-pad-(v-minS)/(maxS-minS)*(H-pad*2);
+  const zero=ys(0);
+  const pts=incomes.map((_,i)=>`${xi(i)},${ys(savs[i])}`).join(' ');
+  const area=`${xi(0)},${zero} `+pts+` ${xi(incomes.length-1)},${zero}`;
+  const svg=document.getElementById('breakChart');
+  svg.innerHTML=`
+    <line x1="${pad}" y1="${zero}" x2="${W-pad}" y2="${zero}" stroke="var(--border)" stroke-dasharray="4,4"/>
+    <polyline points="${area}" fill="rgba(76,175,125,.12)" stroke="none"/>
+    <polyline points="${pts}" fill="none" stroke="var(--amber)" stroke-width="2.5" stroke-linejoin="round"/>
+    ${incomes.map((_,i)=>{
+      const col=savs[i]>=0?'var(--success)':'var(--danger)';
+      return `<circle cx="${xi(i)}" cy="${ys(savs[i])}" r="4" fill="${col}" stroke="var(--bg)" stroke-width="2"/>`;
+    }).join('')}
+    <text x="${pad}" y="${H-4}" fill="var(--muted)" font-size="10" font-family="Sora,sans-serif">$50K</text>
+    <text x="${W-pad-20}" y="${H-4}" fill="var(--muted)" font-size="10" font-family="Sora,sans-serif">$500K</text>
+    <text x="${pad-4}" y="${zero-4}" fill="var(--muted)" font-size="9" font-family="Sora,sans-serif">Break-even</text>
+  `;
+}
+
+function getManifest(){return{tool_id:"111-scorp-election-break-even",al_id:"AL-118",version:"1.0.0",
+  title:"S-Corp Election Break-Even Modeler",category:"career_workforce",display_number:111,
+  ap2_export:true,ap2_mandate_types:["scorp_election_record"],
+  sister_suite:"https://ainumbers.co",consulting_site:"https://apexadvisory.site",
+  license:"CC-BY-4.0",mcp_annotations:{readOnlyHint:true,idempotentHint:true}};}
+
+function exportMarkdown(){
+  if(!_lastResult){alert('Run the calculator first.');return;}
+  const r=_lastResult;
+  const md=`# S-Corp Break-Even Report — AL-118\n\n`+
+    `**Net SE Income:** ${fmt(r.netIncome)} | **Salary %:** ${(r.salaryPct*100).toFixed(0)}%\n\n`+
+    `| Item | Value |\n|---|---|\n`+
+    `| W-2 Salary | ${fmt(r.salary)} |\n`+
+    `| Distribution | ${fmt(r.distribution)} |\n`+
+    `| Sole Prop SE Tax | ${fmt(r.spSETax)} |\n`+
+    `| S-Corp Payroll Tax | ${fmt(r.scSETax)} |\n`+
+    `| SE Tax Savings | ${fmt(r.seSavings)} |\n`+
+    `| Admin Overhead | ${fmt(r.adminCost)} |\n`+
+    `| **Net Annual Savings** | **${fmt(r.netSavings)}** |\n`+
+    `| 5-Year Savings | ${fmt(r.fiveYrSavings)} |\n`+
+    `| Break-Even Income | ${r.breakEvenIncome?fmt(r.breakEvenIncome):'N/A'} |\n\n`+
+    `---\n*Generated by ApexLogics AL-118 · apexlogics.org · Data: IRS 2026 (SS wage base $184,500)*`;
+  const blob=new Blob([md],{type:'text/markdown'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='scorp-AL118.md';a.click();
+}
+
+function exportAP2(){
+  if(!_lastResult){alert('Run the calculator first.');return;}
+  const r=_lastResult;
+  const payload={
+    ap2_version:"2.0",mandate_type:"scorp_election_record",
+    generated_at:new Date().toISOString(),al_id:"AL-118",
+    inputs:{net_se_income:r.netIncome,reasonable_salary_pct:+(r.salaryPct*100).toFixed(0),
+      annual_admin_cost:r.adminCost,owner_health_premium_annual:r.healthPremium,filing_status:r.status},
+    summary:{w2_salary:Math.round(r.salary),distribution:Math.round(r.distribution),
+      sole_prop_se_tax:Math.round(r.spSETax),scorp_payroll_tax:Math.round(r.scSETax),
+      se_tax_savings:Math.round(r.seSavings),net_annual_savings:Math.round(r.netSavings),
+      five_year_savings:Math.round(r.fiveYrSavings),break_even_income:r.breakEvenIncome},
+    downstream_handoff_candidates:["AL-119","AL-123","AL-01"]
+  };
+  const AP2Schema={validate:p=>p.ap2_version&&p.mandate_type&&p.al_id&&p.inputs&&p.summary};
+  if(!AP2Schema.validate(payload)){alert('AP2 validation failed.');return;}
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='scorp-AL118.ap2.json';a.click();
+}
+</script>
+</body>
+</html>
