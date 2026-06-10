@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher Pension Multiplier & Vesting Estimator | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--amber-dim:rgba(232,168,56,.10);
+  --teal:#14B8A6;--teal-dim:rgba(20,184,166,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--teal);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--teal);border-color:var(--teal);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:1024px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:680px}
+.pii-banner{max-width:1024px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:1024px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:680px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s;appearance:none}
+input:focus,select:focus{outline:none;border-color:var(--teal)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.divider{height:1px;background:var(--border);margin:20px 0}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--teal);color:#000}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--teal);color:var(--teal)}
+.result-hidden{display:none}
+/* Verdict */
+.verdict-panel{border-radius:12px;padding:24px;margin-bottom:20px}
+.verdict-stay{background:linear-gradient(135deg,rgba(20,184,166,.08),rgba(232,168,56,.04));border:2px solid rgba(20,184,166,.3)}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--teal);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+.milestone-table table{width:100%;border-collapse:collapse}
+.milestone-table th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:2px solid var(--border)}
+.milestone-table td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:14px}
+.milestone-table td.mono{font-family:var(--font-mono)}
+.milestone-table tr.highlight-row td{background:rgba(20,184,166,.06);font-weight:600}
+.milestone-table tr.vesting-row td{background:rgba(232,168,56,.08);color:var(--amber)}
+.vesting-status{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-weight:700;font-size:15px;margin-bottom:14px}
+.vs-vested{background:rgba(52,211,153,.12);color:#34D399;border:1px solid rgba(52,211,153,.3)}
+.vs-not{background:rgba(232,68,68,.10);color:var(--danger);border:1px solid rgba(232,68,68,.25)}
+.note-box{background:var(--surface2);border-left:3px solid var(--teal);border-radius:0 6px 6px 0;padding:14px 16px;font-size:13px;margin-top:12px;line-height:1.65}
+.note-box.warn{border-left-color:var(--amber)}
+.routing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.routing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:flex-start;gap:10px;text-decoration:none}
+.routing-card:hover{border-color:var(--teal);text-decoration:none}
+.routing-card .r-icon{font-size:20px}
+.routing-card .r-title{font-weight:600;color:var(--teal);margin-bottom:2px;font-size:13px}
+.routing-card .r-desc{font-size:12px;color:var(--muted)}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.mcp-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px}
+.mcp-panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.mcp-endpoint{font-family:var(--font-mono);font-size:12px;color:var(--teal);background:var(--bg);padding:8px 12px;border-radius:6px;word-break:break-all}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tag-teal{background:var(--teal-dim);color:var(--teal)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}
+footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-teal">Education Path &amp; ROI</span></div>
+  <h1>Teacher Pension Multiplier &amp; Vesting Estimator</h1>
+  <p>Enter your plan's multiplier, FAS basis, and vesting threshold to see your projected annual pension, lifetime pension value, and the cost of leaving before key milestones.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<!-- Plan Rules -->
+<div class="card">
+  <h2>Your Pension Plan Parameters</h2>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:16px">All inputs come from your state/district plan documents. No defaults are pre-filled — district pension plans vary significantly.</p>
+  <div class="grid-3">
+    <div class="field">
+      <label for="multiplier">Benefit Multiplier (% per year)</label>
+      <input type="number" id="multiplier" placeholder="e.g. 2.0" min="0.5" max="4.0" step="0.05">
+      <span class="hint">Your state plan's per-year credit. Common range: 1.5%–3.0%. Check your plan document.</span>
+    </div>
+    <div class="field">
+      <label for="vestingYears">Vesting Threshold (years)</label>
+      <input type="number" id="vestingYears" placeholder="e.g. 5" min="1" max="15" step="1">
+      <span class="hint">Minimum years of service to retain any pension benefit.</span>
+    </div>
+    <div class="field">
+      <label for="fasType">FAS Basis</label>
+      <select id="fasType">
+        <option value="3">3-year average</option>
+        <option value="5">5-year average</option>
+        <option value="1">Single final year</option>
+      </select>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="grid-3">
+    <div class="field">
+      <label for="currentYears">Current Years of Service</label>
+      <input type="number" id="currentYears" placeholder="e.g. 8" min="0" max="45" step="1">
+    </div>
+    <div class="field">
+      <label for="plannedRetYears">Planned Total Years of Service</label>
+      <input type="number" id="plannedRetYears" placeholder="e.g. 30" min="1" max="45" step="1">
+    </div>
+    <div class="field">
+      <label for="currentSalary">Current Annual Salary ($)</label>
+      <input type="number" id="currentSalary" placeholder="e.g. 62000" min="20000" max="200000" step="1000">
+    </div>
+  </div>
+  <div class="grid-3" style="margin-top:16px">
+    <div class="field">
+      <label for="salaryGrowthPct">Annual Salary Growth (%)</label>
+      <input type="number" id="salaryGrowthPct" value="2.5" min="0" max="8" step="0.5">
+      <span class="hint">Step + COLA estimate. Affects FAS projection.</span>
+    </div>
+    <div class="field">
+      <label for="estYearsInRetirement">Estimated Years in Retirement</label>
+      <input type="number" id="estYearsInRetirement" value="20" min="5" max="40" step="1">
+    </div>
+    <div class="field">
+      <label for="pensionCola">Pension COLA (% per year)</label>
+      <input type="number" id="pensionCola" value="1.5" min="0" max="5" step="0.25">
+      <span class="hint">Post-retirement annual adjustment. Often 0–3%. Check your plan.</span>
+    </div>
+  </div>
+</div>
+
+<!-- Early Departure -->
+<div class="card">
+  <h2>Early-Exit Comparison (Optional)</h2>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Compare your planned retirement pension against leaving at an earlier milestone — e.g., exactly at vesting threshold or a partial-career exit.</p>
+  <div class="grid-3">
+    <div class="field">
+      <label for="leaveNowYears">Leave-Now Years of Service</label>
+      <input type="number" id="leaveNowYears" placeholder="e.g. 10" min="0" max="45" step="1">
+      <span class="hint">Leave blank to skip early-exit comparison.</span>
+    </div>
+    <div class="field">
+      <label for="discountRate">Discount Rate (%)</label>
+      <input type="number" id="discountRate" value="4.0" min="1" max="10" step="0.5">
+    </div>
+  </div>
+</div>
+
+<!-- Calculate -->
+<div style="text-align:center;margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calculate()">Calculate Pension →</button>
+</div>
+
+<!-- Results -->
+<div id="results" class="result-hidden">
+
+  <div class="card">
+    <h2>Pension Projection</h2>
+
+    <div id="vestingStatus"></div>
+
+    <div class="verdict-panel verdict-stay" id="verdictPanel">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;text-align:center">
+        <div>
+          <div style="font-size:13px;color:var(--muted)">Projected Annual Pension</div>
+          <div style="font-family:var(--font-mono);font-size:36px;color:var(--teal);margin:6px 0" id="annualPension">—</div>
+        </div>
+        <div>
+          <div style="font-size:13px;color:var(--muted)">Replacement Rate</div>
+          <div style="font-family:var(--font-mono);font-size:36px;color:var(--amber);margin:6px 0" id="replacementRate">—</div>
+          <div style="font-size:12px;color:var(--muted)">of final salary</div>
+        </div>
+        <div>
+          <div style="font-size:13px;color:var(--muted)">Lifetime Pension PV</div>
+          <div style="font-family:var(--font-mono);font-size:36px;color:var(--teal);margin:6px 0" id="lifetimePV">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="val" id="fasVal">—</div>
+        <div class="lbl">Final Average Salary (FAS)</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="totalYearsShown">—</div>
+        <div class="lbl">Service years at retirement</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="benefitFactor">—</div>
+        <div class="lbl">Total benefit factor</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="lifetimeNominal">—</div>
+        <div class="lbl">Lifetime pension (nominal)</div>
+      </div>
+    </div>
+
+    <!-- Milestone Comparison Table -->
+    <h3 style="font-family:var(--font-serif);font-size:18px;margin-bottom:14px">Milestone Comparison</h3>
+    <div class="milestone-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Scenario</th><th>Years of Service</th><th>Annual Pension</th>
+            <th>Lifetime PV</th><th>vs. Planned</th>
+          </tr>
+        </thead>
+        <tbody id="milestoneTable"></tbody>
+      </table>
+    </div>
+
+    <!-- Early Exit Delta -->
+    <div id="earlyExitSection" class="result-hidden" style="margin-top:16px">
+      <h3 style="font-family:var(--font-serif);font-size:18px;margin-bottom:10px">Leave-Now vs. Stay-to-Planned Delta</h3>
+      <div class="metrics-grid" id="earlyExitMetrics"></div>
+    </div>
+
+    <div class="note-box" id="summaryNote">—</div>
+    <div class="note-box warn" style="margin-top:12px">
+      <strong>⚠ District-specific inputs required.</strong> This tool uses your plan's multiplier and FAS. Final pension amounts, COLA guarantees, and vesting rules vary by state and district. Verify all inputs against your official plan document or HR team before making career decisions.
+    </div>
+  </div>
+
+  <!-- Next Steps -->
+  <div class="card">
+    <h2>Continue Your Analysis</h2>
+    <div class="routing-grid">
+      <a href="../118-teacher-salary-schedule-projector/index.html" class="routing-card">
+        <div class="r-icon">📈</div>
+        <div>
+          <div class="r-title">Salary Schedule Projector</div>
+          <div class="r-desc">AL-125 · Project salary trajectory to model FAS precisely.</div>
+        </div>
+      </a>
+      <a href="../119-educator-advanced-degree-roi/index.html" class="routing-card">
+        <div class="r-icon">🎓</div>
+        <div>
+          <div class="r-title">Master's Lane-Change ROI</div>
+          <div class="r-desc">AL-126 · Does a master's raise FAS enough to matter? Find out.</div>
+        </div>
+      </a>
+      <a href="../113-pslf-qualifying-payment-counter/index.html" class="routing-card">
+        <div class="r-icon">🏦</div>
+        <div>
+          <div class="r-title">PSLF Payment Counter</div>
+          <div class="r-desc">AL-110 · Public service work may also qualify for loan forgiveness.</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Export -->
+  <div class="card">
+    <h2>Export Results</h2>
+    <div class="results-export-row">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+  <div class="mcp-panel">
+    <h3>MCP Integration</h3>
+    <div class="mcp-endpoint">GET https://apexlogics.org/.well-known/mcp.json → tool: estimate_teacher_pension</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Inbound: Salary Schedule Projector (AL-125) · Lane-Change ROI (AL-126) · Pairs with PSLF Counter (AL-110)</p>
+  </div>
+
+</div><!-- /results -->
+
+</div><!-- /main -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-128 · Data: 2026 (user-supplied plan parameters; formula-based projections; no embedded state tables)
+</footer>
+
+<script>
+function fmtD(n){ return '$' + Math.round(Math.abs(n)).toLocaleString(); }
+function fmtPct(n){ return n.toFixed(1) + '%'; }
+
+let _lastResult = null;
+
+function projectFAS(currentSalary, yearsFromNow, growthPct, fasYears){
+  // Project salary at retirement, average over FAS window
+  const g = growthPct / 100;
+  let sum = 0;
+  const retSalary = currentSalary * Math.pow(1 + g, yearsFromNow);
+  for(let y = 0; y < fasYears; y++){
+    sum += currentSalary * Math.pow(1 + g, yearsFromNow - y);
+  }
+  return sum / fasYears;
+}
+
+function pensionAtYears(yearsService, currentYears, currentSalary, growthPct, fasYears, multiplier, pensionCola, retirementYears, discountRate){
+  const yearsToRet = yearsService - currentYears;
+  const fas = projectFAS(currentSalary, Math.max(0, yearsToRet), growthPct, fasYears);
+  const finalSalary = currentSalary * Math.pow(1 + growthPct/100, Math.max(0, yearsToRet));
+  const annualPension = multiplier / 100 * yearsService * fas;
+  // Lifetime nominal
+  let lifetimeNom = 0, lifetimePV = 0;
+  for(let y = 1; y <= retirementYears; y++){
+    const annualY = annualPension * Math.pow(1 + pensionCola/100, y - 1);
+    lifetimeNom += annualY;
+    lifetimePV += annualY / Math.pow(1 + discountRate/100, y);
+  }
+  return { annualPension, fas, finalSalary, lifetimeNom, lifetimePV, yearsService };
+}
+
+function calculate(){
+  const multiplier      = +document.getElementById('multiplier').value;
+  const vestingYears    = +document.getElementById('vestingYears').value;
+  const fasType         = +document.getElementById('fasType').value;
+  const currentYears    = +document.getElementById('currentYears').value;
+  const plannedRetYears = +document.getElementById('plannedRetYears').value;
+  const currentSalary   = +document.getElementById('currentSalary').value;
+  const salaryGrowth    = +document.getElementById('salaryGrowthPct').value;
+  const retirementYears = +document.getElementById('estYearsInRetirement').value;
+  const pensionCola     = +document.getElementById('pensionCola').value;
+  const discountRate    = +document.getElementById('discountRate').value;
+  const leaveNowYears   = +document.getElementById('leaveNowYears').value || null;
+
+  const missing = [];
+  if(!multiplier)      missing.push('Benefit Multiplier');
+  if(!vestingYears)    missing.push('Vesting Threshold');
+  if(!currentYears && currentYears !== 0) missing.push('Current Years of Service');
+  if(!plannedRetYears) missing.push('Planned Total Years');
+  if(!currentSalary)   missing.push('Current Salary');
+  if(missing.length){ alert('Missing required fields: ' + missing.join(', ')); return; }
+  if(plannedRetYears < currentYears){ alert('Planned retirement years must be ≥ current years.'); return; }
+
+  const planned = pensionAtYears(plannedRetYears, currentYears, currentSalary, salaryGrowth, fasType, multiplier, pensionCola, retirementYears, discountRate);
+  const isVested = currentYears >= vestingYears;
+
+  // Build milestone scenarios
+  const scenarios = [];
+  // Vesting milestone
+  if(vestingYears > currentYears && vestingYears < plannedRetYears){
+    const vest = pensionAtYears(vestingYears, currentYears, currentSalary, salaryGrowth, fasType, multiplier, pensionCola, retirementYears, discountRate);
+    scenarios.push({ label: 'Leave at vesting', ...vest, isVesting: true });
+  }
+  // 20-year milestone if applicable
+  if(currentYears < 20 && plannedRetYears > 20){
+    const m20 = pensionAtYears(20, currentYears, currentSalary, salaryGrowth, fasType, multiplier, pensionCola, retirementYears, discountRate);
+    scenarios.push({ label: 'Stay to 20 years', ...m20 });
+  }
+  // 25-year milestone
+  if(currentYears < 25 && plannedRetYears > 25){
+    const m25 = pensionAtYears(25, currentYears, currentSalary, salaryGrowth, fasType, multiplier, pensionCola, retirementYears, discountRate);
+    scenarios.push({ label: 'Stay to 25 years', ...m25 });
+  }
+  // Planned retirement
+  scenarios.push({ label: 'Planned retirement ★', ...planned, isPlanned: true });
+
+  // Optional early exit
+  let leaveNowResult = null;
+  if(leaveNowYears && leaveNowYears > 0 && leaveNowYears !== plannedRetYears){
+    if(leaveNowYears < vestingYears){
+      leaveNowResult = { annual: 0, lifetimePV: 0, years: leaveNowYears, note: 'Below vesting — $0 pension.' };
+    } else {
+      const ln = pensionAtYears(leaveNowYears, currentYears, currentSalary, salaryGrowth, fasType, multiplier, pensionCola, retirementYears, discountRate);
+      leaveNowResult = { annual: ln.annualPension, lifetimePV: ln.lifetimePV, years: leaveNowYears,
+        delta: planned.annualPension - ln.annualPension,
+        deltaPV: planned.lifetimePV - ln.lifetimePV };
+    }
+  }
+
+  _lastResult = {
+    multiplier, vestingYears, fasType, currentYears, plannedRetYears, currentSalary,
+    salaryGrowth, retirementYears, pensionCola, discountRate,
+    planned, scenarios, leaveNowResult, isVested
+  };
+
+  renderResults(_lastResult);
+}
+
+function renderResults(r){
+  const p = r.planned;
+
+  // Vesting status
+  const vsEl = document.getElementById('vestingStatus');
+  if(r.isVested){
+    vsEl.innerHTML = `<div class="vesting-status vs-vested">✓ Vested (${r.currentYears} yrs ≥ ${r.vestingYears}-yr threshold)</div>`;
+  } else {
+    const gap = r.vestingYears - r.currentYears;
+    vsEl.innerHTML = `<div class="vesting-status vs-not">✗ Not yet vested — ${gap} more year${gap===1?'':'s'} to reach ${r.vestingYears}-yr threshold</div>`;
+  }
+
+  const replacePct = (p.annualPension / p.finalSalary * 100);
+  document.getElementById('annualPension').textContent    = fmtD(p.annualPension);
+  document.getElementById('replacementRate').textContent  = fmtPct(replacePct);
+  document.getElementById('lifetimePV').textContent       = fmtD(p.lifetimePV);
+  document.getElementById('fasVal').textContent           = fmtD(p.fas);
+  document.getElementById('totalYearsShown').textContent  = r.plannedRetYears + ' yrs';
+  document.getElementById('benefitFactor').textContent    = fmtPct(r.multiplier * r.plannedRetYears);
+  document.getElementById('lifetimeNominal').textContent  = fmtD(p.lifetimeNom);
+
+  // Milestone table
+  document.getElementById('milestoneTable').innerHTML = r.scenarios.map(s => {
+    const delta = s.lifetimePV - p.lifetimePV;
+    const deltaStr = s.isPlanned ? '—' : (delta >= 0 ? '+' : '') + fmtD(delta);
+    const rowClass = s.isPlanned ? ' class="highlight-row"' : s.isVesting ? ' class="vesting-row"' : '';
+    return `<tr${rowClass}>
+      <td>${s.label}</td>
+      <td class="mono">${s.yearsService}</td>
+      <td class="mono">${fmtD(s.annualPension)}</td>
+      <td class="mono">${fmtD(s.lifetimePV)}</td>
+      <td class="mono" style="color:${s.isPlanned?'var(--muted)':delta<0?'var(--danger)':'var(--teal)'}">${deltaStr}</td>
+    </tr>`;
+  }).join('');
+
+  // Early exit
+  const earlySection = document.getElementById('earlyExitSection');
+  if(r.leaveNowResult){
+    earlySection.classList.remove('result-hidden');
+    const ln = r.leaveNowResult;
+    document.getElementById('earlyExitMetrics').innerHTML = ln.note
+      ? `<div class="metric-card"><div class="val" style="color:var(--danger)">$0</div><div class="lbl">${ln.note}</div></div>`
+      : `<div class="metric-card"><div class="val">${fmtD(ln.annual)}/yr</div><div class="lbl">Pension at leave-now (${ln.years} yrs)</div></div>
+         <div class="metric-card"><div class="val" style="color:var(--danger)">−${fmtD(ln.delta)}/yr</div><div class="lbl">Annual shortfall vs. planned</div></div>
+         <div class="metric-card"><div class="val" style="color:var(--danger)">−${fmtD(ln.deltaPV)}</div><div class="lbl">Lifetime PV cost of leaving early</div></div>`;
+  } else {
+    earlySection.classList.add('result-hidden');
+  }
+
+  document.getElementById('summaryNote').innerHTML =
+    `<strong>Annual pension at ${r.plannedRetYears} years:</strong> ${fmtD(p.annualPension)} (${r.multiplier}% × ${r.plannedRetYears} yrs × FAS ${fmtD(p.fas)}). ` +
+    `Replacement rate: ${fmtPct(p.annualPension/p.finalSalary*100)} of projected final salary.<br><br>` +
+    `<strong>Lifetime value (PV):</strong> ${fmtD(p.lifetimePV)} over ${r.retirementYears} retirement years at ${r.discountRate}% discount rate, ${r.pensionCola}% COLA.<br><br>` +
+    `<strong>Vesting cliff:</strong> Leaving before year ${r.vestingYears} forfeits the entire pension. The milestone table shows the PV cost of each possible early-exit point.`;
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+function getManifest(){
+  return {
+    tool_id: "121-teacher-pension-estimator", al_id: "AL-128", version: "1.0.0",
+    title: "Teacher Pension Multiplier & Vesting Estimator",
+    category: "education_path_roi",
+    journeys: ["education_path", "compensation_benefits"],
+    personas: ["working_professional"],
+    status: "shipped", maintenance: "zero",
+    ap2_export: true,
+    ap2_mandate_types: ["teacher_pension_record"],
+    ap2_inbound_mandate_types: ["teacher_salary_schedule_record", "educator_advanced_degree_record"],
+    sister_suite: "https://ainumbers.co",
+    consulting_site: "https://apexadvisory.site",
+    license: "CC-BY-4.0",
+    mcp_tool_definition: { name: "estimate_teacher_pension" }
+  };
+}
+
+function exportMarkdown(){
+  if(!_lastResult){ alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const p = r.planned;
+  const md =
+`# Teacher Pension Projection — AL-128
+
+**Plan:** ${r.multiplier}% multiplier · ${r.fasType}-yr FAS · Vesting at ${r.vestingYears} years
+**Service:** ${r.currentYears} years now → ${r.plannedRetYears} years at retirement
+**Salary now:** ${fmtD(r.currentSalary)} · Growth: ${r.salaryGrowth}%/yr
+
+## Results
+| Metric | Value |
+|---|---|
+| Final Average Salary (FAS) | ${fmtD(p.fas)} |
+| Annual Pension at Retirement | ${fmtD(p.annualPension)} |
+| Replacement Rate | ${fmtPct(p.annualPension/p.finalSalary*100)} |
+| Lifetime Pension (PV) | ${fmtD(p.lifetimePV)} |
+| Lifetime Pension (nominal) | ${fmtD(p.lifetimeNom)} |
+| Vesting Status | ${r.isVested ? '✓ Vested' : `✗ Not vested (${r.vestingYears - r.currentYears} yrs to go)`} |
+
+---
+*Generated by ApexLogics AL-128 · apexlogics.org · User-supplied plan parameters; formula-based*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'teacher-pension-AL128.md'; a.click();
+}
+
+function exportAP2(){
+  if(!_lastResult){ alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const p = r.planned;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "teacher_pension_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-128",
+    tool_id: "121-teacher-pension-estimator",
+    inputs: {
+      multiplier: r.multiplier,
+      vestingYears: r.vestingYears,
+      fasType: r.fasType,
+      currentYears: r.currentYears,
+      plannedRetYears: r.plannedRetYears,
+      currentSalary: r.currentSalary,
+      salaryGrowthPct: r.salaryGrowth,
+      estYearsInRetirement: r.retirementYears,
+      pensionColaPct: r.pensionCola,
+      discountRate: r.discountRate
+    },
+    outputs: {
+      fas: Math.round(p.fas),
+      annualPension: Math.round(p.annualPension),
+      replacementRatePct: +(p.annualPension / p.finalSalary * 100).toFixed(1),
+      lifetimePensionPV: Math.round(p.lifetimePV),
+      lifetimePensionNominal: Math.round(p.lifetimeNom),
+      isVested: r.isVested
+    },
+    metadata: {
+      license: "CC-BY-4.0",
+      data_vintage: "2026",
+      regulatory_citations: []
+    }
+  };
+  const AP2Schema = { validate: p => p.ap2_version && p.mandate_type && p.al_id && p.inputs && p.outputs };
+  if(!AP2Schema.validate(payload)){ alert('AP2 validation failed.'); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'AL128_121-teacher-pension_' + tsCompact() + '.ap2.json'; a.click();
+}
+
+function tsCompact(){
+  const d = new Date();
+  return d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) +
+    pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+}
+function pad(n){ return String(n).padStart(2,'0'); }
+</script>
+</body>
+</html>

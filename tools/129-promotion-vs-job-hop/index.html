@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Promotion vs. Job-Hop Calculator | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--lavender:#A78BFA;--lavender-dim:rgba(167,139,250,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;--warn:#FBBF24;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--lavender);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--lavender);border-color:var(--lavender);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:960px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:660px}
+.pii-banner{max-width:960px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:960px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.card h3{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:18px 0 10px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:680px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--lavender)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.toggle-row{display:flex;align-items:center;gap:12px;padding:10px 0}
+.toggle{position:relative;display:inline-block;width:42px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--surface2);border:1px solid var(--border);border-radius:22px;transition:.2s}
+.toggle-slider:before{position:absolute;content:'';width:16px;height:16px;left:2px;top:2px;background:var(--muted);border-radius:50%;transition:.2s}
+.toggle input:checked + .toggle-slider{background:var(--lavender-dim);border-color:var(--lavender)}
+.toggle input:checked + .toggle-slider:before{transform:translateX(20px);background:var(--lavender)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--lavender);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--lavender);color:var(--lavender)}
+.result-hidden{display:none}
+/* Results */
+.verdict-banner{border-radius:12px;padding:24px;margin-bottom:20px;text-align:center}
+.verdict-banner.stay{background:linear-gradient(135deg,rgba(167,139,250,.12),rgba(232,168,56,.06));border:2px solid rgba(167,139,250,.3)}
+.verdict-banner.hop{background:linear-gradient(135deg,rgba(52,211,153,.08),rgba(167,139,250,.06));border:2px solid rgba(52,211,153,.3)}
+.verdict-banner .big-num{font-family:var(--font-mono);font-size:40px;font-weight:500;margin:8px 0}
+.verdict-banner.stay .big-num{color:var(--lavender)}
+.verdict-banner.hop  .big-num{color:var(--success)}
+.verdict-banner .label{font-size:14px;color:var(--muted)}
+.verdict-banner .verdict{font-size:18px;font-weight:700;margin-top:10px}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--lavender);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+.metric-card .sub{font-size:12px;color:var(--muted);margin-top:4px}
+table{width:100%;border-collapse:collapse;margin-bottom:16px}
+th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:14px}
+td.mono{font-family:var(--font-mono)}
+tr.total-row td{font-weight:600;background:rgba(167,139,250,.06)}
+.note-box{background:var(--surface2);border-left:3px solid var(--lavender);border-radius:0 6px 6px 0;padding:14px 16px;font-size:13px;margin-top:12px;line-height:1.65}
+.routing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.routing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:flex-start;gap:10px;text-decoration:none}
+.routing-card:hover{border-color:var(--lavender);text-decoration:none}
+.routing-card .r-icon{font-size:20px}
+.routing-card .r-title{font-weight:600;color:var(--lavender);margin-bottom:2px;font-size:13px}
+.routing-card .r-desc{font-size:12px;color:var(--muted)}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.mcp-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px}
+.mcp-panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.mcp-endpoint{font-family:var(--font-mono);font-size:12px;color:var(--lavender);background:var(--bg);padding:8px 12px;border-radius:6px;word-break:break-all}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tag-lavender{background:var(--lavender-dim);color:var(--lavender)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}
+footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-lavender">Career Transition</span></div>
+  <h1>Promotion vs. Job-Hop Calculator</h1>
+  <p>Compare staying for an internal promotion against taking an external move — netting out forfeited equity, ramp risk, and 5-year cumulative comp to find your real break-even.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<!-- Current Situation -->
+<div class="card">
+  <h2>Your Current Situation</h2>
+  <div class="grid-2">
+    <div class="field">
+      <label for="currentBase">Current Base Salary ($)</label>
+      <input type="number" id="currentBase" value="120000" min="20000" max="2000000" step="1000">
+    </div>
+    <div class="field">
+      <label for="meritPct">Annual Merit Increase, Both Paths (%)</label>
+      <input type="number" id="meritPct" value="3.0" min="0" max="15" step="0.5">
+      <span class="hint">Applied to each path's base before the one-time event.</span>
+    </div>
+    <div class="field">
+      <label for="horizon">Comparison Horizon (years)</label>
+      <input type="number" id="horizon" value="5" min="2" max="10" step="1">
+      <span class="hint">Default: 5 years (one strategic cycle).</span>
+    </div>
+  </div>
+</div>
+
+<!-- Stay Path: Internal Promotion -->
+<div class="card">
+  <h2>Path A — Stay for Internal Promotion</h2>
+  <div class="grid-2">
+    <div class="field">
+      <label for="promoRaisePct">Expected Promotion Raise (%)</label>
+      <input type="number" id="promoRaisePct" value="8" min="1" max="50" step="0.5">
+      <span class="hint">Typical internal promotion: 5–12%. The raise on top of your current base.</span>
+    </div>
+    <div class="field">
+      <label for="promoMonths">Months Until Promotion</label>
+      <input type="number" id="promoMonths" value="12" min="1" max="36" step="1">
+      <span class="hint">Months you continue at current base before the promotion lands.</span>
+    </div>
+  </div>
+</div>
+
+<!-- Hop Path: External Move -->
+<div class="card">
+  <h2>Path B — External Job-Hop</h2>
+  <div class="grid-2">
+    <div class="field">
+      <label for="hopPremiumPct">External Offer Premium (%)</label>
+      <input type="number" id="hopPremiumPct" value="15" min="1" max="80" step="1">
+      <span class="hint">Typical external premium: 10–20%. Labeled BLS/research heuristic — use your actual offer. (BLS OEWS 2025 wage growth data; stylized employer mobility research)</span>
+    </div>
+    <div class="field">
+      <label for="unvestedEquity">Unvested Equity / Bonus Forfeited ($)</label>
+      <input type="number" id="unvestedEquity" value="25000" min="0" max="2000000" step="1000">
+      <span class="hint">Unvested RSUs, options, retention bonus you forfeit by leaving.</span>
+    </div>
+    <div class="field">
+      <label for="rampMonths">Ramp Risk (months to full effectiveness)</label>
+      <input type="number" id="rampMonths" value="3" min="0" max="12" step="1">
+      <span class="hint">Months at reduced effectiveness in new role. We discount 25% of salary during ramp.</span>
+    </div>
+    <div class="field">
+      <label for="tenureResetPct">Tenure/PTO/Benefits Reset Cost (% of salary)</label>
+      <input type="number" id="tenureResetPct" value="3" min="0" max="15" step="0.5">
+      <span class="hint">Annual cost of resetting tenure clock — lower PTO accrual, vesting restart, etc. Expressed as % of salary.</span>
+    </div>
+  </div>
+  <div class="toggle-row">
+    <label class="toggle">
+      <input type="checkbox" id="loosesBenefits">
+      <span class="toggle-slider"></span>
+    </label>
+    <span style="font-size:13px;color:var(--muted)">New role has meaningfully worse benefits (health, 401k match, etc.)</span>
+  </div>
+  <div id="benefitsDeltaRow" style="display:none;padding-top:8px">
+    <div class="field" style="max-width:260px">
+      <label for="benefitsDelta">Annual Benefits Gap ($)</label>
+      <input type="number" id="benefitsDelta" value="5000" min="0" max="50000" step="500">
+      <span class="hint">Estimated annual value of better benefits you lose by leaving.</span>
+    </div>
+  </div>
+</div>
+
+<!-- Calculate -->
+<div style="text-align:center;margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calculate()">Compare Paths →</button>
+</div>
+
+<!-- Results -->
+<div id="results" class="result-hidden">
+
+  <div class="card">
+    <h2>5-Year Comp Comparison</h2>
+
+    <div class="verdict-banner" id="verdictBanner">
+      <div class="label" id="verdictLabel">—</div>
+      <div class="big-num" id="netAdvantage">—</div>
+      <div class="verdict" id="verdictText">—</div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="val" id="stayTotal">—</div>
+        <div class="lbl">Path A — Stay (5-yr cumulative)</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="hopTotal">—</div>
+        <div class="lbl">Path B — Job-Hop (5-yr cumulative)</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="breakEvenPremium">—</div>
+        <div class="lbl">Break-even external premium</div>
+        <div class="sub" id="breakEvenSub">—</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="equityDrag">—</div>
+        <div class="lbl">Equity forfeiture drag</div>
+      </div>
+    </div>
+
+    <h3>Year-by-Year Cumulative Comp</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Year</th>
+          <th>Path A: Stay (Annual)</th>
+          <th>Path A (Cumul.)</th>
+          <th>Path B: Hop (Annual)</th>
+          <th>Path B (Cumul.)</th>
+          <th>Running Δ</th>
+        </tr>
+      </thead>
+      <tbody id="yearTable"></tbody>
+    </table>
+
+    <div class="note-box" id="thresholdNote">—</div>
+  </div>
+
+  <!-- Next Steps -->
+  <div class="card">
+    <h2>Continue Your Analysis</h2>
+    <div class="routing-grid">
+      <a href="../90-counter-offer-decision-engine/index.html" class="routing-card">
+        <div class="r-icon">⚖️</div>
+        <div>
+          <div class="r-title">Counter-Offer Decision Engine</div>
+          <div class="r-desc">AL-97 · Have a competing offer in hand? Model the counter-offer decision.</div>
+        </div>
+      </a>
+      <a href="../09-job-search-roi-tracker/index.html" class="routing-card">
+        <div class="r-icon">🔍</div>
+        <div>
+          <div class="r-title">Job Search ROI Tracker</div>
+          <div class="r-desc">AL-27 · Time, cost, and channel ROI of the job search itself.</div>
+        </div>
+      </a>
+      <a href="../128-raise-ask-ev-calculator/index.html" class="routing-card">
+        <div class="r-icon">📊</div>
+        <div>
+          <div class="r-title">Raise-Ask EV Calculator</div>
+          <div class="r-desc">AL-135 · Model the probability-weighted value of asking first.</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Export -->
+  <div class="card">
+    <h2>Export Results</h2>
+    <div class="results-export-row">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+  <div class="mcp-panel">
+    <h3>MCP Integration</h3>
+    <div class="mcp-endpoint">GET https://apexlogics.org/.well-known/mcp.json → tool: promotion_vs_job_hop</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Inbound: AL-135 raise_ask_record · Downstream: AL-97 Counter-Offer · AL-27 Job Search ROI</p>
+  </div>
+
+</div><!-- /results -->
+
+</div><!-- /main -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-136 · Data: 2026 (BLS OEWS 2025 labeled heuristic; user-input figures govern)
+</footer>
+
+<script>
+function fmtD(n){ return '$' + Math.round(Math.abs(n)).toLocaleString(); }
+function fmtPct(n){ return n.toFixed(1) + '%'; }
+
+// Benefits toggle
+document.getElementById('loosesBenefits').addEventListener('change', function(){
+  document.getElementById('benefitsDeltaRow').style.display = this.checked ? 'block' : 'none';
+});
+
+let _lastResult = null;
+
+function calculate(){
+  const currentBase    = +document.getElementById('currentBase').value;
+  const meritPct       = +document.getElementById('meritPct').value / 100;
+  const horizon        = +document.getElementById('horizon').value;
+  const promoRaisePct  = +document.getElementById('promoRaisePct').value / 100;
+  const promoMonths    = +document.getElementById('promoMonths').value;
+  const hopPremiumPct  = +document.getElementById('hopPremiumPct').value / 100;
+  const unvestedEquity = +document.getElementById('unvestedEquity').value;
+  const rampMonths     = +document.getElementById('rampMonths').value;
+  const tenureResetPct = +document.getElementById('tenureResetPct').value / 100;
+  const loosesBenefits = document.getElementById('loosesBenefits').checked;
+  const benefitsDelta  = loosesBenefits ? +document.getElementById('benefitsDelta').value : 0;
+
+  if(currentBase <= 0){ alert('Enter a valid current salary.'); return; }
+
+  // ── Path A: Stay for Internal Promotion ──
+  // Pre-promotion months at current base (fraction of year)
+  const promoFracYear = Math.min(promoMonths / 12, 1);
+
+  // Post-promotion base
+  const promoBump    = currentBase * promoRaisePct;
+  const promoBase    = currentBase + promoBump;
+
+  // Year-by-year for Path A
+  // Year 1: partial at current, partial at promo
+  // Year 2+: at promoted base with merit
+  const stayRows = [];
+  let stayAnnual, stayBase = currentBase;
+  for(let yr = 1; yr <= horizon; yr++){
+    if(yr === 1){
+      // Blend: promoFracYear at current, (1 - promoFracYear) at promoBase
+      stayAnnual = currentBase * promoFracYear + promoBase * (1 - promoFracYear);
+      stayBase   = promoBase;
+    } else {
+      // Apply merit to previous promoted base
+      stayBase   = stayBase * (1 + meritPct);
+      stayAnnual = stayBase;
+    }
+    stayRows.push(stayAnnual);
+  }
+
+  // ── Path B: External Job-Hop ──
+  const hopBase0     = currentBase * (1 + hopPremiumPct);
+  const rampCost     = (hopBase0 * 0.25 * rampMonths / 12);  // 25% effectiveness loss during ramp
+  const tenureCostYr = hopBase0 * tenureResetPct;
+  const hopRows = [];
+  let hopBase = hopBase0;
+  for(let yr = 1; yr <= horizon; yr++){
+    let hopAnnual = hopBase;
+    if(yr === 1){
+      hopAnnual -= rampCost;           // ramp drag in year 1
+    }
+    hopAnnual -= benefitsDelta;        // annual benefits gap
+    hopAnnual -= tenureCostYr;         // tenure/PTO reset annual cost
+    if(yr > 1) hopBase = hopBase * (1 + meritPct);
+    hopRows.push(hopAnnual);
+  }
+
+  // ── Totals ──
+  const stayCumul = stayRows.reduce((a,b) => a+b, 0);
+  const hopCumul  = hopRows.reduce((a,b) => a+b, 0) - unvestedEquity;  // equity forfeiture one-time
+  const netAdv    = hopCumul - stayCumul;
+  const winner    = netAdv > 0 ? 'hop' : 'stay';
+
+  // ── Break-even external premium ──
+  // Find premium where hopCumul = stayCumul (binary search is fine)
+  let beLo = 0, beHi = 150, bePrem = hopPremiumPct * 100;
+  for(let i = 0; i < 50; i++){
+    const mid = (beLo + beHi) / 2;
+    const prem = mid / 100;
+    const hb0 = currentBase * (1 + prem);
+    const hRamp = hb0 * 0.25 * rampMonths / 12;
+    const hTenure = hb0 * tenureResetPct;
+    let hCum = -unvestedEquity;
+    let hBs = hb0;
+    for(let yr = 1; yr <= horizon; yr++){
+      let ha = hBs - (yr===1 ? hRamp : 0) - benefitsDelta - hTenure;
+      hCum += ha;
+      if(yr > 1) hBs = hBs * (1 + meritPct);
+    }
+    if(hCum > stayCumul) beHi = mid; else beLo = mid;
+  }
+  bePrem = (beLo + beHi) / 2;
+
+  _lastResult = { currentBase, meritPct, horizon, promoRaisePct, promoMonths,
+    hopPremiumPct, unvestedEquity, rampMonths, tenureResetPct, benefitsDelta,
+    stayRows, hopRows, stayCumul, hopCumul, netAdv, winner, bePrem };
+
+  renderResults(_lastResult);
+}
+
+function renderResults(r){
+  const banner = document.getElementById('verdictBanner');
+  banner.className = 'verdict-banner ' + r.winner;
+  document.getElementById('verdictLabel').textContent = r.winner === 'hop'
+    ? `Job-Hop leads by (${r.horizon}-yr cumulative comp)`
+    : `Stay leads by (${r.horizon}-yr cumulative comp)`;
+  document.getElementById('netAdvantage').textContent = fmtD(Math.abs(r.netAdv));
+  document.getElementById('verdictText').textContent = r.winner === 'hop'
+    ? `Job-Hop wins — external premium exceeds forfeiture drag`
+    : `Stay wins — promotion + compounding outperforms`;
+
+  document.getElementById('stayTotal').textContent = fmtD(r.stayCumul);
+  document.getElementById('hopTotal').textContent  = fmtD(r.hopCumul);
+  document.getElementById('breakEvenPremium').textContent = fmtPct(r.bePrem) + ' premium';
+  document.getElementById('breakEvenSub').textContent =
+    r.bePrem > r.hopPremiumPct * 100
+      ? `Your offer at ${fmtPct(r.hopPremiumPct*100)} is below break-even — stay wins`
+      : `Your offer at ${fmtPct(r.hopPremiumPct*100)} clears break-even — hop wins`;
+  document.getElementById('equityDrag').textContent = fmtD(r.unvestedEquity) + ' one-time';
+
+  // Year table
+  let stayCum = 0, hopCum = -r.unvestedEquity;
+  document.getElementById('yearTable').innerHTML = r.stayRows.map((sa, i) => {
+    const ha  = r.hopRows[i];
+    stayCum  += sa;
+    hopCum   += ha;
+    const delta = hopCum - stayCum;
+    const dStyle = delta > 0 ? 'color:var(--success)' : 'color:var(--danger)';
+    return `<tr>
+      <td>${i+1}</td>
+      <td class="mono">${fmtD(sa)}</td>
+      <td class="mono">${fmtD(stayCum)}</td>
+      <td class="mono">${fmtD(ha)}</td>
+      <td class="mono">${fmtD(hopCum + (i===0 ? r.unvestedEquity : 0))}${i===0 ? ' <span style="font-size:11px;color:var(--danger)">−'+fmtD(r.unvestedEquity)+' equity</span>' : ''}</td>
+      <td class="mono" style="${dStyle}">${delta >= 0 ? '+' : ''}${fmtD(delta)}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('thresholdNote').innerHTML =
+    `<strong>Verdict:</strong> To justify hopping, your offer needs a <strong>${fmtPct(r.bePrem)}</strong> premium over current base (after equity forfeiture of ${fmtD(r.unvestedEquity)} and ramp cost). Your input: <strong>${fmtPct(r.hopPremiumPct*100)}</strong> — ${r.winner === 'hop' ? '✓ clears the threshold' : '✗ below threshold'}.<br><br>
+    <strong>Stay threshold:</strong> An internal promotion of ≥ <strong>${fmtPct(r.promoRaisePct*100)}</strong> timed within ${r.promoMonths} months beats a ${fmtPct(r.hopPremiumPct*100)} external premium in this scenario.`;
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+function getManifest(){
+  return {
+    tool_id: "129-promotion-vs-job-hop", al_id: "AL-136", version: "1.0.0",
+    title: "Promotion vs. Job-Hop Calculator", category: "career_transition_mobility",
+    journeys: ["career_navigation","compensation_benefits"],
+    personas: ["working_professional"],
+    status: "shipped", maintenance: "very_low",
+    data_vintage: "2026 — BLS OEWS 2025 labeled heuristic; user-input figures govern",
+    ap2_export: true,
+    ap2_mandate_types: ["mobility_decision_record"],
+    ap2_inbound_mandate_types: ["raise_ask_record"],
+    downstream_handoff_candidates: ["AL-97", "AL-27"],
+    sister_suite: "https://ainumbers.co",
+    consulting_site: "https://apexadvisory.site",
+    license: "CC-BY-4.0",
+    mcp_tool_definition: {
+      name: "promotion_vs_job_hop",
+      description: "Compare staying for an internal promotion against taking an external job-hop over a 5-year horizon, netting forfeited equity, ramp risk, and benefits gap.",
+      inputSchema: { type: "object" }
+    }
+  };
+}
+
+function exportMarkdown(){
+  if(!_lastResult){ alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const md =
+`# Promotion vs. Job-Hop Analysis — AL-136
+
+**Current Base:** ${fmtD(r.currentBase)} | **Horizon:** ${r.horizon} years | **Merit:** ${fmtPct(r.meritPct*100)}/yr
+
+## Paths Compared
+| | Path A: Stay | Path B: Hop |
+|---|---|---|
+| Event | +${fmtPct(r.promoRaisePct*100)} in ${r.promoMonths} months | +${fmtPct(r.hopPremiumPct*100)} premium now |
+| Equity forfeited | $0 | ${fmtD(r.unvestedEquity)} |
+| Ramp cost | $0 | ${fmtD(r.currentBase * (1+r.hopPremiumPct) * 0.25 * r.rampMonths / 12)} (${r.rampMonths}-mo ramp) |
+| **${r.horizon}-yr cumulative** | **${fmtD(r.stayCumul)}** | **${fmtD(r.hopCumul)}** |
+
+## Verdict
+**${r.winner === 'hop' ? 'Job-Hop wins' : 'Stay wins'}** by **${fmtD(Math.abs(r.netAdv))}** over ${r.horizon} years.
+
+Break-even external premium: **${fmtPct(r.bePrem)}**
+Your input premium: **${fmtPct(r.hopPremiumPct*100)}** — ${r.winner === 'hop' ? '✓ above break-even' : '✗ below break-even'}
+
+---
+*Generated by ApexLogics AL-136 · apexlogics.org · Data: 2026 (BLS OEWS 2025 heuristic, user-input governs)*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'promotion-vs-job-hop-AL136.md'; a.click();
+}
+
+function exportAP2(){
+  if(!_lastResult){ alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "mobility_decision_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-136",
+    tool_id: "129-promotion-vs-job-hop",
+    inputs: {
+      currentBase: r.currentBase,
+      promoRaisePct: +(r.promoRaisePct*100).toFixed(1),
+      promoMonths: r.promoMonths,
+      hopPremiumPct: +(r.hopPremiumPct*100).toFixed(1),
+      unvestedEquity: r.unvestedEquity,
+      rampMonths: r.rampMonths,
+      tenureResetPct: +(r.tenureResetPct*100).toFixed(1),
+      benefitsDelta: r.benefitsDelta,
+      meritPct: +(r.meritPct*100).toFixed(1),
+      horizon: r.horizon
+    },
+    outputs: {
+      winner: r.winner,
+      stayTotalComp: Math.round(r.stayCumul),
+      hopTotalComp: Math.round(r.hopCumul),
+      netAdvantage: Math.round(r.netAdv),
+      breakEvenExternalPremium: +r.bePrem.toFixed(1)
+    },
+    downstream_handoff_candidates: ["AL-97", "AL-27"],
+    metadata: { license: "CC-BY-4.0", data_vintage: "2026" }
+  };
+  const AP2Schema = { validate: p => p.ap2_version && p.mandate_type && p.al_id && p.inputs && p.outputs };
+  if(!AP2Schema.validate(payload)){ alert('AP2 validation failed.'); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'AL136_129-promotion-vs-job-hop_' + tsCompact() + '.ap2.json'; a.click();
+}
+
+function tsCompact(){
+  const d = new Date();
+  return d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) +
+    pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+}
+function pad(n){ return String(n).padStart(2,'0'); }
+</script>
+</body>
+</html>

@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raise-Ask Expected Value Calculator | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--coral:#F07167;--coral-dim:rgba(240,113,103,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;--warn:#FBBF24;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--coral);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--coral);border-color:var(--coral);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:900px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:640px}
+.pii-banner{max-width:900px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:900px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.card h3{font-size:14px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:20px 0 12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:620px){.grid-2{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--coral)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.slider-row{display:flex;flex-direction:column;gap:6px}
+.slider-wrap{display:flex;align-items:center;gap:12px}
+input[type=range]{flex:1;accent-color:var(--coral)}
+.slider-val{font-family:var(--font-mono);font-size:13px;color:var(--coral);min-width:42px;text-align:right}
+.prob-sum{font-size:13px;margin-top:8px;padding:8px 12px;border-radius:6px;background:var(--surface2);display:flex;justify-content:space-between;align-items:center}
+.prob-sum .sum-val{font-family:var(--font-mono);font-weight:600}
+.prob-sum.ok{border:1px solid var(--success);color:var(--success)}
+.prob-sum.bad{border:1px solid var(--danger);color:var(--danger)}
+.toggle-row{display:flex;align-items:center;gap:12px;padding:10px 0}
+.toggle-label{font-size:13px;color:var(--muted)}
+.toggle{position:relative;display:inline-block;width:42px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--surface2);border:1px solid var(--border);border-radius:22px;transition:.2s}
+.toggle-slider:before{position:absolute;content:'';width:16px;height:16px;left:2px;top:2px;background:var(--muted);border-radius:50%;transition:.2s}
+.toggle input:checked + .toggle-slider{background:var(--coral-dim);border-color:var(--coral)}
+.toggle input:checked + .toggle-slider:before{transform:translateX(20px);background:var(--coral)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--coral);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--coral);color:var(--coral)}
+.result-hidden{display:none}
+/* Results */
+.result-hero{background:linear-gradient(135deg,var(--coral-dim),rgba(232,168,56,.06));border:2px solid rgba(240,113,103,.3);border-radius:12px;padding:24px;margin-bottom:20px;text-align:center}
+.result-hero .big-num{font-family:var(--font-mono);font-size:44px;font-weight:500;color:var(--coral);margin:8px 0}
+.result-hero .label{font-size:14px;color:var(--muted)}
+.result-hero .sublabel{font-size:13px;color:var(--muted);margin-top:4px}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--coral);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin-bottom:16px}
+th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:14px}
+td.mono{font-family:var(--font-mono)}
+tr.hi-row td{font-weight:600;background:rgba(240,113,103,.06)}
+.ask-script{background:var(--surface2);border-left:3px solid var(--coral);border-radius:0 6px 6px 0;padding:16px;font-size:14px;line-height:1.7;margin-top:10px}
+.ask-script em{color:var(--muted);font-size:12px;display:block;margin-bottom:8px}
+.warn-box{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--warn);margin-top:14px}
+.routing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.routing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:flex-start;gap:10px;text-decoration:none}
+.routing-card:hover{border-color:var(--coral);text-decoration:none}
+.routing-card .r-icon{font-size:20px}
+.routing-card .r-title{font-weight:600;color:var(--coral);margin-bottom:2px;font-size:13px}
+.routing-card .r-desc{font-size:12px;color:var(--muted)}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.mcp-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px}
+.mcp-panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.mcp-endpoint{font-family:var(--font-mono);font-size:12px;color:var(--coral);background:var(--bg);padding:8px 12px;border-radius:6px;word-break:break-all}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tag-coral{background:rgba(240,113,103,.15);color:var(--coral)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}
+footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-coral">Compensation &amp; Offers</span></div>
+  <h1>Raise-Ask Expected Value Calculator</h1>
+  <p>Model the probability-weighted payoff of asking for a raise before you ask. Know your EV, your recommended anchor, and the cost of staying silent.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<!-- Inputs: Your Situation -->
+<div class="card">
+  <h2>Your Current Situation</h2>
+  <div class="grid-2">
+    <div class="field">
+      <label for="currentBase">Current Base Salary ($)</label>
+      <input type="number" id="currentBase" value="95000" min="20000" max="2000000" step="1000">
+    </div>
+    <div class="field">
+      <label for="targetAsk">Target Raise Ask ($)</label>
+      <input type="number" id="targetAsk" value="105000" min="20000" max="2000000" step="1000">
+      <span class="hint">The salary you want to reach, not the raise amount.</span>
+    </div>
+    <div class="field">
+      <label for="partialFrac">Partial Grant (% of full raise)</label>
+      <input type="number" id="partialFrac" value="50" min="10" max="90" step="5">
+      <span class="hint">If they counter, what fraction of the ask do you expect? Default: 50%.</span>
+    </div>
+    <div class="field">
+      <label for="meritPct">Annual Merit Increase (%)</label>
+      <input type="number" id="meritPct" value="3.0" min="0" max="15" step="0.5">
+      <span class="hint">Applied to whichever base you land on each year.</span>
+    </div>
+    <div class="field">
+      <label for="horizon">Compounding Horizon (years)</label>
+      <input type="number" id="horizon" value="3" min="1" max="20" step="1">
+      <span class="hint">Years over which a raise compounds. 3 yr = one job cycle; 10 yr = long-run view.</span>
+    </div>
+  </div>
+
+  <!-- Market range helper -->
+  <h3>Market Range Helper (optional)</h3>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Enter your market range to auto-set the Target Ask to the midpoint. Leave blank to set Target Ask manually above.</p>
+  <div class="grid-2">
+    <div class="field">
+      <label for="mktLow">Market Range Low ($)</label>
+      <input type="number" id="mktLow" value="" min="0" max="2000000" step="1000" placeholder="e.g. 98000">
+    </div>
+    <div class="field">
+      <label for="mktHigh">Market Range High ($)</label>
+      <input type="number" id="mktHigh" value="" min="0" max="2000000" step="1000" placeholder="e.g. 115000">
+    </div>
+  </div>
+  <button class="btn-sec" style="margin-top:10px" onclick="applyMarketMid()">Use Market Midpoint as Target</button>
+</div>
+
+<!-- Probability Inputs -->
+<div class="card">
+  <h2>Probability of Outcomes</h2>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:18px">Assign your subjective probability to each outcome. Must sum to 100%.</p>
+
+  <div class="slider-row" style="margin-bottom:16px">
+    <label>P(Full Grant) — they say yes to your full ask</label>
+    <div class="slider-wrap">
+      <input type="range" id="pFull" min="0" max="100" step="5" value="25" oninput="syncSliders('pFull')">
+      <span class="slider-val" id="pFullVal">25%</span>
+    </div>
+  </div>
+
+  <div class="slider-row" style="margin-bottom:16px">
+    <label>P(Partial Grant) — they counter with something less</label>
+    <div class="slider-wrap">
+      <input type="range" id="pPartial" min="0" max="100" step="5" value="45" oninput="syncSliders('pPartial')">
+      <span class="slider-val" id="pPartialVal">45%</span>
+    </div>
+  </div>
+
+  <div class="slider-row" style="margin-bottom:16px">
+    <label>P(No Change) — they decline entirely</label>
+    <div class="slider-wrap">
+      <input type="range" id="pNone" min="0" max="100" step="5" value="30" oninput="syncSliders('pNone')">
+      <span class="slider-val" id="pNoneVal">30%</span>
+    </div>
+  </div>
+
+  <div class="prob-sum ok" id="probSum">
+    <span>Probabilities sum to:</span>
+    <span class="sum-val" id="probSumVal">100%</span>
+  </div>
+
+  <div class="toggle-row" style="margin-top:18px">
+    <label class="toggle">
+      <input type="checkbox" id="downsideRisk">
+      <span class="toggle-slider"></span>
+    </label>
+    <span class="toggle-label">Downside risk exists (asking could trigger negative consequences)</span>
+  </div>
+  <p style="font-size:12px;color:var(--muted);padding-left:54px;margin-top:4px">In most workplaces, asking professionally carries no real downside. Only toggle on if you have specific reason to believe otherwise.</p>
+</div>
+
+<!-- Calculate -->
+<div style="text-align:center;margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calculate()">Calculate Raise EV →</button>
+</div>
+
+<!-- Results -->
+<div id="results" class="result-hidden">
+
+  <div class="card">
+    <h2>Expected Value of Asking</h2>
+
+    <div class="result-hero">
+      <div class="label">Expected Annual Raise (probability-weighted)</div>
+      <div class="big-num" id="evAnnual">—</div>
+      <div class="sublabel" id="evSubLabel">—</div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="val" id="evLifetime">—</div>
+        <div class="lbl">Lifetime EV over <span id="horizonLabel">—</span> years</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="silenceCost">—</div>
+        <div class="lbl">Cost of staying silent</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="recAnchor">—</div>
+        <div class="lbl">Recommended ask anchor (+15%)</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="partialVal">—</div>
+        <div class="lbl">Partial grant scenario (<span id="partialPctLabel">—</span>)</div>
+      </div>
+    </div>
+
+    <h3>Scenario Breakdown</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Outcome</th>
+          <th>Probability</th>
+          <th>New Salary</th>
+          <th>Annual Raise</th>
+          <th>Weighted Value</th>
+        </tr>
+      </thead>
+      <tbody id="scenarioTable"></tbody>
+    </table>
+
+    <div id="downsideNote" style="display:none" class="warn-box">
+      ⚠ You've flagged a real downside risk. The EV above does not model job-loss or retaliation probability — those are qualitative judgments you need to make. Consult the Counter-Offer Decision Engine if you are weighing options after a difficult conversation.
+    </div>
+
+    <h3>Compounding Value Over <span id="horizonLabel2">3</span> Years</h3>
+    <table>
+      <thead>
+        <tr><th>Year</th><th>Base (No Ask)</th><th>Base (Full Grant)</th><th>Base (Partial Grant)</th><th>EV Scenario</th></tr>
+      </thead>
+      <tbody id="compoundTable"></tbody>
+    </table>
+  </div>
+
+  <!-- Scripted Ask -->
+  <div class="card">
+    <h2>Scripted Ask Framework</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">A starting-point script based on your numbers. Customize with specific accomplishments and market data.</p>
+    <div class="ask-script">
+      <em>Anchoring heuristic: ask ~15% above your target to leave room for a counter, while landing at your goal.</em>
+      <div id="askScript">—</div>
+    </div>
+  </div>
+
+  <!-- Next Steps -->
+  <div class="card">
+    <h2>Continue Your Analysis</h2>
+    <div class="routing-grid">
+      <a href="../129-promotion-vs-job-hop/index.html" class="routing-card">
+        <div class="r-icon">📈</div>
+        <div>
+          <div class="r-title">Promotion vs. Job-Hop</div>
+          <div class="r-desc">AL-136 · If they say no — weigh internal promotion against an external move</div>
+        </div>
+      </a>
+      <a href="../90-counter-offer-decision-engine/index.html" class="routing-card">
+        <div class="r-icon">⚖️</div>
+        <div>
+          <div class="r-title">Counter-Offer Decision Engine</div>
+          <div class="r-desc">AL-97 · If you have a competing offer in hand</div>
+        </div>
+      </a>
+      <a href="../25-total-compensation-suite/index.html" class="routing-card">
+        <div class="r-icon">💼</div>
+        <div>
+          <div class="r-title">Total Comp Suite</div>
+          <div class="r-desc">AL-01 · See the full picture beyond base salary</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Export -->
+  <div class="card">
+    <h2>Export Results</h2>
+    <div class="results-export-row">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+  <div class="mcp-panel">
+    <h3>MCP Integration</h3>
+    <div class="mcp-endpoint">GET https://apexlogics.org/.well-known/mcp.json → tool: raise_ask_ev_calculator</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Downstream handoffs: Promotion vs. Job-Hop (AL-136) · Counter-Offer Engine (AL-97) · Total Comp Suite (AL-01)</p>
+  </div>
+
+</div><!-- /results -->
+
+</div><!-- /main -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-135 · Data: 2026 (pure formula, no embedded tables)
+</footer>
+
+<script>
+// ── Utility ──────────────────────────────────────────────────────────────────
+function fmtDollar(n){ return '$' + Math.round(Math.abs(n)).toLocaleString(); }
+function fmtPct(n){ return (n * 100).toFixed(1) + '%'; }
+
+// ── Slider sync (probabilities must sum to 100) ───────────────────────────────
+function syncSliders(changed){
+  const pFull    = +document.getElementById('pFull').value;
+  const pPartial = +document.getElementById('pPartial').value;
+  const pNone    = +document.getElementById('pNone').value;
+  document.getElementById('pFullVal').textContent    = pFull    + '%';
+  document.getElementById('pPartialVal').textContent = pPartial + '%';
+  document.getElementById('pNoneVal').textContent    = pNone    + '%';
+  const total = pFull + pPartial + pNone;
+  const sumEl = document.getElementById('probSum');
+  document.getElementById('probSumVal').textContent = total + '%';
+  sumEl.className = 'prob-sum ' + (total === 100 ? 'ok' : 'bad');
+}
+
+function applyMarketMid(){
+  const lo = +document.getElementById('mktLow').value;
+  const hi = +document.getElementById('mktHigh').value;
+  if(!lo || !hi || hi <= lo){ alert('Enter valid low and high market range values.'); return; }
+  const mid = Math.round((lo + hi) / 2 / 100) * 100;
+  document.getElementById('targetAsk').value = mid;
+}
+
+// ── Main calculation ──────────────────────────────────────────────────────────
+let _lastResult = null;
+
+function calculate(){
+  const currentBase  = +document.getElementById('currentBase').value;
+  const targetAsk    = +document.getElementById('targetAsk').value;
+  const partialFrac  = +document.getElementById('partialFrac').value / 100;
+  const meritPct     = +document.getElementById('meritPct').value   / 100;
+  const horizon      = +document.getElementById('horizon').value;
+  const pFull        = +document.getElementById('pFull').value       / 100;
+  const pPartial     = +document.getElementById('pPartial').value    / 100;
+  const pNone        = +document.getElementById('pNone').value       / 100;
+  const downsideRisk = document.getElementById('downsideRisk').checked;
+
+  // Input validation
+  if(currentBase <= 0 || targetAsk <= 0){ alert('Please enter valid salary values.'); return; }
+  if(targetAsk <= currentBase){ alert('Target Ask must be higher than Current Base. Enter the salary you want, not the raise amount.'); return; }
+  if(Math.round((pFull + pPartial + pNone) * 100) !== 100){ alert('Probabilities must sum to 100%.'); return; }
+
+  // ── Core outcomes ──
+  const fullRaise    = targetAsk - currentBase;                  // $ if full grant
+  const partialRaise = fullRaise * partialFrac;                  // $ if partial grant
+  const noRaise      = 0;
+
+  // ── Expected value per year (year 1) ──
+  const evYear1 = pFull * fullRaise + pPartial * partialRaise + pNone * noRaise;
+
+  // ── EV base = current + evYear1 raise applied proportionally ──
+  // Modeling: in EV scenario the base at start of year 2 is currentBase + evYear1
+  // then merit compounding applies to whichever base is achieved
+  let evLifetime = 0;
+  let noAskCumulative = 0;
+  let evCumulative = 0;
+  const compRows = [];
+
+  for(let yr = 1; yr <= horizon; yr++){
+    const meritMult = Math.pow(1 + meritPct, yr - 1);
+    const baseNoAsk  = currentBase * meritMult;
+    const baseFull   = (currentBase + fullRaise) * meritMult;
+    const basePartial= (currentBase + partialRaise) * meritMult;
+    // EV salary in year yr = EV base × merit compounding
+    const evBase     = (currentBase + evYear1) * meritMult;
+    const annualGap  = evBase - baseNoAsk;   // incremental value vs. silence
+    evLifetime      += annualGap;
+    compRows.push({ yr, baseNoAsk, baseFull, basePartial, evBase });
+  }
+
+  // ── Silence cost = lifetime EV ──
+  const silenceCost = evLifetime;
+
+  // ── Recommended anchor (ask 15% above target raise) ──
+  const recAnchorSalary = Math.round((currentBase + fullRaise * 1.15) / 100) * 100;
+
+  _lastResult = { currentBase, targetAsk, fullRaise, partialRaise, partialFrac,
+    pFull, pPartial, pNone, evYear1, evLifetime, silenceCost, recAnchorSalary,
+    meritPct, horizon, downsideRisk, compRows };
+
+  renderResults(_lastResult);
+}
+
+function renderResults(r){
+  // Hero
+  document.getElementById('evAnnual').textContent   = fmtDollar(r.evYear1) + '/yr';
+  document.getElementById('evSubLabel').textContent = `EV of asking = ${(r.pFull*100).toFixed(0)}% × ${fmtDollar(r.fullRaise)} + ${(r.pPartial*100).toFixed(0)}% × ${fmtDollar(r.partialRaise)}`;
+  document.getElementById('evLifetime').textContent = fmtDollar(r.evLifetime);
+  document.getElementById('horizonLabel').textContent = r.horizon;
+  document.getElementById('horizonLabel2').textContent = r.horizon;
+  document.getElementById('silenceCost').textContent  = fmtDollar(r.silenceCost);
+  document.getElementById('recAnchor').textContent    = fmtDollar(r.recAnchorSalary);
+  document.getElementById('partialVal').textContent   = fmtDollar(r.partialRaise) + '/yr';
+  document.getElementById('partialPctLabel').textContent = (r.partialFrac * 100).toFixed(0) + '% grant';
+
+  // Scenario table
+  const scenarios = [
+    { label:'Full Grant',    prob:r.pFull,    salary:r.currentBase + r.fullRaise,    raise:r.fullRaise    },
+    { label:'Partial Grant', prob:r.pPartial, salary:r.currentBase + r.partialRaise, raise:r.partialRaise },
+    { label:'No Change',     prob:r.pNone,    salary:r.currentBase,                  raise:0              },
+  ];
+  document.getElementById('scenarioTable').innerHTML = scenarios.map(s => {
+    const weighted = s.prob * s.raise;
+    return `<tr class="${s.label === 'Full Grant' ? 'hi-row' : ''}">
+      <td>${s.label}</td>
+      <td class="mono">${(s.prob * 100).toFixed(0)}%</td>
+      <td class="mono">${fmtDollar(s.salary)}</td>
+      <td class="mono">${s.raise > 0 ? fmtDollar(s.raise) + '/yr' : '—'}</td>
+      <td class="mono">${fmtDollar(weighted)}/yr</td>
+    </tr>`;
+  }).join('') + `<tr class="hi-row">
+    <td><strong>Expected Value (EV)</strong></td>
+    <td class="mono">100%</td>
+    <td class="mono">—</td>
+    <td class="mono"><strong>${fmtDollar(r.evYear1)}/yr</strong></td>
+    <td class="mono"><strong>${fmtDollar(r.evYear1)}/yr</strong></td>
+  </tr>`;
+
+  // Downside note
+  document.getElementById('downsideNote').style.display = r.downsideRisk ? 'block' : 'none';
+
+  // Compounding table
+  document.getElementById('compoundTable').innerHTML = r.compRows.map(row =>
+    `<tr>
+      <td>${row.yr}</td>
+      <td class="mono">${fmtDollar(row.baseNoAsk)}</td>
+      <td class="mono">${fmtDollar(row.baseFull)}</td>
+      <td class="mono">${fmtDollar(row.basePartial)}</td>
+      <td class="mono" style="color:var(--coral)">${fmtDollar(row.evBase)}</td>
+    </tr>`
+  ).join('');
+
+  // Script
+  const anchor = fmtDollar(r.recAnchorSalary);
+  const target = fmtDollar(r.targetAsk);
+  const ev     = fmtDollar(r.evYear1);
+  document.getElementById('askScript').innerHTML =
+    `"I'd like to discuss my compensation. Based on my contributions this year [insert specific win] and current market benchmarks in the ${fmtDollar(r.targetAsk - 5000)}–${fmtDollar(r.targetAsk + 10000)} range, I'd like to bring my base to <strong>${anchor}</strong>. My target is <strong>${target}</strong> — can we discuss getting there?"
+    <br><br>
+    <em style="display:inline;font-size:12px;color:var(--muted)">Expected payoff of asking: ${ev}/yr · Cost of not asking: ${fmtDollar(r.silenceCost)} over ${r.horizon} yr</em>`;
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+// ── Manifest ──────────────────────────────────────────────────────────────────
+function getManifest(){
+  return {
+    tool_id: "128-raise-ask-ev-calculator", al_id: "AL-135", version: "1.0.0",
+    title: "Raise-Ask Expected Value Calculator",
+    category: "compensation_offers",
+    journeys: ["compensation_benefits"],
+    personas: ["working_professional"],
+    status: "shipped", maintenance: "zero",
+    data_vintage: "2026 — pure formula, no embedded data",
+    ap2_export: true,
+    ap2_mandate_types: ["raise_ask_record"],
+    downstream_handoff_candidates: ["AL-136", "AL-97", "AL-01"],
+    sister_suite: "https://ainumbers.co",
+    consulting_site: "https://apexadvisory.site",
+    license: "CC-BY-4.0",
+    mcp_tool_definition: {
+      name: "calculate_raise_ask_ev",
+      description: "Compute the probability-weighted expected value of asking for a salary raise, including silence cost, anchoring recommendation, and scripted ask framework.",
+      inputSchema: { type: "object" }
+    }
+  };
+}
+
+// ── Exports ───────────────────────────────────────────────────────────────────
+function exportMarkdown(){
+  if(!_lastResult){ alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const md =
+`# Raise-Ask Expected Value — AL-135
+
+**Current Base:** ${fmtDollar(r.currentBase)} | **Target Ask:** ${fmtDollar(r.targetAsk)} | **Horizon:** ${r.horizon} years
+
+## Outcome Probabilities
+| Outcome | P | Annual Raise | Weighted |
+|---|---|---|---|
+| Full Grant | ${(r.pFull*100).toFixed(0)}% | ${fmtDollar(r.fullRaise)} | ${fmtDollar(r.pFull * r.fullRaise)} |
+| Partial Grant (${(r.partialFrac*100).toFixed(0)}%) | ${(r.pPartial*100).toFixed(0)}% | ${fmtDollar(r.partialRaise)} | ${fmtDollar(r.pPartial * r.partialRaise)} |
+| No Change | ${(r.pNone*100).toFixed(0)}% | $0 | $0 |
+
+## Key Figures
+- **Expected Annual Raise (EV):** ${fmtDollar(r.evYear1)}/yr
+- **Lifetime EV (${r.horizon} yr, merit-compounded):** ${fmtDollar(r.evLifetime)}
+- **Cost of Staying Silent:** ${fmtDollar(r.silenceCost)}
+- **Recommended Ask Anchor (+15% over target raise):** ${fmtDollar(r.recAnchorSalary)}
+${r.downsideRisk ? '\n⚠ **Downside risk flagged** — evaluate qualitatively.' : ''}
+
+---
+*Generated by ApexLogics AL-135 · apexlogics.org · Data: 2026 (pure formula)*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'raise-ask-ev-AL135.md'; a.click();
+}
+
+function exportAP2(){
+  if(!_lastResult){ alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "raise_ask_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-135",
+    tool_id: "128-raise-ask-ev-calculator",
+    inputs: {
+      currentBase: r.currentBase,
+      targetAsk: r.targetAsk,
+      pFull: +(r.pFull * 100).toFixed(0),
+      pPartial: +(r.pPartial * 100).toFixed(0),
+      pNone: +(r.pNone * 100).toFixed(0),
+      partialFracPct: +(r.partialFrac * 100).toFixed(0),
+      meritPct: +(r.meritPct * 100).toFixed(1),
+      horizon: r.horizon,
+      downsideRisk: r.downsideRisk
+    },
+    outputs: {
+      expectedValue: Math.round(r.evYear1),
+      lifetimeEV: Math.round(r.evLifetime),
+      silenceCost: Math.round(r.silenceCost),
+      recommendedAnchor: r.recAnchorSalary,
+      partialGrantScenario: Math.round(r.partialRaise)
+    },
+    downstream_handoff_candidates: ["AL-136", "AL-97", "AL-01"],
+    metadata: { license: "CC-BY-4.0", data_vintage: "2026" }
+  };
+  const AP2Schema = { validate: p => p.ap2_version && p.mandate_type && p.al_id && p.inputs && p.outputs };
+  if(!AP2Schema.validate(payload)){ alert('AP2 validation failed.'); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'AL135_128-raise-ask-ev_' + tsCompact() + '.ap2.json'; a.click();
+}
+
+function tsCompact(){
+  const d = new Date();
+  return d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) +
+    pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+}
+function pad(n){ return String(n).padStart(2,'0'); }
+</script>
+</body>
+</html>

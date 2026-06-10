@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>National Board Certification (NBCT) ROI Calculator | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--amber-dim:rgba(232,168,56,.10);
+  --green:#34D399;--green-dim:rgba(52,211,153,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--green);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--green);border-color:var(--green);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:880px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:640px}
+.pii-banner{max-width:880px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:880px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.grid-2{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number]{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus{outline:none;border-color:var(--green)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.labeled-const{display:inline-block;padding:2px 8px;border-radius:4px;background:rgba(232,168,56,.12);color:var(--amber);font-size:12px;font-family:var(--font-mono);margin-left:6px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--green);color:#000}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--green);color:var(--green)}
+.result-hidden{display:none}
+.verdict{border-radius:12px;padding:24px;margin-bottom:20px;text-align:center}
+.verdict.positive{background:linear-gradient(135deg,var(--green-dim),rgba(232,168,56,.04));border:2px solid rgba(52,211,153,.3)}
+.verdict.negative{background:linear-gradient(135deg,rgba(248,113,113,.08),rgba(232,168,56,.04));border:2px solid rgba(248,113,113,.25)}
+.verdict .big-num{font-family:var(--font-mono);font-size:44px;font-weight:500;margin:8px 0}
+.verdict.positive .big-num{color:var(--green)}
+.verdict.negative .big-num{color:var(--danger)}
+.verdict .label{font-size:14px;color:var(--muted)}
+.verdict .verdict-text{font-size:16px;font-weight:700;margin-top:10px}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--green);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin-bottom:8px}
+th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:14px}
+td.mono{font-family:var(--font-mono)}
+tr.total-row td{font-weight:600;background:rgba(52,211,153,.05)}
+.note-box{background:var(--surface2);border-left:3px solid var(--green);border-radius:0 6px 6px 0;padding:14px 16px;font-size:13px;margin-top:12px;line-height:1.65}
+.routing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.routing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:flex-start;gap:10px;text-decoration:none}
+.routing-card:hover{border-color:var(--green);text-decoration:none}
+.routing-card .r-icon{font-size:20px}
+.routing-card .r-title{font-weight:600;color:var(--green);margin-bottom:2px;font-size:13px}
+.routing-card .r-desc{font-size:12px;color:var(--muted)}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.mcp-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px}
+.mcp-panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.mcp-endpoint{font-family:var(--font-mono);font-size:12px;color:var(--green);background:var(--bg);padding:8px 12px;border-radius:6px;word-break:break-all}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tag-green{background:var(--green-dim);color:var(--green)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}
+footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-green">Licensing &amp; Credentials</span></div>
+  <h1>National Board Certification (NBCT) ROI Calculator</h1>
+  <p>Model NBCT cost and time against the state or district stipend it unlocks — including the renewal cycle. Know your payback month and the minimum stipend to make it worthwhile.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<!-- Costs -->
+<div class="card">
+  <h2>NBCT Costs</h2>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Assessment fee default is the current NBCT published rate. Enter actual fee if different. <a href="https://www.nbpts.org/national-board-certification/" target="_blank" rel="noopener">nbpts.org</a></p>
+  <div class="grid-2">
+    <div class="field">
+      <label>Assessment Fee ($) <span class="labeled-const">default ≈ $1,900 — NBCT 2025</span></label>
+      <input type="number" id="assessFee" value="1900" min="500" max="5000" step="50">
+      <span class="hint">Current NBCT fee ≈ $1,900 (labeled default — override if your state subsidizes or your cohort differs).</span>
+    </div>
+    <div class="field">
+      <label for="retakesCost">Retake Budget ($)</label>
+      <input type="number" id="retakesCost" value="0" min="0" max="3000" step="100">
+      <span class="hint">Retake cost if you don't pass on first attempt. Default 0 (optimistic).</span>
+    </div>
+    <div class="field">
+      <label for="prepHoursPerWeek">Prep Hours/Week (optional opportunity cost)</label>
+      <input type="number" id="prepHoursPerWeek" value="5" min="0" max="30" step="1">
+    </div>
+    <div class="field">
+      <label for="prepMonths">Prep Duration (months)</label>
+      <input type="number" id="prepMonths" value="12" min="3" max="24" step="1">
+    </div>
+    <div class="field">
+      <label for="currentHourlyRate">Your Hourly Rate (for opp. cost calc)</label>
+      <input type="number" id="currentHourlyRate" value="28" min="10" max="100" step="1">
+      <span class="hint">Divide annual salary ÷ 2080 for an approximate hourly rate.</span>
+    </div>
+  </div>
+</div>
+
+<!-- Benefits -->
+<div class="card">
+  <h2>NBCT Stipend / Salary Benefit</h2>
+  <div class="grid-2">
+    <div class="field">
+      <label for="annualStipend">Annual NBCT Stipend or Schedule Bump ($)</label>
+      <input type="number" id="annualStipend" value="5000" min="500" max="50000" step="250">
+      <span class="hint">Your state/district-specific amount. Varies widely ($1,000–$10,000+). Check your district HR or state education agency.</span>
+    </div>
+    <div class="field">
+      <label for="stipendYears">Stipend Duration (years)</label>
+      <input type="number" id="stipendYears" value="10" min="1" max="15" step="1">
+      <span class="hint">NBCT certification is valid for 10 years. Renewal possible — set to 20 if you plan to renew.</span>
+    </div>
+    <div class="field">
+      <label for="renewalCost">Renewal Cost ($)</label>
+      <input type="number" id="renewalCost" value="1250" min="0" max="3000" step="100">
+      <span class="hint">NBCT renewal cost if you plan to recertify after 10 years.</span>
+    </div>
+    <div class="field">
+      <label for="renewalYear">Renewal Year (from now)</label>
+      <input type="number" id="renewalYear" value="10" min="0" max="20" step="1">
+      <span class="hint">Set to 0 if no renewal planned.</span>
+    </div>
+    <div class="field">
+      <label for="discountRate">Discount Rate (%)</label>
+      <input type="number" id="discountRate" value="4.0" min="1" max="10" step="0.5">
+    </div>
+  </div>
+</div>
+
+<!-- Calculate -->
+<div style="text-align:center;margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calculate()">Calculate NBCT ROI →</button>
+</div>
+
+<!-- Results -->
+<div id="results" class="result-hidden">
+
+  <div class="card">
+    <h2>NBCT ROI Analysis</h2>
+
+    <div class="verdict" id="verdictBox">
+      <div class="label">Net Present Value</div>
+      <div class="big-num" id="npvVal">—</div>
+      <div class="verdict-text" id="verdictText">—</div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="val" id="paybackMonth">—</div>
+        <div class="lbl">Payback (months from start)</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="bcRatio">—</div>
+        <div class="lbl">Benefit-cost ratio</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="minStipend">—</div>
+        <div class="lbl">Minimum stipend to break even</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="totalCost">—</div>
+        <div class="lbl">Total cost (incl. opp. cost)</div>
+      </div>
+    </div>
+
+    <h3>ROI Breakdown</h3>
+    <table>
+      <thead><tr><th>Item</th><th>Amount</th><th>Notes</th></tr></thead>
+      <tbody id="breakdownTable"></tbody>
+    </table>
+
+    <div class="note-box" id="summaryNote">—</div>
+  </div>
+
+  <!-- Next Steps -->
+  <div class="card">
+    <h2>Continue Your Analysis</h2>
+    <div class="routing-grid">
+      <a href="../119-educator-advanced-degree-roi/index.html" class="routing-card">
+        <div class="r-icon">🎓</div>
+        <div>
+          <div class="r-title">Master's Lane-Change ROI</div>
+          <div class="r-desc">AL-126 · Compare NBCT against earning a master's for a lane bump.</div>
+        </div>
+      </a>
+      <a href="../121-teacher-pension-estimator/index.html" class="routing-card">
+        <div class="r-icon">🏛️</div>
+        <div>
+          <div class="r-title">Teacher Pension Estimator</div>
+          <div class="r-desc">AL-128 · Does your NBCT stipend affect pension FAS? Model it.</div>
+        </div>
+      </a>
+      <a href="../118-teacher-salary-schedule-projector/index.html" class="routing-card">
+        <div class="r-icon">📈</div>
+        <div>
+          <div class="r-title">Salary Schedule Projector</div>
+          <div class="r-desc">AL-125 · See your full salary trajectory with NBCT stipend included.</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Export -->
+  <div class="card">
+    <h2>Export Results</h2>
+    <div class="results-export-row">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+  <div class="mcp-panel">
+    <h3>MCP Integration</h3>
+    <div class="mcp-endpoint">GET https://apexlogics.org/.well-known/mcp.json → tool: calculate_nbct_roi</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Pairs with: Master's Lane ROI (AL-126) · CPD Tracker (AL-18) · Salary Schedule Projector (AL-125)</p>
+  </div>
+
+</div><!-- /results -->
+
+</div><!-- /main -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-127 · Data: 2026 (NBCT fee default ~$1,900 — nbpts.org, labeled and user-overridable)
+</footer>
+
+<script>
+function fmtD(n){ return '$' + Math.round(Math.abs(n)).toLocaleString(); }
+function fmtPct(n){ return n.toFixed(2) + 'x'; }
+
+let _lastResult = null;
+
+function calculate(){
+  const assessFee      = +document.getElementById('assessFee').value;
+  const retakesCost    = +document.getElementById('retakesCost').value;
+  const prepHrs        = +document.getElementById('prepHoursPerWeek').value;
+  const prepMonths     = +document.getElementById('prepMonths').value;
+  const hourlyRate     = +document.getElementById('currentHourlyRate').value;
+  const annualStipend  = +document.getElementById('annualStipend').value;
+  const stipendYears   = +document.getElementById('stipendYears').value;
+  const renewalCost    = +document.getElementById('renewalCost').value;
+  const renewalYear    = +document.getElementById('renewalYear').value;
+  const discountRate   = +document.getElementById('discountRate').value / 100;
+
+  if(annualStipend <= 0 || assessFee <= 0){ alert('Enter valid fee and stipend.'); return; }
+
+  const prepWeeks      = prepMonths * 4.33;
+  const oppCost        = prepHrs * prepWeeks * hourlyRate;
+  const totalCost      = assessFee + retakesCost + oppCost + (renewalYear > 0 ? renewalCost / Math.pow(1 + discountRate, renewalYear) : 0);
+
+  // NPV of stipend stream (from when cert is awarded, approx prepMonths from now)
+  const certYear       = prepMonths / 12;
+  let npvBenefits      = 0;
+  let lifetimeStipend  = 0;
+  for(let yr = 1; yr <= stipendYears; yr++){
+    const yr_disc = certYear + yr;
+    npvBenefits += annualStipend / Math.pow(1 + discountRate, yr_disc);
+    lifetimeStipend += annualStipend;
+  }
+  const renewalPV = renewalYear > 0 ? renewalCost / Math.pow(1 + discountRate, renewalYear) : 0;
+  const totalCostNom = assessFee + retakesCost + oppCost;
+  const npv         = npvBenefits - totalCostNom - renewalPV;
+  const bcRatio     = npvBenefits / (totalCostNom + renewalPV);
+
+  // Payback (months from start, nominal undiscounted)
+  let cumBenefit = -(totalCostNom);
+  let paybackMo  = null;
+  const certMo   = prepMonths;
+  for(let m = certMo; m <= certMo + stipendYears * 12; m++){
+    cumBenefit += annualStipend / 12;
+    if(cumBenefit >= 0 && paybackMo === null) paybackMo = m;
+  }
+
+  // Break-even stipend
+  let beLo = 100, beHi = 50000, beStipend;
+  for(let i = 0; i < 60; i++){
+    const mid = (beLo + beHi) / 2;
+    let bPV = 0;
+    for(let yr = 1; yr <= stipendYears; yr++)
+      bPV += mid / Math.pow(1 + discountRate, certYear + yr);
+    if(bPV > totalCostNom + renewalPV) beHi = mid; else beLo = mid;
+  }
+  beStipend = (beLo + beHi) / 2;
+
+  _lastResult = { assessFee, retakesCost, oppCost, prepHrs, prepMonths, hourlyRate,
+    annualStipend, stipendYears, renewalCost, renewalYear, discountRate,
+    totalCostNom, renewalPV, npvBenefits, npv, bcRatio, paybackMo, beStipend, lifetimeStipend };
+
+  renderResults(_lastResult);
+}
+
+function renderResults(r){
+  const vBox = document.getElementById('verdictBox');
+  vBox.className = 'verdict ' + (r.npv >= 0 ? 'positive' : 'negative');
+  document.getElementById('npvVal').textContent = (r.npv >= 0 ? '' : '−') + fmtD(r.npv);
+  document.getElementById('verdictText').textContent = r.npv >= 0
+    ? `✓ NBCT pays off — at ${fmtD(r.annualStipend)}/yr stipend`
+    : `✗ Stipend below break-even — minimum needed: ${fmtD(r.beStipend)}/yr`;
+  document.getElementById('paybackMonth').textContent   = r.paybackMo ? r.paybackMo + ' months' : 'After cert period';
+  document.getElementById('bcRatio').textContent        = r.bcRatio.toFixed(2) + 'x';
+  document.getElementById('minStipend').textContent     = fmtD(r.beStipend) + '/yr';
+  document.getElementById('totalCost').textContent      = fmtD(r.totalCostNom);
+
+  const rows = [
+    ['Assessment Fee',         fmtD(r.assessFee),      'NBCT 2025 ~$1,900 default (labeled, user-overridable)'],
+    ['Retake Budget',          fmtD(r.retakesCost),     r.retakesCost === 0 ? 'No retakes modeled' : ''],
+    ['Study Opportunity Cost', fmtD(r.oppCost),         Math.round(r.prepHrs) + ' hr/wk × ' + r.prepMonths + ' months @ $' + r.hourlyRate + '/hr'],
+    ['Total Upfront Cost',     fmtD(r.totalCostNom),    ''],
+    r.renewalYear > 0 ? ['Renewal Cost (PV)',    fmtD(r.renewalPV),     'Year ' + r.renewalYear + ' renewal, discounted'] : null,
+    ['Stipend NPV',            fmtD(r.npvBenefits),     fmtD(r.annualStipend) + '/yr × ' + r.stipendYears + ' yrs, discounted'],
+    ['Lifetime Stipend (nominal)', fmtD(r.lifetimeStipend), 'Undiscounted total'],
+    ['Net Present Value',      (r.npv >= 0 ? '' : '−') + fmtD(r.npv), r.npv >= 0 ? '✓ Positive' : '✗ Negative'],
+  ].filter(Boolean);
+  document.getElementById('breakdownTable').innerHTML = rows.map((row, i) =>
+    `<tr${i === rows.length - 1 ? ' class="total-row"' : ''}>
+      <td>${row[0]}</td><td class="mono">${row[1]}</td>
+      <td style="font-size:12px;color:var(--muted)">${row[2]}</td>
+    </tr>`
+  ).join('');
+
+  document.getElementById('summaryNote').innerHTML =
+    `<strong>Break-even stipend:</strong> You need at least <strong>${fmtD(r.beStipend)}/yr</strong> to break even on NBCT costs at a ${(r.discountRate*100).toFixed(1)}% discount rate over ${r.stipendYears} years. Your input: <strong>${fmtD(r.annualStipend)}/yr</strong> — ${r.annualStipend >= r.beStipend ? '✓ clears break-even' : '✗ below break-even'}.<br><br>
+    <strong>Tip:</strong> Many states offer partial or full fee subsidies for NBCT. Check your state education agency — reducing the fee significantly shortens payback. Renewal at year ${r.renewalYear > 0 ? r.renewalYear : 10} extends the earning window; model by adjusting the stipend duration.`;
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+function getManifest(){
+  return {
+    tool_id: "120-nbct-roi-calculator", al_id: "AL-127", version: "1.0.0",
+    title: "National Board Certification (NBCT) ROI Calculator",
+    category: "licensing_credentials",
+    journeys: ["education_path"],
+    personas: ["working_professional"],
+    status: "shipped", maintenance: "very_low",
+    data_vintage: "2026 (NBCT fee default ~$1,900 — nbpts.org, labeled and overridable)",
+    ap2_export: true,
+    ap2_mandate_types: ["nbct_roi_record"],
+    sister_suite: "https://ainumbers.co",
+    consulting_site: "https://apexadvisory.site",
+    license: "CC-BY-4.0",
+    mcp_tool_definition: {
+      name: "calculate_nbct_roi",
+      description: "Calculate the ROI of pursuing National Board Certification (NBCT): NPV, payback months, benefit-cost ratio, and minimum stipend needed to break even.",
+      inputSchema: { type: "object" }
+    }
+  };
+}
+
+function exportMarkdown(){
+  if(!_lastResult){ alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const md =
+`# NBCT ROI Analysis — AL-127
+
+**Fee:** ${fmtD(r.assessFee)} | **Stipend:** ${fmtD(r.annualStipend)}/yr × ${r.stipendYears} yrs | **Discount rate:** ${(r.discountRate*100).toFixed(1)}%
+
+## Results
+| Metric | Value |
+|---|---|
+| Net Present Value | ${(r.npv >= 0 ? '' : '−') + fmtD(r.npv)} |
+| Payback | ${r.paybackMo ? r.paybackMo + ' months' : 'After cert period'} |
+| Benefit-Cost Ratio | ${r.bcRatio.toFixed(2)}x |
+| Minimum Stipend to Break Even | ${fmtD(r.beStipend)}/yr |
+| Lifetime Stipend (nominal) | ${fmtD(r.lifetimeStipend)} |
+
+**Verdict:** ${r.npv >= 0 ? '✓ NBCT pays off at current stipend' : '✗ Stipend below break-even'}
+
+---
+*Generated by ApexLogics AL-127 · apexlogics.org · NBCT fee default ~$1,900 (nbpts.org 2025, user-overridable)*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'nbct-roi-AL127.md'; a.click();
+}
+
+function exportAP2(){
+  if(!_lastResult){ alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "nbct_roi_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-127",
+    tool_id: "120-nbct-roi-calculator",
+    inputs: {
+      assessFee: r.assessFee,
+      retakesCost: r.retakesCost,
+      annualStipend: r.annualStipend,
+      stipendYears: r.stipendYears,
+      renewalCost: r.renewalCost,
+      renewalYear: r.renewalYear,
+      prepMonths: r.prepMonths,
+      discountRate: +(r.discountRate*100).toFixed(1)
+    },
+    outputs: {
+      npv: Math.round(r.npv),
+      paybackMonths: r.paybackMo,
+      benefitCostRatio: +r.bcRatio.toFixed(2),
+      minStipendBreakEven: Math.round(r.beStipend),
+      lifetimeStipendNominal: Math.round(r.lifetimeStipend)
+    },
+    metadata: {
+      license: "CC-BY-4.0",
+      data_vintage: "2026",
+      regulatory_citations: ["NBCT assessment fee ~$1,900 (nbpts.org 2025 — labeled default, user-overridable)"]
+    }
+  };
+  const AP2Schema = { validate: p => p.ap2_version && p.mandate_type && p.al_id && p.inputs && p.outputs };
+  if(!AP2Schema.validate(payload)){ alert('AP2 validation failed.'); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'AL127_120-nbct-roi_' + tsCompact() + '.ap2.json'; a.click();
+}
+
+function tsCompact(){
+  const d = new Date();
+  return d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) +
+    pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+}
+function pad(n){ return String(n).padStart(2,'0'); }
+</script>
+</body>
+</html>
