@@ -1161,7 +1161,7 @@ footer {
       </a>
 
       <a href="tools/44-deferred-comp-457b-engine/index.html" class="tool-card"
-         data-cat="compensation_benefits" data-journeys="compensation_offers,career_transition"
+         data-cat="compensation_offers" data-journeys="compensation_offers,career_transition"
          data-personas="employee,financial_planner,hr"
          data-tags="457b deferred compensation tax deferral retirement marginal rate npv taxable account break-even" data-status="shipped"
          data-name="Deferred Comp 457(b) Decision Engine">
@@ -3380,7 +3380,7 @@ footer {
       <p class="mcp-section-desc">Every tool ships with a <code style="font-family:'JetBrains Mono',monospace;font-size:.85em;color:var(--amber)">manifest.json</code> for MCP agent discovery and an AP2 JSON export — structured mandate output for agent handoff across tools. Full registry: <a href="suite-registry.json" style="color:var(--amber)">suite-registry.json</a> · <a href=".well-known/mcp.json" style="color:var(--amber)">.well-known/mcp.json</a> · <a href="llms.txt" style="color:var(--amber)">llms.txt</a> &middot; <a href="mcp.html" style="color:var(--amber)">MCP docs</a>.</p>
     </div>
     <button class="mcp-global-toggle" id="mcpBtnGlobal" onclick="toggleGlobalMcp()" aria-expanded="false">
-      <span>📦 Suite Tool Manifest Registry &middot; 66 tools &middot; manifest.json + AP2 export schema</span>
+      <span>📦 Suite Tool Manifest Registry &middot; <span id="devToolCount">66</span> tools &middot; manifest.json + AP2 export schema</span>
       <span class="mcp-toggle-icon" id="mcpIconGlobal">▼</span>
     </button>
     <div class="mcp-global-panel" id="mcpPanelGlobal">
@@ -3731,8 +3731,36 @@ document.getElementById('introOverlay').addEventListener('click', function(e) {
   if (e.target === this) closeIntro();
 });
 
+/* ── COUNT SYNC (anti-drift) ──────────────────────────────── */
+/* All counts are derived from the actual .tool-card DOM at load — never hardcoded —
+   so adding/removing tools updates every figure automatically. Mirrors the
+   AINumbers.co count-sync pattern. */
+function syncCounts() {
+  const cards = getCards();
+  const total = cards.length;
+  const byCat = {};
+  cards.forEach(c => { const k = c.dataset.cat || ''; byCat[k] = (byCat[k] || 0) + 1; });
+
+  const fcAll = document.getElementById('fc-all');
+  if (fcAll) fcAll.textContent = total;
+  document.querySelectorAll('.filter-count').forEach(s => {
+    if (!s.id || s.id === 'fc-all') return;
+    s.textContent = byCat[s.id.replace(/^fc-/, '')] || 0;
+  });
+  document.querySelectorAll('.cat-heading').forEach(h => {
+    const n = h.querySelector('.cat-n');
+    const key = h.id.replace(/^cat-/, '');
+    if (n && byCat[key] != null) n.textContent = byCat[key] + ' tools';
+  });
+  const search = document.getElementById('globalSearch');
+  if (search) search.placeholder = 'Search ' + total + ' tools…';
+  const devCount = document.getElementById('devToolCount');
+  if (devCount) devCount.textContent = total;
+}
+
 /* ── INIT ─────────────────────────────────────────────────── */
 (function init() {
+  syncCounts();
   // Save default DOM order per grid for sort reset
   _defaultOrder = Array.from(document.querySelectorAll('.tool-grid')).map(grid =>
     Array.from(grid.querySelectorAll('.tool-card'))
