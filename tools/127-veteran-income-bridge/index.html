@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Veteran Income Bridge | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--amber-dim:rgba(232,168,56,.10);
+  --teal:#14B8A6;--teal-dim:rgba(20,184,166,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;--warn:#FBBF24;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--amber);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--amber);border-color:var(--amber);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:980px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,34px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:660px}
+.pii-banner{max-width:980px;margin:0 auto 0;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:980px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:680px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--amber)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--amber);color:#000}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--amber);color:var(--amber)}
+.result-hidden{display:none}
+.result-hero{background:linear-gradient(135deg,var(--amber-dim),rgba(20,184,166,.06));border:2px solid rgba(232,168,56,.3);border-radius:12px;padding:24px;margin-bottom:20px;text-align:center}
+.result-hero .big-num{font-family:var(--font-mono);font-size:44px;font-weight:500;color:var(--amber);margin:8px 0}
+.result-hero .label{font-size:14px;color:var(--muted)}
+.result-hero .sublabel{font-size:13px;color:var(--muted);margin-top:4px}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--amber);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+.metric-card .sub{font-size:12px;color:var(--muted);margin-top:4px}
+.verdict-box{border-radius:10px;padding:20px;margin-bottom:20px}
+.verdict-box.positive{background:rgba(76,175,125,.08);border:1px solid rgba(76,175,125,.3)}
+.verdict-box.warn{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3)}
+.verdict-box.danger{background:rgba(232,85,85,.08);border:1px solid rgba(232,85,85,.3)}
+.verdict-box h3{font-family:var(--font-serif);font-size:18px;margin-bottom:8px}
+.verdict-box p{font-size:14px;color:var(--muted)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:7px 9px;border-bottom:2px solid var(--border)}
+td{padding:7px 9px;border-bottom:1px solid var(--border);font-size:13px;font-family:var(--font-mono)}
+tr:last-child td{border-bottom:none}
+.constants-note{background:var(--surface2);border-left:3px solid var(--amber);padding:10px 14px;font-size:12px;color:var(--muted);border-radius:4px;margin-bottom:14px}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.tool-footer{text-align:center;padding:24px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);margin-top:24px}
+.tool-footer a{color:var(--muted)}
+.tool-footer a:hover{color:var(--amber)}
+.row-gap td{background:rgba(251,191,36,.05)}
+.row-stable td{background:rgba(76,175,125,.05)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo"><span>Apex</span> Logics</div>
+</nav>
+
+<div class="hero">
+  <h1>Veteran Income Bridge</h1>
+  <p>Map every income stream available during the military-to-civilian transition gap: severance, TSP, VA disability, unemployment, spouse income, and bridge employment. Find the month your civilian salary closes the gap.</p>
+</div>
+
+<div class="pii-banner">
+  🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+</div>
+
+<div class="main">
+
+  <div class="card">
+    <h2>Military Separation Details</h2>
+    <div class="constants-note">
+      Severance pay: involuntary separation = 2 months base pay × years of service (§1174). Voluntary (VSP/SSB) varies. PDRL retirement = 2.5% × disability rating × base pay. TSP withdrawals before 59½ incur 10% penalty + tax unless separation at or after age 55 (Rule of 55, IRC §72(t)(2)(A)(v)). Source: 10 U.S.C. §1174; IRC §72(t); 38 CFR (VA disability).
+    </div>
+    <div class="grid-3">
+      <div class="field">
+        <label>Separation Type</label>
+        <select id="sepType" onchange="toggleSepType()">
+          <option value="voluntary">Voluntary (ETS)</option>
+          <option value="involuntary">Involuntary / RIF</option>
+          <option value="retirement">Retirement (20+ years)</option>
+          <option value="medical">Medical / PDRL</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Years of Service</label>
+        <input type="number" id="yos" value="8" min="1" max="40">
+      </div>
+      <div class="field">
+        <label>Monthly Base Pay ($)</label>
+        <input type="number" id="basePay" value="4200" min="1000" max="15000" step="100">
+      </div>
+    </div>
+    <div class="grid-3">
+      <div class="field">
+        <label>Age at Separation</label>
+        <input type="number" id="age" value="30" min="18" max="65">
+      </div>
+      <div class="field">
+        <label>Disability Rating % (0 if none)</label>
+        <input type="number" id="disabilityRating" value="30" min="0" max="100" step="10">
+        <div class="hint">VA disability — tax-free monthly compensation</div>
+      </div>
+      <div class="field">
+        <label>Transition Gap (months before first civ paycheck)</label>
+        <input type="number" id="gapMonths" value="3" min="1" max="18">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Income Bridge Sources</h2>
+    <div class="grid-3">
+      <div class="field">
+        <label>Severance / VSP Lump Sum ($)</label>
+        <input type="number" id="severanceLump" value="0" min="0" max="500000" step="1000">
+        <div class="hint">Leave blank to auto-calculate from §1174</div>
+      </div>
+      <div class="field">
+        <label>TSP Balance ($)</label>
+        <input type="number" id="tspBalance" value="45000" min="0" max="2000000" step="1000">
+      </div>
+      <div class="field">
+        <label>TSP Monthly Withdrawal During Gap ($)</label>
+        <input type="number" id="tspMonthly" value="0" min="0" max="10000" step="100">
+        <div class="hint">0 = don't touch TSP during gap</div>
+      </div>
+    </div>
+    <div class="grid-3">
+      <div class="field">
+        <label>Spouse / Partner Monthly Income ($)</label>
+        <input type="number" id="spouseIncome" value="3000" min="0" max="20000" step="100">
+      </div>
+      <div class="field">
+        <label>Monthly Unemployment Benefit ($)</label>
+        <input type="number" id="uiMonthly" value="1400" min="0" max="4000" step="50">
+        <div class="hint">UI varies by state. Average ~$1,200–$1,800/mo.</div>
+      </div>
+      <div class="field">
+        <label>Bridge Employment Monthly Net ($)</label>
+        <input type="number" id="bridgeIncome" value="0" min="0" max="10000" step="100">
+        <div class="hint">Part-time or contract work during transition</div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label>Monthly Savings / Emergency Fund Available ($)</label>
+        <input type="number" id="savingsAvail" value="15000" min="0" max="500000" step="500">
+      </div>
+      <div class="field">
+        <label>Monthly Household Expenses ($)</label>
+        <input type="number" id="monthlyExpenses" value="5500" min="500" max="30000" step="100">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Target Civilian Role</h2>
+    <div class="grid-3">
+      <div class="field">
+        <label>Civilian Starting Salary ($/yr)</label>
+        <input type="number" id="civSalary" value="72000" min="20000" max="300000" step="1000">
+      </div>
+      <div class="field">
+        <label>Effective Tax Rate (%)</label>
+        <input type="number" id="taxRate" value="22" min="0" max="50">
+      </div>
+      <div class="field">
+        <label>Model Months Post-Separation</label>
+        <input type="number" id="modelMonths" value="18" min="6" max="36">
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-bottom:28px">
+    <button class="btn btn-primary" onclick="calculate()">Calculate Income Bridge →</button>
+  </div>
+
+  <div id="results" class="result-hidden">
+
+    <div class="result-hero">
+      <div class="label">Monthly Income During Gap (All Streams)</div>
+      <div class="big-num" id="r-monthlyBridge"></div>
+      <div class="sublabel" id="r-subtitle"></div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="val" id="r-coverageRatio"></div>
+        <div class="lbl">Gap Coverage Ratio</div>
+        <div class="sub">Bridge income / monthly expenses</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="r-vaDisability"></div>
+        <div class="lbl">VA Disability / mo</div>
+        <div class="sub">Tax-free, based on rating %</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="r-severanceCalc"></div>
+        <div class="lbl">Calculated Severance</div>
+        <div class="sub">§1174 / retirement / PDRL</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="r-monthsSafe"></div>
+        <div class="lbl">Runway (months)</div>
+        <div class="sub">Before savings depleted</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="verdict-box" id="r-verdict">
+        <h3 id="r-verdict-title"></h3>
+        <p id="r-verdict-body"></p>
+      </div>
+
+      <h2 style="margin-top:20px">Month-by-Month Bridge</h2>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Month</th><th>Status</th><th>VA Disab ($)</th><th>UI / Bridge ($)</th><th>Spouse ($)</th><th>TSP ($)</th><th>Total In ($)</th><th>Expenses ($)</th><th>Net ($)</th><th>Savings ($)</th></tr>
+          </thead>
+          <tbody id="r-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="results-export-row">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Download Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ Download AP2 JSON</button>
+    </div>
+
+  </div>
+</div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-134 · Data: 10 U.S.C. §1174; 38 CFR (VA disability); IRC §72(t); VA FY2025 disability rates
+</footer>
+
+<script>
+// VA Disability compensation rates FY2025 (38 CFR §3.4, effective Dec 1, 2024)
+// Rates for single veteran without dependents (conservative — user may have dependents)
+const VA_RATES_FY2025 = {
+  10: 175.51, 20: 346.95, 30: 537.42, 40: 774.16, 50: 1102.04,
+  60: 1395.93, 70: 1759.19, 80: 2044.89, 90: 2297.96, 100: 3831.30
+};
+// Median monthly UI benefit by tier (user overrides — these are reference defaults shown in hint)
+
+let _lastResult = null;
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+function fmtPct(n) { return n.toFixed(0) + '%'; }
+
+function lookupVARate(rating) {
+  const snapped = Math.round(rating / 10) * 10;
+  return VA_RATES_FY2025[snapped] || 0;
+}
+
+function toggleSepType() {}
+
+function calculate() {
+  const sepType = document.getElementById('sepType').value;
+  const yos = parseFloat(document.getElementById('yos').value) || 8;
+  const basePay = parseFloat(document.getElementById('basePay').value) || 4200;
+  const age = parseFloat(document.getElementById('age').value) || 30;
+  const disabilityRating = parseFloat(document.getElementById('disabilityRating').value) || 0;
+  const gapMonths = parseInt(document.getElementById('gapMonths').value) || 3;
+  const severanceLump = parseFloat(document.getElementById('severanceLump').value) || 0;
+  const tspBalance = parseFloat(document.getElementById('tspBalance').value) || 45000;
+  const tspMonthly = parseFloat(document.getElementById('tspMonthly').value) || 0;
+  const spouseIncome = parseFloat(document.getElementById('spouseIncome').value) || 0;
+  const uiMonthly = parseFloat(document.getElementById('uiMonthly').value) || 0;
+  const bridgeIncome = parseFloat(document.getElementById('bridgeIncome').value) || 0;
+  const savingsAvail = parseFloat(document.getElementById('savingsAvail').value) || 15000;
+  const monthlyExpenses = parseFloat(document.getElementById('monthlyExpenses').value) || 5500;
+  const civSalary = parseFloat(document.getElementById('civSalary').value) || 72000;
+  const taxRate = parseFloat(document.getElementById('taxRate').value) / 100 || 0.22;
+  const modelMonths = parseInt(document.getElementById('modelMonths').value) || 18;
+
+  // Severance calculation per 10 U.S.C. §1174
+  let calcSeverance = severanceLump;
+  if (severanceLump === 0) {
+    if (sepType === 'involuntary') {
+      calcSeverance = basePay * 2 * yos; // 2 months × YOS
+    } else if (sepType === 'retirement') {
+      calcSeverance = 0; // retirement pay instead — show monthly
+    } else if (sepType === 'medical') {
+      calcSeverance = basePay * 2 * yos; // PDRL lump or monthly, simplified as lump
+    }
+  }
+
+  // VA disability monthly (tax-free)
+  const vaMonthly = lookupVARate(disabilityRating);
+
+  // Retirement monthly (if applicable)
+  const retirementMonthly = sepType === 'retirement' ? basePay * 0.025 * yos : 0;
+
+  // TSP penalty
+  const tspPenalty = (age < 55 && tspMonthly > 0) ? tspMonthly * 0.10 : 0;
+
+  const civMonthlyNet = civSalary / 12 * (1 - taxRate);
+
+  // Month-by-month
+  let savings = savingsAvail;
+  let runwayEnd = null;
+  const rows = [];
+  for (let m = 1; m <= modelMonths; m++) {
+    const inGap = m <= gapMonths;
+    const hasCivJob = !inGap;
+
+    const civIncome = hasCivJob ? civMonthlyNet : 0;
+    const uiThisMonth = inGap ? uiMonthly : 0;
+    const bridgeThisMonth = inGap ? bridgeIncome : 0;
+    const tspThis = inGap ? Math.max(0, tspMonthly - tspPenalty) : 0;
+
+    // Severance spread over gap months
+    const severanceMonthly = inGap && gapMonths > 0 ? calcSeverance / gapMonths : 0;
+
+    const totalIn = vaMonthly + retirementMonthly + spouseIncome + uiThisMonth + bridgeThisMonth + tspThis + severanceMonthly + civIncome;
+    const netMonth = totalIn - monthlyExpenses;
+    savings += netMonth;
+    if (savings < 0 && runwayEnd === null) runwayEnd = m - 1;
+
+    rows.push({
+      month: m, status: hasCivJob ? 'Civilian' : 'Gap',
+      vaDisab: vaMonthly, uiBridge: uiThisMonth + bridgeThisMonth,
+      spouse: spouseIncome, tsp: tspThis, totalIn, expenses: monthlyExpenses, net: netMonth, savings
+    });
+  }
+
+  const monthlyBridgeDuringGap = vaMonthly + retirementMonthly + spouseIncome + uiMonthly + bridgeIncome + (tspMonthly > 0 ? Math.max(0, tspMonthly - tspPenalty) : 0) + (gapMonths > 0 ? calcSeverance / gapMonths : 0);
+  const coverageRatio = monthlyExpenses > 0 ? monthlyBridgeDuringGap / monthlyExpenses : 0;
+
+  _lastResult = {
+    sepType, yos, basePay, age, disabilityRating, gapMonths, calcSeverance, vaMonthly,
+    tspBalance, tspMonthly, tspPenalty, spouseIncome, uiMonthly, bridgeIncome,
+    savingsAvail, monthlyExpenses, civSalary, taxRate, modelMonths,
+    monthlyBridgeDuringGap, coverageRatio, retirementMonthly, runwayEnd, rows, civMonthlyNet
+  };
+  renderResults(_lastResult);
+}
+
+function renderResults(r) {
+  document.getElementById('results').classList.remove('result-hidden');
+  document.getElementById('r-monthlyBridge').textContent = fmt(r.monthlyBridgeDuringGap);
+  document.getElementById('r-subtitle').textContent = `${r.gapMonths}-month transition gap · Target civilian: ${fmt(r.civSalary)}/yr`;
+  document.getElementById('r-coverageRatio').textContent = fmtPct(r.coverageRatio * 100);
+  document.getElementById('r-vaDisability').textContent = fmt(r.vaMonthly);
+  document.getElementById('r-severanceCalc').textContent = fmt(r.calcSeverance);
+  document.getElementById('r-monthsSafe').textContent = r.runwayEnd === null ? '>'+r.modelMonths+' mo' : r.runwayEnd + ' mo';
+
+  const vbox = document.getElementById('r-verdict');
+  const isSafe = r.coverageRatio >= 0.80 || r.runwayEnd === null;
+  const isDanger = r.coverageRatio < 0.50 && r.runwayEnd !== null && r.runwayEnd < r.gapMonths;
+  vbox.className = 'verdict-box ' + (isDanger ? 'danger' : isSafe ? 'positive' : 'warn');
+  document.getElementById('r-verdict-title').textContent = isDanger
+    ? `Income gap — savings won't cover the full ${r.gapMonths}-month transition`
+    : isSafe ? `Bridge income covers ${fmtPct(r.coverageRatio * 100)} of expenses — transition funded`
+    : `Partial coverage — consider bridge employment or SkillBridge to close gap`;
+  document.getElementById('r-verdict-body').textContent =
+    `Monthly bridge income during gap: ${fmt(r.monthlyBridgeDuringGap)} (VA disability tax-free: ${fmt(r.vaMonthly)}, UI: ${fmt(r.uiMonthly)}, spouse: ${fmt(r.spouseIncome)}). ` +
+    `Severance: ${fmt(r.calcSeverance)} spread over ${r.gapMonths} months. ` +
+    (r.tspMonthly > 0 ? `TSP withdrawal: ${fmt(r.tspMonthly)}/mo${r.tspPenalty > 0 ? ` (early penalty $${Math.round(r.tspPenalty)})` : ''}. ` : '') +
+    `After ${r.gapMonths} months, civilian take-home: ${fmt(r.civMonthlyNet)}/mo.`;
+
+  const tbody = document.getElementById('r-tbody');
+  tbody.innerHTML = '';
+  r.rows.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.className = row.status === 'Gap' ? 'row-gap' : 'row-stable';
+    tr.innerHTML = `<td>${row.month}</td><td>${row.status}</td><td>${fmt(row.vaDisab)}</td><td>${fmt(row.uiBridge)}</td><td>${fmt(row.spouse)}</td><td>${fmt(row.tsp)}</td><td>${fmt(row.totalIn)}</td><td>${fmt(row.expenses)}</td><td style="color:${row.net>=0?'var(--success)':'var(--danger)'}">${fmt(row.net)}</td><td style="color:${row.savings>=0?'var(--text)':'var(--danger)'}">${fmt(row.savings)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function buildMarkdown(r) {
+  return `# Veteran Income Bridge\n\n## Key Results\n- **Monthly Bridge Income:** ${fmt(r.monthlyBridgeDuringGap)}\n- Coverage Ratio: ${(r.coverageRatio * 100).toFixed(0)}%\n- VA Disability / mo: ${fmt(r.vaMonthly)} (tax-free, ${r.disabilityRating}% rating)\n- Calculated Severance: ${fmt(r.calcSeverance)}\n- Runway: ${r.runwayEnd === null ? '>'+r.modelMonths+' mo' : r.runwayEnd + ' mo'}\n\n## Inputs\n- YOS: ${r.yos} · Base Pay: ${fmt(r.basePay)}/mo · Sep Type: ${r.sepType}\n- Gap: ${r.gapMonths} mo · Civilian Target: ${fmt(r.civSalary)}/yr\n- Monthly Expenses: ${fmt(r.monthlyExpenses)}\n\n*Generated by ApexLogics AL-134 · 10 U.S.C. §1174; 38 CFR; VA FY2025 rates*\n`;
+}
+
+function exportMarkdown() {
+  if (!_lastResult) return;
+  const blob = new Blob([buildMarkdown(_lastResult)], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'veteran-income-bridge.md'; a.click();
+}
+
+const AP2Schema = {
+  VALID_MANDATE_TYPES: ['veteran_income_bridge_record'],
+  validate(obj) {
+    const required = ['ap2_version','mandate_type','generated_at','al_id','tool_id','inputs','outputs','downstream_handoff_candidates','metadata'];
+    for (const f of required) { if (!(f in obj)) throw new Error(`AP2 missing: ${f}`); }
+    if (!this.VALID_MANDATE_TYPES.includes(obj.mandate_type)) throw new Error(`Unknown mandate_type: ${obj.mandate_type}`);
+    if (obj.ap2_version !== '2.0') throw new Error('ap2_version must be "2.0"');
+    return true;
+  }
+};
+
+function exportAP2() {
+  if (!_lastResult) return;
+  const r = _lastResult;
+  const payload = {
+    ap2_version: '2.0',
+    mandate_type: 'veteran_income_bridge_record',
+    generated_at: new Date().toISOString(),
+    al_id: 'AL-134',
+    tool_id: '127-veteran-income-bridge',
+    inputs: {
+      sepType: r.sepType, yos: r.yos, basePay: r.basePay, disabilityRating: r.disabilityRating,
+      gapMonths: r.gapMonths, monthlyExpenses: r.monthlyExpenses, civSalary: r.civSalary
+    },
+    outputs: {
+      monthlyBridgeIncome: Math.round(r.monthlyBridgeDuringGap), coverageRatioPct: +(r.coverageRatio * 100).toFixed(1),
+      vaMonthly: Math.round(r.vaMonthly), calcSeverance: Math.round(r.calcSeverance),
+      runwayMonths: r.runwayEnd === null ? r.modelMonths : r.runwayEnd
+    },
+    downstream_handoff_candidates: ['AL-132', 'AL-133'],
+    metadata: { data_vintage: 'VA FY2025 disability rates (38 CFR, Dec 1 2024); 10 U.S.C. §1174; IRC §72(t)', tool_name: 'Veteran Income Bridge' }
+  };
+  try { AP2Schema.validate(payload); } catch(e) { alert('AP2 validation error: ' + e.message); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'AL-134-veteran-income-bridge.ap2.json'; a.click();
+}
+</script>
+</body>
+</html>

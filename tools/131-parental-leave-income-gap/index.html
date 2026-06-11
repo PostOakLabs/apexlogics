@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parental Leave Income Gap Planner | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--amber-dim:rgba(232,168,56,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;--warn:#FBBF24;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--amber);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--amber);border-color:var(--amber);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:980px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,34px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:660px}
+.pii-banner{max-width:980px;margin:0 auto 0;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:980px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:680px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--amber)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--amber);color:#000}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--amber);color:var(--amber)}
+.result-hidden{display:none}
+.result-hero{background:linear-gradient(135deg,var(--amber-dim),rgba(20,184,166,.06));border:2px solid rgba(232,168,56,.3);border-radius:12px;padding:24px;margin-bottom:20px;text-align:center}
+.result-hero .big-num{font-family:var(--font-mono);font-size:44px;font-weight:500;color:var(--amber);margin:8px 0}
+.result-hero .label{font-size:14px;color:var(--muted)}
+.result-hero .sublabel{font-size:13px;color:var(--muted);margin-top:4px}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--amber);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+.metric-card .sub{font-size:12px;color:var(--muted);margin-top:4px}
+.verdict-box{border-radius:10px;padding:20px;margin-bottom:20px}
+.verdict-box.positive{background:rgba(76,175,125,.08);border:1px solid rgba(76,175,125,.3)}
+.verdict-box.warn{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3)}
+.verdict-box.danger{background:rgba(232,85,85,.08);border:1px solid rgba(232,85,85,.3)}
+.verdict-box h3{font-family:var(--font-serif);font-size:18px;margin-bottom:8px}
+.verdict-box p{font-size:14px;color:var(--muted)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:7px 9px;border-bottom:2px solid var(--border)}
+td{padding:7px 9px;border-bottom:1px solid var(--border);font-size:13px;font-family:var(--font-mono)}
+tr:last-child td{border-bottom:none}
+.constants-note{background:var(--surface2);border-left:3px solid var(--amber);padding:10px 14px;font-size:12px;color:var(--muted);border-radius:4px;margin-bottom:14px}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.tool-footer{text-align:center;padding:24px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);margin-top:24px}
+.tool-footer a{color:var(--muted)}
+.tool-footer a:hover{color:var(--amber)}
+.leave-row td{background:rgba(251,191,36,.05)}
+.work-row td{background:rgba(76,175,125,.05)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo"><span>Apex</span> Logics</div>
+</nav>
+
+<div class="hero">
+  <h1>Parental Leave Income Gap Planner</h1>
+  <p>Model the income gap during parental leave: stack employer paid leave, state SDI/PFL, and FMLA unpaid weeks. Find the monthly shortfall, savings required, and full return-to-work recovery timeline.</p>
+</div>
+
+<div class="pii-banner">
+  🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+</div>
+
+<div class="main">
+
+  <div class="card">
+    <h2>Your Compensation</h2>
+    <div class="constants-note">
+      FMLA (29 CFR §825): up to 12 weeks unpaid job-protected leave for eligible employees (12 months tenure, 50+ employees). State PFL/SDI varies: CA PFL = 60–70% of wages up to $1,620/wk (2025); NY PFL = 67% up to $1,177/wk; NJ TDI/FLI = 85% up to $1,055/wk. Federal employees: 12 weeks paid parental leave (FEPLA). FMLA and state PFL run concurrently.
+    </div>
+    <div class="grid-3">
+      <div class="field">
+        <label>Annual Base Salary ($)</label>
+        <input type="number" id="baseSalary" value="85000" min="10000" max="500000" step="1000">
+      </div>
+      <div class="field">
+        <label>Effective Tax Rate (%)</label>
+        <input type="number" id="taxRate" value="22" min="0" max="50">
+      </div>
+      <div class="field">
+        <label>Monthly Household Expenses ($)</label>
+        <input type="number" id="monthlyExpenses" value="6500" min="500" max="30000" step="100">
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label>Partner / Spouse Monthly Income (take-home) ($)</label>
+        <input type="number" id="partnerIncome" value="4000" min="0" max="20000" step="100">
+      </div>
+      <div class="field">
+        <label>Current Savings / Emergency Fund ($)</label>
+        <input type="number" id="savings" value="20000" min="0" max="500000" step="500">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Leave Structure</h2>
+    <div class="grid-3">
+      <div class="field">
+        <label>Employer Paid Leave (weeks at full pay)</label>
+        <input type="number" id="employerPaidWeeks" value="6" min="0" max="26">
+      </div>
+      <div class="field">
+        <label>Employer Partial Pay Weeks</label>
+        <input type="number" id="employerPartialWeeks" value="2" min="0" max="26">
+      </div>
+      <div class="field">
+        <label>Employer Partial Pay Rate (%)</label>
+        <input type="number" id="employerPartialPct" value="60" min="0" max="100">
+      </div>
+    </div>
+    <div class="grid-3">
+      <div class="field">
+        <label>State PFL / SDI</label>
+        <select id="stateProgram">
+          <option value="none">No state program</option>
+          <option value="ca">California PFL (60–70%)</option>
+          <option value="ny">New York PFL (67%)</option>
+          <option value="nj">New Jersey TDI/FLI (85%)</option>
+          <option value="wa">Washington PFML (60–90%)</option>
+          <option value="co">Colorado FAMLI (90%)</option>
+          <option value="or">Oregon PFML (60%)</option>
+          <option value="custom">Custom state rate</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>State PFL Duration (weeks)</label>
+        <input type="number" id="statePflWeeks" value="8" min="0" max="16">
+      </div>
+      <div class="field">
+        <label>Custom State PFL Rate (%) — if "Custom" selected</label>
+        <input type="number" id="customPflRate" value="60" min="0" max="100">
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label>Total Leave Duration (weeks including FMLA unpaid)</label>
+        <input type="number" id="totalLeaveWeeks" value="16" min="1" max="52">
+      </div>
+      <div class="field">
+        <label>New Recurring Monthly Expense (baby) ($)</label>
+        <input type="number" id="babyExpense" value="1200" min="0" max="5000" step="50">
+        <div class="hint">Diapers, formula, nursery costs starting month 1</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-bottom:28px">
+    <button class="btn btn-primary" onclick="calculate()">Calculate Leave Gap →</button>
+  </div>
+
+  <div id="results" class="result-hidden">
+
+    <div class="result-hero">
+      <div class="label">Total Income Gap During Leave</div>
+      <div class="big-num" id="r-totalGap"></div>
+      <div class="sublabel" id="r-subtitle"></div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="val" id="r-avgLeaveMonthly"></div>
+        <div class="lbl">Avg Monthly During Leave</div>
+        <div class="sub">All sources combined</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="r-shortfallMonthly"></div>
+        <div class="lbl">Avg Monthly Shortfall</div>
+        <div class="sub">Expenses minus income</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="r-savingsNeeded"></div>
+        <div class="lbl">Savings Needed</div>
+        <div class="sub">To cover full leave gap</div>
+      </div>
+      <div class="metric-card">
+        <div class="val" id="r-recoveryMonths"></div>
+        <div class="lbl">Recovery Timeline</div>
+        <div class="sub">Months to replenish savings</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="verdict-box" id="r-verdict">
+        <h3 id="r-verdict-title"></h3>
+        <p id="r-verdict-body"></p>
+      </div>
+
+      <h2 style="margin-top:20px">Week-by-Week Leave Schedule</h2>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Week</th><th>Phase</th><th>Employer Pay ($)</th><th>State PFL ($)</th><th>Partner ($)</th><th>Total In ($)</th><th>Expenses ($)</th><th>Net ($)</th></tr>
+          </thead>
+          <tbody id="r-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="results-export-row">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Download Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ Download AP2 JSON</button>
+    </div>
+
+  </div>
+</div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-138 · Data: 29 CFR §825 (FMLA); state PFL rates as of 2025 (CA/NY/NJ/WA/CO/OR)
+</footer>
+
+<script>
+// State PFL rates 2025
+const STATE_PFL_RATES = {
+  none: 0, ca: 0.65, ny: 0.67, nj: 0.85, wa: 0.75, co: 0.90, or: 0.60, custom: null
+};
+
+// State weekly wage caps 2025 (approximate)
+const STATE_CAPS_WEEKLY = {
+  none: 0, ca: 1620, ny: 1177, nj: 1055, wa: 1574, co: 1292, or: 1470, custom: 99999
+};
+
+let _lastResult = null;
+function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+
+function calculate() {
+  const baseSalary = parseFloat(document.getElementById('baseSalary').value) || 85000;
+  const taxRate = parseFloat(document.getElementById('taxRate').value) / 100 || 0.22;
+  const monthlyExpenses = parseFloat(document.getElementById('monthlyExpenses').value) || 6500;
+  const partnerIncome = parseFloat(document.getElementById('partnerIncome').value) || 0;
+  const savings = parseFloat(document.getElementById('savings').value) || 20000;
+  const employerPaidWeeks = parseFloat(document.getElementById('employerPaidWeeks').value) || 0;
+  const employerPartialWeeks = parseFloat(document.getElementById('employerPartialWeeks').value) || 0;
+  const employerPartialPct = parseFloat(document.getElementById('employerPartialPct').value) / 100 || 0.60;
+  const stateProgram = document.getElementById('stateProgram').value;
+  const statePflWeeks = parseFloat(document.getElementById('statePflWeeks').value) || 0;
+  const customPflRate = parseFloat(document.getElementById('customPflRate').value) / 100 || 0.60;
+  const totalLeaveWeeks = parseInt(document.getElementById('totalLeaveWeeks').value) || 16;
+  const babyExpense = parseFloat(document.getElementById('babyExpense').value) || 0;
+
+  const weeklyGross = baseSalary / 52;
+  const weeklyNet = weeklyGross * (1 - taxRate);
+  const weeklyExpenses = (monthlyExpenses + babyExpense) / 4.333;
+  const weeklyPartner = partnerIncome / 4.333;
+
+  const statePflRate = stateProgram === 'custom' ? customPflRate : STATE_PFL_RATES[stateProgram];
+  const stateCap = STATE_CAPS_WEEKLY[stateProgram] || 99999;
+  const statePflWeekly = Math.min(weeklyGross * statePflRate, stateCap) * (1 - taxRate * 0.5); // PFL often partially taxable
+
+  const rows = [];
+  let totalGap = 0;
+  let totalIncome = 0;
+
+  for (let w = 1; w <= totalLeaveWeeks; w++) {
+    let phase, empPay, statePfl;
+
+    if (w <= employerPaidWeeks) {
+      phase = 'Employer Paid';
+      empPay = weeklyNet;
+    } else if (w <= employerPaidWeeks + employerPartialWeeks) {
+      phase = 'Employer Partial';
+      empPay = weeklyNet * employerPartialPct;
+    } else {
+      phase = 'Unpaid / FMLA';
+      empPay = 0;
+    }
+
+    // State PFL concurrent up to statePflWeeks
+    statePfl = w <= statePflWeeks ? statePflWeekly : 0;
+    // PFL can't exceed net weekly (no windfall)
+    const combinedIncome = Math.min(empPay + statePfl, weeklyNet * 1.05) + weeklyPartner;
+    const net = combinedIncome - weeklyExpenses;
+    if (net < 0) totalGap += Math.abs(net);
+    totalIncome += combinedIncome;
+
+    rows.push({ week: w, phase, empPay, statePfl, partner: weeklyPartner, total: combinedIncome, expenses: weeklyExpenses, net });
+  }
+
+  const avgLeaveMonthly = (totalIncome / totalLeaveWeeks) * 4.333;
+  const shortfallMonthly = Math.max(0, (monthlyExpenses + babyExpense) - avgLeaveMonthly);
+  const savingsNeeded = totalGap;
+  const isFullyCovered = savings >= savingsNeeded;
+
+  // Recovery: after return, how many months to replenish gap
+  const returnMonthlyNet = (baseSalary / 12) * (1 - taxRate);
+  const surplusPerMonth = Math.max(0, returnMonthlyNet + partnerIncome - monthlyExpenses - babyExpense);
+  const recoveryMonths = surplusPerMonth > 0 ? Math.ceil(savingsNeeded / surplusPerMonth) : 999;
+
+  _lastResult = {
+    baseSalary, taxRate: taxRate * 100, monthlyExpenses, partnerIncome, savings, babyExpense,
+    employerPaidWeeks, employerPartialWeeks, stateProgram, statePflWeeks, totalLeaveWeeks,
+    totalGap, avgLeaveMonthly, shortfallMonthly, savingsNeeded, recoveryMonths,
+    isFullyCovered, rows, weeklyNet
+  };
+  renderResults(_lastResult);
+}
+
+function renderResults(r) {
+  document.getElementById('results').classList.remove('result-hidden');
+  document.getElementById('r-totalGap').textContent = fmt(r.totalGap);
+  document.getElementById('r-subtitle').textContent = `${r.totalLeaveWeeks}-week leave · ${r.employerPaidWeeks} wks paid + ${r.statePflWeeks} wks state PFL`;
+  document.getElementById('r-avgLeaveMonthly').textContent = fmt(r.avgLeaveMonthly);
+  document.getElementById('r-shortfallMonthly').textContent = fmt(r.shortfallMonthly);
+  document.getElementById('r-savingsNeeded').textContent = fmt(r.savingsNeeded);
+  document.getElementById('r-recoveryMonths').textContent = r.recoveryMonths < 999 ? r.recoveryMonths + ' mo' : 'Check budget';
+
+  const vbox = document.getElementById('r-verdict');
+  vbox.className = 'verdict-box ' + (r.isFullyCovered ? 'positive' : r.savings > r.savingsNeeded * 0.5 ? 'warn' : 'danger');
+  document.getElementById('r-verdict-title').textContent = r.isFullyCovered
+    ? `Current savings cover full gap — you're funded for leave`
+    : `Savings shortfall: need ${fmt(r.savingsNeeded - r.savings)} more before leave`;
+  document.getElementById('r-verdict-body').textContent =
+    `Total income gap: ${fmt(r.totalGap)} over ${r.totalLeaveWeeks} weeks. You have ${fmt(r.savings)} in savings — ` +
+    (r.isFullyCovered ? `${fmt(r.savings - r.totalGap)} cushion remaining.` : `${fmt(r.savingsNeeded - r.savings)} short.`) +
+    ` Recovery timeline post-return: ${r.recoveryMonths < 999 ? r.recoveryMonths + ' months' : 'review budget'} to replenish. Consider AL-137 (Dep. Care FSA) to reduce ongoing childcare cost.`;
+
+  const tbody = document.getElementById('r-tbody');
+  tbody.innerHTML = '';
+  r.rows.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.className = row.phase === 'Unpaid / FMLA' ? 'leave-row' : 'work-row';
+    tr.innerHTML = `<td>${row.week}</td><td>${row.phase}</td><td>${fmt(row.empPay)}</td><td>${fmt(row.statePfl)}</td><td>${fmt(row.partner)}</td><td>${fmt(row.total)}</td><td>${fmt(row.expenses)}</td><td style="color:${row.net>=0?'var(--success)':'var(--danger)'}">${fmt(row.net)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function buildMarkdown(r) {
+  return `# Parental Leave Income Gap\n\n## Results\n- **Total Income Gap:** ${fmt(r.totalGap)}\n- Avg Monthly During Leave: ${fmt(r.avgLeaveMonthly)}\n- Monthly Shortfall: ${fmt(r.shortfallMonthly)}\n- Savings Needed: ${fmt(r.savingsNeeded)}\n- Recovery Timeline: ${r.recoveryMonths < 999 ? r.recoveryMonths + ' months' : 'Review budget'}\n\n## Leave Structure\n- ${r.totalLeaveWeeks} total weeks: ${r.employerPaidWeeks} employer paid, ${r.statePflWeeks} state PFL, FMLA remainder\n- Base Salary: ${fmt(r.baseSalary)}/yr · Baby expense: ${fmt(r.babyExpense)}/mo\n\n*Generated by ApexLogics AL-138 · 29 CFR §825 (FMLA); state PFL rates 2025*\n`;
+}
+
+function exportMarkdown() {
+  if (!_lastResult) return;
+  const blob = new Blob([buildMarkdown(_lastResult)], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'parental-leave-income-gap.md'; a.click();
+}
+
+const AP2Schema = {
+  VALID_MANDATE_TYPES: ['parental_leave_income_record'],
+  validate(obj) {
+    const required = ['ap2_version','mandate_type','generated_at','al_id','tool_id','inputs','outputs','downstream_handoff_candidates','metadata'];
+    for (const f of required) { if (!(f in obj)) throw new Error(`AP2 missing: ${f}`); }
+    if (!this.VALID_MANDATE_TYPES.includes(obj.mandate_type)) throw new Error(`Unknown mandate_type: ${obj.mandate_type}`);
+    if (obj.ap2_version !== '2.0') throw new Error('ap2_version must be "2.0"');
+    return true;
+  }
+};
+
+function exportAP2() {
+  if (!_lastResult) return;
+  const r = _lastResult;
+  const payload = {
+    ap2_version: '2.0',
+    mandate_type: 'parental_leave_income_record',
+    generated_at: new Date().toISOString(),
+    al_id: 'AL-138',
+    tool_id: '131-parental-leave-income-gap',
+    inputs: {
+      baseSalary: r.baseSalary, totalLeaveWeeks: r.totalLeaveWeeks,
+      employerPaidWeeks: r.employerPaidWeeks, statePflWeeks: r.statePflWeeks,
+      stateProgram: r.stateProgram, monthlyExpenses: r.monthlyExpenses, babyExpense: r.babyExpense
+    },
+    outputs: {
+      totalIncomeGap: Math.round(r.totalGap), avgLeaveMonthly: Math.round(r.avgLeaveMonthly),
+      savingsNeeded: Math.round(r.savingsNeeded), recoveryMonths: r.recoveryMonths < 999 ? r.recoveryMonths : null,
+      isFullyCovered: r.isFullyCovered
+    },
+    downstream_handoff_candidates: ['AL-137'],
+    metadata: { data_vintage: '29 CFR §825 (FMLA); state PFL rates 2025 (CA/NY/NJ/WA/CO/OR)', tool_name: 'Parental Leave Income Gap Planner' }
+  };
+  try { AP2Schema.validate(payload); } catch(e) { alert('AP2 validation error: ' + e.message); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'AL-138-parental-leave-income-gap.ap2.json'; a.click();
+}
+</script>
+</body>
+</html>
