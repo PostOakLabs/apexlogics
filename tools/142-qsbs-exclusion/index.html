@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QSBS §1202 Exclusion Calculator | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--coral:#F07167;--coral-dim:rgba(240,113,103,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;--warn:#FBBF24;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--coral);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--coral);border-color:var(--coral);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:960px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:640px}
+.pii-banner{max-width:960px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:960px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:680px){.grid-2,.grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:440px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],input[type=date],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--coral)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.vintage-note{font-size:11px;color:var(--muted);padding:6px 10px;background:var(--surface2);border-radius:4px;border-left:3px solid var(--amber);margin-top:8px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--coral);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--coral);color:var(--coral)}
+.result-hidden{display:none}
+.result-hero{background:linear-gradient(135deg,var(--coral-dim),rgba(232,168,56,.06));border:2px solid rgba(240,113,103,.3);border-radius:12px;padding:24px;margin-bottom:20px;text-align:center}
+.result-hero .big-num{font-family:var(--font-mono);font-size:52px;font-weight:500;color:var(--coral);margin:8px 0}
+.result-hero .lbl{font-size:14px;color:var(--muted)}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--coral);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+.compare-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px}
+.compare-table th{background:var(--surface2);color:var(--muted);font-weight:600;text-align:left;padding:8px 10px;font-size:12px;text-transform:uppercase}
+.compare-table td{padding:8px 10px;border-bottom:1px solid var(--border)}
+.compare-table tr.highlight td{background:rgba(240,113,103,.07);font-weight:600;color:var(--coral)}
+.warn-box{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--warn);margin-top:14px}
+.info-box{background:rgba(76,175,125,.07);border:1px solid rgba(76,175,125,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--success);margin-top:14px}
+.detail-block{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;color:var(--muted);line-height:1.8;margin-top:12px}
+.routing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.routing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:flex-start;gap:10px;text-decoration:none}
+.routing-card:hover{border-color:var(--coral);text-decoration:none}
+.routing-card .r-icon{font-size:20px}
+.routing-card .r-title{font-weight:600;color:var(--coral);margin-bottom:2px;font-size:13px}
+.routing-card .r-desc{font-size:12px;color:var(--muted)}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tag-coral{background:rgba(240,113,103,.15);color:var(--coral)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-coral">Equity &amp; Equity Tax</span></div>
+  <h1>QSBS §1202 Exclusion Calculator</h1>
+  <p>Estimate your qualified small business stock gain exclusion under current law. OBBBA (July 4, 2025) added tiered rates for stock issued after 7/4/2025: 3yr=50%, 4yr=75%, 5yr=100%, and raised the gross asset threshold to $75M.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<div class="card">
+  <h2>Stock Details</h2>
+  <div class="vintage-note">
+    📌 <strong>OBBBA §1202 changes (July 4, 2025):</strong> For stock issued AFTER 7/4/2025: 3yr=50%, 4yr=75%, 5yr+=100% exclusion; gross asset cap raised $50M→$75M; cap = max($15M, 10× adjusted basis). Pre-OBBBA stock: 5yr+=100% (original rules), $50M gross asset cap, $10M per-taxpayer cap.
+  </div>
+  <div class="grid-3" style="margin-top:18px">
+    <div class="field">
+      <label for="issueDate">Stock Issue Date</label>
+      <input type="date" id="issueDate">
+      <span class="hint">Or §83(b) election date if earlier</span>
+    </div>
+    <div class="field">
+      <label for="saleDate">Anticipated Sale / Exit Date</label>
+      <input type="date" id="saleDate">
+    </div>
+    <div class="field">
+      <label for="adjustedBasis">Adjusted Basis ($)</label>
+      <input type="number" id="adjustedBasis" value="50000" min="0" step="1000">
+      <span class="hint">Original investment + any §1202 adjustments</span>
+    </div>
+  </div>
+  <div class="grid-3" style="margin-top:16px">
+    <div class="field">
+      <label for="totalGain">Total Realized Gain ($)</label>
+      <input type="number" id="totalGain" value="5000000" min="0" step="100000">
+    </div>
+    <div class="field">
+      <label for="issuerGrossAssets">Issuer Gross Assets at Issue ($)</label>
+      <input type="number" id="issuerGrossAssets" value="10000000" min="0" step="500000">
+      <span class="hint">Must be ≤ $50M (pre-OBBBA) or ≤ $75M (post-OBBBA) at time of issuance</span>
+    </div>
+    <div class="field">
+      <label for="entityType1202">Issuer Entity Type</label>
+      <select id="entityType1202">
+        <option value="ccorp">C-Corporation (required for §1202)</option>
+        <option value="other">LLC / S-Corp / Partnership (ineligible)</option>
+      </select>
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:16px">
+    <div class="field">
+      <label for="ltcgRate1202">Your Long-Term Cap Gains Rate (%)</label>
+      <input type="number" id="ltcgRate1202" value="23.8" min="0" max="40" step="0.1">
+      <span class="hint">20% federal LTCG + 3.8% NIIT = 23.8%</span>
+    </div>
+    <div class="field">
+      <label for="stateRate">State Capital Gains Rate (%)</label>
+      <input type="number" id="stateRate" value="0" min="0" max="20" step="0.1">
+      <span class="hint">Many states don't honor §1202 exclusion (CA, NY, NJ, etc. — set to your state rate on full gain if applicable)</span>
+    </div>
+  </div>
+</div>
+
+<div style="margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calculate()">Calculate Exclusion →</button>
+</div>
+
+<!-- Results -->
+<div id="results" class="result-hidden">
+
+  <div class="result-hero">
+    <div class="lbl">Estimated Excluded Gain</div>
+    <div class="big-num" id="rExcluded">—</div>
+    <div class="lbl" id="rExcludedLabel">—</div>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="val" id="mExclPct">—</div>
+      <div class="lbl">Exclusion %</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="mTaxableGain">—</div>
+      <div class="lbl">Taxable gain</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="mFedTax">—</div>
+      <div class="lbl">Federal tax owed</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="mTaxSaved">—</div>
+      <div class="lbl">Est. tax saved</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Holding Period Scenarios</h2>
+    <table class="compare-table" id="scenarioTable">
+      <thead><tr>
+        <th>Hold Years</th>
+        <th>Exclusion %</th>
+        <th>Excl. Gain Cap</th>
+        <th>Actual Excluded</th>
+        <th>Taxable Gain</th>
+        <th>Fed Tax (28% on taxable)</th>
+        <th>vs. No QSBS</th>
+      </tr></thead>
+      <tbody id="scenarioBody"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Qualification Analysis</h2>
+    <div class="detail-block" id="qualDetail"></div>
+    <div id="ineligibleWarn" class="warn-box" style="display:none"></div>
+    <div id="stateNote" class="warn-box" style="display:none"></div>
+    <div id="qualOk" class="info-box" style="display:none"></div>
+  </div>
+
+  <div class="card">
+    <h2>Next Steps</h2>
+    <div class="routing-grid">
+      <a href="../140-83b-election-timer/index.html" class="routing-card">
+        <span class="r-icon">📋</span>
+        <div><div class="r-title">83(b) Election Timer</div><div class="r-desc">Start QSBS holding period at grant (AL-147)</div></div>
+      </a>
+      <a href="../141-equity-exit-waterfall/index.html" class="routing-card">
+        <span class="r-icon">💧</span>
+        <div><div class="r-title">Exit Waterfall</div><div class="r-desc">Full exit proceeds model (AL-148)</div></div>
+      </a>
+    </div>
+    <div class="results-export-row">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+</div><!-- /results -->
+
+</div><!-- /main -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-149 · Data: IRC §1202 (OBBBA, July 4, 2025); tiered rates 3/4/5yr
+</footer>
+
+<script>
+const OBBBA_DATE = new Date('2025-07-04');
+
+function setDefaultDates() {
+  const today = new Date();
+  const sale  = new Date(today); sale.setFullYear(sale.getFullYear() + 5);
+  document.getElementById('issueDate').value = today.toISOString().split('T')[0];
+  document.getElementById('saleDate').value  = sale.toISOString().split('T')[0];
+}
+setDefaultDates();
+
+function holdYears(issueStr, saleStr) {
+  const issue = new Date(issueStr + 'T12:00:00');
+  const sale  = new Date(saleStr  + 'T12:00:00');
+  return (sale - issue) / (365.25 * 24 * 60 * 60 * 1000);
+}
+
+function getExclusionPct(holdYrs, isPostOBBBA) {
+  if (holdYrs < 3) return 0;
+  if (isPostOBBBA) {
+    if (holdYrs >= 5) return 1.00;
+    if (holdYrs >= 4) return 0.75;
+    return 0.50; // 3–4yr
+  } else {
+    // Pre-OBBBA: 5yr = 100% (post-TCJA)
+    return holdYrs >= 5 ? 1.00 : 0;
+  }
+}
+
+// QSBS: 28% rate applies to non-excluded portion (IRC §1202(d) / §57(a)(7))
+const QSBS_TAX_RATE = 0.28;
+
+let _lastResult = null;
+
+function calculate() {
+  const issueDateStr = document.getElementById('issueDate').value;
+  const saleDateStr  = document.getElementById('saleDate').value;
+  const adjBasis     = +document.getElementById('adjustedBasis').value;
+  const totalGain    = +document.getElementById('totalGain').value;
+  const grossAssets  = +document.getElementById('issuerGrossAssets').value;
+  const entityType   = document.getElementById('entityType1202').value;
+  const ltcgRate     = +document.getElementById('ltcgRate1202').value / 100;
+  const stateRate    = +document.getElementById('stateRate').value / 100;
+
+  if (!issueDateStr || !saleDateStr) { alert('Enter issue and sale dates.'); return; }
+
+  const issueDate = new Date(issueDateStr + 'T12:00:00');
+  const isPostOBBBA = issueDate > OBBBA_DATE;
+  const grossAssetCap = isPostOBBBA ? 75000000 : 50000000;
+  const perTaxpayerCap = isPostOBBBA ? Math.max(15000000, adjBasis * 10) : Math.max(10000000, adjBasis * 10);
+
+  const holdYrs = holdYears(issueDateStr, saleDateStr);
+  const exclPct = getExclusionPct(holdYrs, isPostOBBBA);
+
+  // Ineligible?
+  const grossAssetIneligible = grossAssets > grossAssetCap;
+  const entityIneligible     = entityType !== 'ccorp';
+  const ineligible = grossAssetIneligible || entityIneligible;
+
+  let excludedGain = 0;
+  let taxableGain  = totalGain;
+  let fedTax       = 0;
+  let taxSaved     = 0;
+  let effectiveExclPct = exclPct;
+
+  if (!ineligible) {
+    const rawExclusion = totalGain * exclPct;
+    excludedGain = Math.min(rawExclusion, perTaxpayerCap);
+    if (rawExclusion > perTaxpayerCap) effectiveExclPct = perTaxpayerCap / totalGain;
+    taxableGain  = totalGain - excludedGain;
+    // Non-excluded QSBS gain taxed at 28% (not standard LTCG rates)
+    fedTax = taxableGain * QSBS_TAX_RATE;
+    const noQsbsTax = totalGain * ltcgRate;
+    taxSaved = noQsbsTax - fedTax;
+  } else {
+    fedTax = totalGain * ltcgRate;
+  }
+
+  // Scenarios
+  const scenarios = [];
+  for (let yr of [3, 4, 5, 6]) {
+    const ePct = getExclusionPct(yr, isPostOBBBA);
+    const rawExcl = totalGain * ePct;
+    const capExcl = Math.min(rawExcl, perTaxpayerCap);
+    const taxable = totalGain - capExcl;
+    const tax = taxable * QSBS_TAX_RATE;
+    const noQsbs = totalGain * ltcgRate;
+    scenarios.push({ yr, ePct, excluded: capExcl, taxable, tax, saved: noQsbs - tax });
+  }
+
+  _lastResult = {
+    issueDateStr, saleDateStr, adjBasis, totalGain, grossAssets, entityType,
+    ltcgRate, stateRate, isPostOBBBA, grossAssetCap, perTaxpayerCap,
+    holdYrs, exclPct: effectiveExclPct, excludedGain, taxableGain, fedTax, taxSaved,
+    ineligible, grossAssetIneligible, entityIneligible, scenarios
+  };
+
+  renderResults(_lastResult);
+}
+
+function fmtDollar(n) { return '$' + Math.round(Math.abs(n)).toLocaleString(); }
+function fmtPct(n)    { return (n * 100).toFixed(0) + '%'; }
+
+function renderResults(r) {
+  document.getElementById('rExcluded').textContent    = r.ineligible ? '$0' : fmtDollar(r.excludedGain);
+  document.getElementById('rExcludedLabel').textContent = r.ineligible
+    ? 'Ineligible — see qualification analysis'
+    : `${fmtPct(r.exclPct)} exclusion · ${r.holdYrs.toFixed(1)}-year hold · ${r.isPostOBBBA ? 'Post-OBBBA rates' : 'Pre-OBBBA rates'}`;
+
+  document.getElementById('mExclPct').textContent    = r.ineligible ? '0%' : fmtPct(r.exclPct);
+  document.getElementById('mTaxableGain').textContent= fmtDollar(r.taxableGain);
+  document.getElementById('mFedTax').textContent     = fmtDollar(r.fedTax);
+  document.getElementById('mTaxSaved').textContent   = r.ineligible ? '$0' : fmtDollar(r.taxSaved);
+
+  // Scenarios table
+  const tbody = document.getElementById('scenarioBody');
+  tbody.innerHTML = '';
+  r.scenarios.forEach(s => {
+    const isCurrentHold = Math.floor(r.holdYrs) === s.yr || (r.holdYrs >= s.yr && r.holdYrs < s.yr + 1);
+    const tr = document.createElement('tr');
+    if (isCurrentHold && !r.ineligible) tr.classList.add('highlight');
+    tr.innerHTML = `<td>${s.yr}+ years</td><td>${fmtPct(s.ePct)}</td><td>${fmtDollar(r.perTaxpayerCap)}</td><td>${fmtDollar(s.excluded)}</td><td>${fmtDollar(s.taxable)}</td><td>${fmtDollar(s.tax)}</td><td>${s.saved > 0 ? '–' + fmtDollar(s.saved) : '—'}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Qualification
+  const qualDetail = document.getElementById('qualDetail');
+  qualDetail.innerHTML =
+    `<strong>Issue date:</strong> ${r.issueDateStr} → <strong>${r.isPostOBBBA ? 'Post-OBBBA' : 'Pre-OBBBA'} rules apply</strong><br>` +
+    `<strong>Holding period:</strong> ${r.holdYrs.toFixed(1)} years (${r.holdYrs < 3 ? 'not yet 3 years — no exclusion until year 3' : 'qualifies for ' + fmtPct(r.exclPct) + ' exclusion'})<br>` +
+    `<strong>Issuer gross assets:</strong> ${fmtDollar(r.grossAssets)} ${r.grossAssetIneligible ? '❌ exceeds ' + fmtDollar(r.grossAssetCap) + ' cap' : '✅ within ' + fmtDollar(r.grossAssetCap) + ' cap'}<br>` +
+    `<strong>Entity type:</strong> ${r.entityType === 'ccorp' ? '✅ C-Corp' : '❌ Not a C-Corp — §1202 requires C-Corp'}<br>` +
+    `<strong>Per-taxpayer cap:</strong> max($15M, 10× basis) = ${fmtDollar(r.perTaxpayerCap)}<br>` +
+    `<strong>Non-excluded QSBS gain rate:</strong> 28% (§1202/§57(a)(7)) — higher than standard 20% LTCG`;
+
+  const ineligWarn  = document.getElementById('ineligibleWarn');
+  const stateNote   = document.getElementById('stateNote');
+  const qualOk      = document.getElementById('qualOk');
+
+  if (r.ineligible) {
+    ineligWarn.style.display = 'block';
+    ineligWarn.innerHTML = '❌ <strong>QSBS Ineligible:</strong> ' +
+      (r.entityIneligible ? 'Stock must be issued by a C-Corporation. ' : '') +
+      (r.grossAssetIneligible ? `Issuer gross assets ($${(r.grossAssets/1e6).toFixed(1)}M) exceed the ${fmtDollar(r.grossAssetCap)} cap at time of issuance. ` : '');
+    qualOk.style.display = 'none';
+  } else {
+    ineligWarn.style.display = 'none';
+    qualOk.style.display = 'block';
+    qualOk.textContent = `✅ Meets §1202 structural requirements. Document: (1) C-corp certificate of incorporation, (2) original issuance (not secondary market purchase), (3) gross asset certification from company, (4) active business requirement (not services, finance, hospitality — check §1202(e)).`;
+  }
+
+  if (r.stateRate > 0) {
+    stateNote.style.display = 'block';
+    stateNote.innerHTML = `⚠️ <strong>State tax:</strong> Many states (CA, NY, NJ, IL, MA) do not honor the §1202 exclusion — your full gain may be taxable at the state level at ${(r.stateRate*100).toFixed(1)}%. Estimated state tax on full gain: ${fmtDollar(r.totalGain * r.stateRate)}.`;
+  } else stateNote.style.display = 'none';
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+function exportMarkdown() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const md =
+`# QSBS §1202 Exclusion — AL-149
+
+**Issue date:** ${r.issueDateStr} · **${r.isPostOBBBA ? 'Post-OBBBA' : 'Pre-OBBBA'} rules** · **Hold:** ${r.holdYrs.toFixed(1)} years
+
+## Results
+| Item | Amount |
+|---|---|
+| Total gain | ${fmtDollar(r.totalGain)} |
+| Exclusion % | ${fmtPct(r.exclPct)} |
+| Excluded gain | ${fmtDollar(r.excludedGain)} |
+| Taxable gain | ${fmtDollar(r.taxableGain)} |
+| Federal tax (28% on taxable) | ${fmtDollar(r.fedTax)} |
+| Est. tax saved vs. no QSBS | ${fmtDollar(r.taxSaved)} |
+| Eligible | ${r.ineligible ? 'No' : 'Yes'} |
+
+---
+*Generated by ApexLogics AL-149 · apexlogics.org · IRC §1202 (OBBBA July 4, 2025)*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'qsbs-exclusion-AL149.md'; a.click();
+}
+
+function exportAP2() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "qsbs_exclusion_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-149",
+    tool_id: "142-qsbs-exclusion",
+    inputs: {
+      issueDate: r.issueDateStr,
+      saleDate: r.saleDateStr,
+      adjustedBasis: r.adjBasis,
+      totalGain: r.totalGain,
+      issuerGrossAssets: r.grossAssets,
+      isPostOBBBA: r.isPostOBBBA
+    },
+    outputs: {
+      holdingYears: +r.holdYrs.toFixed(2),
+      exclusionPct: +r.exclPct.toFixed(4),
+      excludedGain: Math.round(r.excludedGain),
+      taxableGain: Math.round(r.taxableGain),
+      federalTaxOwed: Math.round(r.fedTax),
+      taxSaved: Math.round(r.taxSaved),
+      isEligible: !r.ineligible,
+      perTaxpayerCap: Math.round(r.perTaxpayerCap)
+    },
+    downstream_handoff_candidates: ["AL-147", "AL-148"],
+    metadata: {
+      license: "CC-BY-4.0",
+      data_vintage: "IRC §1202 OBBBA (July 4, 2025): 3yr=50%, 4yr=75%, 5yr=100%; $75M gross asset cap"
+    }
+  };
+  const AP2Schema = {
+    validMandateTypes: ['qsbs_exclusion_record'],
+    validate: function(p) {
+      const errors = [];
+      ['ap2_version','mandate_type','al_id','inputs','outputs'].forEach(k => {
+        if (!p[k]) errors.push('missing: ' + k);
+      });
+      if (p.mandate_type && !this.validMandateTypes.includes(p.mandate_type))
+        errors.push('unrecognized mandate_type: ' + p.mandate_type);
+      return { valid: errors.length === 0, errors };
+    }
+  };
+  const result = AP2Schema.validate(payload);
+  if (!result.valid) { alert('AP2 validation failed: ' + result.errors.join('; ')); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  const pad = n => String(n).padStart(2,'0');
+  const d = new Date();
+  const ts = d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+  a.download = 'AL149_142-qsbs-exclusion_' + ts + '.ap2.json'; a.click();
+}
+</script>
+</body>
+</html>

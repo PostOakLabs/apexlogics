@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QBI §199A Deduction Optimizer | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--coral:#F07167;--coral-dim:rgba(240,113,103,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;--warn:#FBBF24;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--coral);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--coral);border-color:var(--coral);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:960px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:640px}
+.pii-banner{max-width:960px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:960px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:680px){.grid-2,.grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:440px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--coral)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.vintage-note{font-size:11px;color:var(--muted);padding:6px 10px;background:var(--surface2);border-radius:4px;border-left:3px solid var(--amber);margin-top:8px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--coral);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--coral);color:var(--coral)}
+.result-hidden{display:none}
+.result-hero{background:linear-gradient(135deg,var(--coral-dim),rgba(232,168,56,.06));border:2px solid rgba(240,113,103,.3);border-radius:12px;padding:24px;margin-bottom:20px;text-align:center}
+.result-hero .big-num{font-family:var(--font-mono);font-size:48px;font-weight:500;color:var(--coral);margin:8px 0}
+.result-hero .lbl{font-size:14px;color:var(--muted)}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--coral);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+.phase-bar-wrap{margin:16px 0;background:var(--surface2);border-radius:8px;padding:16px}
+.phase-bar-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:8px}
+.phase-bar{height:12px;border-radius:6px;background:var(--border);overflow:hidden}
+.phase-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--success),var(--coral));transition:width .4s}
+.lever-box{background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.3);border-radius:8px;padding:16px;margin-top:14px}
+.lever-box h4{font-size:14px;font-weight:600;color:var(--amber);margin-bottom:8px}
+.lever-box p{font-size:13px;color:var(--muted)}
+.warn-box{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--warn);margin-top:14px}
+.info-box{background:rgba(76,175,125,.07);border:1px solid rgba(76,175,125,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--success);margin-top:14px}
+.routing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.routing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:flex-start;gap:10px;text-decoration:none}
+.routing-card:hover{border-color:var(--coral);text-decoration:none}
+.routing-card .r-icon{font-size:20px}
+.routing-card .r-title{font-weight:600;color:var(--coral);margin-bottom:2px;font-size:13px}
+.routing-card .r-desc{font-size:12px;color:var(--muted)}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.mcp-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px}
+.mcp-panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.mcp-endpoint{font-family:var(--font-mono);font-size:12px;color:var(--coral);background:var(--bg);padding:8px 12px;border-radius:6px;word-break:break-all}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tag-coral{background:rgba(240,113,103,.15);color:var(--coral)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}
+footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-coral">Freelance &amp; Self-Employment Tax</span></div>
+  <h1>QBI §199A Deduction Optimizer</h1>
+  <p>Estimate your 20% qualified business income deduction (made permanent by OBBBA), model the SSTB phase-out, and see the W-2 wage lever that can unlock more deduction above the threshold.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<div class="card">
+  <h2>Business Income</h2>
+  <div class="vintage-note">
+    📌 <strong>2026 thresholds (OBBBA — permanent):</strong> $201,775 single / $403,500 MFJ. Phase-out band: $75,000 single / $150,000 MFJ. Minimum deduction: $400 if QBI ≥ $1,000 from active trade. Amounts labeled and user-overridable below.
+  </div>
+  <div class="grid-3" style="margin-top:18px">
+    <div class="field">
+      <label for="qbi">Qualified Business Income (QBI) ($)</label>
+      <input type="number" id="qbi" value="120000" min="0" step="1000">
+      <span class="hint">Net income from your trade or business</span>
+    </div>
+    <div class="field">
+      <label for="taxableIncome">Taxable Income (before QBI deduction) ($)</label>
+      <input type="number" id="taxableIncome" value="130000" min="0" step="1000">
+      <span class="hint">Line 15 of Form 1040 (estimated)</span>
+    </div>
+    <div class="field">
+      <label for="filingStatus">Filing Status</label>
+      <select id="filingStatus">
+        <option value="single">Single / MFS / HoH</option>
+        <option value="mfj">Married Filing Jointly</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Business Type &amp; W-2 Wages</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="sstb">Business Type</label>
+      <select id="sstb">
+        <option value="no">Non-SSTB (most trades, real estate, manufacturing, etc.)</option>
+        <option value="yes">SSTB (consulting, law, health, financial services, performing arts, etc.)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="w2Wages">W-2 Wages Paid by Business ($)</label>
+      <input type="number" id="w2Wages" value="0" min="0" step="1000">
+      <span class="hint">Total W-2 wages you (or your entity) pay to employees incl. yourself if S-corp</span>
+    </div>
+    <div class="field">
+      <label for="ubia">Qualified Property (UBIA) ($)</label>
+      <input type="number" id="ubia" value="0" min="0" step="1000">
+      <span class="hint">Unadjusted basis of depreciable property used in the business at close of year</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Threshold Overrides <span style="font-size:12px;color:var(--muted);font-weight:400">(optional — defaults are 2026 OBBBA values)</span></h2>
+  <div class="grid-2">
+    <div class="field">
+      <label for="threshold">Taxable Income Threshold ($)</label>
+      <input type="number" id="threshold" value="201775" min="0" step="100">
+    </div>
+    <div class="field">
+      <label for="phaseoutBand">Phase-out Band Width ($)</label>
+      <input type="number" id="phaseoutBand" value="75000" min="0" step="100">
+      <span class="hint">$75,000 single / $150,000 MFJ (2026 OBBBA)</span>
+    </div>
+  </div>
+</div>
+
+<div style="margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calculate()">Calculate QBI Deduction →</button>
+</div>
+
+<!-- Results -->
+<div id="results" class="result-hidden">
+
+  <div class="result-hero">
+    <div class="lbl">Estimated QBI Deduction</div>
+    <div class="big-num" id="qbiDeduction">—</div>
+    <div class="lbl" id="deductionSubLabel">—</div>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="val" id="tentative20">—</div>
+      <div class="lbl">Tentative 20% deduction</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="bindingLimit">—</div>
+      <div class="lbl">Binding limit (W-2/UBIA)</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="taxSaved">—</div>
+      <div class="lbl">Est. federal tax saved</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="phaseoutStatus">—</div>
+      <div class="lbl">Phase-out status</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Deduction Calculation</h2>
+
+    <div id="phaseBarWrap" class="phase-bar-wrap" style="display:none">
+      <div class="phase-bar-label">
+        <span>Threshold <span id="thresholdLabel">$201,775</span></span>
+        <span>Phase-out end <span id="phaseEndLabel">$276,775</span></span>
+      </div>
+      <div class="phase-bar"><div class="phase-bar-fill" id="phaseBarFill" style="width:0%"></div></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">Your taxable income is <span id="posInBand">—</span> through the phase-out band</div>
+    </div>
+
+    <div id="calcDetail" style="margin-top:16px;font-size:14px;line-height:1.8;color:var(--muted)"></div>
+
+    <div id="leverBox" class="lever-box" style="display:none">
+      <h4>💡 W-2 Wage Lever</h4>
+      <p id="leverText"></p>
+    </div>
+
+    <div id="sstbDisallowed" class="warn-box" style="display:none">
+      🚫 <strong>SSTB fully disallowed:</strong> Your taxable income exceeds the phase-out ceiling. As an SSTB, your QBI deduction is $0 at this income level. To recover the deduction, reduce taxable income below the phase-out range (e.g., via retirement contributions, Solo 401k, or business restructuring).
+    </div>
+
+    <div id="minimumDed" class="info-box" style="display:none">
+      ✅ <strong>Minimum deduction applies (OBBBA):</strong> Even where the standard calculation is limited, a $400 minimum QBI deduction applies if your QBI is ≥ $1,000 from an active trade or business.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Next Steps</h2>
+    <div class="routing-grid">
+      <a href="../111-s-corp-tax-savings-engine/index.html" class="routing-card">
+        <span class="r-icon">🏢</span>
+        <div><div class="r-title">S-Corp Tax Engine</div><div class="r-desc">Model S-corp election tax savings (AL-118)</div></div>
+      </a>
+      <a href="../138-scorp-reasonable-comp/index.html" class="routing-card">
+        <span class="r-icon">💰</span>
+        <div><div class="r-title">Reasonable Comp Estimator</div><div class="r-desc">Optimize salary/distribution split (AL-145)</div></div>
+      </a>
+      <a href="../23-freelance-1099-total-cost-calculator/index.html" class="routing-card">
+        <span class="r-icon">📄</span>
+        <div><div class="r-title">1099 Total Cost Calculator</div><div class="r-desc">Full SE tax + benefits cost picture (AL-45)</div></div>
+      </a>
+    </div>
+    <div class="results-export-row" style="margin-top:16px">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+  <div class="mcp-panel">
+    <h3>MCP Integration</h3>
+    <div class="mcp-endpoint">GET https://apexlogics.org/.well-known/mcp.json → tool: optimize_qbi_deduction</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Downstream: S-Corp Tax Engine (AL-118) · Reasonable Comp (AL-145)</p>
+  </div>
+
+</div><!-- /results -->
+
+</div><!-- /main -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-144 · Data: 2026 §199A thresholds (OBBBA-permanent)
+</footer>
+
+<script>
+// 2026 §199A default thresholds (OBBBA, signed July 4, 2025 — permanent)
+// Source: IRC §199A as amended; inflation-adjusted 2026 figures
+// Single/MFS/HoH: $201,775 threshold; $75,000 phase-out band
+// MFJ: $403,500 threshold; $150,000 phase-out band
+// Minimum deduction: $400 if QBI ≥ $1,000 (active trade or business)
+const DEFAULTS_2026 = {
+  single: { threshold: 201775, band: 75000 },
+  mfj:    { threshold: 403500, band: 150000 }
+};
+
+// Update threshold/band when filing status changes
+document.getElementById('filingStatus').addEventListener('change', function() {
+  const d = DEFAULTS_2026[this.value];
+  document.getElementById('threshold').value = d.threshold;
+  document.getElementById('phaseoutBand').value = d.band;
+});
+
+let _lastResult = null;
+
+function calculate() {
+  const qbi           = +document.getElementById('qbi').value;
+  const taxableIncome = +document.getElementById('taxableIncome').value;
+  const filingStatus  = document.getElementById('filingStatus').value;
+  const isSSTB        = document.getElementById('sstb').value === 'yes';
+  const w2Wages       = +document.getElementById('w2Wages').value;
+  const ubia          = +document.getElementById('ubia').value;
+  const threshold     = +document.getElementById('threshold').value;
+  const phaseoutBand  = +document.getElementById('phaseoutBand').value;
+
+  if (qbi <= 0 || taxableIncome <= 0) {
+    alert('Please enter positive QBI and taxable income values.'); return;
+  }
+
+  const phaseoutEnd = threshold + phaseoutBand;
+  const tentative = qbi * 0.20;
+
+  // W-2 / UBIA limitation (applies above threshold for non-SSTBs; for SSTBs it's disqualifying)
+  const w2Limit  = w2Wages * 0.50;
+  const ubaLimit = w2Wages * 0.25 + ubia * 0.025;
+  const propertyLimit = Math.max(w2Limit, ubaLimit);
+
+  let deduction = 0;
+  let sstbDisallowed = false;
+  let phaseoutPct = 0;
+  let calcLines = [];
+  let leverW2Needed = 0;
+
+  if (taxableIncome <= threshold) {
+    // Below threshold: full 20% deduction, no W-2/UBIA limit
+    deduction = Math.min(tentative, taxableIncome * 0.20); // also capped at 20% of taxable income
+    calcLines = [
+      `Taxable income (${fmtDollar(taxableIncome)}) ≤ threshold (${fmtDollar(threshold)}) → full 20% applies`,
+      `Tentative deduction: 20% × ${fmtDollar(qbi)} = ${fmtDollar(tentative)}`,
+      `Final deduction = min(tentative, 20% × taxable income) = ${fmtDollar(deduction)}`
+    ];
+  } else if (taxableIncome >= phaseoutEnd) {
+    if (isSSTB) {
+      // SSTB fully disallowed above phase-out
+      deduction = 0;
+      sstbDisallowed = true;
+      calcLines = [
+        `Taxable income (${fmtDollar(taxableIncome)}) ≥ phase-out end (${fmtDollar(phaseoutEnd)})`,
+        `SSTB: deduction fully disallowed above phase-out ceiling.`
+      ];
+    } else {
+      // Non-SSTB: apply W-2/UBIA limitation
+      deduction = propertyLimit > 0 ? Math.min(tentative, propertyLimit) : tentative;
+      calcLines = [
+        `Taxable income (${fmtDollar(taxableIncome)}) ≥ phase-out end (${fmtDollar(phaseoutEnd)}) → W-2/UBIA limitation applies`,
+        `Tentative 20% deduction: ${fmtDollar(tentative)}`,
+        `50% of W-2 wages: ${fmtDollar(w2Limit)} | 25% W-2 + 2.5% UBIA: ${fmtDollar(ubaLimit)}`,
+        `Binding limit = max(${fmtDollar(w2Limit)}, ${fmtDollar(ubaLimit)}) = ${fmtDollar(propertyLimit)}`,
+        `Deduction = min(tentative, limit) = ${fmtDollar(deduction)}`
+      ];
+      if (w2Wages < qbi * 0.5 && tentative > propertyLimit) {
+        leverW2Needed = Math.round((tentative - propertyLimit) / 0.5);
+      }
+    }
+  } else {
+    // In the phase-out range — interpolate
+    phaseoutPct = (taxableIncome - threshold) / phaseoutBand; // 0 to 1
+    if (isSSTB) {
+      // SSTB: linearly phase out the deduction
+      const phasedDeduction = tentative * (1 - phaseoutPct);
+      deduction = Math.max(0, phasedDeduction);
+      calcLines = [
+        `Taxable income is ${(phaseoutPct * 100).toFixed(1)}% through the phase-out band`,
+        `SSTB phase-out: tentative (${fmtDollar(tentative)}) × (1 − ${(phaseoutPct * 100).toFixed(1)}%) = ${fmtDollar(deduction)}`
+      ];
+    } else {
+      // Non-SSTB: linearly phase in the W-2/UBIA limit
+      const fullLimit = propertyLimit > 0 ? Math.min(tentative, propertyLimit) : tentative;
+      deduction = tentative - phaseoutPct * Math.max(0, tentative - fullLimit);
+      calcLines = [
+        `Taxable income is ${(phaseoutPct * 100).toFixed(1)}% through the phase-out band`,
+        `W-2/UBIA limit phases in: tentative (${fmtDollar(tentative)}) → limited deduction (${fmtDollar(deduction)})`
+      ];
+    }
+  }
+
+  // Minimum deduction ($400 if QBI ≥ $1,000, active trade) — OBBBA 2026
+  const minDed = (qbi >= 1000 && deduction < 400) ? 400 : 0;
+  const finalDeduction = Math.max(deduction, minDed);
+
+  // Rough tax savings: 22% marginal (user-specific; labeled estimate)
+  const taxSaved = finalDeduction * 0.22;
+
+  _lastResult = {
+    qbi, taxableIncome, filingStatus, isSSTB, w2Wages, ubia,
+    threshold, phaseoutBand, phaseoutEnd, tentative, propertyLimit,
+    deduction: finalDeduction, sstbDisallowed, phaseoutPct,
+    calcLines, leverW2Needed, taxSaved, minDed
+  };
+
+  renderResults(_lastResult);
+}
+
+function fmtDollar(n) { return '$' + Math.round(Math.abs(n)).toLocaleString(); }
+
+function renderResults(r) {
+  document.getElementById('qbiDeduction').textContent = fmtDollar(r.deduction);
+  document.getElementById('deductionSubLabel').textContent =
+    r.sstbDisallowed ? 'SSTB fully disallowed at this income level' :
+    r.deduction === 0 ? 'No deduction available' :
+    r.isSSTB ? `SSTB — ${(r.phaseoutPct * 100).toFixed(0)}% phased out` :
+    r.taxableIncome <= r.threshold ? 'Full deduction — below threshold' :
+    'W-2/UBIA limited or phase-out applied';
+
+  document.getElementById('tentative20').textContent = fmtDollar(r.tentative);
+  document.getElementById('bindingLimit').textContent = r.propertyLimit > 0 ? fmtDollar(r.propertyLimit) : 'None (below threshold)';
+  document.getElementById('taxSaved').textContent = fmtDollar(r.taxSaved) + '*';
+  document.getElementById('phaseoutStatus').textContent =
+    r.sstbDisallowed ? 'Fully disallowed' :
+    r.taxableIncome <= r.threshold ? 'Below threshold' :
+    r.taxableIncome >= r.phaseoutEnd ? 'Fully in limitation zone' :
+    `${(r.phaseoutPct * 100).toFixed(0)}% phased out`;
+
+  // Phase bar
+  if (r.taxableIncome > r.threshold) {
+    document.getElementById('phaseBarWrap').style.display = 'block';
+    document.getElementById('thresholdLabel').textContent = fmtDollar(r.threshold);
+    document.getElementById('phaseEndLabel').textContent  = fmtDollar(r.phaseoutEnd);
+    const fillPct = Math.min(100, r.phaseoutPct * 100);
+    document.getElementById('phaseBarFill').style.width = fillPct + '%';
+    document.getElementById('posInBand').textContent = r.taxableIncome >= r.phaseoutEnd
+      ? 'beyond the phase-out ceiling'
+      : `${fillPct.toFixed(0)}% of the way`;
+  } else {
+    document.getElementById('phaseBarWrap').style.display = 'none';
+  }
+
+  document.getElementById('calcDetail').innerHTML = r.calcLines.map(l => `• ${l}`).join('<br>') +
+    `<br><br><em style="font-size:12px">* Tax saved is estimated at 22% marginal rate; your actual rate may differ.</em>`;
+
+  // Lever
+  document.getElementById('leverBox').style.display = r.leverW2Needed > 0 ? 'block' : 'none';
+  if (r.leverW2Needed > 0) {
+    document.getElementById('leverText').textContent =
+      `Paying an additional ${fmtDollar(r.leverW2Needed)} in W-2 wages (e.g., via S-corp salary) would increase the binding limit enough to fully unlock the ${fmtDollar(r.tentative)} tentative deduction. Compare W-2 payroll costs against the deduction gain.`;
+  }
+
+  document.getElementById('sstbDisallowed').style.display = r.sstbDisallowed ? 'block' : 'none';
+  document.getElementById('minimumDed').style.display = r.minDed > 0 ? 'block' : 'none';
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+function exportMarkdown() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const md =
+`# QBI §199A Deduction — AL-144
+
+**Filing status:** ${r.filingStatus} · **QBI:** ${fmtDollar(r.qbi)} · **Taxable income:** ${fmtDollar(r.taxableIncome)} · **SSTB:** ${r.isSSTB ? 'Yes' : 'No'}
+
+## Deduction Estimate
+| Item | Amount |
+|---|---|
+| Tentative 20% deduction | ${fmtDollar(r.tentative)} |
+| W-2/UBIA binding limit | ${r.propertyLimit > 0 ? fmtDollar(r.propertyLimit) : 'N/A'} |
+| **Final QBI deduction** | **${fmtDollar(r.deduction)}** |
+| Est. tax saved (22%) | ${fmtDollar(r.taxSaved)} |
+
+**Phase-out status:** ${r.sstbDisallowed ? 'Fully disallowed (SSTB above ceiling)' : r.taxableIncome <= r.threshold ? 'Below threshold — full deduction' : `${(r.phaseoutPct*100).toFixed(0)}% through phase-out`}
+
+${r.leverW2Needed > 0 ? `**W-2 lever:** Pay ${fmtDollar(r.leverW2Needed)} additional in W-2 wages to fully unlock the tentative deduction.` : ''}
+
+---
+*Generated by ApexLogics AL-144 · apexlogics.org · Data: 2026 §199A (OBBBA-permanent); thresholds $201,775/$403,500*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'qbi-optimizer-AL144.md'; a.click();
+}
+
+function exportAP2() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "qbi_deduction_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-144",
+    tool_id: "137-qbi-199a-optimizer",
+    inputs: {
+      qbi: r.qbi,
+      taxableIncome: r.taxableIncome,
+      filingStatus: r.filingStatus,
+      isSSTB: r.isSSTB,
+      w2Wages: r.w2Wages,
+      ubia: r.ubia,
+      threshold: r.threshold,
+      phaseoutBand: r.phaseoutBand
+    },
+    outputs: {
+      qbiDeduction: Math.round(r.deduction),
+      tentativeDeduction: Math.round(r.tentative),
+      bindingLimit: Math.round(r.propertyLimit),
+      taxSavedEstimate: Math.round(r.taxSaved),
+      phaseoutPct: +r.phaseoutPct.toFixed(3),
+      sstbDisallowed: r.sstbDisallowed,
+      leverW2Needed: r.leverW2Needed
+    },
+    downstream_handoff_candidates: ["AL-118"],
+    metadata: {
+      license: "CC-BY-4.0",
+      data_vintage: "2026 §199A OBBBA-permanent; thresholds $201,775/$403,500"
+    }
+  };
+  const AP2Schema = {
+    validMandateTypes: ['qbi_deduction_record'],
+    validate: function(p) {
+      const errors = [];
+      ['ap2_version','mandate_type','al_id','inputs','outputs'].forEach(k => {
+        if (!p[k]) errors.push('missing: ' + k);
+      });
+      if (p.mandate_type && !this.validMandateTypes.includes(p.mandate_type))
+        errors.push('unrecognized mandate_type: ' + p.mandate_type);
+      return { valid: errors.length === 0, errors };
+    }
+  };
+  const result = AP2Schema.validate(payload);
+  if (!result.valid) { alert('AP2 validation failed: ' + result.errors.join('; ')); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  const pad = n => String(n).padStart(2,'0');
+  const d = new Date();
+  const ts = d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+  a.download = 'AL144_137-qbi-optimizer_' + ts + '.ap2.json'; a.click();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post-Termination Option Exercise-Window Decision | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--coral:#F07167;--coral-dim:rgba(240,113,103,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;--warn:#FBBF24;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--coral);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--coral);border-color:var(--coral);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:960px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:640px}
+.pii-banner{max-width:960px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:960px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px}
+@media(max-width:700px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--coral)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.slider-row{display:flex;flex-direction:column;gap:6px}
+.slider-wrap{display:flex;align-items:center;gap:12px}
+input[type=range]{flex:1;accent-color:var(--coral)}
+.slider-val{font-family:var(--font-mono);font-size:13px;color:var(--coral);min-width:42px;text-align:right}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--coral);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--coral);color:var(--coral)}
+.result-hidden{display:none}
+.result-hero{background:linear-gradient(135deg,var(--coral-dim),rgba(232,168,56,.06));border:2px solid rgba(240,113,103,.3);border-radius:12px;padding:24px;margin-bottom:20px;text-align:center}
+.result-hero .verdict{font-family:var(--font-serif);font-size:28px;margin:8px 0}
+.result-hero .sublabel{font-size:13px;color:var(--muted);margin-top:4px}
+.verdict-exercise{color:var(--success)}
+.verdict-lapse{color:var(--danger)}
+.verdict-caution{color:var(--warn)}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--coral);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin-bottom:16px}
+th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:14px}
+td.mono{font-family:var(--font-mono)}
+tr.hi-row td{font-weight:600;background:rgba(240,113,103,.06)}
+.warn-box{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--warn);margin-top:14px}
+.info-box{background:rgba(76,175,125,.07);border:1px solid rgba(76,175,125,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--success);margin-top:14px}
+.danger-box{background:rgba(232,85,85,.07);border:1px solid rgba(232,85,85,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--danger);margin-top:14px}
+.routing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.routing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:flex-start;gap:10px;text-decoration:none}
+.routing-card:hover{border-color:var(--coral);text-decoration:none}
+.routing-card .r-icon{font-size:20px}
+.routing-card .r-title{font-weight:600;color:var(--coral);margin-bottom:2px;font-size:13px}
+.routing-card .r-desc{font-size:12px;color:var(--muted)}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.mcp-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px}
+.mcp-panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.mcp-endpoint{font-family:var(--font-mono);font-size:12px;color:var(--coral);background:var(--bg);padding:8px 12px;border-radius:6px;word-break:break-all}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tag-coral{background:rgba(240,113,103,.15);color:var(--coral)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}
+footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-coral">Equity &amp; Tax</span></div>
+  <h1>Post-Termination Option Exercise-Window Decision</h1>
+  <p>You've left your company. The clock is running on your vested options — typically 90 days. Model exercise cost, AMT exposure, and expected value across exit scenarios before the window closes.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<!-- Card 1: Option Details -->
+<div class="card">
+  <h2>Your Options</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="vestedShares">Vested Shares</label>
+      <input type="number" id="vestedShares" value="10000" min="1" step="100">
+    </div>
+    <div class="field">
+      <label for="strikePrice">Strike Price ($/share)</label>
+      <input type="number" id="strikePrice" value="5.00" min="0" step="0.01">
+    </div>
+    <div class="field">
+      <label for="fmv">Current 409A / FMV ($/share)</label>
+      <input type="number" id="fmv" value="12.00" min="0" step="0.01">
+      <span class="hint">Last 409A appraisal or FMV per your option agreement</span>
+    </div>
+  </div>
+  <div class="grid-3" style="margin-top:16px">
+    <div class="field">
+      <label for="optionType">Option Type</label>
+      <select id="optionType">
+        <option value="iso">ISO (Incentive Stock Options)</option>
+        <option value="nso">NSO (Non-Qualified)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="windowDays">Exercise Window (days)</label>
+      <input type="number" id="windowDays" value="90" min="1" max="3650" step="1">
+      <span class="hint">Default: 90 days (IRC §422). Some companies grant extended windows — check your agreement.</span>
+    </div>
+    <div class="field">
+      <label for="cashAvailable">Cash Available for Exercise ($)</label>
+      <input type="number" id="cashAvailable" value="30000" min="0" step="1000">
+      <span class="hint">Cash you're willing to put at risk</span>
+    </div>
+  </div>
+</div>
+
+<!-- Card 2: Exit Scenarios -->
+<div class="card">
+  <h2>Exit Scenarios</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="exitLow">Exit — Bear Case ($/share)</label>
+      <input type="number" id="exitLow" value="0" min="0" step="0.50">
+      <span class="hint">Company goes to zero / below strike</span>
+    </div>
+    <div class="field">
+      <label for="exitBase">Exit — Base Case ($/share)</label>
+      <input type="number" id="exitBase" value="25.00" min="0" step="0.50">
+    </div>
+    <div class="field">
+      <label for="exitHigh">Exit — Bull Case ($/share)</label>
+      <input type="number" id="exitHigh" value="60.00" min="0" step="0.50">
+    </div>
+  </div>
+
+  <div style="margin-top:20px">
+    <div style="font-size:14px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px">Probability Weights (%)</div>
+    <div class="grid-3">
+      <div class="slider-row">
+        <label>Bear case probability</label>
+        <div class="slider-wrap">
+          <input type="range" id="pBear" min="0" max="100" value="25" oninput="document.getElementById('pBearVal').textContent=this.value+'%'">
+          <span class="slider-val" id="pBearVal">25%</span>
+        </div>
+      </div>
+      <div class="slider-row">
+        <label>Base case probability</label>
+        <div class="slider-wrap">
+          <input type="range" id="pBase" min="0" max="100" value="55" oninput="document.getElementById('pBaseVal').textContent=this.value+'%'">
+          <span class="slider-val" id="pBaseVal">55%</span>
+        </div>
+      </div>
+      <div class="slider-row">
+        <label>Bull case probability</label>
+        <div class="slider-wrap">
+          <input type="range" id="pBull" min="0" max="100" value="20" oninput="document.getElementById('pBullVal').textContent=this.value+'%'">
+          <span class="slider-val" id="pBullVal">20%</span>
+        </div>
+      </div>
+    </div>
+    <div id="probSum" class="prob-sum bad" style="margin-top:12px;padding:8px 12px;border-radius:6px;background:var(--surface2);font-size:13px;display:flex;justify-content:space-between">
+      <span>Probabilities sum</span><span class="sum-val" id="probSumVal" style="font-family:var(--font-mono);font-weight:600">100%</span>
+    </div>
+  </div>
+</div>
+
+<style>
+.prob-sum.ok{border:1px solid var(--success);color:var(--success)}
+.prob-sum.bad{border:1px solid var(--danger);color:var(--danger)}
+</style>
+
+<script>
+function syncProbs(){
+  const pB=+document.getElementById('pBear').value;
+  const pb=+document.getElementById('pBase').value;
+  const pU=+document.getElementById('pBull').value;
+  document.getElementById('pBearVal').textContent=pB+'%';
+  document.getElementById('pBaseVal').textContent=pb+'%';
+  document.getElementById('pBullVal').textContent=pU+'%';
+  const total=pB+pb+pU;
+  document.getElementById('probSumVal').textContent=total+'%';
+  document.getElementById('probSum').className='prob-sum '+(total===100?'ok':'bad');
+}
+document.getElementById('pBear').addEventListener('input',syncProbs);
+document.getElementById('pBase').addEventListener('input',syncProbs);
+document.getElementById('pBull').addEventListener('input',syncProbs);
+</script>
+
+<div style="margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calculate()">Analyze Exercise Decision →</button>
+</div>
+
+<!-- Results -->
+<div id="results" class="result-hidden">
+
+  <div class="result-hero">
+    <div style="font-size:13px;color:var(--muted)">Recommendation</div>
+    <div class="verdict" id="mainVerdict">—</div>
+    <div class="sublabel" id="verdictReason">—</div>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="val" id="exerciseCost">—</div>
+      <div class="lbl">Total exercise cost</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="spreadVal">—</div>
+      <div class="lbl">Spread at current FMV</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="evExercise">—</div>
+      <div class="lbl">EV of exercise &amp; hold</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="maxAffordable">—</div>
+      <div class="lbl">Max shares w/in cash limit</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Scenario Analysis</h2>
+    <table>
+      <thead><tr>
+        <th>Scenario</th><th>Exit $/sh</th><th>P</th><th>Gross Proceeds</th><th>Net (after exercise cost)</th><th>EV Contribution</th>
+      </tr></thead>
+      <tbody id="scenarioTable"></tbody>
+    </table>
+
+    <div id="amtWarning" class="warn-box" style="display:none"></div>
+    <div id="nsoNote" class="info-box" style="display:none"></div>
+    <div id="isoNote" class="info-box" style="display:none"></div>
+    <div id="cashConstraintNote" class="warn-box" style="display:none"></div>
+    <div id="lapseNote" class="warn-box" style="display:none"></div>
+  </div>
+
+  <div class="card">
+    <h2>Next Steps</h2>
+    <div class="routing-grid">
+      <a href="../109-iso-amt-calculator/index.html" class="routing-card">
+        <span class="r-icon">🧮</span>
+        <div><div class="r-title">ISO-AMT Calculator</div><div class="r-desc">Full AMT exposure calculation for ISO exercise (AL-116)</div></div>
+      </a>
+      <a href="../21-equity-compensation-analyzer/index.html" class="routing-card">
+        <span class="r-icon">📊</span>
+        <div><div class="r-title">Equity Comp Analyzer</div><div class="r-desc">Model your full equity package value (AL-33)</div></div>
+      </a>
+    </div>
+    <div class="results-export-row" style="margin-top:16px">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+  <div class="mcp-panel">
+    <h3>MCP Integration</h3>
+    <div class="mcp-endpoint">GET https://apexlogics.org/.well-known/mcp.json → tool: evaluate_option_exercise_window</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Downstream: ISO-AMT Calculator (AL-116)</p>
+  </div>
+
+</div><!-- /results -->
+
+</div><!-- /main -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-142 · Data: 2026 — no embedded data; IRC §422 default window
+</footer>
+
+<script>
+let _lastResult = null;
+
+function calculate() {
+  const vestedShares  = +document.getElementById('vestedShares').value;
+  const strikePrice   = +document.getElementById('strikePrice').value;
+  const fmv           = +document.getElementById('fmv').value;
+  const optionType    = document.getElementById('optionType').value;
+  const windowDays    = +document.getElementById('windowDays').value;
+  const cashAvailable = +document.getElementById('cashAvailable').value;
+  const exitLow       = +document.getElementById('exitLow').value;
+  const exitBase      = +document.getElementById('exitBase').value;
+  const exitHigh      = +document.getElementById('exitHigh').value;
+  const pBear         = +document.getElementById('pBear').value / 100;
+  const pBase         = +document.getElementById('pBase').value / 100;
+  const pBull         = +document.getElementById('pBull').value / 100;
+
+  if (!vestedShares || strikePrice < 0 || !fmv) {
+    alert('Please enter valid share count, strike, and FMV values.'); return;
+  }
+  if (Math.round((pBear + pBase + pBull) * 100) !== 100) {
+    alert('Probabilities must sum to 100%.'); return;
+  }
+
+  const exerciseCost = vestedShares * strikePrice;
+  const spread = vestedShares * (fmv - strikePrice);
+  const maxAffordable = cashAvailable > 0 && strikePrice > 0
+    ? Math.floor(cashAvailable / strikePrice) : vestedShares;
+  const exercisableShares = Math.min(vestedShares, cashAvailable > 0 ? maxAffordable : vestedShares);
+
+  // EV of exercise & hold (net of strike cost)
+  const scenarios = [
+    { label: 'Bear (worst case)', exit: exitLow,  p: pBear },
+    { label: 'Base case',         exit: exitBase, p: pBase },
+    { label: 'Bull (best case)',  exit: exitHigh, p: pBull },
+  ];
+
+  let evExercise = 0;
+  const scenarioRows = scenarios.map(s => {
+    const grossProceeds = vestedShares * s.exit;
+    const net = grossProceeds - exerciseCost;
+    const ev = s.p * Math.max(0, net);
+    evExercise += ev;
+    return { ...s, grossProceeds, net, ev };
+  });
+
+  // AMT flag for ISOs
+  const amtSpread = spread; // AMT preference item = spread at exercise (ISO only)
+  const amtFlag = optionType === 'iso' && spread > 50000;
+
+  // Verdict
+  const evVsLapse = evExercise - 0; // lapse EV is always $0
+  const cashShortfall = cashAvailable > 0 && exerciseCost > cashAvailable;
+  const underwater = fmv <= strikePrice;
+
+  let verdict, verdictClass, verdictReason;
+  if (underwater) {
+    verdict = 'Let Options Lapse';
+    verdictClass = 'verdict-lapse';
+    verdictReason = `FMV ($${fmv.toFixed(2)}) is at or below strike ($${strikePrice.toFixed(2)}) — options are underwater with no intrinsic value`;
+  } else if (cashShortfall && exercisableShares < vestedShares * 0.1) {
+    verdict = 'Insufficient Cash — Lapse or Partial';
+    verdictClass = 'verdict-caution';
+    verdictReason = `You can only afford ${exercisableShares.toLocaleString()} of ${vestedShares.toLocaleString()} shares within your cash limit`;
+  } else if (evExercise > 0) {
+    verdict = 'Exercise ' + (cashShortfall ? exercisableShares.toLocaleString() + ' Shares' : 'All Vested Shares');
+    verdictClass = 'verdict-exercise';
+    verdictReason = `Positive EV of $${Math.round(evExercise).toLocaleString()} — deadline: ${windowDays} days`;
+  } else {
+    verdict = 'Caution — EV Near Zero';
+    verdictClass = 'verdict-caution';
+    verdictReason = 'Risk/reward is marginal; review probability assumptions';
+  }
+
+  _lastResult = {
+    vestedShares, strikePrice, fmv, optionType, windowDays, cashAvailable,
+    exerciseCost, spread, maxAffordable, exercisableShares,
+    scenarioRows, evExercise, amtFlag, amtSpread, cashShortfall, underwater,
+    verdict, exitLow, exitBase, exitHigh, pBear, pBase, pBull
+  };
+
+  renderResults(_lastResult);
+}
+
+function renderResults(r) {
+  const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString();
+
+  document.getElementById('mainVerdict').textContent = r.verdict;
+  document.getElementById('mainVerdict').className = 'verdict ' + (
+    r.underwater ? 'verdict-lapse' :
+    r.evExercise > 0 ? 'verdict-exercise' : 'verdict-caution'
+  );
+  document.getElementById('verdictReason').textContent =
+    r.underwater ? `FMV ($${r.fmv.toFixed(2)}) ≤ strike ($${r.strikePrice.toFixed(2)}) — no intrinsic value` :
+    r.cashShortfall ? `Cash limit: can exercise ${r.exercisableShares.toLocaleString()} of ${r.vestedShares.toLocaleString()} shares` :
+    `Window: ${r.windowDays} days from termination date`;
+
+  document.getElementById('exerciseCost').textContent = fmt(r.exerciseCost);
+  document.getElementById('spreadVal').textContent    = r.spread >= 0 ? fmt(r.spread) : '—';
+  document.getElementById('evExercise').textContent   = fmt(r.evExercise);
+  document.getElementById('maxAffordable').textContent = r.exercisableShares.toLocaleString() + ' sh';
+
+  // Scenario table
+  document.getElementById('scenarioTable').innerHTML = r.scenarioRows.map(s => `
+    <tr class="${s.label === 'Base case' ? 'hi-row' : ''}">
+      <td>${s.label}</td>
+      <td class="mono">$${s.exit.toFixed(2)}</td>
+      <td class="mono">${(s.p * 100).toFixed(0)}%</td>
+      <td class="mono">${fmt(s.grossProceeds)}</td>
+      <td class="mono">${s.net >= 0 ? fmt(s.net) : '(' + fmt(s.net) + ')'}</td>
+      <td class="mono">${fmt(s.ev)}</td>
+    </tr>`).join('') + `
+    <tr class="hi-row">
+      <td><strong>Expected Value (EV)</strong></td>
+      <td class="mono">—</td><td class="mono">100%</td><td class="mono">—</td>
+      <td class="mono">—</td>
+      <td class="mono"><strong>${fmt(r.evExercise)}</strong></td>
+    </tr>`;
+
+  // AMT / type notes
+  document.getElementById('amtWarning').style.display = r.amtFlag ? 'block' : 'none';
+  if (r.amtFlag) {
+    document.getElementById('amtWarning').innerHTML =
+      `⚠️ <strong>ISO AMT exposure flag:</strong> Exercising all ${r.vestedShares.toLocaleString()} ISOs creates an AMT preference item of approximately ${fmt(r.amtSpread)}. This may trigger Alternative Minimum Tax. Use the <a href="../109-iso-amt-calculator/index.html">ISO-AMT Calculator (AL-116)</a> to model your exact AMT liability before exercising.`;
+  }
+
+  document.getElementById('nsoNote').style.display  = r.optionType === 'nso' ? 'block' : 'none';
+  document.getElementById('isoNote').style.display  = r.optionType === 'iso' ? 'block' : 'none';
+  if (r.optionType === 'nso') {
+    document.getElementById('nsoNote').innerHTML =
+      `💡 <strong>NSO tax treatment:</strong> The spread at exercise ($${(r.fmv - r.strikePrice).toFixed(2)}/share) is taxed as ordinary income in the year you exercise — your employer will withhold. Plan cash for the tax bill in addition to the exercise cost.`;
+  } else {
+    document.getElementById('isoNote').innerHTML =
+      `💡 <strong>ISO tax treatment:</strong> No ordinary income tax at exercise (AMT item only). To get LTCG treatment on the full gain, you must hold the shares ≥ 2 years from grant date AND ≥ 1 year from exercise date. Selling sooner is a disqualifying disposition (treated as NSO spread).`;
+  }
+
+  document.getElementById('cashConstraintNote').style.display = r.cashShortfall ? 'block' : 'none';
+  if (r.cashShortfall) {
+    document.getElementById('cashConstraintNote').innerHTML =
+      `⚠️ <strong>Cash constraint:</strong> Exercising all ${r.vestedShares.toLocaleString()} shares costs ${fmt(r.exerciseCost)}. Your stated cash limit covers only ${r.exercisableShares.toLocaleString()} shares. Consider partial exercise — prioritize the lowest-strike or highest-EV tranche.`;
+  }
+
+  document.getElementById('lapseNote').style.display = r.underwater ? 'block' : 'none';
+  if (r.underwater) {
+    document.getElementById('lapseNote').innerHTML =
+      `ℹ️ Options are currently underwater. Let them lapse — exercising would cost more than the shares are worth at current FMV. Check if your agreement grants extended exercise if the company's valuation recovers.`;
+  }
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+function exportMarkdown() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString();
+  const md =
+`# Option Exercise Window — AL-142
+
+**${r.vestedShares.toLocaleString()} vested ${r.optionType.toUpperCase()}s** · Strike: $${r.strikePrice.toFixed(2)} · FMV: $${r.fmv.toFixed(2)} · Window: ${r.windowDays} days
+
+## Recommendation: ${r.verdict}
+
+## Exercise Cost Summary
+- Total exercise cost (all shares): ${fmt(r.exerciseCost)}
+- Spread at current FMV: ${fmt(r.spread)}
+- Max shares within cash limit (${fmt(r.cashAvailable)}): ${r.exercisableShares.toLocaleString()} shares
+
+## Scenario EV
+| Scenario | Exit $/sh | P | Net | EV |
+|---|---|---|---|---|
+| Bear | $${r.exitLow.toFixed(2)} | ${(r.pBear*100).toFixed(0)}% | ${fmt(r.vestedShares*r.exitLow - r.exerciseCost)} | ${fmt(r.scenarioRows[0].ev)} |
+| Base | $${r.exitBase.toFixed(2)} | ${(r.pBase*100).toFixed(0)}% | ${fmt(r.vestedShares*r.exitBase - r.exerciseCost)} | ${fmt(r.scenarioRows[1].ev)} |
+| Bull | $${r.exitHigh.toFixed(2)} | ${(r.pBull*100).toFixed(0)}% | ${fmt(r.vestedShares*r.exitHigh - r.exerciseCost)} | ${fmt(r.scenarioRows[2].ev)} |
+| **EV** | — | 100% | — | **${fmt(r.evExercise)}** |
+
+${r.amtFlag ? '⚠ **AMT flag:** spread of ' + fmt(r.amtSpread) + ' — run ISO-AMT Calculator (AL-116) before exercising.' : ''}
+
+---
+*Generated by ApexLogics AL-142 · apexlogics.org · Data: 2026 — IRC §422 default window*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'option-exercise-window-AL142.md'; a.click();
+}
+
+function exportAP2() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "exercise_window_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-142",
+    tool_id: "135-option-exercise-window",
+    inputs: {
+      vestedShares: r.vestedShares,
+      strikePrice: r.strikePrice,
+      fmv: r.fmv,
+      optionType: r.optionType,
+      windowDays: r.windowDays,
+      cashAvailable: r.cashAvailable
+    },
+    outputs: {
+      exerciseCost: Math.round(r.exerciseCost),
+      spread: Math.round(r.spread),
+      evExercise: Math.round(r.evExercise),
+      exercisableShares: r.exercisableShares,
+      amtFlag: r.amtFlag,
+      verdict: r.underwater ? 'lapse' : r.evExercise > 0 ? 'exercise' : 'caution'
+    },
+    downstream_handoff_candidates: ["AL-116"],
+    metadata: { license: "CC-BY-4.0", data_vintage: "2026" }
+  };
+  const AP2Schema = {
+    validMandateTypes: ['exercise_window_record'],
+    validate: function(p) {
+      const errors = [];
+      ['ap2_version','mandate_type','al_id','inputs','outputs'].forEach(k => {
+        if (!p[k]) errors.push('missing: ' + k);
+      });
+      if (p.mandate_type && !this.validMandateTypes.includes(p.mandate_type))
+        errors.push('unrecognized mandate_type: ' + p.mandate_type);
+      return { valid: errors.length === 0, errors };
+    }
+  };
+  const result = AP2Schema.validate(payload);
+  if (!result.valid) { alert('AP2 validation failed: ' + result.errors.join('; ')); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  const pad = n => String(n).padStart(2,'0');
+  const d = new Date();
+  const ts = d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+  a.download = 'AL142_135-option-exercise-window_' + ts + '.ap2.json'; a.click();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H-1B Employer Change Planner | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--coral:#F07167;--coral-dim:rgba(240,113,103,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;--warn:#FBBF24;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--coral);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--coral);border-color:var(--coral);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:960px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:640px}
+.pii-banner{max-width:960px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:960px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:680px){.grid-2,.grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:440px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],input[type=date],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--coral)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.vintage-note{font-size:11px;color:var(--muted);padding:6px 10px;background:var(--surface2);border-radius:4px;border-left:3px solid var(--amber);margin-top:8px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--coral);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--coral);color:var(--coral)}
+.result-hidden{display:none}
+.status-banner{border-radius:10px;padding:16px 20px;margin-bottom:20px;font-size:14px}
+.status-banner.safe{background:rgba(76,175,125,.10);border:1px solid rgba(76,175,125,.4);color:var(--success)}
+.status-banner.warn{background:rgba(251,191,36,.10);border:1px solid rgba(251,191,36,.4);color:var(--warn)}
+.status-banner.risk{background:rgba(232,85,85,.10);border:1px solid rgba(232,85,85,.4);color:var(--danger)}
+.timeline{border-left:2px solid var(--border);padding-left:20px;margin:14px 0}
+.tl-item{position:relative;margin-bottom:16px}
+.tl-item::before{content:'';position:absolute;left:-25px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--coral);border:2px solid var(--bg)}
+.tl-item.done::before{background:var(--success)}
+.tl-item.warn::before{background:var(--warn)}
+.tl-item.risk::before{background:var(--danger)}
+.tl-date{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.tl-label{font-weight:600;font-size:14px}
+.tl-note{font-size:13px;color:var(--muted)}
+.cost-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin:14px 0}
+.cost-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px}
+.cost-card .val{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--coral);margin-bottom:4px}
+.cost-card .lbl{font-size:12px;color:var(--muted)}
+.warn-box{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--warn);margin-top:14px}
+.info-box{background:rgba(76,175,125,.07);border:1px solid rgba(76,175,125,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--success);margin-top:14px}
+.routing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.routing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:flex-start;gap:10px;text-decoration:none}
+.routing-card:hover{border-color:var(--coral);text-decoration:none}
+.routing-card .r-icon{font-size:20px}
+.routing-card .r-title{font-weight:600;color:var(--coral);margin-bottom:2px;font-size:13px}
+.routing-card .r-desc{font-size:12px;color:var(--muted)}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tag-coral{background:rgba(240,113,103,.15);color:var(--coral)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-coral">Immigration &amp; Career</span></div>
+  <h1>H-1B Employer Change Planner</h1>
+  <p>Model your AC21 portability eligibility, transfer timing, 60-day grace period risk, premium processing costs, and the safest path to starting your new role.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<div class="card">
+  <h2>Current H-1B Status</h2>
+  <div class="vintage-note">⚠️ This tool provides general framework analysis. Immigration law is complex and fact-specific — consult a licensed immigration attorney before taking action.</div>
+  <div class="grid-3" style="margin-top:18px">
+    <div class="field">
+      <label for="h1bExpiry">Current H-1B I-94 Expiry Date</label>
+      <input type="date" id="h1bExpiry">
+    </div>
+    <div class="field">
+      <label for="i140Status">I-140 Status (employer's GC petition)</label>
+      <select id="i140Status">
+        <option value="none">None filed / not applicable</option>
+        <option value="pending">Pending (not yet approved)</option>
+        <option value="approved_lt180">Approved &lt; 180 days ago</option>
+        <option value="approved_ge180">Approved ≥ 180 days ago (AC21 eligible)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="i140ApprovalDate">I-140 Approval Date (if applicable)</label>
+      <input type="date" id="i140ApprovalDate">
+    </div>
+  </div>
+  <div class="grid-3" style="margin-top:16px">
+    <div class="field">
+      <label for="h1bYearsCap">H-1B Years Used (of 6-year cap)</label>
+      <input type="number" id="h1bYearsCap" value="3" min="1" max="6" step="1">
+    </div>
+    <div class="field">
+      <label for="lastDayWork">Planned Last Day at Current Employer</label>
+      <input type="date" id="lastDayWork">
+    </div>
+    <div class="field">
+      <label for="newStartDate">Desired Start Date at New Employer</label>
+      <input type="date" id="newStartDate">
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Transfer Options</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="processingType">Filing Type</label>
+      <select id="processingType">
+        <option value="premium">Premium Processing (15 business days)</option>
+        <option value="regular">Regular Processing (3–6 months estimate)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="currentSalaryH1B">Current Salary ($)</label>
+      <input type="number" id="currentSalaryH1B" value="130000" min="0" step="5000">
+    </div>
+    <div class="field">
+      <label for="newSalary">New Employer Salary ($)</label>
+      <input type="number" id="newSalary" value="160000" min="0" step="5000">
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:16px">
+    <div class="field">
+      <label for="attorneyFee">Attorney Fee Estimate ($)</label>
+      <input type="number" id="attorneyFee" value="3500" min="0" step="500">
+    </div>
+    <div class="field">
+      <label for="paidByEmployer">Attorney Fee Paid By</label>
+      <select id="paidByEmployer">
+        <option value="employer">New employer pays all fees</option>
+        <option value="split">Split</option>
+        <option value="employee">Employee pays</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div style="margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calculate()">Analyze Transfer →</button>
+</div>
+
+<!-- Results -->
+<div id="results" class="result-hidden">
+
+  <div id="statusBanner" class="status-banner safe"></div>
+
+  <div class="card">
+    <h2>Transfer Timeline</h2>
+    <div class="timeline" id="timeline"></div>
+  </div>
+
+  <div class="card">
+    <h2>Cost Summary</h2>
+    <div class="cost-grid" id="costGrid"></div>
+    <div style="font-size:13px;color:var(--muted);margin-top:8px" id="costDetail"></div>
+  </div>
+
+  <div class="card">
+    <h2>Key Rules &amp; Risks</h2>
+    <div id="rulesDetail" style="font-size:14px;color:var(--muted);line-height:1.9"></div>
+    <div id="ac21Note" class="info-box" style="display:none"></div>
+    <div id="gapRisk" class="warn-box" style="display:none"></div>
+  </div>
+
+  <div class="card">
+    <h2>Next Steps</h2>
+    <div class="routing-grid">
+      <a href="../145-greencard-wait-planner/index.html" class="routing-card">
+        <span class="r-icon">🌿</span>
+        <div><div class="r-title">Green Card Wait Planner</div><div class="r-desc">Model priority date / wait queue (AL-152)</div></div>
+      </a>
+    </div>
+    <div class="results-export-row">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+</div><!-- /results -->
+
+</div><!-- /main -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-151 · Data: INA §214(n) AC21; 8 CFR §214.2(h)(13); USCIS 2026
+</footer>
+
+<script>
+const PREMIUM_DAYS = 15; // business days ~ 21 calendar days
+const REGULAR_MONTHS_LOW = 3;
+const PREMIUM_FEE = 2805; // FY2025 figure; labeled for user
+const GRACE_PERIOD_DAYS = 60;
+
+function addBusinessDays(date, bdays) {
+  let d = new Date(date);
+  let added = 0;
+  while (added < bdays) {
+    d.setDate(d.getDate() + 1);
+    if (d.getDay() !== 0 && d.getDay() !== 6) added++;
+  }
+  return d;
+}
+
+function daysBetween(a, b) {
+  return Math.round((new Date(b) - new Date(a)) / (1000 * 60 * 60 * 24));
+}
+
+function formatDate(d) {
+  return new Date(d).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
+}
+
+let _lastResult = null;
+
+function calculate() {
+  const h1bExpiry       = document.getElementById('h1bExpiry').value;
+  const i140Status      = document.getElementById('i140Status').value;
+  const i140ApprovalDate= document.getElementById('i140ApprovalDate').value;
+  const h1bYearsCap     = +document.getElementById('h1bYearsCap').value;
+  const lastDayWork     = document.getElementById('lastDayWork').value;
+  const newStartDate    = document.getElementById('newStartDate').value;
+  const processingType  = document.getElementById('processingType').value;
+  const currentSalary   = +document.getElementById('currentSalaryH1B').value;
+  const newSalary       = +document.getElementById('newSalary').value;
+  const attorneyFee     = +document.getElementById('attorneyFee').value;
+  const paidByEmployer  = document.getElementById('paidByEmployer').value;
+
+  const today = new Date(); today.setHours(12, 0, 0, 0);
+
+  if (!h1bExpiry || !lastDayWork || !newStartDate) {
+    alert('Enter expiry date, last day, and new start date.'); return;
+  }
+
+  // AC21 portability check
+  const ac21Eligible = i140Status === 'approved_ge180';
+
+  // Gap between last day and new start
+  const gapDays = daysBetween(lastDayWork, newStartDate);
+
+  // Grace period: 60 days from last day (as of 2017 USCIS rule)
+  const gracePeriodEnd = new Date(lastDayWork + 'T12:00:00');
+  gracePeriodEnd.setDate(gracePeriodEnd.getDate() + GRACE_PERIOD_DAYS);
+
+  const newStartDateObj = new Date(newStartDate + 'T12:00:00');
+  const gapRisk = gapDays > GRACE_PERIOD_DAYS;
+  const gapWarning = gapDays > 14 && gapDays <= GRACE_PERIOD_DAYS;
+
+  // Premium processing expected receipt
+  const filingDate = today; // assumption: file on or before last day
+  const premiumReceipt = addBusinessDays(filingDate, PREMIUM_DAYS);
+
+  // Filing fees
+  const uscisBaseFee = 460; // I-129 base (approximate 2026)
+  const asylumFee = 600; // asylum program fee (non-cap-exempt employer)
+  const premiumFee = processingType === 'premium' ? PREMIUM_FEE : 0;
+  const totalUSCIS = uscisBaseFee + asylumFee + premiumFee;
+  const employeeCost = paidByEmployer === 'employer' ? 0 :
+    paidByEmployer === 'split' ? Math.round((attorneyFee + totalUSCIS) / 2) :
+    (attorneyFee + totalUSCIS);
+
+  // Salary gain (annual)
+  const annualGain = newSalary - currentSalary;
+
+  // H-1B years remaining
+  const yearsRemaining = 6 - h1bYearsCap;
+
+  _lastResult = {
+    h1bExpiry, i140Status, i140ApprovalDate, h1bYearsCap, lastDayWork, newStartDate,
+    processingType, currentSalary, newSalary, attorneyFee, paidByEmployer,
+    ac21Eligible, gapDays, gracePeriodEnd, gapRisk, gapWarning,
+    premiumReceipt, uscisBaseFee, asylumFee, premiumFee, totalUSCIS, employeeCost,
+    annualGain, yearsRemaining, today
+  };
+
+  renderResults(_lastResult);
+}
+
+function fmtDollar(n) { return '$' + Math.round(Math.abs(n)).toLocaleString(); }
+
+function renderResults(r) {
+  // Status banner
+  const banner = document.getElementById('statusBanner');
+  if (r.gapRisk) {
+    banner.className = 'status-banner risk';
+    banner.innerHTML = `🚫 <strong>High Risk:</strong> Gap of ${r.gapDays} days between last day and new start exceeds the 60-day grace period. You could fall out of status. Use portability filing (new employer files I-129 before you leave) or compress the gap.`;
+  } else if (r.gapWarning) {
+    banner.className = 'status-banner warn';
+    banner.innerHTML = `⚠️ <strong>Caution:</strong> Gap of ${r.gapDays} days is within the 60-day grace period but leaves little margin. File the I-129 transfer <em>before</em> your last day so you have H-1B portability from filing date.`;
+  } else {
+    banner.className = 'status-banner safe';
+    banner.innerHTML = `✅ <strong>Safe Timeline:</strong> Gap of ${r.gapDays} day${r.gapDays !== 1 ? 's' : ''} is manageable. File the new I-129 before or on your last day of employment to begin portability immediately.`;
+  }
+
+  // Timeline
+  const tl = document.getElementById('timeline');
+  const items = [
+    { date: new Date().toISOString().split('T')[0], label: 'Today — begin transfer filing', note: 'New employer files I-129 H-1B transfer petition', cls: 'done' },
+    { date: r.lastDayWork, label: 'Last Day at Current Employer', note: '60-day grace period begins', cls: r.gapDays > 0 ? 'warn' : 'done' },
+    { date: r.processingType === 'premium'
+        ? r.premiumReceipt.toISOString().split('T')[0]
+        : '(3–6 months — regular processing)',
+      label: r.processingType === 'premium' ? 'Expected USCIS Decision (Premium)' : 'Expected USCIS Decision (Regular)',
+      note: r.processingType === 'premium' ? '15 business days from receipt' : 'Estimate only; verify current times at uscis.gov',
+      cls: 'done' },
+    { date: r.newStartDate, label: 'Target Start Date at New Employer', note: r.gapRisk ? '⚠️ AFTER grace period expires' : '✅ Within grace period', cls: r.gapRisk ? 'risk' : 'done' },
+    { date: r.h1bExpiry, label: 'Current H-1B I-94 Expiry', note: `${r.yearsRemaining} year${r.yearsRemaining !== 1 ? 's' : ''} remaining after this term`, cls: 'warn' }
+  ];
+  tl.innerHTML = items.map(i => `
+    <div class="tl-item ${i.cls}">
+      <div class="tl-date">${typeof i.date === 'string' && i.date.match(/^\d{4}/) ? formatDate(i.date) : i.date}</div>
+      <div class="tl-label">${i.label}</div>
+      <div class="tl-note">${i.note}</div>
+    </div>`).join('');
+
+  // Costs
+  document.getElementById('costGrid').innerHTML =
+    `<div class="cost-card"><div class="val">${fmtDollar(r.uscisBaseFee + r.asylumFee)}</div><div class="lbl">USCIS filing fees (est.)</div></div>` +
+    (r.premiumFee > 0 ? `<div class="cost-card"><div class="val">${fmtDollar(r.premiumFee)}</div><div class="lbl">Premium processing fee</div></div>` : '') +
+    `<div class="cost-card"><div class="val">${fmtDollar(r.attorneyFee)}</div><div class="lbl">Attorney fees (est.)</div></div>` +
+    `<div class="cost-card"><div class="val">${fmtDollar(r.employeeCost)}</div><div class="lbl">Your out-of-pocket cost</div></div>` +
+    `<div class="cost-card"><div class="val">${r.annualGain >= 0 ? '+' : ''}${fmtDollar(r.annualGain)}</div><div class="lbl">Annual salary change</div></div>`;
+
+  document.getElementById('costDetail').textContent =
+    r.paidByEmployer === 'employer' ? '✅ New employer covers all USCIS and legal fees.'
+    : r.paidByEmployer === 'split' ? 'Costs split with employer. Note: USCIS requires employer to pay some fees (I-129 base).'
+    : '⚠️ You are covering all costs. Note: USCIS regulations prohibit certain fee shifts to employees — consult your attorney.';
+
+  // Rules
+  document.getElementById('rulesDetail').innerHTML =
+    `<strong>AC21 portability (INA §214(n)):</strong> ${r.ac21Eligible
+      ? '✅ You qualify. You may change employers (same or similar SOC occupation) without risking the priority date in your I-140.'
+      : 'Not available at this stage. You need an approved I-140 with 180+ days of waiting.'}<br>` +
+    `<strong>Grace period:</strong> 60 days from last day of employment. Grace period ends ${formatDate(r.gracePeriodEnd)}.<br>` +
+    `<strong>Portability filing:</strong> Once the new I-129 is FILED (not approved), you may begin work for the new employer immediately under portability. Keep receipt notice.<br>` +
+    `<strong>H-1B cap:</strong> A cap-exempt transfer (same category) doesn't re-enter the lottery. You have ~${r.yearsRemaining} year${r.yearsRemaining !== 1 ? 's' : ''} of H-1B status remaining post-transfer.`;
+
+  const ac21Note = document.getElementById('ac21Note');
+  if (r.ac21Eligible) {
+    ac21Note.style.display = 'block';
+    ac21Note.innerHTML = `✅ <strong>AC21 Note:</strong> Your I-140 priority date is locked in. Even if the current employer withdraws the I-140 after you leave, a new employer can file a new I-140 and you can port the priority date. Keep documentation of your I-140 approval notice.`;
+  } else ac21Note.style.display = 'none';
+
+  const gapRiskEl = document.getElementById('gapRisk');
+  if (r.gapRisk) {
+    gapRiskEl.style.display = 'block';
+    gapRiskEl.innerHTML = `🚫 <strong>Gap exceeds grace period:</strong> ${r.gapDays} days > 60-day limit. Options: (1) push new start date earlier, (2) delay last day, (3) file I-129 at new employer well before separation so portability is established from filing date. Consult an attorney immediately.`;
+  } else gapRiskEl.style.display = 'none';
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+function exportMarkdown() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const md =
+`# H-1B Employer Change Plan — AL-151
+
+**Last day:** ${r.lastDayWork} · **New start:** ${r.newStartDate} · **Gap:** ${r.gapDays} days · **AC21 eligible:** ${r.ac21Eligible ? 'Yes' : 'No'}
+
+## Status: ${r.gapRisk ? '⚠️ High Risk — Gap Exceeds 60 Days' : r.gapWarning ? '⚠️ Caution — Limited Margin' : '✅ Timeline Appears Safe'}
+
+## Costs
+| Item | Amount |
+|---|---|
+| USCIS fees (est.) | ${fmtDollar(r.uscisBaseFee + r.asylumFee)} |
+| Premium processing | ${fmtDollar(r.premiumFee)} |
+| Attorney fees | ${fmtDollar(r.attorneyFee)} |
+| Your out-of-pocket | ${fmtDollar(r.employeeCost)} |
+| Annual salary change | ${r.annualGain >= 0 ? '+' : ''}${fmtDollar(r.annualGain)} |
+
+---
+*Generated by ApexLogics AL-151 · apexlogics.org · INA §214(n); 8 CFR §214.2(h)(13); 2026*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'h1b-change-AL151.md'; a.click();
+}
+
+function exportAP2() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "h1b_change_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-151",
+    tool_id: "144-h1b-change-planner",
+    inputs: {
+      h1bExpiry: r.h1bExpiry,
+      i140Status: r.i140Status,
+      lastDayWork: r.lastDayWork,
+      newStartDate: r.newStartDate,
+      processingType: r.processingType
+    },
+    outputs: {
+      gapDays: r.gapDays,
+      gracePeriodEnd: r.gracePeriodEnd.toISOString().split('T')[0],
+      gapRisk: r.gapRisk,
+      ac21Eligible: r.ac21Eligible,
+      yearsRemainingH1B: r.yearsRemaining,
+      employeeCost: r.employeeCost,
+      annualSalaryChange: r.annualGain,
+      recommendation: r.gapRisk ? 'urgent_compress_gap' : r.gapWarning ? 'file_early' : 'proceed_with_filing'
+    },
+    downstream_handoff_candidates: ["AL-152"],
+    metadata: {
+      license: "CC-BY-4.0",
+      data_vintage: "INA §214(n) AC21; USCIS 2026 fee schedule"
+    }
+  };
+  const AP2Schema = {
+    validMandateTypes: ['h1b_change_record'],
+    validate: function(p) {
+      const errors = [];
+      ['ap2_version','mandate_type','al_id','inputs','outputs'].forEach(k => {
+        if (!p[k]) errors.push('missing: ' + k);
+      });
+      if (p.mandate_type && !this.validMandateTypes.includes(p.mandate_type))
+        errors.push('unrecognized mandate_type: ' + p.mandate_type);
+      return { valid: errors.length === 0, errors };
+    }
+  };
+  const result = AP2Schema.validate(payload);
+  if (!result.valid) { alert('AP2 validation failed: ' + result.errors.join('; ')); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  const pad = n => String(n).padStart(2,'0');
+  const d = new Date();
+  const ts = d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+  a.download = 'AL151_144-h1b-change_' + ts + '.ap2.json'; a.click();
+}
+</script>
+</body>
+</html>

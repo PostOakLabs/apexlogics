@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Office & Augusta Rule Calculator | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--coral:#F07167;--coral-dim:rgba(240,113,103,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;--warn:#FBBF24;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--coral);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--coral);border-color:var(--coral);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:960px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:640px}
+.pii-banner{max-width:960px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:960px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.tab-bar{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab{padding:10px 20px;cursor:pointer;font-size:14px;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;transition:color .2s,border-color .2s}
+.tab.active{color:var(--coral);border-bottom-color:var(--coral)}
+.tab-pane{display:none}.tab-pane.active{display:block}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:680px){.grid-2,.grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:440px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--coral)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.vintage-note{font-size:11px;color:var(--muted);padding:6px 10px;background:var(--surface2);border-radius:4px;border-left:3px solid var(--amber);margin-top:8px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--coral);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--coral);color:var(--coral)}
+.result-hidden{display:none}
+.result-hero{background:linear-gradient(135deg,var(--coral-dim),rgba(232,168,56,.06));border:2px solid rgba(240,113,103,.3);border-radius:12px;padding:24px;margin-bottom:20px}
+.result-hero-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;text-align:center}
+.rh-item .big-num{font-family:var(--font-mono);font-size:32px;font-weight:500;color:var(--coral);margin:4px 0}
+.rh-item .lbl{font-size:12px;color:var(--muted)}
+.winner-badge{display:inline-block;padding:2px 10px;border-radius:12px;background:rgba(76,175,125,.15);color:var(--success);font-size:11px;font-weight:600;text-transform:uppercase}
+.warn-box{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--warn);margin-top:14px}
+.info-box{background:rgba(76,175,125,.07);border:1px solid rgba(76,175,125,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--success);margin-top:14px}
+.detail-block{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;color:var(--muted);line-height:1.8;margin-top:12px}
+.routing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.routing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:flex-start;gap:10px;text-decoration:none}
+.routing-card:hover{border-color:var(--coral);text-decoration:none}
+.routing-card .r-icon{font-size:20px}
+.routing-card .r-title{font-weight:600;color:var(--coral);margin-bottom:2px;font-size:13px}
+.routing-card .r-desc{font-size:12px;color:var(--muted)}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tag-coral{background:rgba(240,113,103,.15);color:var(--coral)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-coral">Freelance &amp; Self-Employment Tax</span></div>
+  <h1>Home Office &amp; Augusta Rule Calculator</h1>
+  <p>Compare the regular vs. simplified home-office deduction, and model the Augusta Rule §280A(g) tax-free rental allowance — up to 14 days of rent from your own business, tax-free.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<div class="card">
+  <h2>Module</h2>
+  <div class="tab-bar">
+    <div class="tab active" id="tab-ho" onclick="switchTab('ho')">🏠 Home Office Deduction</div>
+    <div class="tab" id="tab-aug" onclick="switchTab('aug')">🏌️ Augusta Rule (§280A(g))</div>
+    <div class="tab" id="tab-both" onclick="switchTab('both')">📊 Combined Summary</div>
+  </div>
+
+  <!-- HOME OFFICE TAB -->
+  <div class="tab-pane active" id="pane-ho">
+    <div class="vintage-note">📌 Simplified method: $5/sq ft (max 300 sq ft = $1,500 cap). Regular method: actual home expenses × business-use pct. Rev. Proc. 2013-13.</div>
+    <div class="grid-3" style="margin-top:18px">
+      <div class="field">
+        <label for="officeSqFt">Home Office Square Feet</label>
+        <input type="number" id="officeSqFt" value="200" min="1" step="10">
+      </div>
+      <div class="field">
+        <label for="homeSqFt">Total Home Square Feet</label>
+        <input type="number" id="homeSqFt" value="1800" min="1" step="10">
+      </div>
+      <div class="field">
+        <label for="businessUsePct">Business Use % (override)</label>
+        <input type="number" id="businessUsePct" value="" min="0" max="100" step="1" placeholder="Auto from sq ft">
+        <span class="hint">Leave blank to auto-calculate from sq ft</span>
+      </div>
+    </div>
+    <div class="grid-3" style="margin-top:16px">
+      <div class="field">
+        <label for="annualRent">Annual Rent or Mortgage Interest ($)</label>
+        <input type="number" id="annualRent" value="24000" min="0" step="500">
+        <span class="hint">If renter: full annual rent. If owner: mortgage interest only.</span>
+      </div>
+      <div class="field">
+        <label for="utilities">Annual Utilities ($)</label>
+        <input type="number" id="utilities" value="3600" min="0" step="100">
+      </div>
+      <div class="field">
+        <label for="otherHomeExp">Other Home Expenses ($)</label>
+        <input type="number" id="otherHomeExp" value="1200" min="0" step="100">
+        <span class="hint">Insurance, repairs, depreciation (optional)</span>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:16px">
+      <div class="field">
+        <label for="grossIncome">Gross Business Income ($)</label>
+        <input type="number" id="grossIncome" value="120000" min="0" step="1000">
+        <span class="hint">Regular method deduction is limited to gross income from business</span>
+      </div>
+      <div class="field">
+        <label for="entityTypeHO">Entity Type</label>
+        <select id="entityTypeHO">
+          <option value="soleProp">Sole Proprietor / Single-member LLC (Schedule C)</option>
+          <option value="scorp">S-Corp owner-employee (accountable plan reimbursement)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUGUSTA RULE TAB -->
+  <div class="tab-pane" id="pane-aug">
+    <div class="vintage-note">📌 IRC §280A(g): If you rent your home for &lt;15 days/year, rental income is tax-free and NOT reported. For S-corp owners: company pays rent to owner; owner excludes income; company deducts rent. Must be at a fair-market rental rate for the meeting/event purpose.</div>
+    <div class="grid-3" style="margin-top:18px">
+      <div class="field">
+        <label for="rentalDays">Days You Plan to Rent to Business</label>
+        <input type="number" id="rentalDays" value="14" min="1" max="30" step="1">
+        <span class="hint">Must be ≤ 14 to qualify for §280A(g) exclusion</span>
+      </div>
+      <div class="field">
+        <label for="dailyRentalRate">Fair Market Daily Rental Rate ($)</label>
+        <input type="number" id="dailyRentalRate" value="800" min="0" step="50">
+        <span class="hint">Comparable event venue rate in your area (document with 3 comps)</span>
+      </div>
+      <div class="field">
+        <label for="corpTaxRate">Business Tax Rate (for deduction value) (%)</label>
+        <input type="number" id="corpTaxRate" value="37" min="0" max="50" step="1">
+        <span class="hint">Your combined federal+state marginal rate for S-corp/business income</span>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:16px">
+      <div class="field">
+        <label for="entityTypeAug">Entity Structure</label>
+        <select id="entityTypeAug">
+          <option value="scorp">S-Corp (corporation pays rent → deduction flows through)</option>
+          <option value="soleProp">Sole Prop / LLC taxed as SP (rent to self — limited benefit)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="ownerMarginalRate">Owner Marginal Income Tax Rate (%)</label>
+        <input type="number" id="ownerMarginalRate" value="32" min="0" max="50" step="1">
+        <span class="hint">Your personal federal+state marginal rate</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMBINED TAB -->
+  <div class="tab-pane" id="pane-both">
+    <p style="color:var(--muted);font-size:14px">Fill in both modules above, then click Calculate to see the combined summary.</p>
+  </div>
+
+</div>
+
+<div style="margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calculate()">Calculate →</button>
+</div>
+
+<!-- Results -->
+<div id="results" class="result-hidden">
+
+  <div class="result-hero">
+    <div class="result-hero-grid">
+      <div class="rh-item">
+        <div class="lbl">Home Office (best method)</div>
+        <div class="big-num" id="rHOBest">—</div>
+        <div class="lbl" id="rHOMethod">—</div>
+      </div>
+      <div class="rh-item">
+        <div class="lbl">Augusta Rule — Tax-Free Rental</div>
+        <div class="big-num" id="rAugTaxFree">—</div>
+        <div class="lbl" id="rAugLabel">—</div>
+      </div>
+      <div class="rh-item">
+        <div class="lbl">Combined Tax Benefit (est.)</div>
+        <div class="big-num" id="rCombined">—</div>
+        <div class="lbl">at your rates</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Home Office detail -->
+  <div class="card" id="hoResultCard">
+    <h2>Home Office Deduction Detail</h2>
+    <div class="detail-block" id="hoDetail"></div>
+    <div id="hoWarn" class="warn-box" style="display:none"></div>
+    <div id="hoInfo" class="info-box" style="display:none"></div>
+  </div>
+
+  <!-- Augusta detail -->
+  <div class="card" id="augResultCard">
+    <h2>Augusta Rule §280A(g) Detail</h2>
+    <div class="detail-block" id="augDetail"></div>
+    <div id="augWarn" class="warn-box" style="display:none"></div>
+    <div id="augInfo" class="info-box" style="display:none"></div>
+  </div>
+
+  <div class="card">
+    <h2>Next Steps</h2>
+    <div class="routing-grid">
+      <a href="../138-scorp-reasonable-comp/index.html" class="routing-card">
+        <span class="r-icon">💰</span>
+        <div><div class="r-title">Reasonable Comp Estimator</div><div class="r-desc">S-corp salary/distribution split (AL-145)</div></div>
+      </a>
+      <a href="../137-qbi-199a-optimizer/index.html" class="routing-card">
+        <span class="r-icon">📊</span>
+        <div><div class="r-title">QBI §199A Optimizer</div><div class="r-desc">Pass-through deduction model (AL-144)</div></div>
+      </a>
+    </div>
+    <div class="results-export-row">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+</div><!-- /results -->
+
+</div><!-- /main -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-146 · Data: IRC §280A; Rev. Proc. 2013-13; IRS Pub. 587 (2026)
+</footer>
+
+<script>
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + t).classList.add('active');
+  document.getElementById('pane-' + t).classList.add('active');
+}
+
+const SIMPLIFIED_RATE = 5; // $5/sq ft
+const SIMPLIFIED_MAX_SQFT = 300;
+
+let _lastResult = null;
+
+function calculate() {
+  // HOME OFFICE
+  const officeSqFt   = +document.getElementById('officeSqFt').value || 0;
+  const homeSqFt     = +document.getElementById('homeSqFt').value   || 1;
+  const buPctOverride= document.getElementById('businessUsePct').value;
+  const buPct        = buPctOverride ? (+buPctOverride / 100) : (officeSqFt / homeSqFt);
+  const annualRent   = +document.getElementById('annualRent').value   || 0;
+  const utilities    = +document.getElementById('utilities').value    || 0;
+  const otherHomeExp = +document.getElementById('otherHomeExp').value || 0;
+  const grossIncome  = +document.getElementById('grossIncome').value  || 0;
+  const entityTypeHO = document.getElementById('entityTypeHO').value;
+
+  const totalHomeExp  = annualRent + utilities + otherHomeExp;
+  const regularDeduction = Math.min(totalHomeExp * buPct, grossIncome); // limited to gross income
+  const simplifiedDeduction = Math.min(officeSqFt, SIMPLIFIED_MAX_SQFT) * SIMPLIFIED_RATE;
+  const bestHO = Math.max(regularDeduction, simplifiedDeduction);
+  const bestHOMethod = regularDeduction >= simplifiedDeduction ? 'Regular' : 'Simplified';
+
+  // AUGUSTA RULE
+  const rentalDays      = +document.getElementById('rentalDays').value       || 0;
+  const dailyRate       = +document.getElementById('dailyRentalRate').value  || 0;
+  const corpTaxRate     = +document.getElementById('corpTaxRate').value / 100 || 0.37;
+  const ownerMargRate   = +document.getElementById('ownerMarginalRate').value / 100 || 0.32;
+  const entityTypeAug   = document.getElementById('entityTypeAug').value;
+
+  const totalRental     = rentalDays * dailyRate;
+  const qualifies       = rentalDays <= 14;
+  const augTaxFreeIncome = qualifies ? totalRental : 0;
+  // For S-corp: owner gets tax-free income; corp deducts rental expense
+  // For sole prop: renting to yourself doesn't work — no corp deduction
+  const augCorpDeduction = entityTypeAug === 'scorp' && qualifies ? totalRental : 0;
+  const augTaxBenefit   = entityTypeAug === 'scorp' && qualifies
+    ? totalRental * corpTaxRate  // corp deduction saves at corp rate
+    : 0;
+
+  // Combined estimated tax benefit
+  const hoBenefit = bestHO * ownerMargRate;
+  const totalTaxBenefit = hoBenefit + augTaxBenefit;
+
+  _lastResult = {
+    officeSqFt, homeSqFt, buPct, totalHomeExp, regularDeduction, simplifiedDeduction,
+    bestHO, bestHOMethod, grossIncome, entityTypeHO,
+    rentalDays, dailyRate, corpTaxRate, ownerMargRate, entityTypeAug,
+    totalRental, qualifies, augTaxFreeIncome, augCorpDeduction, augTaxBenefit,
+    hoBenefit, totalTaxBenefit
+  };
+
+  renderResults(_lastResult);
+}
+
+function fmtDollar(n) { return '$' + Math.round(Math.abs(n)).toLocaleString(); }
+function fmtPct(n)    { return (n * 100).toFixed(1) + '%'; }
+
+function renderResults(r) {
+  document.getElementById('rHOBest').textContent  = fmtDollar(r.bestHO);
+  document.getElementById('rHOMethod').textContent= r.bestHOMethod + ' method';
+  document.getElementById('rAugTaxFree').textContent = r.qualifies ? fmtDollar(r.augTaxFreeIncome) : '$0';
+  document.getElementById('rAugLabel').textContent   = r.qualifies
+    ? (r.entityTypeAug === 'scorp' ? 'Tax-free to owner; corp deducts' : '§280A(g) exclusion (income only)')
+    : `⚠️ ${r.rentalDays} days — exceeds 14-day limit`;
+  document.getElementById('rCombined').textContent   = fmtDollar(r.totalTaxBenefit);
+
+  // HO detail
+  document.getElementById('hoDetail').innerHTML =
+    `<strong>Business use %:</strong> ${fmtPct(r.buPct)} (${r.officeSqFt} / ${r.homeSqFt} sq ft)<br>` +
+    `<strong>Total home expenses:</strong> ${fmtDollar(r.totalHomeExp)}<br>` +
+    `<strong>Regular method deduction:</strong> ${fmtDollar(r.totalHomeExp * r.buPct)} → limited to gross income = ${fmtDollar(r.regularDeduction)} ` +
+    (r.regularDeduction < r.totalHomeExp * r.buPct ? '⚠️ limited by gross income' : '') + '<br>' +
+    `<strong>Simplified method deduction:</strong> ${Math.min(r.officeSqFt, 300)} sq ft × $5 = ${fmtDollar(r.simplifiedDeduction)}<br>` +
+    `<strong>Best method:</strong> ${r.bestHOMethod} → <span style="color:var(--coral)">${fmtDollar(r.bestHO)}</span>` +
+    (r.entityTypeHO === 'scorp' ? '<br><em>S-corp: use an accountable plan — employer reimburses actual expenses; employee excludes from income.</em>' : '');
+
+  const hoWarn = document.getElementById('hoWarn');
+  if (r.buPct > 0.5) {
+    hoWarn.style.display = 'block';
+    hoWarn.textContent = `⚠️ Business-use % of ${fmtPct(r.buPct)} is high. IRS scrutinizes home-office deductions above ~50%. Ensure the space is used "regularly and exclusively" for business.`;
+  } else hoWarn.style.display = 'none';
+
+  const hoInfo = document.getElementById('hoInfo');
+  if (r.simplifiedDeduction >= r.regularDeduction) {
+    hoInfo.style.display = 'block';
+    hoInfo.textContent = `✅ Simplified method wins here (${fmtDollar(r.simplifiedDeduction)} vs ${fmtDollar(r.regularDeduction)}). The simplified method also avoids depreciation recapture if you sell your home.`;
+  } else {
+    hoInfo.style.display = 'block';
+    hoInfo.textContent = `✅ Regular method gives a larger deduction (${fmtDollar(r.regularDeduction)} vs ${fmtDollar(r.simplifiedDeduction)}). Keep receipts for all home expenses. Note: if you claim home depreciation, there may be recapture tax when you sell.`;
+  }
+
+  // Augusta detail
+  document.getElementById('augDetail').innerHTML =
+    `<strong>Rental days:</strong> ${r.rentalDays} · <strong>Daily rate:</strong> ${fmtDollar(r.dailyRate)} · <strong>Total rental income:</strong> ${fmtDollar(r.totalRental)}<br>` +
+    `<strong>§280A(g) qualification:</strong> ${r.qualifies ? '✅ ≤ 14 days — qualifies' : '❌ > 14 days — DISQUALIFIED (all rental income becomes taxable)'}<br>` +
+    (r.entityTypeAug === 'scorp' && r.qualifies
+      ? `<strong>Owner:</strong> ${fmtDollar(r.augTaxFreeIncome)} in rental income is tax-free (not reported on owner's return)<br>` +
+        `<strong>S-Corp:</strong> Deducts ${fmtDollar(r.augCorpDeduction)} in rent expense → saves est. ${fmtDollar(r.augTaxBenefit)} at ${(r.corpTaxRate*100).toFixed(0)}% rate`
+      : r.entityTypeAug === 'soleProp' && r.qualifies
+      ? `Income is tax-free to you, but as a sole proprietor there's no separate entity to pay/deduct rent. Benefit is limited to income exclusion only.`
+      : `Rental income is fully taxable. Consider reducing days to ≤ 14 or restructuring as S-corp.`);
+
+  const augWarn = document.getElementById('augWarn');
+  const augInfo = document.getElementById('augInfo');
+  if (!r.qualifies) {
+    augWarn.style.display = 'block';
+    augWarn.textContent = `❌ ${r.rentalDays} days exceeds the 14-day §280A(g) threshold. All rental income is taxable. Reduce days to 14 or fewer to qualify for the exclusion.`;
+    augInfo.style.display = 'none';
+  } else if (r.entityTypeAug === 'scorp') {
+    augWarn.style.display = 'none';
+    augInfo.style.display = 'block';
+    augInfo.innerHTML = `✅ Qualifies for §280A(g) exclusion. <strong>Required documentation:</strong> meeting agenda or business purpose statement, 3 comparable venue quotes (Airbnb, hotels, event spaces), board/corporate minutes authorizing rental, written rental agreement between you and your S-corp.`;
+  } else {
+    augWarn.style.display = 'none';
+    augInfo.style.display = 'block';
+    augInfo.textContent = `✅ Income excluded from taxable income. For greater tax benefit (deduction at corp level), consider S-corp structure.`;
+  }
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+function exportMarkdown() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const md =
+`# Home Office & Augusta Rule — AL-146
+
+## Home Office Deduction
+| Method | Deduction |
+|---|---|
+| Regular method | ${fmtDollar(r.regularDeduction)} |
+| Simplified method | ${fmtDollar(r.simplifiedDeduction)} |
+| **Best method (${r.bestHOMethod})** | **${fmtDollar(r.bestHO)}** |
+
+**Business use:** ${fmtPct(r.buPct)} · **Entity:** ${r.entityTypeHO}
+
+## Augusta Rule §280A(g)
+| Item | Value |
+|---|---|
+| Rental days | ${r.rentalDays} |
+| Daily rate | ${fmtDollar(r.dailyRate)} |
+| Total rental income | ${fmtDollar(r.totalRental)} |
+| Qualifies for §280A(g) | ${r.qualifies ? 'Yes' : 'No — exceeds 14 days'} |
+| Tax-free income (owner) | ${fmtDollar(r.augTaxFreeIncome)} |
+| Corp deduction (S-corp) | ${fmtDollar(r.augCorpDeduction)} |
+| Est. tax benefit | ${fmtDollar(r.augTaxBenefit)} |
+
+**Combined estimated tax benefit:** ${fmtDollar(r.totalTaxBenefit)}
+
+---
+*Generated by ApexLogics AL-146 · apexlogics.org · IRC §280A; Rev. Proc. 2013-13; IRS Pub. 587 (2026)*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'home-office-augusta-AL146.md'; a.click();
+}
+
+function exportAP2() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "home_office_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-146",
+    tool_id: "139-home-office-augusta",
+    inputs: {
+      officeSqFt: r.officeSqFt,
+      homeSqFt: r.homeSqFt,
+      businessUsePct: +r.buPct.toFixed(4),
+      totalHomeExpenses: r.totalHomeExp,
+      grossBusinessIncome: r.grossIncome,
+      entityType: r.entityTypeHO,
+      augustaRentalDays: r.rentalDays,
+      augustaDailyRate: r.dailyRate,
+      augustaEntityType: r.entityTypeAug
+    },
+    outputs: {
+      homeOfficeDeduction: Math.round(r.bestHO),
+      homeOfficeBestMethod: r.bestHOMethod,
+      regularMethodDeduction: Math.round(r.regularDeduction),
+      simplifiedMethodDeduction: Math.round(r.simplifiedDeduction),
+      augustaTaxFreeIncome: Math.round(r.augTaxFreeIncome),
+      augustaCorpDeduction: Math.round(r.augCorpDeduction),
+      augustaQualifies: r.qualifies,
+      combinedEstTaxBenefit: Math.round(r.totalTaxBenefit)
+    },
+    downstream_handoff_candidates: ["AL-145", "AL-144"],
+    metadata: {
+      license: "CC-BY-4.0",
+      data_vintage: "IRC §280A; Rev. Proc. 2013-13 ($5/sq ft simplified); IRS Pub. 587 (2026)"
+    }
+  };
+  const AP2Schema = {
+    validMandateTypes: ['home_office_record'],
+    validate: function(p) {
+      const errors = [];
+      ['ap2_version','mandate_type','al_id','inputs','outputs'].forEach(k => {
+        if (!p[k]) errors.push('missing: ' + k);
+      });
+      if (p.mandate_type && !this.validMandateTypes.includes(p.mandate_type))
+        errors.push('unrecognized mandate_type: ' + p.mandate_type);
+      return { valid: errors.length === 0, errors };
+    }
+  };
+  const result = AP2Schema.validate(payload);
+  if (!result.valid) { alert('AP2 validation failed: ' + result.errors.join('; ')); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  const pad = n => String(n).padStart(2,'0');
+  const d = new Date();
+  const ts = d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+  a.download = 'AL146_139-home-office-augusta_' + ts + '.ap2.json'; a.click();
+}
+</script>
+</body>
+</html>

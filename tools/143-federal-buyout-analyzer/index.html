@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Federal Buyout Decision Analyzer | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--coral:#F07167;--coral-dim:rgba(240,113,103,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;--warn:#FBBF24;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--coral);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--coral);border-color:var(--coral);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:960px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:640px}
+.pii-banner{max-width:960px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:960px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:680px){.grid-2,.grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:440px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--coral)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.vintage-note{font-size:11px;color:var(--muted);padding:6px 10px;background:var(--surface2);border-radius:4px;border-left:3px solid var(--amber);margin-top:8px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--coral);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--coral);color:var(--coral)}
+.result-hidden{display:none}
+.verdict-banner{border-radius:12px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;gap:16px}
+.verdict-banner.accept{background:rgba(76,175,125,.10);border:2px solid var(--success)}
+.verdict-banner.stay{background:rgba(240,113,103,.10);border:2px solid var(--coral)}
+.verdict-banner.close{background:rgba(251,191,36,.10);border:2px solid var(--warn)}
+.verdict-banner .icon{font-size:32px}
+.verdict-banner h3{font-family:var(--font-serif);font-size:22px;margin-bottom:4px}
+.verdict-banner p{font-size:14px;color:var(--muted)}
+.verdict-banner .net{font-family:var(--font-mono);font-size:28px;margin-left:auto;color:var(--coral)}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--coral);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:600px){.compare-grid{grid-template-columns:1fr}}
+.compare-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.compare-box.winner{border-color:var(--success)}
+.compare-box h3{font-size:14px;font-weight:600;margin-bottom:12px}
+.line-row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:4px}
+.line-row strong{color:var(--text)}
+.line-row.total{margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-weight:600;color:var(--coral)}
+.warn-box{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--warn);margin-top:14px}
+.info-box{background:rgba(76,175,125,.07);border:1px solid rgba(76,175,125,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--success);margin-top:14px}
+.routing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.routing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:flex-start;gap:10px;text-decoration:none}
+.routing-card:hover{border-color:var(--coral);text-decoration:none}
+.routing-card .r-icon{font-size:20px}
+.routing-card .r-title{font-weight:600;color:var(--coral);margin-bottom:2px;font-size:13px}
+.routing-card .r-desc{font-size:12px;color:var(--muted)}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tag-coral{background:rgba(240,113,103,.15);color:var(--coral)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-coral">Career Transition &amp; Mobility</span></div>
+  <h1>Federal Buyout Decision Analyzer</h1>
+  <p>Model the net financial value of accepting a VERA/VSIP buyout or deferred resignation vs. staying: compare annuity NPV, lump-sum incentive pay, FEHB continuation costs, and private-sector re-employment value.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<div class="card">
+  <h2>Employment Profile</h2>
+  <div class="vintage-note">📌 FERS annuity = 1% × high-3 × service years (1.1% if age ≥62 and ≥20 years). VSIP cap: $25,000 (statutory). FEHB TCC: 18 months at 102% of full premium.</div>
+  <div class="grid-3" style="margin-top:18px">
+    <div class="field">
+      <label for="currentSalary">Current Annual Salary ($)</label>
+      <input type="number" id="currentSalary" value="95000" min="0" step="1000">
+    </div>
+    <div class="field">
+      <label for="high3">High-3 Average Salary ($)</label>
+      <input type="number" id="high3" value="90000" min="0" step="1000">
+      <span class="hint">Average of highest 3 consecutive years</span>
+    </div>
+    <div class="field">
+      <label for="yearsService">Years of Federal Service</label>
+      <input type="number" id="yearsService" value="20" min="0" max="40" step="1">
+    </div>
+  </div>
+  <div class="grid-3" style="margin-top:16px">
+    <div class="field">
+      <label for="currentAge">Current Age</label>
+      <input type="number" id="currentAge" value="52" min="25" max="70" step="1">
+    </div>
+    <div class="field">
+      <label for="retirementSystem">Retirement System</label>
+      <select id="retirementSystem">
+        <option value="fers">FERS</option>
+        <option value="csrs">CSRS</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="veraEligible">VERA Eligible (early retirement)?</label>
+      <select id="veraEligible">
+        <option value="yes">Yes — meeting VERA age/service requirements</option>
+        <option value="no">No — would take deferred annuity or MRA+10</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Buyout Offer Terms</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="vsipAmount">VSIP Lump Sum ($)</label>
+      <input type="number" id="vsipAmount" value="25000" min="0" step="1000">
+      <span class="hint">Statutory cap $25,000; some programs offer less</span>
+    </div>
+    <div class="field">
+      <label for="fehbMonthlyPremium">Your Monthly FEHB Premium ($)</label>
+      <input type="number" id="fehbMonthlyPremium" value="500" min="0" step="50">
+      <span class="hint">Employee share of current premium</span>
+    </div>
+    <div class="field">
+      <label for="tspBalance">TSP Balance ($)</label>
+      <input type="number" id="tspBalance" value="250000" min="0" step="10000">
+      <span class="hint">Current TSP balance (vested)</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Post-Separation Assumptions</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="privateJobSalary">Expected Private-Sector Salary ($)</label>
+      <input type="number" id="privateJobSalary" value="110000" min="0" step="5000">
+    </div>
+    <div class="field">
+      <label for="jobSearchMonths">Expected Job Search Duration (months)</label>
+      <input type="number" id="jobSearchMonths" value="3" min="0" max="24" step="1">
+    </div>
+    <div class="field">
+      <label for="privateHealthCost">Monthly Private Health Insurance ($)</label>
+      <input type="number" id="privateHealthCost" value="700" min="0" step="50">
+      <span class="hint">Market rate for comparable coverage (during search period)</span>
+    </div>
+  </div>
+  <div class="grid-3" style="margin-top:16px">
+    <div class="field">
+      <label for="discountRate">Discount Rate for NPV (%)</label>
+      <input type="number" id="discountRate" value="4" min="0" max="15" step="0.5">
+      <span class="hint">Nominal rate to discount future annuity payments</span>
+    </div>
+    <div class="field">
+      <label for="lifeExpectancy">Life Expectancy (age)</label>
+      <input type="number" id="lifeExpectancy" value="85" min="60" max="100" step="1">
+    </div>
+    <div class="field">
+      <label for="remainingFedYears">Years Left Until Planned Federal Retirement (stay path)</label>
+      <input type="number" id="remainingFedYears" value="8" min="0" max="30" step="1">
+      <span class="hint">If you stay, how many more years would you serve?</span>
+    </div>
+  </div>
+</div>
+
+<div style="margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calculate()">Analyze Buyout →</button>
+</div>
+
+<!-- Results -->
+<div id="results" class="result-hidden">
+
+  <div id="verdictBanner" class="verdict-banner">
+    <div class="icon" id="verdictIcon">—</div>
+    <div>
+      <h3 id="verdictTitle">—</h3>
+      <p id="verdictSubtext">—</p>
+    </div>
+    <div class="net" id="verdictNet">—</div>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="val" id="mAnnuityNPV">—</div>
+      <div class="lbl">Annuity NPV (accept)</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="mStayNPV">—</div>
+      <div class="lbl">Annuity NPV (stay path)</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="mVsipNet">—</div>
+      <div class="lbl">VSIP net of tax</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="mPrivatePremium">—</div>
+      <div class="lbl">Health cost gap (search)</div>
+    </div>
+  </div>
+
+  <div class="compare-grid">
+    <div class="compare-box" id="acceptBox">
+      <h3>✈️ Accept Buyout</h3>
+      <div class="line-row"><span>VSIP lump sum (net of 37% est.)</span><strong id="a-vsip">—</strong></div>
+      <div class="line-row"><span>FERS/CSRS annuity NPV</span><strong id="a-annuity">—</strong></div>
+      <div class="line-row"><span>TSP (portable, no impact)</span><strong id="a-tsp">—</strong></div>
+      <div class="line-row"><span>Private salary NPV (est.)</span><strong id="a-priv">—</strong></div>
+      <div class="line-row"><span>Job search / health cost gap</span><strong id="a-gap">—</strong></div>
+      <div class="line-row total"><span>Total accept-path value (NPV)</span><strong id="a-total">—</strong></div>
+    </div>
+    <div class="compare-box" id="stayBox">
+      <h3>🏛️ Stay</h3>
+      <div class="line-row"><span>Remaining salary NPV</span><strong id="s-sal">—</strong></div>
+      <div class="line-row"><span>Incremental annuity benefit</span><strong id="s-ann-incr">—</strong></div>
+      <div class="line-row"><span>FEHB premium (employer share retained)</span><strong id="s-fehb">—</strong></div>
+      <div class="line-row"><span>Larger final annuity NPV</span><strong id="s-ann-full">—</strong></div>
+      <div class="line-row total"><span>Total stay-path value (NPV)</span><strong id="s-total">—</strong></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Key Considerations</h2>
+    <div id="keyConsiderations" style="font-size:14px;color:var(--muted);line-height:1.9"></div>
+    <div id="noVeraWarn" class="warn-box" style="display:none"></div>
+    <div id="annuityNote" class="info-box" style="display:none"></div>
+  </div>
+
+  <div class="card">
+    <h2>Next Steps</h2>
+    <div class="routing-grid">
+      <a href="../08-16-job-offer-total-comp/index.html" class="routing-card">
+        <span class="r-icon">💼</span>
+        <div><div class="r-title">Job Offer Comparison</div><div class="r-desc">Compare private-sector offers (AL-08/16)</div></div>
+      </a>
+      <a href="../136-severance-ui-timing/index.html" class="routing-card">
+        <span class="r-icon">⏱️</span>
+        <div><div class="r-title">Severance + UI Timing</div><div class="r-desc">Optimize separation benefit timing (AL-143)</div></div>
+      </a>
+    </div>
+    <div class="results-export-row">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+</div><!-- /results -->
+
+</div><!-- /main -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-150 · Data: FERS/CSRS rules; VSIP cap 5 U.S.C. §3522; FEHB 5 U.S.C. §8905a (2026)
+</footer>
+
+<script>
+// FERS annuity factor
+function fersAnnuityFactor(age, yearsService) {
+  // 1.1% if age >= 62 AND service >= 20; else 1.0%
+  return (age >= 62 && yearsService >= 20) ? 0.011 : 0.010;
+}
+
+function npvAnnuity(annualPayment, discountRate, yearsPayment) {
+  if (discountRate === 0) return annualPayment * yearsPayment;
+  return annualPayment * (1 - Math.pow(1 + discountRate, -yearsPayment)) / discountRate;
+}
+
+let _lastResult = null;
+
+function calculate() {
+  const currentSalary     = +document.getElementById('currentSalary').value;
+  const high3             = +document.getElementById('high3').value;
+  const yearsService      = +document.getElementById('yearsService').value;
+  const currentAge        = +document.getElementById('currentAge').value;
+  const retirementSystem  = document.getElementById('retirementSystem').value;
+  const veraEligible      = document.getElementById('veraEligible').value === 'yes';
+  const vsipAmount        = +document.getElementById('vsipAmount').value;
+  const fehbMonthlyPremium= +document.getElementById('fehbMonthlyPremium').value;
+  const tspBalance        = +document.getElementById('tspBalance').value;
+  const privateJobSalary  = +document.getElementById('privateJobSalary').value;
+  const jobSearchMonths   = +document.getElementById('jobSearchMonths').value;
+  const privateHealthCost = +document.getElementById('privateHealthCost').value;
+  const discountRate      = +document.getElementById('discountRate').value / 100;
+  const lifeExpectancy    = +document.getElementById('lifeExpectancy').value;
+  const remainingFedYears = +document.getElementById('remainingFedYears').value;
+
+  // Annuity (accept)
+  const annuityFactor = retirementSystem === 'fers'
+    ? fersAnnuityFactor(currentAge, yearsService)
+    : 0.0175; // CSRS simplified: ~1.75% per year average
+  const annuityAnnual = high3 * annuityFactor * yearsService;
+  // Reduce by 5% per year if age < MRA (simplified; VERA waives age penalty)
+  const mra = 57; // FERS MRA for most employees
+  const agePenaltyYears = veraEligible ? 0 : Math.max(0, mra - currentAge) * 0.05;
+  const annuityAnnualAdj = annuityAnnual * (1 - agePenaltyYears);
+  const annuityPayYears = Math.max(0, lifeExpectancy - currentAge);
+  const annuityNPV = npvAnnuity(annuityAnnualAdj, discountRate, annuityPayYears);
+
+  // VSIP
+  const vsipNet = vsipAmount * (1 - 0.37); // simplified 37% marginal
+
+  // Health cost gap during search
+  const healthGap = jobSearchMonths * Math.max(0, privateHealthCost - fehbMonthlyPremium);
+
+  // Private salary NPV (after search, nominal PV for 10 years as proxy)
+  const privYearsBase = 10; // modeled out-years
+  const privSalaryNPV = npvAnnuity(privateJobSalary, discountRate, privYearsBase);
+
+  // ACCEPT total
+  const acceptTotal = annuityNPV + vsipNet + privSalaryNPV - healthGap;
+
+  // STAY path
+  const finalYearsService = yearsService + remainingFedYears;
+  const finalAge = currentAge + remainingFedYears;
+  const stayAnnuityFactor = retirementSystem === 'fers'
+    ? fersAnnuityFactor(finalAge, finalYearsService)
+    : 0.0175;
+  const stayAnnuityAnnual = high3 * stayAnnuityFactor * finalYearsService * 1.05; // modest salary growth in high-3
+  const stayPayYears = Math.max(0, lifeExpectancy - finalAge);
+  const stayAnnuityNPV = npvAnnuity(stayAnnuityAnnual, discountRate, stayPayYears);
+  const remainingSalaryNPV = npvAnnuity(currentSalary, discountRate, remainingFedYears);
+  const fehbValueNPV = npvAnnuity(fehbMonthlyPremium * 12, discountRate, remainingFedYears); // employer share benefit
+  const stayTotal = remainingSalaryNPV + stayAnnuityNPV + fehbValueNPV;
+
+  const incremental = acceptTotal - stayTotal;
+
+  _lastResult = {
+    currentSalary, high3, yearsService, currentAge, retirementSystem, veraEligible,
+    vsipAmount, fehbMonthlyPremium, tspBalance, privateJobSalary, jobSearchMonths,
+    privateHealthCost, discountRate, lifeExpectancy, remainingFedYears,
+    annuityAnnual: annuityAnnualAdj, annuityNPV, vsipNet, healthGap, privSalaryNPV,
+    acceptTotal, stayAnnuityNPV, remainingSalaryNPV, fehbValueNPV, stayTotal, incremental,
+    agePenaltyYears
+  };
+
+  renderResults(_lastResult);
+}
+
+function fmtDollar(n) { return (n < 0 ? '–' : '') + '$' + Math.round(Math.abs(n)).toLocaleString(); }
+
+function renderResults(r) {
+  const banner = document.getElementById('verdictBanner');
+  const threshold = r.stayTotal * 0.05; // 5% margin = "close"
+  let verdictClass, icon, title, subtext;
+  if (r.incremental > threshold) {
+    verdictClass='accept'; icon='✈️'; title='Buyout Appears Financially Favorable';
+    subtext=`At these assumptions, accepting generates est. ${fmtDollar(Math.abs(r.incremental))} more NPV than staying.`;
+  } else if (r.incremental < -threshold) {
+    verdictClass='stay'; icon='🏛️'; title='Staying Appears Financially Stronger';
+    subtext=`At these assumptions, staying generates est. ${fmtDollar(Math.abs(r.incremental))} more NPV than taking the buyout.`;
+  } else {
+    verdictClass='close'; icon='⚖️'; title='Decision Is Close — Non-Financial Factors Matter';
+    subtext=`The financial difference is within 5% of stay-path NPV. Quality of life and career goals should drive the decision.`;
+  }
+  banner.className = 'verdict-banner ' + verdictClass;
+  document.getElementById('verdictIcon').textContent = icon;
+  document.getElementById('verdictTitle').textContent = title;
+  document.getElementById('verdictSubtext').textContent = subtext;
+  document.getElementById('verdictNet').textContent = (r.incremental >= 0 ? '+' : '') + fmtDollar(r.incremental);
+
+  document.getElementById('mAnnuityNPV').textContent    = fmtDollar(r.annuityNPV);
+  document.getElementById('mStayNPV').textContent       = fmtDollar(r.stayAnnuityNPV);
+  document.getElementById('mVsipNet').textContent       = fmtDollar(r.vsipNet);
+  document.getElementById('mPrivatePremium').textContent= fmtDollar(r.healthGap);
+
+  // Accept box
+  document.getElementById('a-vsip').textContent    = fmtDollar(r.vsipNet);
+  document.getElementById('a-annuity').textContent = fmtDollar(r.annuityNPV);
+  document.getElementById('a-tsp').textContent     = fmtDollar(r.tspBalance) + ' (portable)';
+  document.getElementById('a-priv').textContent    = fmtDollar(r.privSalaryNPV);
+  document.getElementById('a-gap').textContent     = '–' + fmtDollar(r.healthGap);
+  document.getElementById('a-total').textContent   = fmtDollar(r.acceptTotal);
+
+  // Stay box
+  document.getElementById('s-sal').textContent      = fmtDollar(r.remainingSalaryNPV);
+  document.getElementById('s-ann-incr').textContent = fmtDollar(r.stayAnnuityNPV - r.annuityNPV);
+  document.getElementById('s-fehb').textContent     = fmtDollar(r.fehbValueNPV);
+  document.getElementById('s-ann-full').textContent = fmtDollar(r.stayAnnuityNPV);
+  document.getElementById('s-total').textContent    = fmtDollar(r.stayTotal);
+
+  // Highlight winner
+  document.getElementById('acceptBox').classList.toggle('winner', r.incremental > 0);
+  document.getElementById('stayBox').classList.toggle('winner', r.incremental <= 0);
+
+  document.getElementById('keyConsiderations').innerHTML =
+    `<strong>Annual annuity (accept path):</strong> ${fmtDollar(r.annuityAnnual)} ` +
+    (r.agePenaltyYears > 0 ? `(reduced ${(r.agePenaltyYears*100).toFixed(0)}% for early age — no VERA penalty waiver)` : '(no age reduction — VERA waiver applies)') + '<br>' +
+    `<strong>TSP balance (${fmtDollar(r.tspBalance)}):</strong> Fully portable regardless of decision. Roll to IRA to preserve tax-deferred growth.<br>` +
+    `<strong>FEHB continuation:</strong> If VERA eligible, you retain FEHB into retirement. If not, TCC at 102% for up to 18 months.<br>` +
+    `<strong>Social Security:</strong> Not modeled here. Federal employment may interact with Government Pension Offset (GPO/WEP) if CSRS.<br>` +
+    `<strong>Note:</strong> This model uses simplified NPV estimates. Actual FERS/CSRS calculations involve COLA adjustments, survivor benefit elections, and other factors. Verify with OPM or your HR Benefits office.`;
+
+  const noVeraWarn = document.getElementById('noVeraWarn');
+  if (!r.veraEligible) {
+    noVeraWarn.style.display = 'block';
+    noVeraWarn.innerHTML = `⚠️ <strong>No VERA eligibility:</strong> Without VERA, separating before MRA may result in a deferred annuity (not payable until age 62 or MRA+10). The annuity calculation above applies a simplified age reduction. Verify your specific eligibility with HR.`;
+  } else noVeraWarn.style.display = 'none';
+
+  const annuityNote = document.getElementById('annuityNote');
+  annuityNote.style.display = 'block';
+  annuityNote.textContent = `✅ If you qualify for VERA and have 20+ years of service, you can begin an unreduced annuity immediately. The annuity also includes FEHB in retirement — a significant non-financial benefit not fully captured in this NPV model.`;
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+function exportMarkdown() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const md =
+`# Federal Buyout Decision — AL-150
+
+**Salary:** ${fmtDollar(r.currentSalary)} · **Service:** ${r.yearsService} years · **High-3:** ${fmtDollar(r.high3)} · **Age:** ${r.currentAge} · **VERA:** ${r.veraEligible ? 'Yes' : 'No'}
+
+## Financial Comparison (NPV)
+| Path | Value |
+|---|---|
+| **Accept buyout total** | **${fmtDollar(r.acceptTotal)}** |
+| **Stay total** | **${fmtDollar(r.stayTotal)}** |
+| Net advantage | ${r.incremental >= 0 ? 'Accept +' + fmtDollar(r.incremental) : 'Stay +' + fmtDollar(-r.incremental)} |
+
+**Annual annuity (accept):** ${fmtDollar(r.annuityAnnual)} · **VSIP net:** ${fmtDollar(r.vsipNet)} · **TSP balance:** ${fmtDollar(r.tspBalance)} (portable)
+
+---
+*Generated by ApexLogics AL-150 · apexlogics.org · FERS/CSRS; VSIP 5 U.S.C. §3522; 2026*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'federal-buyout-AL150.md'; a.click();
+}
+
+function exportAP2() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "buyout_decision_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-150",
+    tool_id: "143-federal-buyout-analyzer",
+    inputs: {
+      currentSalary: r.currentSalary,
+      high3: r.high3,
+      yearsService: r.yearsService,
+      currentAge: r.currentAge,
+      retirementSystem: r.retirementSystem,
+      veraEligible: r.veraEligible,
+      vsipAmount: r.vsipAmount,
+      privateJobSalary: r.privateJobSalary
+    },
+    outputs: {
+      annualAnnuity: Math.round(r.annuityAnnual),
+      annuityNPV: Math.round(r.annuityNPV),
+      vsipNet: Math.round(r.vsipNet),
+      acceptTotalNPV: Math.round(r.acceptTotal),
+      stayTotalNPV: Math.round(r.stayTotal),
+      netAdvantage: Math.round(r.incremental),
+      recommendation: r.incremental > 0 ? 'consider_accept' : r.incremental < 0 ? 'consider_stay' : 'close_call'
+    },
+    downstream_handoff_candidates: ["AL-27", "AL-143"],
+    metadata: {
+      license: "CC-BY-4.0",
+      data_vintage: "FERS/CSRS rules; VSIP cap 5 U.S.C. §3522; 2026"
+    }
+  };
+  const AP2Schema = {
+    validMandateTypes: ['buyout_decision_record'],
+    validate: function(p) {
+      const errors = [];
+      ['ap2_version','mandate_type','al_id','inputs','outputs'].forEach(k => {
+        if (!p[k]) errors.push('missing: ' + k);
+      });
+      if (p.mandate_type && !this.validMandateTypes.includes(p.mandate_type))
+        errors.push('unrecognized mandate_type: ' + p.mandate_type);
+      return { valid: errors.length === 0, errors };
+    }
+  };
+  const result = AP2Schema.validate(payload);
+  if (!result.valid) { alert('AP2 validation failed: ' + result.errors.join('; ')); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  const pad = n => String(n).padStart(2,'0');
+  const d = new Date();
+  const ts = d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+  a.download = 'AL150_143-federal-buyout_' + ts + '.ap2.json'; a.click();
+}
+</script>
+</body>
+</html>

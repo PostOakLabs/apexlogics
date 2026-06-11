@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Green Card Wait Planner | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--coral:#F07167;--coral-dim:rgba(240,113,103,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;--warn:#FBBF24;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--coral);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--coral);border-color:var(--coral);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:960px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:640px}
+.pii-banner{max-width:960px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:960px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:680px){.grid-2,.grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:440px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],input[type=date],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--coral)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.vintage-note{font-size:11px;color:var(--muted);padding:6px 10px;background:var(--surface2);border-radius:4px;border-left:3px solid var(--amber);margin-top:8px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--coral);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--coral);color:var(--coral)}
+.result-hidden{display:none}
+.result-hero{background:linear-gradient(135deg,var(--coral-dim),rgba(232,168,56,.06));border:2px solid rgba(240,113,103,.3);border-radius:12px;padding:24px;margin-bottom:20px;text-align:center}
+.result-hero .big-num{font-family:var(--font-mono);font-size:48px;font-weight:500;color:var(--coral);margin:8px 0}
+.result-hero .lbl{font-size:14px;color:var(--muted)}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--coral);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+.progress-row{display:flex;gap:12px;align-items:center;margin:12px 0;font-size:13px}
+.progress-bar{flex:1;height:10px;background:var(--border);border-radius:5px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--coral),var(--amber));border-radius:5px;transition:width .4s}
+.warn-box{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--warn);margin-top:14px}
+.info-box{background:rgba(76,175,125,.07);border:1px solid rgba(76,175,125,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--success);margin-top:14px}
+.routing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.routing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:flex-start;gap:10px;text-decoration:none}
+.routing-card:hover{border-color:var(--coral);text-decoration:none}
+.routing-card .r-icon{font-size:20px}
+.routing-card .r-title{font-weight:600;color:var(--coral);margin-bottom:2px;font-size:13px}
+.routing-card .r-desc{font-size:12px;color:var(--muted)}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tag-coral{background:rgba(240,113,103,.15);color:var(--coral)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-coral">Immigration &amp; Career</span></div>
+  <h1>Green Card Wait Planner</h1>
+  <p>Estimate your employment-based green card wait time based on country of birth and preference category, model AC21 H-1B extension eligibility, and plan career decisions around the backlog timeline.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<div class="card">
+  <h2>Your Green Card Status</h2>
+  <div class="vintage-note">
+    📌 Wait estimates use historical DOS Visa Bulletin progression rates — actual priority dates move monthly and vary significantly. Always verify current dates at <strong>travel.state.gov</strong>. This tool is a planning model, not a legal prediction.
+  </div>
+  <div class="grid-3" style="margin-top:18px">
+    <div class="field">
+      <label for="countryOfBirth">Country of Birth (for per-country cap)</label>
+      <select id="countryOfBirth">
+        <option value="india">India (longest EB-2/EB-3 backlog)</option>
+        <option value="china">China (mainland born)</option>
+        <option value="philippines">Philippines</option>
+        <option value="mexico">Mexico</option>
+        <option value="row">Rest of World (no significant backlog)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="category">Preference Category</label>
+      <select id="category">
+        <option value="eb1">EB-1 (priority workers, extraordinary ability)</option>
+        <option value="eb2">EB-2 (advanced degree / exceptional ability)</option>
+        <option value="eb3">EB-3 (skilled workers, professionals)</option>
+        <option value="eb2niw">EB-2 NIW (national interest waiver — self-petitioned)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="priorityDate">Your Priority Date (I-140 approval date)</label>
+      <input type="date" id="priorityDate">
+      <span class="hint">Date on your I-140 approval notice or I-130 receipt for older cases</span>
+    </div>
+  </div>
+  <div class="grid-3" style="margin-top:16px">
+    <div class="field">
+      <label for="i140Filed">I-140 Status</label>
+      <select id="i140Filed">
+        <option value="approved">Approved</option>
+        <option value="pending">Pending</option>
+        <option value="not_filed">Not yet filed</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="h1bYearsUsed">H-1B Years Used (of 6-year cap)</label>
+      <input type="number" id="h1bYearsUsed" value="4" min="0" max="6" step="1">
+    </div>
+    <div class="field">
+      <label for="currentAge">Current Age</label>
+      <input type="number" id="currentAge" value="35" min="18" max="70" step="1">
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Career Context</h2>
+  <div class="grid-2">
+    <div class="field">
+      <label for="currentSalary">Current Salary ($)</label>
+      <input type="number" id="currentSalary" value="150000" min="0" step="5000">
+    </div>
+    <div class="field">
+      <label for="targetRole">Career Goal During Wait Period</label>
+      <select id="targetRole">
+        <option value="stay">Stay at current employer until GC</option>
+        <option value="change">Change employers (AC21 portability)</option>
+        <option value="startup">Join or start a company (will need O-1 or EB-1A)</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div style="margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calculate()">Estimate Wait →</button>
+</div>
+
+<!-- Results -->
+<div id="results" class="result-hidden">
+
+  <div class="result-hero">
+    <div class="lbl">Estimated Wait Remaining</div>
+    <div class="big-num" id="rWait">—</div>
+    <div class="lbl" id="rWaitLabel">—</div>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="val" id="mEstGCYear">—</div>
+      <div class="lbl">Estimated GC year</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="mAC21">—</div>
+      <div class="lbl">AC21 H-1B extension</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="mH1BYearsLeft">—</div>
+      <div class="lbl">H-1B years remaining</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="mAgeAtGC">—</div>
+      <div class="lbl">Your age at GC (est.)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Wait Queue Context</h2>
+    <div id="waitContext" style="font-size:14px;color:var(--muted);line-height:1.8"></div>
+    <div class="progress-row" style="margin-top:16px">
+      <span style="font-size:13px;color:var(--muted);min-width:120px">Queue position</span>
+      <div class="progress-bar"><div class="progress-fill" id="queueProgress" style="width:50%"></div></div>
+      <span id="queuePct" style="font-size:13px;min-width:40px;text-align:right"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>AC21 &amp; H-1B Extensions</h2>
+    <div id="ac21Detail" style="font-size:14px;color:var(--muted);line-height:1.8"></div>
+    <div id="ac21Ok" class="info-box" style="display:none"></div>
+    <div id="ac21Warn" class="warn-box" style="display:none"></div>
+  </div>
+
+  <div class="card">
+    <h2>Career Planning During Wait</h2>
+    <div id="careerPlan" style="font-size:14px;color:var(--muted);line-height:1.8"></div>
+  </div>
+
+  <div class="card">
+    <h2>Next Steps</h2>
+    <div class="routing-grid">
+      <a href="../144-h1b-change-planner/index.html" class="routing-card">
+        <span class="r-icon">🔄</span>
+        <div><div class="r-title">H-1B Change Planner</div><div class="r-desc">Model employer transfer timing (AL-151)</div></div>
+      </a>
+      <a href="../08-16-job-offer-total-comp/index.html" class="routing-card">
+        <span class="r-icon">💼</span>
+        <div><div class="r-title">Job Offer Comparison</div><div class="r-desc">Compare offers including immigration value (AL-08/16)</div></div>
+      </a>
+    </div>
+    <div class="results-export-row">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+</div><!-- /results -->
+
+</div><!-- /main -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-152 · Data: DOS Visa Bulletin historical progression rates; INA §203; AC21 §106 (2026 estimates)
+</footer>
+
+<script>
+// Historical wait estimates (years remaining from priority date issuance to current availability)
+// These are rough historical averages — actual varies enormously
+// Format: { [country]: { [category]: approxYearsWait } }
+const WAIT_TABLE = {
+  india: {
+    eb1:   { waitYears: 3, note: 'EB-1 India backlog growing; 2–4yr typical as of 2025' },
+    eb2:   { waitYears: 90, note: 'EB-2 India: estimated 80–100+ year backlog based on Visa Bulletin retrogression trends' },
+    eb3:   { waitYears: 70, note: 'EB-3 India: similar to EB-2, sometimes slightly less due to spillover' },
+    eb2niw:{ waitYears: 90, note: 'EB-2 NIW India: same per-country cap as EB-2; self-petitioned but same line' }
+  },
+  china: {
+    eb1:   { waitYears: 2, note: 'EB-1 China: moderate backlog, ~1–3 years' },
+    eb2:   { waitYears: 10, note: 'EB-2 China: ~8–12 year estimate' },
+    eb3:   { waitYears: 12, note: 'EB-3 China: ~10–14 year estimate' },
+    eb2niw:{ waitYears: 10, note: 'EB-2 NIW China: same as EB-2' }
+  },
+  philippines: {
+    eb1:   { waitYears: 1, note: 'EB-1 Philippines: minimal backlog' },
+    eb2:   { waitYears: 3, note: 'EB-2 Philippines: ~2–4 years' },
+    eb3:   { waitYears: 8, note: 'EB-3 Philippines: ~6–10 years' },
+    eb2niw:{ waitYears: 3, note: 'EB-2 NIW Philippines: ~2–4 years' }
+  },
+  mexico: {
+    eb1:   { waitYears: 1, note: 'EB-1 Mexico: minimal backlog' },
+    eb2:   { waitYears: 2, note: 'EB-2 Mexico: ~1–3 years' },
+    eb3:   { waitYears: 5, note: 'EB-3 Mexico: ~3–6 years' },
+    eb2niw:{ waitYears: 2, note: 'EB-2 NIW Mexico: ~1–3 years' }
+  },
+  row: {
+    eb1:   { waitYears: 0, note: 'EB-1 ROW: current or minimal wait' },
+    eb2:   { waitYears: 1, note: 'EB-2 ROW: ~0–1 year' },
+    eb3:   { waitYears: 1, note: 'EB-3 ROW: ~0–1 year' },
+    eb2niw:{ waitYears: 1, note: 'EB-2 NIW ROW: ~0–1 year' }
+  }
+};
+
+let _lastResult = null;
+
+function calculate() {
+  const country     = document.getElementById('countryOfBirth').value;
+  const category    = document.getElementById('category').value;
+  const priorityDate= document.getElementById('priorityDate').value;
+  const i140Filed   = document.getElementById('i140Filed').value;
+  const h1bYearsUsed= +document.getElementById('h1bYearsUsed').value;
+  const currentAge  = +document.getElementById('currentAge').value;
+  const targetRole  = document.getElementById('targetRole').value;
+  const currentSalary = +document.getElementById('currentSalary').value;
+
+  const waitData = WAIT_TABLE[country][category];
+  const waitYears = waitData.waitYears;
+  const waitNote  = waitData.note;
+
+  // Adjust for time already elapsed since priority date
+  let yearsElapsed = 0;
+  if (priorityDate) {
+    const pd = new Date(priorityDate + 'T12:00:00');
+    yearsElapsed = (new Date() - pd) / (365.25 * 24 * 60 * 60 * 1000);
+  }
+  const remainingYears = Math.max(0, waitYears - yearsElapsed);
+  const estGCYear = new Date().getFullYear() + Math.round(remainingYears);
+  const ageAtGC = currentAge + Math.round(remainingYears);
+
+  // AC21 §106: H-1B extensions beyond 6 years if I-140 approved AND priority date not current
+  const h1bYearsLeft = 6 - h1bYearsUsed;
+  const ac21Eligible = i140Filed === 'approved' && remainingYears > 0;
+  const ac21Extension = ac21Eligible ? '1-year increments (unlimited)' : 'Not available';
+
+  // Queue progress estimate
+  // Rough: if waitYears = 90 and elapsed = 5, progress = 5.5%
+  const queuePct = waitYears > 0 ? Math.min(100, Math.round(yearsElapsed / waitYears * 100)) : 100;
+
+  _lastResult = {
+    country, category, priorityDate, i140Filed, h1bYearsUsed, currentAge, targetRole,
+    currentSalary, waitYears, waitNote, yearsElapsed, remainingYears, estGCYear, ageAtGC,
+    h1bYearsLeft, ac21Eligible, ac21Extension, queuePct
+  };
+
+  renderResults(_lastResult);
+}
+
+function fmtYears(y) {
+  if (y >= 100) return '100+ years';
+  if (y < 0.5) return '< 1 year';
+  return Math.round(y) + ' years';
+}
+
+function renderResults(r) {
+  document.getElementById('rWait').textContent    = fmtYears(r.remainingYears);
+  document.getElementById('rWaitLabel').textContent =
+    r.remainingYears >= 100 ? 'Effectively lifetime wait at current progression rates'
+    : `Estimated for ${r.country.toUpperCase()} ${r.category.toUpperCase()} — verify at travel.state.gov`;
+
+  document.getElementById('mEstGCYear').textContent   = r.estGCYear >= 2120 ? '2100+' : r.estGCYear;
+  document.getElementById('mAC21').textContent        = r.ac21Eligible ? 'Eligible' : 'Not eligible';
+  document.getElementById('mH1BYearsLeft').textContent= r.h1bYearsLeft + ' yr' + (r.h1bYearsLeft !== 1 ? 's' : '') + ' in cap';
+  document.getElementById('mAgeAtGC').textContent     = r.estGCYear >= 2120 ? 'N/A' : r.ageAtGC;
+
+  document.getElementById('waitContext').innerHTML =
+    `<strong>Historical wait for ${r.country} ${r.category}:</strong> ${r.waitNote}<br>` +
+    `<strong>Years elapsed since priority date:</strong> ${r.yearsElapsed.toFixed(1)} years<br>` +
+    `<strong>Estimated remaining wait:</strong> ${fmtYears(r.remainingYears)}<br>` +
+    `<strong>⚠️ Important:</strong> Progression rates vary dramatically year-to-year and with policy changes. India EB-2/EB-3 backlogs are particularly volatile. This estimate is illustrative only.`;
+
+  document.getElementById('queueProgress').style.width = r.queuePct + '%';
+  document.getElementById('queuePct').textContent = r.queuePct + '% elapsed';
+
+  // AC21
+  document.getElementById('ac21Detail').innerHTML =
+    `<strong>AC21 §106 eligibility:</strong> ${r.ac21Eligible ? '✅ Eligible' : '❌ Not eligible'}<br>` +
+    (r.ac21Eligible
+      ? `You can receive H-1B extensions in 1-year increments beyond the 6-year cap. Your current employer (or a new employer via AC21 portability) must continue sponsoring the GC process.<br>`
+      : r.i140Filed !== 'approved'
+      ? `Requires an approved I-140. File your I-140 as soon as possible to begin AC21 protection.`
+      : `AC21 only applies when priority date is not current — if priority date is current, proceed to AOS.`) +
+    `<br><strong>H-1B years remaining in 6-year cap:</strong> ${r.h1bYearsLeft} year${r.h1bYearsLeft !== 1 ? 's' : ''}` +
+    (r.h1bYearsLeft <= 1 && !r.ac21Eligible ? ' — ⚠️ Apply for extension or AC21 now' : '');
+
+  const ac21Ok   = document.getElementById('ac21Ok');
+  const ac21Warn = document.getElementById('ac21Warn');
+  if (r.ac21Eligible) {
+    ac21Ok.style.display = 'block';
+    ac21Ok.innerHTML = `✅ <strong>AC21 protection:</strong> With an approved I-140 and a pending GC, you can extend H-1B in 1-year increments indefinitely. You can also change employers with the same or similar occupation (SOC code) and port your priority date (AC21 portability).`;
+    ac21Warn.style.display = 'none';
+  } else if (r.h1bYearsLeft <= 1) {
+    ac21Ok.style.display = 'none';
+    ac21Warn.style.display = 'block';
+    ac21Warn.innerHTML = `⚠️ <strong>H-1B cap approaching:</strong> You have ${r.h1bYearsLeft} year${r.h1bYearsLeft !== 1 ? 's' : ''} left and don't yet qualify for AC21 extensions. File your I-140 immediately if not done, and consult an attorney about timing.`;
+  } else {
+    ac21Ok.style.display = 'none';
+    ac21Warn.style.display = 'none';
+  }
+
+  // Career plan
+  const careerPlanMap = {
+    stay: `<strong>Staying at current employer:</strong> Simplest path. Maintain GC sponsorship continuity. Negotiate compensation annually — immigration sponsorship is a meaningful benefit valued at $10K–$30K in direct costs + risk premium.<br>` +
+          `<strong>Risk:</strong> Layoffs or restructuring can disrupt sponsorship. Know your AC21 portability rights so you can move quickly if needed.`,
+    change: `<strong>Changing employers with AC21 portability:</strong> Allowed once I-140 is approved + 180 days. New employer must file a new GC case; you may port your priority date if occupation is same/similar.<br>` +
+            `<strong>Key steps:</strong> Secure new I-140 from new employer; confirm old priority date can be ported; use the H-1B Change Planner (AL-151) to verify timing.`,
+    startup: `<strong>Starting or joining a startup:</strong> H-1B cannot be self-sponsored. Options:<br>` +
+             `• EB-1A (extraordinary ability): self-petitioned, no employer needed, typically 1–3yr wait for most countries.<br>` +
+             `• O-1A (extraordinary ability): non-immigrant, faster, can work for startup while EB-1A is pending.<br>` +
+             `• L-1A (intracompany transfer): if you set up a foreign parent entity first.<br>` +
+             `<strong>Note:</strong> Startup path risks: if I-140 with old employer lapses and no AC21 protection, priority date may be lost.`
+  };
+  document.getElementById('careerPlan').innerHTML = careerPlanMap[r.targetRole] || '';
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+function exportMarkdown() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const md =
+`# Green Card Wait Plan — AL-152
+
+**Country:** ${r.country} · **Category:** ${r.category} · **Priority date:** ${r.priorityDate || 'Not set'}
+
+## Estimate
+| Item | Value |
+|---|---|
+| Historical wait (total) | ${r.waitYears >= 100 ? '100+ years' : r.waitYears + ' years'} |
+| Years elapsed | ${r.yearsElapsed.toFixed(1)} years |
+| **Remaining estimate** | **${fmtYears(r.remainingYears)}** |
+| Estimated GC year | ${r.estGCYear >= 2120 ? '2100+' : r.estGCYear} |
+| AC21 eligible | ${r.ac21Eligible ? 'Yes' : 'No'} |
+| H-1B years remaining in cap | ${r.h1bYearsLeft} |
+
+> ${r.waitNote}
+
+---
+*Generated by ApexLogics AL-152 · apexlogics.org · INA §203; AC21 §106; DOS Visa Bulletin estimates (2026). Verify at travel.state.gov.*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'greencard-wait-AL152.md'; a.click();
+}
+
+function exportAP2() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "greencard_wait_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-152",
+    tool_id: "145-greencard-wait-planner",
+    inputs: {
+      countryOfBirth: r.country,
+      category: r.category,
+      priorityDate: r.priorityDate,
+      i140Status: r.i140Filed,
+      h1bYearsUsed: r.h1bYearsUsed
+    },
+    outputs: {
+      estimatedWaitYears: +r.remainingYears.toFixed(1),
+      estimatedGCYear: r.estGCYear,
+      ac21Eligible: r.ac21Eligible,
+      h1bYearsRemainingInCap: r.h1bYearsLeft,
+      queuePctElapsed: r.queuePct
+    },
+    downstream_handoff_candidates: ["AL-151"],
+    metadata: {
+      license: "CC-BY-4.0",
+      data_vintage: "DOS Visa Bulletin historical progression; INA §203; AC21 §106 (2026 estimates — verify at travel.state.gov)"
+    }
+  };
+  const AP2Schema = {
+    validMandateTypes: ['greencard_wait_record'],
+    validate: function(p) {
+      const errors = [];
+      ['ap2_version','mandate_type','al_id','inputs','outputs'].forEach(k => {
+        if (!p[k]) errors.push('missing: ' + k);
+      });
+      if (p.mandate_type && !this.validMandateTypes.includes(p.mandate_type))
+        errors.push('unrecognized mandate_type: ' + p.mandate_type);
+      return { valid: errors.length === 0, errors };
+    }
+  };
+  const result = AP2Schema.validate(payload);
+  if (!result.valid) { alert('AP2 validation failed: ' + result.errors.join('; ')); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  const pad = n => String(n).padStart(2,'0');
+  const d = new Date();
+  const ts = d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+  a.download = 'AL152_145-greencard-wait_' + ts + '.ap2.json'; a.click();
+}
+</script>
+</body>
+</html>

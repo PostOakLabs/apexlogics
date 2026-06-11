@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equity Exit Waterfall Calculator | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--coral:#F07167;--coral-dim:rgba(240,113,103,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;--warn:#FBBF24;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--coral);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--coral);border-color:var(--coral);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:1024px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:640px}
+.pii-banner{max-width:1024px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:1024px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px}
+@media(max-width:800px){.grid-4{grid-template-columns:1fr 1fr}}
+@media(max-width:680px){.grid-2,.grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:440px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--coral)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.section-sep{border:none;border-top:1px dashed var(--border);margin:16px 0}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--coral);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--coral);color:var(--coral)}
+.result-hidden{display:none}
+.result-hero{background:linear-gradient(135deg,var(--coral-dim),rgba(232,168,56,.06));border:2px solid rgba(240,113,103,.3);border-radius:12px;padding:24px;margin-bottom:20px}
+.result-hero-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;text-align:center}
+.rh-item .big-num{font-family:var(--font-mono);font-size:32px;font-weight:500;color:var(--coral);margin:4px 0}
+.rh-item .lbl{font-size:12px;color:var(--muted)}
+.table-wrap{overflow-x:auto;margin-top:14px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--surface2);color:var(--muted);font-weight:600;text-align:left;padding:8px 10px;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+td{padding:8px 10px;border-bottom:1px solid var(--border)}
+tr.highlight td{background:rgba(240,113,103,.07);font-weight:600}
+.waterfall-bar{display:flex;height:20px;border-radius:6px;overflow:hidden;gap:2px;margin-top:12px}
+.wf-seg{height:100%;transition:width .4s;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden}
+.wf-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:11px}
+.wf-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:4px}
+.warn-box{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--warn);margin-top:14px}
+.info-box{background:rgba(76,175,125,.07);border:1px solid rgba(76,175,125,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--success);margin-top:14px}
+.routing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.routing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:flex-start;gap:10px;text-decoration:none}
+.routing-card:hover{border-color:var(--coral);text-decoration:none}
+.routing-card .r-icon{font-size:20px}
+.routing-card .r-title{font-weight:600;color:var(--coral);margin-bottom:2px;font-size:13px}
+.routing-card .r-desc{font-size:12px;color:var(--muted)}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tag-coral{background:rgba(240,113,103,.15);color:var(--coral)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-coral">Equity &amp; Equity Tax</span></div>
+  <h1>Equity Exit Waterfall Calculator</h1>
+  <p>Enter your cap table structure — preferred liquidation preferences, participation rights, and common ownership — to see how exit proceeds distribute in an M&amp;A or IPO scenario.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<div class="card">
+  <h2>Exit &amp; Company Structure</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="exitValuation">Exit Valuation ($)</label>
+      <input type="number" id="exitValuation" value="50000000" min="0" step="1000000">
+    </div>
+    <div class="field">
+      <label for="totalInvested">Total Preferred Invested ($)</label>
+      <input type="number" id="totalInvested" value="10000000" min="0" step="500000">
+      <span class="hint">Aggregate liquidation preference amount</span>
+    </div>
+    <div class="field">
+      <label for="preferredOwnership">Preferred Ownership % (fully-diluted)</label>
+      <input type="number" id="preferredOwnership" value="60" min="0" max="100" step="1">
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Liquidation Preference Structure</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="prefMultiple">Liquidation Preference Multiple</label>
+      <select id="prefMultiple">
+        <option value="1">1× (most common)</option>
+        <option value="1.5">1.5×</option>
+        <option value="2">2×</option>
+        <option value="3">3×</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="participationType">Participation Type</label>
+      <select id="participationType">
+        <option value="non">Non-participating preferred</option>
+        <option value="full">Fully participating preferred</option>
+        <option value="capped">Participating with cap</option>
+      </select>
+    </div>
+    <div class="field" id="capField" style="display:none">
+      <label for="participationCap">Participation Cap (× invested)</label>
+      <input type="number" id="participationCap" value="3" min="1" step="0.5">
+      <span class="hint">e.g., 3× means preferred stops participating after 3× total return</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Your Position</h2>
+  <div class="grid-4">
+    <div class="field">
+      <label for="yourRole">Your Role</label>
+      <select id="yourRole">
+        <option value="common">Common stockholder</option>
+        <option value="founder">Founder (common)</option>
+        <option value="employee">Employee (options/RSAs)</option>
+        <option value="preferred">Preferred investor</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="yourOwnership">Your Ownership % (fully-diluted)</label>
+      <input type="number" id="yourOwnership" value="5" min="0" max="100" step="0.1">
+    </div>
+    <div class="field">
+      <label for="yourStrikeTotal">Your Option Strike (total cost to exercise $)</label>
+      <input type="number" id="yourStrikeTotal" value="50000" min="0" step="1000">
+      <span class="hint">Total exercise cost; enter 0 for RSAs or vested stock</span>
+    </div>
+    <div class="field">
+      <label for="yourCostBasis">Your Cost Basis (tax) ($)</label>
+      <input type="number" id="yourCostBasis" value="50000" min="0" step="1000">
+      <span class="hint">For tax gain calculation</span>
+    </div>
+  </div>
+</div>
+
+<div style="margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calculate()">Run Waterfall →</button>
+</div>
+
+<!-- Results -->
+<div id="results" class="result-hidden">
+
+  <div class="result-hero">
+    <div class="result-hero-grid">
+      <div class="rh-item">
+        <div class="lbl">Your Gross Proceeds</div>
+        <div class="big-num" id="rYourProceeds">—</div>
+      </div>
+      <div class="rh-item">
+        <div class="lbl">Your Net (after exercise)</div>
+        <div class="big-num" id="rYourNet">—</div>
+      </div>
+      <div class="rh-item">
+        <div class="lbl">Preferred Total (all)</div>
+        <div class="big-num" id="rPrefTotal">—</div>
+      </div>
+      <div class="rh-item">
+        <div class="lbl">Common Pool</div>
+        <div class="big-num" id="rCommonPool">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Waterfall Distribution</h2>
+    <div class="waterfall-bar" id="waterfallBar"></div>
+    <div class="wf-legend" id="waterfallLegend"></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Layer</th>
+          <th>Recipient</th>
+          <th>Amount</th>
+          <th>% of Exit</th>
+          <th>Notes</th>
+        </tr></thead>
+        <tbody id="waterfallBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Your Payout Detail</h2>
+    <div id="yourDetail" style="font-size:14px;color:var(--muted);line-height:1.8"></div>
+    <div id="breakEven" class="info-box" style="display:none"></div>
+    <div id="prefWins" class="warn-box" style="display:none"></div>
+  </div>
+
+  <div class="card">
+    <h2>Next Steps</h2>
+    <div class="routing-grid">
+      <a href="../140-83b-election-timer/index.html" class="routing-card">
+        <span class="r-icon">📋</span>
+        <div><div class="r-title">83(b) Election Timer</div><div class="r-desc">Start holding period for QSBS (AL-147)</div></div>
+      </a>
+      <a href="../142-qsbs-exclusion/index.html" class="routing-card">
+        <span class="r-icon">✨</span>
+        <div><div class="r-title">QSBS Exclusion Calculator</div><div class="r-desc">Estimate §1202 gain exclusion (AL-149)</div></div>
+      </a>
+    </div>
+    <div class="results-export-row">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+</div><!-- /results -->
+
+</div><!-- /main -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-148 · Data: Structural model; NVCA standard term sheet conventions
+</footer>
+
+<script>
+document.getElementById('participationType').addEventListener('change', function() {
+  document.getElementById('capField').style.display = this.value === 'capped' ? 'block' : 'none';
+});
+
+const SEG_COLORS = ['#e85555','#F07167','#FBBF24','#4caf7d','#60a5fa','#a78bfa'];
+
+let _lastResult = null;
+
+function calculate() {
+  const exitVal         = +document.getElementById('exitValuation').value;
+  const totalInvested   = +document.getElementById('totalInvested').value;
+  const prefOwnerPct    = +document.getElementById('preferredOwnership').value / 100;
+  const prefMultiple    = +document.getElementById('prefMultiple').value;
+  const participationType = document.getElementById('participationType').value;
+  const participationCap  = +document.getElementById('participationCap').value;
+  const yourRole        = document.getElementById('yourRole').value;
+  const yourOwnerPct    = +document.getElementById('yourOwnership').value / 100;
+  const yourStrike      = +document.getElementById('yourStrikeTotal').value;
+  const yourBasis       = +document.getElementById('yourCostBasis').value;
+
+  if (exitVal <= 0) { alert('Enter a positive exit valuation.'); return; }
+
+  const commonOwnerPct  = 1 - prefOwnerPct;
+  const liquidPref      = totalInvested * prefMultiple;
+  let remaining         = exitVal;
+  const layers          = [];
+
+  // Layer 1: Liquidation preference
+  const prefPref = Math.min(remaining, liquidPref);
+  remaining -= prefPref;
+  layers.push({ label: 'Preferred Liquidation Preference', recipient: 'Preferred investors', amount: prefPref });
+
+  // Layer 2: Participation (if applicable) or conversion to common
+  let prefParticipation = 0;
+  let commonPool = 0;
+
+  if (participationType === 'non') {
+    // Non-participating: preferred has already taken preference; they can choose to convert
+    // If pro-rata of exit > preference, preferred would convert (but we model the standard: prefer gets pref, common gets rest)
+    // Actually for non-participating: remaining goes to common. Preferred may convert to common if their pro-rata > pref.
+    const prefProRata = exitVal * prefOwnerPct;
+    if (prefProRata > liquidPref) {
+      // Preferred converts — everyone gets pro-rata
+      // Reset layers and do pro-rata instead
+      layers.length = 0;
+      layers.push({ label: 'Pro-Rata (Preferred converts to common)', recipient: 'All stockholders', amount: exitVal });
+      prefParticipation = exitVal * prefOwnerPct - liquidPref; // incremental above pref
+      commonPool = exitVal * commonOwnerPct;
+      layers[0].amount = exitVal * prefOwnerPct;
+      layers.push({ label: 'Pro-Rata Common', recipient: 'Common stockholders', amount: commonPool });
+    } else {
+      commonPool = remaining;
+      if (commonPool > 0) layers.push({ label: 'Common Pro-Rata', recipient: 'Common stockholders', amount: commonPool });
+    }
+  } else if (participationType === 'full') {
+    // Fully participating: preferred gets pref THEN participates in remaining
+    prefParticipation = remaining * prefOwnerPct;
+    commonPool = remaining * commonOwnerPct;
+    if (prefParticipation > 0) layers.push({ label: 'Preferred Participation (pro-rata)', recipient: 'Preferred investors', amount: prefParticipation });
+    if (commonPool > 0)         layers.push({ label: 'Common Pro-Rata', recipient: 'Common stockholders', amount: commonPool });
+  } else {
+    // Capped participating
+    const capAmount = totalInvested * participationCap;
+    const maxParticipation = Math.max(0, capAmount - liquidPref);
+    const prefParticipationRaw = remaining * prefOwnerPct;
+    prefParticipation = Math.min(prefParticipationRaw, maxParticipation);
+    const remainingAfterCap = remaining - prefParticipation;
+    // If cap hit, remaining is split among converted (pro-rata all) or common
+    const hitCap = prefParticipationRaw > maxParticipation;
+    if (hitCap) {
+      // Preferred converts; all remaining splits pro-rata
+      commonPool = remaining * commonOwnerPct + prefParticipationRaw - prefParticipation;
+    } else {
+      commonPool = remaining * commonOwnerPct;
+    }
+    if (prefParticipation > 0) layers.push({ label: 'Preferred Participation (capped ' + participationCap + '×)', recipient: 'Preferred investors', amount: prefParticipation });
+    if (commonPool > 0)         layers.push({ label: 'Common Pro-Rata', recipient: 'Common stockholders', amount: commonPool });
+  }
+
+  // Total preferred
+  const prefTotal = prefPref + prefParticipation;
+
+  // Your share
+  let yourGross = 0;
+  if (yourRole === 'preferred') {
+    yourGross = prefTotal * (yourOwnerPct / prefOwnerPct);
+  } else {
+    // Common: from common pool
+    const commonShare = commonOwnerPct > 0 ? yourOwnerPct / commonOwnerPct : 0;
+    yourGross = commonPool * commonShare;
+  }
+  const yourNet = Math.max(0, yourGross - yourStrike);
+  const yourGain = Math.max(0, yourNet - yourBasis);
+
+  // Break-even exit for common
+  let breakEvenExit = 0;
+  if (yourRole !== 'preferred' && commonOwnerPct > 0) {
+    // Exit where common starts getting money > 0
+    if (participationType === 'non') {
+      breakEvenExit = liquidPref; // common gets nothing below liquidPref
+    } else {
+      breakEvenExit = liquidPref; // same — common needs to exceed pref
+    }
+    // Add strike
+    const commonShareFrac = yourOwnerPct / commonOwnerPct;
+    if (commonShareFrac > 0) {
+      // (exit - liquidPref) * commonOwnerPct * commonShareFrac = yourStrike
+      breakEvenExit = liquidPref + (yourStrike / (commonOwnerPct * commonShareFrac));
+    }
+  }
+
+  _lastResult = {
+    exitVal, totalInvested, prefOwnerPct, prefMultiple, participationType, participationCap,
+    yourRole, yourOwnerPct, yourStrike, yourBasis,
+    liquidPref, layers, prefTotal, commonPool, yourGross, yourNet, yourGain, breakEvenExit
+  };
+
+  renderResults(_lastResult);
+}
+
+function fmtDollar(n) { return '$' + Math.round(Math.abs(n)).toLocaleString(); }
+function fmtPct(n)    { return (n * 100).toFixed(1) + '%'; }
+
+function renderResults(r) {
+  document.getElementById('rYourProceeds').textContent = fmtDollar(r.yourGross);
+  document.getElementById('rYourNet').textContent      = fmtDollar(r.yourNet);
+  document.getElementById('rPrefTotal').textContent    = fmtDollar(r.prefTotal);
+  document.getElementById('rCommonPool').textContent   = fmtDollar(r.commonPool);
+
+  // Waterfall bar
+  const barEl  = document.getElementById('waterfallBar');
+  const legEl  = document.getElementById('waterfallLegend');
+  barEl.innerHTML = ''; legEl.innerHTML = '';
+  r.layers.forEach((l, i) => {
+    const pct = l.amount / r.exitVal * 100;
+    const color = SEG_COLORS[i % SEG_COLORS.length];
+    const seg = document.createElement('div');
+    seg.className = 'wf-seg';
+    seg.style.width = pct + '%';
+    seg.style.background = color;
+    seg.title = l.label + ': ' + fmtDollar(l.amount);
+    barEl.appendChild(seg);
+    legEl.innerHTML += `<span><span class="wf-dot" style="background:${color}"></span>${l.label}</span> `;
+  });
+
+  // Waterfall table
+  const tbody = document.getElementById('waterfallBody');
+  tbody.innerHTML = '';
+  let cum = 0;
+  r.layers.forEach((l, i) => {
+    cum += l.amount;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${i + 1}</td><td>${l.label}</td><td>${fmtDollar(l.amount)}</td><td>${fmtPct(l.amount / r.exitVal)}</td><td>${l.recipient}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Your detail
+  const roleLabel = { common:'Common stockholder', founder:'Founder (common)', employee:'Employee (options/RSAs)', preferred:'Preferred investor' };
+  document.getElementById('yourDetail').innerHTML =
+    `<strong>Your role:</strong> ${roleLabel[r.yourRole]} · <strong>Ownership:</strong> ${fmtPct(r.yourOwnerPct)}<br>` +
+    `<strong>Gross proceeds:</strong> ${fmtDollar(r.yourGross)}<br>` +
+    `<strong>Exercise / cost:</strong> ${fmtDollar(r.yourStrike)}<br>` +
+    `<strong>Net proceeds:</strong> ${fmtDollar(r.yourNet)}<br>` +
+    `<strong>Taxable gain (vs. basis):</strong> ${fmtDollar(r.yourGain)}<br>` +
+    `<br>Use the QSBS Exclusion Calculator (AL-149) to model §1202 gain exclusions if this is eligible C-corp stock held ≥5 years.`;
+
+  const breakEvenEl = document.getElementById('breakEven');
+  const prefWinsEl  = document.getElementById('prefWins');
+  if (r.yourRole !== 'preferred' && r.breakEvenExit > 0) {
+    breakEvenEl.style.display = 'block';
+    breakEvenEl.textContent = `✅ Break-even exit valuation for your common position (net of exercise cost): ~${fmtDollar(r.breakEvenExit)}`;
+  } else breakEvenEl.style.display = 'none';
+
+  if (r.prefTotal > r.commonPool && r.yourRole !== 'preferred') {
+    prefWinsEl.style.display = 'block';
+    prefWinsEl.textContent = `⚠️ Preferred investors captured ${fmtPct(r.prefTotal / r.exitVal)} of exit proceeds vs. ${fmtPct(r.commonPool / r.exitVal)} for all common. Your common position is significantly diluted by the preference stack.`;
+  } else prefWinsEl.style.display = 'none';
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+function exportMarkdown() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const md =
+`# Equity Exit Waterfall — AL-148
+
+**Exit valuation:** ${fmtDollar(r.exitVal)} · **Preferred invested:** ${fmtDollar(r.totalInvested)} · **Pref multiple:** ${r.prefMultiple}× · **Participation:** ${r.participationType}
+
+## Waterfall
+${r.layers.map((l,i) => `${i+1}. ${l.label} — ${fmtDollar(l.amount)} (${fmtPct(l.amount/r.exitVal)})`).join('\n')}
+
+## Your Position
+- Ownership: ${fmtPct(r.yourOwnerPct)} · Role: ${r.yourRole}
+- **Gross proceeds:** ${fmtDollar(r.yourGross)}
+- Net of exercise: ${fmtDollar(r.yourNet)}
+- Taxable gain: ${fmtDollar(r.yourGain)}
+
+---
+*Generated by ApexLogics AL-148 · apexlogics.org · NVCA standard liquidation preference model*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'exit-waterfall-AL148.md'; a.click();
+}
+
+function exportAP2() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "equity_waterfall_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-148",
+    tool_id: "141-equity-exit-waterfall",
+    inputs: {
+      exitValuation: r.exitVal,
+      totalInvested: r.totalInvested,
+      preferredOwnershipPct: +r.prefOwnerPct.toFixed(4),
+      prefMultiple: r.prefMultiple,
+      participationType: r.participationType,
+      yourOwnershipPct: +r.yourOwnerPct.toFixed(4),
+      yourRole: r.yourRole,
+      yourStrikeTotal: r.yourStrike
+    },
+    outputs: {
+      liquidationPreference: Math.round(r.liquidPref),
+      preferredTotal: Math.round(r.prefTotal),
+      commonPool: Math.round(r.commonPool),
+      yourGrossProceeds: Math.round(r.yourGross),
+      yourNetProceeds: Math.round(r.yourNet),
+      yourTaxableGain: Math.round(r.yourGain),
+      breakEvenExit: Math.round(r.breakEvenExit)
+    },
+    downstream_handoff_candidates: ["AL-147", "AL-149"],
+    metadata: {
+      license: "CC-BY-4.0",
+      data_vintage: "Structural model; NVCA standard term sheet conventions"
+    }
+  };
+  const AP2Schema = {
+    validMandateTypes: ['equity_waterfall_record'],
+    validate: function(p) {
+      const errors = [];
+      ['ap2_version','mandate_type','al_id','inputs','outputs'].forEach(k => {
+        if (!p[k]) errors.push('missing: ' + k);
+      });
+      if (p.mandate_type && !this.validMandateTypes.includes(p.mandate_type))
+        errors.push('unrecognized mandate_type: ' + p.mandate_type);
+      return { valid: errors.length === 0, errors };
+    }
+  };
+  const result = AP2Schema.validate(payload);
+  if (!result.valid) { alert('AP2 validation failed: ' + result.errors.join('; ')); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  const pad = n => String(n).padStart(2,'0');
+  const d = new Date();
+  const ts = d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+  a.download = 'AL148_141-exit-waterfall_' + ts + '.ap2.json'; a.click();
+}
+</script>
+</body>
+</html>

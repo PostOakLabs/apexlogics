@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Severance + Unemployment Timing Sequencer | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--coral:#F07167;--coral-dim:rgba(240,113,103,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;--warn:#FBBF24;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--coral);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--coral);border-color:var(--coral);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:900px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:640px}
+.pii-banner{max-width:900px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:900px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:620px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--coral)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--coral);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--coral);color:var(--coral)}
+.result-hidden{display:none}
+.result-hero{background:linear-gradient(135deg,var(--coral-dim),rgba(232,168,56,.06));border:2px solid rgba(240,113,103,.3);border-radius:12px;padding:24px;margin-bottom:20px}
+.result-hero h3{font-family:var(--font-serif);font-size:22px;margin-bottom:8px;color:var(--coral)}
+.result-hero p{color:var(--muted);font-size:14px}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--coral);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin-bottom:16px}
+th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:14px}
+td.mono{font-family:var(--font-mono)}
+tr.hi-row td{font-weight:600;background:rgba(240,113,103,.06)}
+.warn-box{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--warn);margin-top:14px}
+.info-box{background:rgba(76,175,125,.07);border:1px solid rgba(76,175,125,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--success);margin-top:14px}
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:16px;padding:12px 0;border-bottom:1px solid var(--border)}
+.tl-week{font-family:var(--font-mono);font-size:12px;color:var(--muted);min-width:70px;padding-top:2px}
+.tl-dot{width:10px;height:10px;border-radius:50%;background:var(--coral);margin-top:6px;flex-shrink:0}
+.tl-content{font-size:14px}
+.tl-content strong{color:var(--text)}
+.routing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.routing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:flex-start;gap:10px;text-decoration:none}
+.routing-card:hover{border-color:var(--coral);text-decoration:none}
+.routing-card .r-icon{font-size:20px}
+.routing-card .r-title{font-weight:600;color:var(--coral);margin-bottom:2px;font-size:13px}
+.routing-card .r-desc{font-size:12px;color:var(--muted)}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.mcp-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px}
+.mcp-panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.mcp-endpoint{font-family:var(--font-mono);font-size:12px;color:var(--coral);background:var(--bg);padding:8px 12px;border-radius:6px;word-break:break-all}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tag-coral{background:rgba(240,113,103,.15);color:var(--coral)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}
+footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-coral">Career Transition</span></div>
+  <h1>Severance + Unemployment Timing Sequencer</h1>
+  <p>Lump-sum vs. salary-continuation severance interacts with UI eligibility in different ways by state. Sequence correctly to avoid leaving benefits on the table.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<!-- Card 1: Severance -->
+<div class="card">
+  <h2>Your Severance Package</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="severanceForm">Severance Payment Form</label>
+      <select id="severanceForm">
+        <option value="lump">Lump sum (paid at separation)</option>
+        <option value="continuation">Salary continuation (periodic)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="severanceTotal">Total Severance Amount ($)</label>
+      <input type="number" id="severanceTotal" value="30000" min="0" step="500">
+    </div>
+    <div class="field">
+      <label for="weeklySalary">Pre-Separation Weekly Salary ($)</label>
+      <input type="number" id="weeklySalary" value="1500" min="0" step="50">
+    </div>
+  </div>
+</div>
+
+<!-- Card 2: UI Info -->
+<div class="card">
+  <h2>Unemployment Insurance</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="stateBucket">State UI Bucket</label>
+      <select id="stateBucket">
+        <option value="nodelay">No-delay states (e.g., CA, NY — lump sum doesn't delay UI)</option>
+        <option value="standard" selected>Standard states (most states — continuation delays UI)</option>
+        <option value="generous">Generous states (extended benefits / higher WBA)</option>
+      </select>
+      <span class="hint">Simplified buckets — verify with your state UI agency before filing</span>
+    </div>
+    <div class="field">
+      <label for="weeklyBenefit">Estimated Weekly UI Benefit ($)</label>
+      <input type="number" id="weeklyBenefit" value="450" min="0" step="10">
+      <span class="hint">Your estimated WBA — check your state's UI calculator</span>
+    </div>
+    <div class="field">
+      <label for="searchWeeks">Expected Job Search Duration (weeks)</label>
+      <input type="number" id="searchWeeks" value="16" min="1" max="99" step="1">
+    </div>
+  </div>
+</div>
+
+<div style="margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calculate()">Sequence Benefits →</button>
+</div>
+
+<!-- Results -->
+<div id="results" class="result-hidden">
+
+  <div class="result-hero">
+    <h3 id="recHeadline">—</h3>
+    <p id="recDetail">—</p>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="val" id="totalSevPay">—</div>
+      <div class="lbl">Total severance</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="totalUIOptimal">—</div>
+      <div class="lbl">UI benefits (optimal timing)</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="totalUISuboptimal">—</div>
+      <div class="lbl">UI benefits (suboptimal timing)</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="benefitLeft">—</div>
+      <div class="lbl">Benefits at risk if mis-timed</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Path Comparison</h2>
+    <table>
+      <thead><tr>
+        <th>Path</th><th>UI Delay</th><th>UI Weeks Captured</th><th>UI Total</th><th>Combined Total</th>
+      </tr></thead>
+      <tbody id="pathTable"></tbody>
+    </table>
+    <div id="stateNote" class="info-box" style="margin-top:0"></div>
+  </div>
+
+  <div class="card">
+    <h2>Recommended Timeline</h2>
+    <div class="timeline" id="timeline"></div>
+    <div class="warn-box" style="margin-top:16px">
+      ⚠️ <strong>Verify with your state UI agency before filing.</strong> This tool uses simplified state buckets. UI rules are complex, change frequently, and vary by employer type, reason for separation, and local rules. The analysis here is illustrative — do not rely on it as legal or benefits advice.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Next Steps</h2>
+    <div class="routing-grid">
+      <a href="../09-job-search-roi-tracker/index.html" class="routing-card">
+        <span class="r-icon">🔍</span>
+        <div><div class="r-title">Job Search ROI Tracker</div><div class="r-desc">Model ROI of different search channels (AL-27)</div></div>
+      </a>
+      <a href="../08-severance-decision-engine/index.html" class="routing-card">
+        <span class="r-icon">📋</span>
+        <div><div class="r-title">Severance Decision Engine</div><div class="r-desc">Evaluate your full severance package (AL-24)</div></div>
+      </a>
+    </div>
+    <div class="results-export-row" style="margin-top:16px">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+  <div class="mcp-panel">
+    <h3>MCP Integration</h3>
+    <div class="mcp-endpoint">GET https://apexlogics.org/.well-known/mcp.json → tool: sequence_severance_ui_timing</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Inbound: Severance Engine (AL-24) · Downstream: Job Search ROI (AL-27)</p>
+  </div>
+
+</div><!-- /results -->
+
+</div><!-- /main -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-143 · Data: 2026 — state UI rules (simplified buckets)
+</footer>
+
+<script>
+// State UI bucket rules (simplified — verify with state UI agency)
+// no-delay: lump-sum severance does NOT delay UI (CA, NJ, OR and similar)
+// standard: continuation severance delays UI claim by weeks equivalent; lump sum varies by state
+// generous: same as standard but higher/extended benefit availability
+const UI_BUCKETS = {
+  nodelay:    { lumpDelay: 0,    contDelay: 'weeks', name: 'No-delay state' },
+  standard:   { lumpDelay: 0,    contDelay: 'weeks', name: 'Standard state'  },
+  generous:   { lumpDelay: 0,    contDelay: 'weeks', name: 'Generous state'  }
+};
+
+let _lastResult = null;
+
+function calculate() {
+  const severanceForm  = document.getElementById('severanceForm').value;
+  const severanceTotal = +document.getElementById('severanceTotal').value;
+  const weeklySalary   = +document.getElementById('weeklySalary').value;
+  const stateBucket    = document.getElementById('stateBucket').value;
+  const weeklyBenefit  = +document.getElementById('weeklyBenefit').value;
+  const searchWeeks    = +document.getElementById('searchWeeks').value;
+
+  if (!severanceTotal || !weeklySalary || !weeklyBenefit) {
+    alert('Please fill in all required fields.'); return;
+  }
+
+  // Continuation pay period equivalent in weeks
+  const continuationWeeks = weeklySalary > 0 ? Math.round(severanceTotal / weeklySalary) : 0;
+
+  // UI delay rules by state bucket + severance form
+  let delayWeeksOptimal = 0;
+  let delayWeeksSuboptimal = 0;
+  let optimalAction = '';
+  let suboptimalAction = '';
+
+  if (stateBucket === 'nodelay') {
+    // No-delay: neither form delays UI
+    delayWeeksOptimal    = 0;
+    delayWeeksSuboptimal = 0;
+    optimalAction    = severanceForm === 'lump' ? 'Request lump sum (no UI delay in your state)' : 'Salary continuation (no UI delay in your state)';
+    suboptimalAction = 'N/A — state does not delay UI for either form';
+  } else {
+    // Standard / generous: continuation pay delays UI by the continuation period
+    if (severanceForm === 'continuation') {
+      delayWeeksOptimal    = 0;      // ask employer to convert to lump sum
+      delayWeeksSuboptimal = continuationWeeks;
+      optimalAction    = 'Negotiate to convert continuation to lump sum → file UI immediately';
+      suboptimalAction = `Salary continuation as-is → UI delayed ${continuationWeeks} weeks`;
+    } else {
+      // lump sum — most states: no delay OR short waiting period
+      delayWeeksOptimal    = 0;
+      delayWeeksSuboptimal = 0;
+      optimalAction    = 'File UI after standard waiting week (lump sum typically doesn\'t delay)';
+      suboptimalAction = 'Filing correctly — no sequencing issue with lump sum';
+    }
+  }
+
+  // UI weeks captured
+  const maxUIWeeks = Math.min(searchWeeks, 26); // typical max benefit period
+  const uiWeeksOptimal    = Math.max(0, maxUIWeeks - delayWeeksOptimal);
+  const uiWeeksSuboptimal = Math.max(0, maxUIWeeks - delayWeeksSuboptimal);
+
+  const totalUIOptimal    = uiWeeksOptimal    * weeklyBenefit;
+  const totalUISuboptimal = uiWeeksSuboptimal * weeklyBenefit;
+  const benefitLeft       = Math.max(0, totalUIOptimal - totalUISuboptimal);
+
+  _lastResult = {
+    severanceForm, severanceTotal, weeklySalary, stateBucket, weeklyBenefit,
+    searchWeeks, continuationWeeks, delayWeeksOptimal, delayWeeksSuboptimal,
+    optimalAction, suboptimalAction, uiWeeksOptimal, uiWeeksSuboptimal,
+    totalUIOptimal, totalUISuboptimal, benefitLeft
+  };
+
+  renderResults(_lastResult);
+}
+
+function renderResults(r) {
+  const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString();
+
+  const missingBenefits = r.benefitLeft > 0;
+  document.getElementById('recHeadline').textContent =
+    missingBenefits ? `Act now: ${r.optimalAction}` : 'No sequencing risk — proceed as structured';
+  document.getElementById('recDetail').textContent =
+    missingBenefits
+      ? `Without restructuring, you risk forgoing ${fmt(r.benefitLeft)} in UI benefits over ${r.delayWeeksSuboptimal} delayed weeks.`
+      : 'Your severance form does not create a UI timing conflict in your state bucket.';
+
+  document.getElementById('totalSevPay').textContent    = fmt(r.severanceTotal);
+  document.getElementById('totalUIOptimal').textContent = fmt(r.totalUIOptimal);
+  document.getElementById('totalUISuboptimal').textContent = fmt(r.totalUISuboptimal);
+  document.getElementById('benefitLeft').textContent    = fmt(r.benefitLeft);
+
+  // Path table
+  document.getElementById('pathTable').innerHTML = `
+    <tr class="hi-row">
+      <td><strong>Optimal: ${r.optimalAction.split('→')[0].trim()}</strong></td>
+      <td class="mono">${r.delayWeeksOptimal} wks</td>
+      <td class="mono">${r.uiWeeksOptimal} wks</td>
+      <td class="mono">${fmt(r.totalUIOptimal)}</td>
+      <td class="mono">${fmt(r.severanceTotal + r.totalUIOptimal)}</td>
+    </tr>
+    <tr>
+      <td>Suboptimal: ${r.suboptimalAction.split('→')[0].trim()}</td>
+      <td class="mono">${r.delayWeeksSuboptimal} wks</td>
+      <td class="mono">${r.uiWeeksSuboptimal} wks</td>
+      <td class="mono">${fmt(r.totalUISuboptimal)}</td>
+      <td class="mono">${fmt(r.severanceTotal + r.totalUISuboptimal)}</td>
+    </tr>
+  `;
+
+  // State note
+  const stateNoteMap = {
+    nodelay:  '✅ Your state does not use wages/severance to disqualify or delay UI. File immediately after your last day of work.',
+    standard: '📋 Standard state: salary continuation pay is typically treated as wages during the period covered, delaying UI eligibility. Lump-sum treatment varies — confirm with your state UI office.',
+    generous: '📋 Your state has relatively generous UI rules, but continuation pay may still delay claims. Confirm with your state UI agency.'
+  };
+  document.getElementById('stateNote').textContent = stateNoteMap[r.stateBucket];
+
+  // Timeline
+  const timelineItems = [];
+  timelineItems.push({ week: 'Week 0', label: 'Last day of employment — COBRA election window opens (60 days)' });
+  if (r.delayWeeksOptimal === 0) {
+    timelineItems.push({ week: 'Week 1', label: 'File UI claim (most states have 1-week waiting period)' });
+    timelineItems.push({ week: 'Week 2', label: 'First UI payment expected (week 2 of claim)' });
+  } else {
+    timelineItems.push({ week: `Week ${r.delayWeeksOptimal + 1}`, label: 'File UI claim after continuation period ends' });
+  }
+  if (r.severanceForm === 'continuation' && r.delayWeeksSuboptimal > 0) {
+    timelineItems.push({ week: `Week ${r.continuationWeeks}`, label: `Salary continuation ends — ${fmt(r.severanceTotal)} received` });
+  }
+  timelineItems.push({ week: `Week ${Math.round(r.searchWeeks / 2)}`, label: 'Mid-search checkpoint — reassess job search strategy' });
+  timelineItems.push({ week: `Week ${r.searchWeeks}`, label: 'Target start date at new role' });
+
+  document.getElementById('timeline').innerHTML = timelineItems.map(item =>
+    `<div class="tl-item">
+      <div class="tl-week">${item.week}</div>
+      <div class="tl-dot"></div>
+      <div class="tl-content">${item.label}</div>
+    </div>`
+  ).join('');
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+function exportMarkdown() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString();
+  const md =
+`# Severance + UI Timing — AL-143
+
+**Severance:** ${fmt(r.severanceTotal)} (${r.severanceForm === 'lump' ? 'lump sum' : 'salary continuation'}) · **State bucket:** ${r.stateBucket} · **Weekly UI benefit:** ${fmt(r.weeklyBenefit)}
+
+## Optimal Sequencing
+${r.optimalAction}
+
+## Path Comparison
+| Path | UI Delay | UI Weeks | UI Total | Combined |
+|---|---|---|---|---|
+| Optimal | ${r.delayWeeksOptimal} wks | ${r.uiWeeksOptimal} | ${fmt(r.totalUIOptimal)} | ${fmt(r.severanceTotal + r.totalUIOptimal)} |
+| Suboptimal | ${r.delayWeeksSuboptimal} wks | ${r.uiWeeksSuboptimal} | ${fmt(r.totalUISuboptimal)} | ${fmt(r.severanceTotal + r.totalUISuboptimal)} |
+
+**Benefits at risk if mis-timed:** ${fmt(r.benefitLeft)}
+
+---
+*Generated by ApexLogics AL-143 · apexlogics.org · Data: 2026 state UI buckets (verify with state agency)*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'severance-ui-timing-AL143.md'; a.click();
+}
+
+function exportAP2() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "severance_ui_timing_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-143",
+    tool_id: "136-severance-ui-timing",
+    inputs: {
+      severanceForm: r.severanceForm,
+      severanceTotal: r.severanceTotal,
+      weeklySalary: r.weeklySalary,
+      stateBucket: r.stateBucket,
+      weeklyBenefit: r.weeklyBenefit,
+      searchWeeks: r.searchWeeks
+    },
+    outputs: {
+      optimalAction: r.optimalAction,
+      uiDelayWeeks: r.delayWeeksOptimal,
+      uiWeeksCaptured: r.uiWeeksOptimal,
+      totalUIOptimal: Math.round(r.totalUIOptimal),
+      benefitsAtRisk: Math.round(r.benefitLeft)
+    },
+    downstream_handoff_candidates: ["AL-27"],
+    metadata: { license: "CC-BY-4.0", data_vintage: "2026 state UI buckets" }
+  };
+  const AP2Schema = {
+    validMandateTypes: ['severance_ui_timing_record'],
+    validate: function(p) {
+      const errors = [];
+      ['ap2_version','mandate_type','al_id','inputs','outputs'].forEach(k => {
+        if (!p[k]) errors.push('missing: ' + k);
+      });
+      if (p.mandate_type && !this.validMandateTypes.includes(p.mandate_type))
+        errors.push('unrecognized mandate_type: ' + p.mandate_type);
+      return { valid: errors.length === 0, errors };
+    }
+  };
+  const result = AP2Schema.validate(payload);
+  if (!result.valid) { alert('AP2 validation failed: ' + result.errors.join('; ')); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  const pad = n => String(n).padStart(2,'0');
+  const d = new Date();
+  const ts = d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+  a.download = 'AL143_136-severance-ui-timing_' + ts + '.ap2.json'; a.click();
+}
+</script>
+</body>
+</html>
