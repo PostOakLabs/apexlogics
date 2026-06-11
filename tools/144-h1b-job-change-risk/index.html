@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H-1B Job-Change Risk & Cost Calculator | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--coral:#F07167;--coral-dim:rgba(240,113,103,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;--warn:#FBBF24;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--coral);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--coral);border-color:var(--coral);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:960px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:660px}
+.pii-banner{max-width:960px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:960px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:660px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--coral)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--coral);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--coral);color:var(--coral)}
+.result-hidden{display:none}
+.result-hero{background:linear-gradient(135deg,var(--coral-dim),rgba(232,168,56,.06));border:2px solid rgba(240,113,103,.3);border-radius:12px;padding:24px;margin-bottom:20px;text-align:center}
+.result-hero .rec{font-family:var(--font-serif);font-size:28px;margin:8px 0;color:var(--coral)}
+.result-hero .sublabel{font-size:13px;color:var(--muted);margin-top:4px}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--coral);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin-bottom:8px}
+th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:14px}
+td.mono{font-family:var(--font-mono)}
+.warn-box{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--warn);margin-top:14px}
+.info-box{background:rgba(76,175,125,.07);border:1px solid rgba(76,175,125,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--success);margin-top:14px}
+.danger-box{background:rgba(232,85,85,.07);border:1px solid rgba(232,85,85,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--danger);margin-top:14px}
+.risk-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:600}
+.risk-low{background:rgba(76,175,125,.15);color:var(--success)}
+.risk-mid{background:rgba(251,191,36,.15);color:var(--warn)}
+.risk-high{background:rgba(232,85,85,.15);color:var(--danger)}
+.timeline{border-left:2px solid var(--border);margin:8px 0 8px 16px;padding-left:20px}
+.timeline-item{position:relative;padding:8px 0;font-size:13px}
+.timeline-item::before{content:'';position:absolute;left:-25px;top:14px;width:10px;height:10px;border-radius:50%;background:var(--coral);border:2px solid var(--bg)}
+.routing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.routing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:flex-start;gap:10px;text-decoration:none}
+.routing-card:hover{border-color:var(--coral);text-decoration:none}
+.routing-card .r-icon{font-size:20px}
+.routing-card .r-title{font-weight:600;color:var(--coral);margin-bottom:2px;font-size:13px}
+.routing-card .r-desc{font-size:12px;color:var(--muted)}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.mcp-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px}
+.mcp-panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.mcp-endpoint{font-family:var(--font-mono);font-size:12px;color:var(--coral);background:var(--bg);padding:8px 12px;border-radius:6px;word-break:break-all}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tag-amber{background:rgba(232,168,56,.15);color:var(--amber)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}
+footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-amber">Immigration</span></div>
+  <h1>H-1B Job-Change Risk & Cost Calculator</h1>
+  <p>Model the filing timeline, gap risk, legal costs, and income exposure when changing jobs on an H-1B — including portability under AC21, simultaneous filing strategies, and the cap-gap.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<!-- Card 1: Current H-1B Status -->
+<div class="card">
+  <h2>Current H-1B Status</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="h1bStatus">Current H-1B Situation</label>
+      <select id="h1bStatus">
+        <option value="active_h1b">Active H-1B with current employer</option>
+        <option value="pending_transfer">H-1B transfer pending with new employer</option>
+        <option value="cap_subject">Cap-subject (new H-1B, not yet started)</option>
+        <option value="cap_exempt">Cap-exempt position (nonprofit, university)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="i94Expiry">Months Until I-94 / H-1B Expires</label>
+      <input type="number" id="i94Expiry" value="18" min="1" max="72" step="1">
+      <span class="hint">Check your I-94 at i94.cbp.dhs.gov</span>
+    </div>
+    <div class="field">
+      <label for="priorityDate">Has Approved I-140 / Priority Date?</label>
+      <select id="priorityDate">
+        <option value="no">No approved I-140</option>
+        <option value="yes_current">Yes — priority date is current</option>
+        <option value="yes_backlogged">Yes — priority date is backlogged</option>
+      </select>
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:16px">
+    <div class="field">
+      <label for="yearsOnH1b">Years Already on H-1B</label>
+      <input type="number" id="yearsOnH1b" value="3" min="0" max="6" step="0.5">
+      <span class="hint">H-1B max is 6 years (3+3); extensions past 6 yr require approved I-140</span>
+    </div>
+    <div class="field">
+      <label for="nationality">Nationality (for wait-list context)</label>
+      <select id="nationality">
+        <option value="india">India (EB-2/3 severely backlogged)</option>
+        <option value="china">China (EB-2/3 backlogged)</option>
+        <option value="other" selected>Other country (typically current or short wait)</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- Card 2: Job Change Details -->
+<div class="card">
+  <h2>Job Change Details</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="currentSalary">Current Salary ($)</label>
+      <input type="number" id="currentSalary" value="130000" min="1" step="1000">
+    </div>
+    <div class="field">
+      <label for="newSalary">New Offer Salary ($)</label>
+      <input type="number" id="newSalary" value="160000" min="1" step="1000">
+    </div>
+    <div class="field">
+      <label for="signingBonus">Signing Bonus ($)</label>
+      <input type="number" id="signingBonus" value="20000" min="0" step="1000">
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:16px">
+    <div class="field">
+      <label for="startStrategy">Filing / Start Strategy</label>
+      <select id="startStrategy">
+        <option value="portability">AC21 Portability — file H-1B transfer, start immediately upon receipt</option>
+        <option value="wait_approval">Wait for H-1B transfer approval before starting</option>
+        <option value="concurrent">Concurrent filing — keep current job until transfer approved</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="gapWeeks">Expected Gap Weeks (if any, between jobs)</label>
+      <input type="number" id="gapWeeks" value="0" min="0" max="52" step="1">
+      <span class="hint">Days out of status = deportability risk; 0 is ideal with portability</span>
+    </div>
+  </div>
+</div>
+
+<!-- Card 3: Legal & Filing Costs -->
+<div class="card">
+  <h2>Legal & Filing Costs</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="attorneyFee">Attorney Fee for Transfer ($)</label>
+      <input type="number" id="attorneyFee" value="3500" min="0" step="500">
+      <span class="hint">Typical range: $2,000–$6,000 depending on complexity</span>
+    </div>
+    <div class="field">
+      <label for="uiscisFilingFee">USCIS Filing Fee ($)</label>
+      <input type="number" id="uscisFilingFee" value="730" min="0" step="10">
+      <span class="hint">I-129 base fee + ACWIA + fraud prevention (2025 fee schedule)</span>
+    </div>
+    <div class="field">
+      <label for="premiumProcessing">Premium Processing? ($)</label>
+      <select id="premiumProcessing">
+        <option value="0">No — standard processing</option>
+        <option value="2805" selected>Yes — $2,805 (15 business days)</option>
+      </select>
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:16px">
+    <div class="field">
+      <label for="paidByEmployer">Who Pays Legal / Filing Fees?</label>
+      <select id="paidByEmployer">
+        <option value="employer" selected>New employer pays all fees</option>
+        <option value="split">Split — employer pays USCIS, I pay attorney</option>
+        <option value="employee">I pay all fees</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="transferTimeline">Estimated Transfer Processing Time (weeks)</label>
+      <input type="number" id="transferTimeline" value="4" min="1" max="24" step="1">
+      <span class="hint">Premium: ~3 weeks · Standard: 3–6 months</span>
+    </div>
+  </div>
+</div>
+
+<div style="margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calculate()">Assess H-1B Job-Change Risk →</button>
+</div>
+
+<!-- Results -->
+<div id="results" class="result-hidden">
+
+  <div class="result-hero">
+    <div style="font-size:13px;color:var(--muted)">H-1B Job-Change Assessment</div>
+    <div class="rec" id="riskLabel">—</div>
+    <div class="sublabel" id="riskSub">—</div>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="val" id="outOfPocketCost">—</div>
+      <div class="lbl">Your out-of-pocket cost</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="salaryGain">—</div>
+      <div class="lbl">Annual salary gain</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="paybackMonths">—</div>
+      <div class="lbl">Months to recoup costs</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="gapRisk">—</div>
+      <div class="lbl">Unlawful presence risk</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="firstYearNet">—</div>
+      <div class="lbl">First-year net gain</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Filing Timeline</h2>
+    <div class="timeline" id="timeline"></div>
+    <div id="ac21Box"></div>
+  </div>
+
+  <div class="card">
+    <h2>Cost Breakdown</h2>
+    <table>
+      <thead><tr><th>Item</th><th>Total Cost</th><th>Your Share</th></tr></thead>
+      <tbody id="costTable"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Key Risk Flags</h2>
+    <div id="riskFlags"></div>
+  </div>
+
+  <div class="card">
+    <h2>3-Year Financial Impact</h2>
+    <table>
+      <thead><tr><th>Year</th><th>Stay Income</th><th>New Offer Income</th><th>Net Advantage</th></tr></thead>
+      <tbody id="financialTable"></tbody>
+    </table>
+    <div id="financialNote" class="info-box"></div>
+  </div>
+
+  <div class="card">
+    <h2>Next Steps</h2>
+    <div class="routing-grid">
+      <a href="../145-greencard-wait-cost/index.html" class="routing-card">
+        <span class="r-icon">🟢</span>
+        <div><div class="r-title">Green-Card Wait-Cost Estimator</div><div class="r-desc">Model the cost of your priority date backlog (AL-152)</div></div>
+      </a>
+      <a href="../113-career-roi-calculator/index.html" class="routing-card">
+        <span class="r-icon">📈</span>
+        <div><div class="r-title">Career ROI Calculator</div><div class="r-desc">Full compensation comparison with benefits (AL-120)</div></div>
+      </a>
+    </div>
+    <div class="results-export-row">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+  <div class="mcp-panel">
+    <h3>MCP Integration</h3>
+    <div class="mcp-endpoint">GET https://apexlogics.org/.well-known/mcp.json → tool: assess_h1b_job_change</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Downstream: Green-Card Wait-Cost Estimator (AL-152), Career ROI (AL-120)</p>
+  </div>
+
+</div><!-- /results -->
+</div><!-- /main -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-151 · Data: INA §214(n) AC21; USCIS fee schedule 2024; processing times approximate
+</footer>
+
+<script>
+// ── Constants ─────────────────────────────────────────────────────────────────
+// AC21 portability: INA §214(n) — H-1B holder can change jobs if:
+//   • New employer files H-1B transfer before old H-1B expires
+//   • New job is in same or similar occupational classification
+//   • Petition has been pending ≥180 days (for I-485 portability)
+// H-1B maximum: 6 years (8 CFR §214.2(h)(13)(iii)(A))
+//   Extensions beyond 6 yr: require approved I-140 (INA §106(a) or §104(c) of AC21)
+// Unlawful presence: accumulation >180 days triggers 3-yr bar; >365 days triggers 10-yr bar
+// Grace period: 60-day grace period after I-94 expiry for cap-subject H-1B (8 CFR §214.1(l))
+// USCIS filing fees: based on 2024 final rule — I-129 $730 base (small employer); ACWIA + fraud included
+// Premium processing I-129: $2,805 (as of 2024 final rule)
+
+let _lastResult = null;
+
+function calculate() {
+  const h1bStatus       = document.getElementById('h1bStatus').value;
+  const i94Expiry       = +document.getElementById('i94Expiry').value;
+  const priorityDate    = document.getElementById('priorityDate').value;
+  const yearsOnH1b      = +document.getElementById('yearsOnH1b').value;
+  const nationality     = document.getElementById('nationality').value;
+  const currentSalary   = +document.getElementById('currentSalary').value;
+  const newSalary       = +document.getElementById('newSalary').value;
+  const signingBonus    = +document.getElementById('signingBonus').value;
+  const startStrategy   = document.getElementById('startStrategy').value;
+  const gapWeeks        = +document.getElementById('gapWeeks').value;
+  const attorneyFee     = +document.getElementById('attorneyFee').value;
+  const uscisFilingFee  = +document.getElementById('uscisFilingFee').value;
+  const premiumProc     = +document.getElementById('premiumProcessing').value;
+  const paidByEmployer  = document.getElementById('paidByEmployer').value;
+  const transferTimeline = +document.getElementById('transferTimeline').value;
+
+  // ── Total cost + employee share ──
+  const totalFees = attorneyFee + uscisFilingFee + premiumProc;
+  let employeeShare;
+  if (paidByEmployer === 'employer')      employeeShare = 0;
+  else if (paidByEmployer === 'split')    employeeShare = attorneyFee;
+  else                                    employeeShare = totalFees;
+
+  // ── Salary gain & payback ──
+  const salaryGain = newSalary - currentSalary;
+  const firstYearGain = signingBonus + salaryGain - employeeShare;
+  const paybackMonths = employeeShare > 0 ? Math.ceil(employeeShare / (salaryGain / 12)) : 0;
+
+  // ── Risk assessment ──
+  const hasUnlawfulPresenceRisk = gapWeeks > 0;
+  const gapDays = gapWeeks * 7;
+  let unlawfulPresenceLevel = 'none';
+  if (gapDays > 0 && gapDays <= 180) unlawfulPresenceLevel = 'low';
+  if (gapDays > 180 && gapDays <= 365) unlawfulPresenceLevel = 'high_3yr_bar';
+  if (gapDays > 365) unlawfulPresenceLevel = 'high_10yr_bar';
+
+  const h1bYearsLeft = 6 - yearsOnH1b;
+  const needsExtension = h1bYearsLeft <= 1.5;
+  const extensionPossible = priorityDate === 'yes_backlogged' || priorityDate === 'yes_current';
+
+  // Overall risk level
+  let riskLevel, riskText, riskSub;
+  const flags = [];
+  if (unlawfulPresenceLevel === 'high_3yr_bar' || unlawfulPresenceLevel === 'high_10yr_bar') {
+    riskLevel = 'high';
+  } else if (gapDays > 0 || (needsExtension && !extensionPossible) || i94Expiry < 6) {
+    riskLevel = 'medium';
+  } else {
+    riskLevel = 'low';
+  }
+
+  if (riskLevel === 'low') {
+    riskText = 'Low Risk — Job Change Feasible';
+    riskSub = 'Filing timeline and status are manageable. Proceed with attorney guidance.';
+  } else if (riskLevel === 'medium') {
+    riskText = 'Medium Risk — Action Required Before Starting';
+    riskSub = 'Some issues need resolution. Review risk flags below before accepting the offer.';
+  } else {
+    riskText = 'High Risk — Consult Immigration Attorney Immediately';
+    riskSub = `${gapDays} days of potential unlawful presence. Do not change status without legal counsel.`;
+  }
+
+  // Build risk flags
+  if (gapWeeks > 0) flags.push({ level:'danger', text: `${gapWeeks}-week gap (${gapDays} days) between jobs creates unlawful presence risk. H-1B holders have a 60-day grace period after I-94 expiry — any gap in employer status before transfer is filed = potential violation.` });
+  if (unlawfulPresenceLevel === 'high_3yr_bar') flags.push({ level:'danger', text: `>180 days unlawful presence triggers a 3-year bar from re-entry to the US.` });
+  if (unlawfulPresenceLevel === 'high_10yr_bar') flags.push({ level:'danger', text: `>365 days unlawful presence triggers a 10-year bar from re-entry.` });
+  if (needsExtension && !extensionPossible) flags.push({ level:'warn', text: `Only ${h1bYearsLeft.toFixed(1)} years remaining on H-1B (6-year max) and no approved I-140 to extend beyond 6 years. You may need a new H-1B petition or to transition to another status.` });
+  if (needsExtension && extensionPossible) flags.push({ level:'info', text: `Approved I-140 detected — you can extend H-1B beyond 6 years in 1-year increments (INA §104(c)) or 3-year increments (INA §106(a)) if priority date is not current.` });
+  if (i94Expiry < 6) flags.push({ level:'warn', text: `I-94 expires in ${i94Expiry} months. Ensure H-1B transfer is filed and a new I-94 is issued before expiry.` });
+  if (startStrategy === 'portability') flags.push({ level:'info', text: `AC21 portability (INA §214(n)): you can start the new job as soon as the transfer petition is filed with USCIS (not approved). Keep receipt notice as work authorization proof.` });
+  if (startStrategy === 'wait_approval') flags.push({ level:'warn', text: `Waiting for approval delays your start by ~${transferTimeline} weeks. You remain authorized with current employer during this time but forfeit salary gain for that period.` });
+  if (nationality === 'india' && priorityDate === 'yes_backlogged') flags.push({ level:'warn', text: `Indian nationals with backlogged EB-2/EB-3 priority dates should not change employers casually — AC21 I-485 portability requires the I-485 to have been pending ≥180 days for "same or similar" job protection.` });
+
+  // ── Timeline ──
+  const timeline = [];
+  timeline.push({ day: 'Day 1', event: 'Sign offer letter; ensure H-1B transfer filing is imminent' });
+  timeline.push({ day: 'Day 1–3', event: 'New employer\'s attorney files I-129 H-1B transfer with USCIS; premium processing adds 15 business days SLA' });
+  if (startStrategy === 'portability') {
+    timeline.push({ day: `Week 1`, event: 'Start new job upon USCIS receipt notice (portability). Keep receipt as work auth. proof.' });
+    timeline.push({ day: `Week ${transferTimeline}`, event: 'H-1B transfer approved — new I-94 issued' });
+  } else {
+    timeline.push({ day: `Week ${transferTimeline}`, event: 'H-1B transfer approved — start new job' });
+  }
+  if (i94Expiry < 6) {
+    timeline.push({ day: 'Critical', event: `I-94 expires in ${i94Expiry} months — ensure new I-94 with extended dates is issued before then` });
+  }
+
+  // ── 3-year financial ──
+  const years = [1, 2, 3];
+  const financials = years.map(y => {
+    const stayIncome = currentSalary * y;
+    const gainFromNew = newSalary * y + (y === 1 ? signingBonus - employeeShare : 0);
+    return { year: y, stayIncome, gainFromNew, advantage: gainFromNew - stayIncome };
+  });
+
+  _lastResult = {
+    h1bStatus, i94Expiry, priorityDate, yearsOnH1b, nationality,
+    currentSalary, newSalary, signingBonus, startStrategy, gapWeeks, gapDays,
+    attorneyFee, uscisFilingFee, premiumProc, paidByEmployer, transferTimeline,
+    totalFees, employeeShare, salaryGain, firstYearGain, paybackMonths,
+    unlawfulPresenceLevel, h1bYearsLeft, needsExtension, extensionPossible,
+    riskLevel, riskText, riskSub, flags, timeline, financials
+  };
+
+  renderResults(_lastResult);
+}
+
+function fmt(n){ return '$' + Math.round(Math.abs(n)).toLocaleString(); }
+
+function renderResults(r) {
+  document.getElementById('riskLabel').textContent = r.riskText;
+  document.getElementById('riskSub').textContent   = r.riskSub;
+
+  document.getElementById('outOfPocketCost').textContent = r.employeeShare > 0 ? fmt(r.employeeShare) : '$0 (employer pays)';
+  document.getElementById('salaryGain').textContent      = (r.salaryGain >= 0 ? '+' : '–') + fmt(r.salaryGain) + '/yr';
+  document.getElementById('paybackMonths').textContent   = r.paybackMonths > 0 ? r.paybackMonths + ' months' : 'Immediate';
+  document.getElementById('gapRisk').textContent         = r.gapDays > 0 ? `${r.gapDays} days at-risk` : 'None (no gap)';
+  document.getElementById('firstYearNet').textContent    = (r.firstYearGain >= 0 ? '+' : '–') + fmt(Math.abs(r.firstYearGain));
+
+  // Timeline
+  document.getElementById('timeline').innerHTML = r.timeline.map(t =>
+    `<div class="timeline-item"><strong>${t.day}:</strong> ${t.event}</div>`
+  ).join('');
+
+  const ac21Box = document.getElementById('ac21Box');
+  if (r.startStrategy === 'portability') {
+    ac21Box.innerHTML = `<div class="info-box">✅ <strong>AC21 Portability (INA §214(n)):</strong> As long as the new employer files the transfer petition before your I-94 expires, you can start working the day USCIS receives the petition. Keep the USCIS receipt notice — it is your work authorization proof during the processing period.</div>`;
+  } else if (r.startStrategy === 'concurrent') {
+    ac21Box.innerHTML = `<div class="info-box">💡 <strong>Concurrent Filing:</strong> Maintain your current employment until the transfer is approved. This is the safest approach but delays your start and may be limited by non-compete or notice requirements.</div>`;
+  } else {
+    ac21Box.innerHTML = `<div class="warn-box">⚠️ <strong>Waiting for Approval:</strong> You are not using portability. You cannot start the new job until the I-129 transfer is approved. This adds ${r.transferTimeline} weeks of delay and income loss.</div>`;
+  }
+
+  // Cost table
+  document.getElementById('costTable').innerHTML = `
+    <tr><td>Attorney fee (H-1B transfer)</td><td class="mono">${fmt(r.attorneyFee)}</td><td class="mono">${r.paidByEmployer === 'employee' || r.paidByEmployer === 'split' ? fmt(r.attorneyFee) : '$0'}</td></tr>
+    <tr><td>USCIS filing fee (I-129)</td><td class="mono">${fmt(r.uscisFilingFee)}</td><td class="mono">${r.paidByEmployer === 'employee' ? fmt(r.uscisFilingFee) : '$0'}</td></tr>
+    <tr><td>Premium processing</td><td class="mono">${r.premiumProc > 0 ? fmt(r.premiumProc) : '$0'}</td><td class="mono">${r.paidByEmployer === 'employee' && r.premiumProc > 0 ? fmt(r.premiumProc) : '$0'}</td></tr>
+    <tr style="font-weight:600"><td>Total</td><td class="mono">${fmt(r.totalFees)}</td><td class="mono" style="color:var(--coral)">${fmt(r.employeeShare)}</td></tr>`;
+
+  // Risk flags
+  document.getElementById('riskFlags').innerHTML = r.flags.length
+    ? r.flags.map(f => `<div class="${f.level === 'danger' ? 'danger-box' : f.level === 'warn' ? 'warn-box' : 'info-box'}" style="margin-top:10px">${f.level === 'danger' ? '🚨' : f.level === 'warn' ? '⚠️' : '💡'} ${f.text}</div>`).join('')
+    : '<div class="info-box">✅ No significant risk flags identified for this job change profile.</div>';
+
+  // Financial table
+  document.getElementById('financialTable').innerHTML = r.financials.map(f =>
+    `<tr><td>Year ${f.year}</td><td class="mono">${fmt(f.stayIncome)}</td><td class="mono">${fmt(f.gainFromNew)}</td><td class="mono" style="color:${f.advantage >= 0 ? 'var(--success)' : 'var(--danger)'}">${f.advantage >= 0 ? '+' : '–'}${fmt(Math.abs(f.advantage))}</td></tr>`
+  ).join('');
+
+  const yr3 = r.financials[2];
+  document.getElementById('financialNote').innerHTML =
+    yr3.advantage > 0
+    ? `✅ Over 3 years, the new role adds ${fmt(yr3.advantage)} net (after your share of fees and including signing bonus).`
+    : `⚠️ Over 3 years the new role is behind by ${fmt(Math.abs(yr3.advantage))}. Salary delta may not justify costs and risks.`;
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+// ── Exports ───────────────────────────────────────────────────────────────────
+function exportMarkdown() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const md =
+`# H-1B Job-Change Risk & Cost Calculator — AL-151
+
+**Status:** ${r.h1bStatus} · **I-94 expires:** ${r.i94Expiry} mo · **Years on H-1B:** ${r.yearsOnH1b} · **Nationality:** ${r.nationality}
+**Gap weeks:** ${r.gapWeeks} · **Strategy:** ${r.startStrategy} · **Transfer timeline:** ${r.transferTimeline} wk
+
+## Risk Assessment: ${r.riskText}
+${r.riskSub}
+
+## Cost Summary
+| Item | Total | Your Share |
+|---|---|---|
+| Attorney fee | ${fmt(r.attorneyFee)} | ${r.paidByEmployer !== 'employer' ? fmt(r.attorneyFee) : '$0'} |
+| USCIS filing fee | ${fmt(r.uscisFilingFee)} | ${r.paidByEmployer === 'employee' ? fmt(r.uscisFilingFee) : '$0'} |
+| Premium processing | ${fmt(r.premiumProc)} | ${r.paidByEmployer === 'employee' ? fmt(r.premiumProc) : '$0'} |
+| **Your out-of-pocket** | | **${fmt(r.employeeShare)}** |
+
+## Financial Impact
+- Salary gain: ${r.salaryGain >= 0 ? '+' : ''}${fmt(r.salaryGain)}/yr
+- First-year net: ${r.firstYearGain >= 0 ? '+' : '–'}${fmt(Math.abs(r.firstYearGain))} (incl. bonus, less costs)
+- Payback period: ${r.paybackMonths > 0 ? r.paybackMonths + ' months' : 'Immediate'}
+
+## Risk Flags
+${r.flags.length ? r.flags.map(f => `- [${f.level.toUpperCase()}] ${f.text}`).join('\n') : '- No significant flags'}
+
+---
+*Generated by ApexLogics AL-151 · apexlogics.org · Not legal advice — consult an immigration attorney*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'h1b-job-change-AL151.md'; a.click();
+}
+
+function exportAP2() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "h1b_change_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-151",
+    tool_id: "144-h1b-job-change-risk",
+    inputs: {
+      h1bStatus: r.h1bStatus, i94ExpiryMonths: r.i94Expiry,
+      priorityDate: r.priorityDate, yearsOnH1b: r.yearsOnH1b, nationality: r.nationality,
+      currentSalary: r.currentSalary, newSalary: r.newSalary, signingBonus: r.signingBonus,
+      startStrategy: r.startStrategy, gapWeeks: r.gapWeeks,
+      attorneyFee: r.attorneyFee, premiumProcessing: r.premiumProc > 0,
+      paidByEmployer: r.paidByEmployer, transferTimelineWeeks: r.transferTimeline
+    },
+    outputs: {
+      riskLevel: r.riskLevel, employeeOutOfPocket: r.employeeShare,
+      annualSalaryGain: r.salaryGain, firstYearNetGain: Math.round(r.firstYearGain),
+      paybackMonths: r.paybackMonths, unlawfulPresenceRisk: r.unlawfulPresenceLevel,
+      gapDays: r.gapDays, needsExtension: r.needsExtension,
+      riskFlagCount: r.flags.filter(f => f.level === 'danger' || f.level === 'warn').length
+    },
+    downstream_handoff_candidates: ["AL-152", "AL-120"],
+    metadata: { license: "CC-BY-4.0", data_vintage: "INA §214(n) AC21; USCIS fee schedule 2024; not legal advice" }
+  };
+  const AP2Schema = {
+    validMandateTypes: ['h1b_change_record'],
+    validate: function(p) {
+      const errors = [];
+      ['ap2_version','mandate_type','al_id','inputs','outputs'].forEach(k => {
+        if (!p[k]) errors.push('missing: ' + k);
+      });
+      if (p.mandate_type && !this.validMandateTypes.includes(p.mandate_type))
+        errors.push('unrecognized mandate_type: ' + p.mandate_type);
+      return { valid: errors.length === 0, errors };
+    }
+  };
+  const vr = AP2Schema.validate(payload);
+  if (!vr.valid) { alert('AP2 validation error: ' + vr.errors.join(', ')); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'ap2-h1b-job-change-AL151.json'; a.click();
+}
+</script>
+</body>
+</html>

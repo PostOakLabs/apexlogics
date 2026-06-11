@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>83(b) Election Decision Engine | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--coral:#F07167;--coral-dim:rgba(240,113,103,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;--warn:#FBBF24;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--coral);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--coral);border-color:var(--coral);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:900px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:640px}
+.pii-banner{max-width:900px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:900px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.card h3{font-size:14px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:20px 0 12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:620px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--coral)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.toggle-row{display:flex;align-items:center;gap:12px;padding:10px 0}
+.toggle-label{font-size:13px;color:var(--muted)}
+.toggle{position:relative;display:inline-block;width:42px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--surface2);border:1px solid var(--border);border-radius:22px;transition:.2s}
+.toggle-slider:before{position:absolute;content:'';width:16px;height:16px;left:2px;top:2px;background:var(--muted);border-radius:50%;transition:.2s}
+.toggle input:checked + .toggle-slider{background:var(--coral-dim);border-color:var(--coral)}
+.toggle input:checked + .toggle-slider:before{transform:translateX(20px);background:var(--coral)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--coral);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--coral);color:var(--coral)}
+.result-hidden{display:none}
+.result-hero{background:linear-gradient(135deg,var(--coral-dim),rgba(232,168,56,.06));border:2px solid rgba(240,113,103,.3);border-radius:12px;padding:24px;margin-bottom:20px;text-align:center}
+.result-hero .rec{font-family:var(--font-serif);font-size:28px;margin:8px 0;color:var(--coral)}
+.result-hero .sublabel{font-size:13px;color:var(--muted);margin-top:4px}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--coral);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin-bottom:16px}
+th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:14px}
+td.mono{font-family:var(--font-mono)}
+tr.hi-row td{font-weight:600;background:rgba(240,113,103,.06)}
+.warn-box{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--warn);margin-top:14px}
+.info-box{background:rgba(76,175,125,.07);border:1px solid rgba(76,175,125,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--success);margin-top:14px}
+.danger-box{background:rgba(232,85,85,.07);border:1px solid rgba(232,85,85,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--danger);margin-top:14px}
+.routing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.routing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:flex-start;gap:10px;text-decoration:none}
+.routing-card:hover{border-color:var(--coral);text-decoration:none}
+.routing-card .r-icon{font-size:20px}
+.routing-card .r-title{font-weight:600;color:var(--coral);margin-bottom:2px;font-size:13px}
+.routing-card .r-desc{font-size:12px;color:var(--muted)}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.mcp-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px}
+.mcp-panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.mcp-endpoint{font-family:var(--font-mono);font-size:12px;color:var(--coral);background:var(--bg);padding:8px 12px;border-radius:6px;word-break:break-all}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tag-amber{background:rgba(232,168,56,.15);color:var(--amber)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}
+footer.tool-footer a:hover{color:var(--amber)}
+.deadline-banner{background:rgba(232,85,85,.1);border:2px solid rgba(232,85,85,.4);border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:14px}
+.deadline-banner .icon{font-size:28px}
+.deadline-banner .text strong{color:var(--danger);font-size:15px}
+.deadline-banner .text p{font-size:13px;color:var(--muted);margin-top:2px}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-amber">Startup Equity</span></div>
+  <h1>83(b) Election Decision Engine</h1>
+  <p>For early-exercise options or restricted stock at grant, model the tax-now vs. tax-at-vest tradeoff and frame the irreversible 30-day filing deadline.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<div class="deadline-banner">
+  <span class="icon">⏰</span>
+  <div class="text">
+    <strong>30-Day Deadline — Irreversible</strong>
+    <p>An 83(b) election must be filed with the IRS within 30 days of the grant/purchase date. Late filings are not accepted. Once missed, the election cannot be made retroactively.</p>
+  </div>
+</div>
+
+<!-- Card 1: Grant Details -->
+<div class="card">
+  <h2>Grant / Purchase Details</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="shares">Shares Granted / Purchased</label>
+      <input type="number" id="shares" value="500000" min="1" step="1000">
+    </div>
+    <div class="field">
+      <label for="strikePrice">Strike / Purchase Price ($ per share)</label>
+      <input type="number" id="strikePrice" value="0.001" min="0" step="0.001">
+      <span class="hint">$0.001 is typical for founder restricted stock; early-exercise ISOs use the 409A FMV</span>
+    </div>
+    <div class="field">
+      <label for="fmvAtGrant">Current 409A FMV at Grant ($ per share)</label>
+      <input type="number" id="fmvAtGrant" value="0.10" min="0" step="0.001">
+      <span class="hint">The spread at grant is what's taxable if you file 83(b) now</span>
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:16px">
+    <div class="field">
+      <label for="vestingYears">Vesting Period (years)</label>
+      <input type="number" id="vestingYears" value="4" min="1" max="10" step="0.5">
+    </div>
+    <div class="field">
+      <label for="grantType">Grant Type</label>
+      <select id="grantType">
+        <option value="restricted_stock">Restricted Stock (RS) — §83(b) most common here</option>
+        <option value="early_exercise_iso">Early-Exercised ISO — §83(b) available if exercised before vesting</option>
+        <option value="early_exercise_nso">Early-Exercised NSO</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- Card 2: Exit Scenarios -->
+<div class="card">
+  <h2>Exit Scenarios</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="fmvLow">Expected FMV at Vest — Low ($)</label>
+      <input type="number" id="fmvLow" value="1.00" min="0" step="0.01">
+    </div>
+    <div class="field">
+      <label for="fmvBase">Expected FMV at Vest — Base ($)</label>
+      <input type="number" id="fmvBase" value="5.00" min="0" step="0.01">
+    </div>
+    <div class="field">
+      <label for="fmvHigh">Expected FMV at Vest — High ($)</label>
+      <input type="number" id="fmvHigh" value="20.00" min="0" step="0.01">
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:16px">
+    <div class="field">
+      <label for="forfeitureProb">P(Forfeiture Before Full Vest) — %</label>
+      <input type="number" id="forfeitureProb" value="15" min="0" max="100" step="1">
+      <span class="hint">Risk of leaving / termination before full vesting. Higher for early-stage.</span>
+    </div>
+    <div class="field">
+      <label for="taxBracket">Ordinary Income Tax Rate Bucket</label>
+      <select id="taxBracket">
+        <option value="0.22">22% — ~$50K–$100K income</option>
+        <option value="0.24" selected>24% — ~$100K–$200K income</option>
+        <option value="0.32">32% — ~$200K–$400K income</option>
+        <option value="0.37">37% — $400K+ income</option>
+      </select>
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:16px">
+    <div class="field">
+      <label for="ltcgRate">Long-Term Capital Gains Rate</label>
+      <select id="ltcgRate">
+        <option value="0.15" selected>15% (most taxpayers)</option>
+        <option value="0.20">20% (high earners + NIIT)</option>
+        <option value="0.238">23.8% (with 3.8% NIIT)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="exitYears">Expected Hold Before Exit (years)</label>
+      <input type="number" id="exitYears" value="5" min="1" max="20" step="1">
+    </div>
+  </div>
+</div>
+
+<div style="margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calculate()">Model the 83(b) Decision →</button>
+</div>
+
+<!-- Results -->
+<div id="results" class="result-hidden">
+
+  <div class="result-hero">
+    <div style="font-size:13px;color:var(--muted)">83(b) Filing Verdict</div>
+    <div class="rec" id="verdict">—</div>
+    <div class="sublabel" id="verdictSub">—</div>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="val" id="taxAtElection">—</div>
+      <div class="lbl">Tax owed if you file now</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="taxAtVest">—</div>
+      <div class="lbl">Expected tax at vest (no election)</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="taxSaved">—</div>
+      <div class="lbl">EV of tax saved by filing</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="forfeitureRisk">—</div>
+      <div class="lbl">Downside: tax paid if forfeited</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Scenario Analysis</h2>
+    <table>
+      <thead><tr>
+        <th>Scenario</th><th>FMV at Vest</th>
+        <th>Tax (no 83b)</th><th>Tax (with 83b)</th><th>Savings from 83(b)</th>
+      </tr></thead>
+      <tbody id="scenarioTable"></tbody>
+    </table>
+    <div id="ltcgNote" class="info-box"></div>
+    <div id="forfeitNote" class="warn-box"></div>
+  </div>
+
+  <div class="card">
+    <h2>What the 83(b) Election Does</h2>
+    <div class="info-box" style="margin-top:0">
+      <strong>Without election:</strong> You pay ordinary income tax on the spread (FMV − purchase price) as each tranche vests over <span id="vestYrSpan">—</span> years.<br><br>
+      <strong>With election (filed within 30 days of grant):</strong> You pay ordinary income tax on the spread <em>today</em> (often near-zero for founder stock at grant). From that point, any appreciation is treated as long-term capital gain — at a lower rate — once you hold >1 year from the grant date.<br><br>
+      <strong>The LTCG clock starts at grant,</strong> not at each vesting date. This is the primary benefit for rapidly-appreciating startup stock.
+    </div>
+    <div id="nsoWarning" class="warn-box" style="display:none;margin-top:12px">
+      ⚠️ <strong>NSO note:</strong> For Non-Qualified Stock Options, the 83(b) election locks in ordinary income at the exercise spread now. The benefit is converting future appreciation to LTCG. Consult a tax advisor on your specific ISO/NSO mix.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Next Steps</h2>
+    <div class="routing-grid">
+      <a href="../109-iso-amt-planner/index.html" class="routing-card">
+        <span class="r-icon">📊</span>
+        <div><div class="r-title">ISO-AMT Planner</div><div class="r-desc">If ISOs are early-exercised, model AMT exposure (AL-116)</div></div>
+      </a>
+      <a href="../141-equity-exit-waterfall/index.html" class="routing-card">
+        <span class="r-icon">💧</span>
+        <div><div class="r-title">Exit Waterfall Modeler</div><div class="r-desc">What your shares net after the preference stack at exit (AL-148)</div></div>
+      </a>
+      <a href="../142-qsbs-1202-estimator/index.html" class="routing-card">
+        <span class="r-icon">🏆</span>
+        <div><div class="r-title">QSBS §1202 Estimator</div><div class="r-desc">Filing early starts your QSBS hold-period clock (AL-149)</div></div>
+      </a>
+    </div>
+    <div class="results-export-row" style="margin-top:16px">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+  <div class="mcp-panel">
+    <h3>MCP Integration</h3>
+    <div class="mcp-endpoint">GET https://apexlogics.org/.well-known/mcp.json → tool: decide_83b_election</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Inbound: Equity Comp Analyzer (AL-33) · Downstream: ISO-AMT Planner (AL-116), Exit Waterfall (AL-148), QSBS Estimator (AL-149)</p>
+  </div>
+
+</div><!-- /results -->
+
+</div><!-- /main -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-147 · Data: Tax rates — simplified buckets (2026 est.); IRC §83(b) statutory
+</footer>
+
+<script>
+// ── Constants (labeled) ───────────────────────────────────────────────────────
+// IRC §83(b) — 30-day election to include property in income at grant rather than vesting
+// Source: IRC §83(b); Treas. Reg. §1.83-2
+// LTCG rates: IRC §1(h). 15%/20%/23.8% brackets — simplified buckets.
+// Tax rates bucketed — actual rates depend on full tax picture; consult advisor
+
+let _lastResult = null;
+
+function calculate() {
+  const shares        = +document.getElementById('shares').value;
+  const strikePrice   = +document.getElementById('strikePrice').value;
+  const fmvAtGrant    = +document.getElementById('fmvAtGrant').value;
+  const vestingYears  = +document.getElementById('vestingYears').value;
+  const grantType     = document.getElementById('grantType').value;
+  const fmvLow        = +document.getElementById('fmvLow').value;
+  const fmvBase       = +document.getElementById('fmvBase').value;
+  const fmvHigh       = +document.getElementById('fmvHigh').value;
+  const forfeitProb   = +document.getElementById('forfeitureProb').value / 100;
+  const taxBracket    = +document.getElementById('taxBracket').value;
+  const ltcgRate      = +document.getElementById('ltcgRate').value;
+  const exitYears     = +document.getElementById('exitYears').value;
+
+  if (!shares || fmvAtGrant < 0) {
+    alert('Please enter shares and FMV values.'); return;
+  }
+
+  // ── Tax at election (filing 83b NOW) ──
+  const spreadAtGrant = Math.max(0, fmvAtGrant - strikePrice);
+  const taxAtElection = spreadAtGrant * shares * taxBracket;
+
+  // ── Tax at vest for each scenario (no 83b) ──
+  // Without 83b: ordinary income tax on spread at each vesting date
+  // Simplified: assume ratable vesting; tax on (FMV_at_vest - strike) × shares × ordinary rate
+  function taxAtVestScenario(fmvVest) {
+    const spreadAtVest = Math.max(0, fmvVest - strikePrice);
+    return spreadAtVest * shares * taxBracket;
+  }
+
+  // ── Savings from 83(b) filing: convert appreciation to LTCG ──
+  // With 83b: basis = FMV at grant; appreciation from grant to exit = LTCG
+  // Without 83b: vesting spread = ordinary income; post-vest appreciation = LTCG
+  // Simplified model: at exit, compare total tax under each path
+  function taxWithout83b(fmvVest, fmvExit) {
+    const ordinaryIncome = Math.max(0, fmvVest - strikePrice) * shares;
+    const ltcgGain = Math.max(0, fmvExit - fmvVest) * shares;
+    return ordinaryIncome * taxBracket + ltcgGain * ltcgRate;
+  }
+
+  function taxWith83b(fmvExit) {
+    // At election: pay ordinary on small spread now
+    const electionTax = spreadAtGrant * shares * taxBracket;
+    // At exit: LTCG on (exit - grant FMV)
+    const ltcgGain = Math.max(0, fmvExit - fmvAtGrant) * shares;
+    return electionTax + ltcgGain * ltcgRate;
+  }
+
+  // Use fmvVest as proxy for fmvExit in simple model; users can see the spread
+  const scenarios = [
+    { label: 'Low', fmvVest: fmvLow, fmvExit: fmvLow },
+    { label: 'Base', fmvVest: fmvBase, fmvExit: fmvBase },
+    { label: 'High', fmvVest: fmvHigh, fmvExit: fmvHigh }
+  ];
+
+  const scenarioResults = scenarios.map(s => ({
+    ...s,
+    taxNoElection: taxWithout83b(s.fmvVest, s.fmvExit),
+    taxWithElection: taxWith83b(s.fmvExit),
+    savings: taxWithout83b(s.fmvVest, s.fmvExit) - taxWith83b(s.fmvExit)
+  }));
+
+  // EV of savings (probability-weighted across base scenario, adjusted for forfeiture)
+  const evSavings = scenarioResults[1].savings * (1 - forfeitProb);
+  const forfeitureDownside = taxAtElection; // tax paid on shares that are later forfeited
+
+  // Expected tax at vest (base scenario, no election)
+  const expectedTaxAtVest = taxAtVestScenario(fmvBase) * (1 - forfeitProb);
+
+  // Verdict
+  const shouldFile = evSavings > forfeitureDownside * forfeitProb;
+
+  _lastResult = {
+    shares, strikePrice, fmvAtGrant, vestingYears, grantType,
+    forfeitProb, taxBracket, ltcgRate, exitYears,
+    spreadAtGrant, taxAtElection, expectedTaxAtVest,
+    evSavings, forfeitureDownside, scenarioResults, shouldFile
+  };
+
+  renderResults(_lastResult);
+}
+
+function renderResults(r) {
+  const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString();
+  const fmtPct = p => (p * 100).toFixed(1) + '%';
+
+  const verdictText = r.taxAtElection === 0
+    ? 'File 83(b) — zero cost, all upside'
+    : r.shouldFile
+    ? 'File 83(b) — EV of savings exceeds downside risk'
+    : 'Consider carefully — forfeiture risk may exceed savings';
+
+  document.getElementById('verdict').textContent = verdictText;
+  document.getElementById('verdictSub').textContent =
+    r.taxAtElection === 0
+    ? `Spread at grant is $0 — no tax owed at election. All future appreciation is LTCG from grant date.`
+    : `Tax now: ${fmt(r.taxAtElection)} · EV of savings: ${fmt(r.evSavings)} · Forfeiture downside: ${fmt(r.forfeitureDownside * r.forfeitProb)}`;
+
+  document.getElementById('taxAtElection').textContent = fmt(r.taxAtElection);
+  document.getElementById('taxAtVest').textContent = fmt(r.expectedTaxAtVest);
+  document.getElementById('taxSaved').textContent = fmt(Math.max(0, r.evSavings));
+  document.getElementById('forfeitureRisk').textContent =
+    r.forfeitProb > 0 ? fmt(r.taxAtElection) + ' (if forfeited)' : '$0 (no forfeiture risk entered)';
+
+  document.getElementById('vestYrSpan').textContent = r.vestingYears;
+
+  // Scenario table
+  document.getElementById('scenarioTable').innerHTML = r.scenarioResults.map((s, i) =>
+    `<tr${i === 1 ? ' class="hi-row"' : ''}>
+      <td>${s.label}</td>
+      <td class="mono">$${s.fmvVest}</td>
+      <td class="mono">${fmt(s.taxNoElection)}</td>
+      <td class="mono">${fmt(s.taxWithElection)}</td>
+      <td class="mono" style="color:${s.savings > 0 ? 'var(--success)' : 'var(--danger)'}">${s.savings >= 0 ? '+' : ''}${fmt(s.savings)}</td>
+    </tr>`
+  ).join('');
+
+  document.getElementById('ltcgNote').innerHTML =
+    r.spreadAtGrant === 0
+    ? `✅ <strong>Zero spread at grant:</strong> No ordinary income at election — the 83(b) is essentially free to file. All future appreciation accrues as LTCG from the grant date. Filing is almost always correct in this case.`
+    : `💡 <strong>LTCG clock:</strong> With an 83(b) filed, your long-term capital gains holding period starts at grant (not at each vesting date). Appreciation from ${r.fmvAtGrant.toFixed(3)} to exit price is treated as LTCG (${fmtPct(r.ltcgRate)}) rather than ordinary income (${fmtPct(r.taxBracket)}).`;
+
+  document.getElementById('forfeitNote').innerHTML =
+    r.forfeitProb > 0
+    ? `⚠️ <strong>Forfeiture risk:</strong> If you forfeit vested shares after filing the 83(b), you lose the tax paid at election with no refund (§83(b)(1)). Estimated downside: ${fmt(r.taxAtElection)} at ${fmtPct(r.forfeitProb)} probability = ${fmt(r.taxAtElection * r.forfeitProb)} expected loss.`
+    : `✅ <strong>No forfeiture risk entered.</strong> If forfeiture is genuinely near-zero (e.g., founder stock with minimal vesting remaining), the 83(b) upside is unambiguous.`;
+
+  const nsoWarn = document.getElementById('nsoWarning');
+  nsoWarn.style.display = r.grantType === 'early_exercise_nso' ? 'block' : 'none';
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+// ── Exports ───────────────────────────────────────────────────────────────────
+function fmtD(n){ return '$' + Math.round(n).toLocaleString(); }
+
+function exportMarkdown() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const fmtPct = p => (p * 100).toFixed(1) + '%';
+  const md =
+`# 83(b) Election Decision Engine — AL-147
+
+**Shares:** ${r.shares.toLocaleString()} · **Strike:** $${r.strikePrice} · **FMV at grant:** $${r.fmvAtGrant}
+**Grant type:** ${r.grantType} · **Vesting:** ${r.vestingYears} yr · **Forfeiture risk:** ${fmtPct(r.forfeitProb)}
+**Ordinary rate:** ${fmtPct(r.taxBracket)} · **LTCG rate:** ${fmtPct(r.ltcgRate)}
+
+## 83(b) Election Analysis
+| | Amount |
+|---|---|
+| Spread at grant | $${(r.spreadAtGrant * r.shares).toLocaleString()} |
+| **Tax if you file now** | **${fmtD(r.taxAtElection)}** |
+| EV of tax savings (base × non-forfeiture) | ${fmtD(r.evSavings)} |
+| Forfeiture downside | ${fmtD(r.taxAtElection)} at ${fmtPct(r.forfeitProb)} prob |
+
+## Scenario Table
+| Scenario | FMV at Vest | Tax (no 83b) | Tax (with 83b) | Savings |
+|---|---|---|---|---|
+${r.scenarioResults.map(s => `| ${s.label} | $${s.fmvVest} | ${fmtD(s.taxNoElection)} | ${fmtD(s.taxWithElection)} | ${s.savings >= 0 ? '+' : ''}${fmtD(s.savings)} |`).join('\n')}
+
+## Verdict
+${r.taxAtElection === 0 ? '**File 83(b)** — zero spread at grant, no tax cost, all upside.' : r.shouldFile ? '**File 83(b)** — EV of savings exceeds forfeiture risk.' : '**Evaluate carefully** — forfeiture risk may offset savings.'}
+
+⚠️ *30-day deadline from grant date — irreversible. Consult a tax advisor.*
+
+---
+*Generated by ApexLogics AL-147 · apexlogics.org · Data: IRC §83(b); tax rate buckets 2026 est.*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = '83b-election-AL147.md'; a.click();
+}
+
+function exportAP2() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "eighty_three_b_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-147",
+    tool_id: "140-83b-election-decision",
+    inputs: {
+      shares: r.shares,
+      strikePrice: r.strikePrice,
+      fmvAtGrant: r.fmvAtGrant,
+      vestingYears: r.vestingYears,
+      grantType: r.grantType,
+      forfeitureProb: r.forfeitProb,
+      ordinaryTaxRate: r.taxBracket,
+      ltcgRate: r.ltcgRate
+    },
+    outputs: {
+      spreadAtGrant: +(r.spreadAtGrant * r.shares).toFixed(0),
+      taxAtElection: Math.round(r.taxAtElection),
+      expectedTaxAtVest: Math.round(r.expectedTaxAtVest),
+      evSavingsFromFiling: Math.round(Math.max(0, r.evSavings)),
+      forfeitureDownside: Math.round(r.taxAtElection),
+      verdict: r.taxAtElection === 0 ? 'file_free' : r.shouldFile ? 'file' : 'evaluate_carefully',
+      zeroSpreadAtGrant: r.spreadAtGrant === 0
+    },
+    downstream_handoff_candidates: ["AL-116", "AL-148", "AL-149"],
+    metadata: { license: "CC-BY-4.0", data_vintage: "IRC §83(b) statutory; tax buckets 2026 est." }
+  };
+  const AP2Schema = {
+    validMandateTypes: ['eighty_three_b_record'],
+    validate: function(p) {
+      const errors = [];
+      ['ap2_version','mandate_type','al_id','inputs','outputs'].forEach(k => {
+        if (!p[k]) errors.push('missing: ' + k);
+      });
+      if (p.mandate_type && !this.validMandateTypes.includes(p.mandate_type))
+        errors.push('unrecognized mandate_type: ' + p.mandate_type);
+      return { valid: errors.length === 0, errors };
+    }
+  };
+  const vr = AP2Schema.validate(payload);
+  if (!vr.valid) { alert('AP2 validation error: ' + vr.errors.join(', ')); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'ap2-83b-election-AL147.json'; a.click();
+}
+</script>
+</body>
+</html>

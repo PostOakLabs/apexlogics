@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Federal / Public Buyout Decision Engine | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--coral:#F07167;--coral-dim:rgba(240,113,103,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;--warn:#FBBF24;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--coral);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--coral);border-color:var(--coral);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:960px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:660px}
+.pii-banner{max-width:960px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:960px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.card h3{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:18px 0 10px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:660px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--coral)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--coral);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--coral);color:var(--coral)}
+.result-hidden{display:none}
+.result-hero{background:linear-gradient(135deg,var(--coral-dim),rgba(232,168,56,.06));border:2px solid rgba(240,113,103,.3);border-radius:12px;padding:24px;margin-bottom:20px;text-align:center}
+.result-hero .rec{font-family:var(--font-serif);font-size:28px;margin:8px 0;color:var(--coral)}
+.result-hero .sublabel{font-size:13px;color:var(--muted);margin-top:4px}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--coral);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin-bottom:8px}
+th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:14px}
+td.mono{font-family:var(--font-mono)}
+tr.hi-row td{font-weight:600;background:rgba(240,113,103,.06)}
+.warn-box{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--warn);margin-top:14px}
+.info-box{background:rgba(76,175,125,.07);border:1px solid rgba(76,175,125,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--success);margin-top:14px}
+.danger-box{background:rgba(232,85,85,.07);border:1px solid rgba(232,85,85,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--danger);margin-top:14px}
+.routing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.routing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:flex-start;gap:10px;text-decoration:none}
+.routing-card:hover{border-color:var(--coral);text-decoration:none}
+.routing-card .r-icon{font-size:20px}
+.routing-card .r-title{font-weight:600;color:var(--coral);margin-bottom:2px;font-size:13px}
+.routing-card .r-desc{font-size:12px;color:var(--muted)}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.mcp-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px}
+.mcp-panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.mcp-endpoint{font-family:var(--font-mono);font-size:12px;color:var(--coral);background:var(--bg);padding:8px 12px;border-radius:6px;word-break:break-all}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tag-amber{background:rgba(232,168,56,.15);color:var(--amber)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}
+footer.tool-footer a:hover{color:var(--amber)}
+.score-bar-track{background:var(--surface2);border-radius:20px;height:10px;margin:8px 0}
+.score-bar-fill{height:10px;border-radius:20px;background:var(--coral);transition:width .5s}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-amber">Workforce Exit</span></div>
+  <h1>Federal / Public Buyout Decision Engine</h1>
+  <p>Compare your federal or public-sector voluntary buyout offer against staying — modeling net buyout value, pension impact, FEHB bridge, UI timing, and private-sector offer potential.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<!-- Card 1: Current Position -->
+<div class="card">
+  <h2>Current Position</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="currentSalary">Current Annual Salary ($)</label>
+      <input type="number" id="currentSalary" value="95000" min="1" step="1000">
+    </div>
+    <div class="field">
+      <label for="yearsService">Years of Service</label>
+      <input type="number" id="yearsService" value="12" min="0" step="1">
+    </div>
+    <div class="field">
+      <label for="currentAge">Current Age</label>
+      <input type="number" id="currentAge" value="48" min="20" max="70" step="1">
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:16px">
+    <div class="field">
+      <label for="retirementSystem">Retirement System</label>
+      <select id="retirementSystem">
+        <option value="fers">FERS (Federal Employee Retirement System)</option>
+        <option value="csrs">CSRS (Civil Service Retirement System)</option>
+        <option value="state_db">State/Local Defined Benefit Pension</option>
+        <option value="none">No pension / 401(k) only</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="retirementAge">Normal Retirement Age (for full pension)</label>
+      <input type="number" id="retirementAge" value="62" min="50" max="70" step="1">
+    </div>
+  </div>
+</div>
+
+<!-- Card 2: Buyout Offer -->
+<div class="card">
+  <h2>Buyout Offer</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="severancePay">Severance / VSIP Amount ($)</label>
+      <input type="number" id="severancePay" value="25000" min="0" step="1000">
+      <span class="hint">Federal VSIP is capped at $25K; state programs vary</span>
+    </div>
+    <div class="field">
+      <label for="continuedHealthMonths">Continued Health Coverage (months)</label>
+      <input type="number" id="continuedHealthMonths" value="6" min="0" max="36" step="1">
+      <span class="hint">FEHB continues on severance pay; COBRA or retirement FEHB after</span>
+    </div>
+    <div class="field">
+      <label for="taxRate">Marginal Tax Rate (ordinary income)</label>
+      <select id="taxRate">
+        <option value="0.22">22%</option>
+        <option value="0.24" selected>24%</option>
+        <option value="0.32">32%</option>
+      </select>
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:16px">
+    <div class="field">
+      <label for="monthlyHealthCost">Estimated Monthly Health Premium If Not Covered ($)</label>
+      <input type="number" id="monthlyHealthCost" value="650" min="0" step="50">
+      <span class="hint">ACA marketplace or COBRA cost to benchmark the health bridge value</span>
+    </div>
+    <div class="field">
+      <label for="pensionReducPct">Pension Reduction from Early Exit (%)</label>
+      <input type="number" id="pensionReducPct" value="15" min="0" max="60" step="1">
+      <span class="hint">Estimated % reduction from leaving before normal retirement age</span>
+    </div>
+  </div>
+</div>
+
+<!-- Card 3: Post-Exit Scenarios -->
+<div class="card">
+  <h2>Post-Exit Scenarios</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="privateOfferLow">Private Sector Offer — Low ($)</label>
+      <input type="number" id="privateOfferLow" value="80000" min="0" step="1000">
+    </div>
+    <div class="field">
+      <label for="privateOfferBase">Private Sector Offer — Base ($)</label>
+      <input type="number" id="privateOfferBase" value="110000" min="0" step="1000">
+    </div>
+    <div class="field">
+      <label for="privateOfferHigh">Private Sector Offer — High ($)</label>
+      <input type="number" id="privateOfferHigh" value="140000" min="0" step="1000">
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:16px">
+    <div class="field">
+      <label for="searchMonths">Expected Job Search Duration (months)</label>
+      <input type="number" id="searchMonths" value="4" min="0" max="24" step="1">
+    </div>
+    <div class="field">
+      <label for="stayYears">How Many More Years Would You Stay If Not Taking Buyout?</label>
+      <input type="number" id="stayYears" value="7" min="1" max="30" step="1">
+    </div>
+  </div>
+</div>
+
+<div style="margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calculate()">Model the Buyout Decision →</button>
+</div>
+
+<!-- Results -->
+<div id="results" class="result-hidden">
+
+  <div class="result-hero">
+    <div style="font-size:13px;color:var(--muted)">Buyout Decision</div>
+    <div class="rec" id="verdict">—</div>
+    <div class="sublabel" id="verdictSub">—</div>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="val" id="netBuyout">—</div>
+      <div class="lbl">Net buyout after tax</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="healthBridge">—</div>
+      <div class="lbl">Health coverage bridge value</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="pensionCost">—</div>
+      <div class="lbl">Est. pension cost of leaving early</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="incomeLostSearch">—</div>
+      <div class="lbl">Income lost during search</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="netGainLoss">—</div>
+      <div class="lbl">5-yr net gain/loss (base scenario)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>5-Year Financial Comparison</h2>
+    <table>
+      <thead><tr>
+        <th>Year</th><th>Stay: Total Comp</th>
+        <th>Exit (Low offer)</th><th>Exit (Base offer)</th><th>Exit (High offer)</th>
+      </tr></thead>
+      <tbody id="yearTable"></tbody>
+    </table>
+    <div id="breakEvenNote" class="info-box"></div>
+  </div>
+
+  <div class="card">
+    <h2>Pension & Benefits Analysis</h2>
+    <table>
+      <thead><tr><th>Item</th><th>Staying</th><th>Taking Buyout</th><th>Difference</th></tr></thead>
+      <tbody id="pensionTable"></tbody>
+    </table>
+    <div id="pensionBox" class="warn-box"></div>
+  </div>
+
+  <div class="card">
+    <h2>Decision Scorecard</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Financial factors only. Personal job satisfaction and career trajectory are outside this model.</p>
+    <div id="scoreItems"></div>
+    <div style="margin-top:12px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:13px;color:var(--muted)">Overall score:</span>
+      <div class="score-bar-track" style="flex:1"><div class="score-bar-fill" id="scoreBar" style="width:0%"></div></div>
+      <span id="scorePct" style="font-family:var(--font-mono);font-size:14px;color:var(--coral)">0%</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Next Steps</h2>
+    <div class="routing-grid">
+      <a href="../136-severance-ui-timing/index.html" class="routing-card">
+        <span class="r-icon">📅</span>
+        <div><div class="r-title">Severance + UI Timing</div><div class="r-desc">Optimize when to file for unemployment after severance pay (AL-143)</div></div>
+      </a>
+      <a href="../134-cobra-vs-aca-optimizer/index.html" class="routing-card">
+        <span class="r-icon">🏥</span>
+        <div><div class="r-title">COBRA vs. ACA Optimizer</div><div class="r-desc">Find the cheapest health coverage bridge (AL-141)</div></div>
+      </a>
+      <a href="../113-career-roi-calculator/index.html" class="routing-card">
+        <span class="r-icon">📈</span>
+        <div><div class="r-title">Career ROI Calculator</div><div class="r-desc">Model total compensation comparison vs. private sector (AL-120)</div></div>
+      </a>
+    </div>
+    <div class="results-export-row">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+  <div class="mcp-panel">
+    <h3>MCP Integration</h3>
+    <div class="mcp-endpoint">GET https://apexlogics.org/.well-known/mcp.json → tool: decide_federal_buyout</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Inbound: Severance+UI Timing (AL-143) · Downstream: COBRA/ACA Optimizer (AL-141), Career ROI (AL-120)</p>
+  </div>
+
+</div><!-- /results -->
+</div><!-- /main -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-150 · Data: FERS/CSRS pension formulas simplified; VSIP cap 5 USC §3523; ACA/COBRA cost estimates
+</footer>
+
+<script>
+// ── Constants ────────────────────────────────────────────────────────────────
+// VSIP cap: $25,000 per 5 USC §3523(b)(3)(B)
+// FERS basic pension formula: 1.0% × high-3 salary × years service (1.1% if age 62+ with 20+ yr)
+// CSRS: ~2% × high-3 × years (simplified)
+// State DB: varies — user enters reduction % as proxy
+// Pension reduction proxy: user-entered % simulates early-exit penalty
+// These are simplified buckets — actual pension calculations require OPM or HR input
+
+let _lastResult = null;
+
+function calculate() {
+  const currentSalary       = +document.getElementById('currentSalary').value;
+  const yearsService        = +document.getElementById('yearsService').value;
+  const currentAge          = +document.getElementById('currentAge').value;
+  const retirementSystem    = document.getElementById('retirementSystem').value;
+  const retirementAge       = +document.getElementById('retirementAge').value;
+  const severancePay        = +document.getElementById('severancePay').value;
+  const continuedHealthMos  = +document.getElementById('continuedHealthMonths').value;
+  const taxRate             = +document.getElementById('taxRate').value;
+  const monthlyHealthCost   = +document.getElementById('monthlyHealthCost').value;
+  const pensionReducPct     = +document.getElementById('pensionReducPct').value / 100;
+  const privateOfferLow     = +document.getElementById('privateOfferLow').value;
+  const privateOfferBase    = +document.getElementById('privateOfferBase').value;
+  const privateOfferHigh    = +document.getElementById('privateOfferHigh').value;
+  const searchMonths        = +document.getElementById('searchMonths').value;
+  const stayYears           = +document.getElementById('stayYears').value;
+
+  // ── Net buyout ──
+  const netSeverance        = severancePay * (1 - taxRate);
+  const healthBridgeValue   = continuedHealthMos * monthlyHealthCost;
+  const netBuyout           = netSeverance + healthBridgeValue;
+
+  // ── Pension impact ──
+  // Simplified FERS formula: 1% × high-3 × years
+  // "High-3" approximated as current salary for simplicity
+  let annualPensionFull = 0;
+  let annualPensionEarly = 0;
+  if (retirementSystem === 'fers') {
+    const multiplier = (currentAge + stayYears >= 62 && yearsService + stayYears >= 20) ? 0.011 : 0.010;
+    annualPensionFull  = multiplier * currentSalary * (yearsService + stayYears);
+    annualPensionEarly = annualPensionFull * (1 - pensionReducPct);
+  } else if (retirementSystem === 'csrs') {
+    annualPensionFull  = 0.02 * currentSalary * (yearsService + stayYears);
+    annualPensionEarly = annualPensionFull * (1 - pensionReducPct);
+  } else if (retirementSystem === 'state_db') {
+    annualPensionFull  = 0.015 * currentSalary * (yearsService + stayYears);
+    annualPensionEarly = annualPensionFull * (1 - pensionReducPct);
+  } else {
+    annualPensionFull  = 0;
+    annualPensionEarly = 0;
+  }
+
+  const yearsInRetirement  = Math.max(0, 85 - (currentAge + stayYears));
+  const pensionLifetimeLost = (annualPensionFull - annualPensionEarly) * yearsInRetirement;
+
+  // ── Income lost during job search ──
+  const incomeLostSearch = (currentSalary / 12) * searchMonths * (1 - taxRate);
+
+  // ── 5-year income comparison ──
+  // Stay: salary × 5 (simplified; no raises modeled for neutrality)
+  // Exit: year 1 = private offer - search gap; years 2-5 = private offer
+  const YEARS = 5;
+  function exitIncome(offer) {
+    const yr1 = offer * ((12 - searchMonths) / 12) * (1 - taxRate);
+    const yrN = offer * (1 - taxRate);
+    return yr1 + yrN * (YEARS - 1);
+  }
+  const stayTotal5yr = currentSalary * (1 - taxRate) * YEARS;
+  const exitTotalLow  = exitIncome(privateOfferLow)  + netBuyout;
+  const exitTotalBase = exitIncome(privateOfferBase) + netBuyout;
+  const exitTotalHigh = exitIncome(privateOfferHigh) + netBuyout;
+
+  const netGainLoss = exitTotalBase - stayTotal5yr;
+
+  // ── Scorecard ──
+  const scores = [
+    { label: 'Net buyout vs. 3 months salary', pass: netBuyout >= currentSalary * 0.25, note: `Buyout net ${fmt(netBuyout)} vs. 3-mo buffer ${fmt(currentSalary * 0.25)}` },
+    { label: 'Base private offer > current salary', pass: privateOfferBase > currentSalary, note: `Base offer ${fmt(privateOfferBase)} vs. current ${fmt(currentSalary)}` },
+    { label: 'Health coverage bridged', pass: continuedHealthMos >= searchMonths, note: `${continuedHealthMos} mo coverage vs. ${searchMonths} mo search` },
+    { label: '5-yr net gain positive (base scenario)', pass: netGainLoss > 0, note: `5-yr net: ${netGainLoss >= 0 ? '+' : ''}${fmt(netGainLoss)}` },
+    { label: 'Pension cost acceptable (<20% of 5-yr stay income)', pass: pensionLifetimeLost < stayTotal5yr * 0.2, note: `Pension cost ${fmt(pensionLifetimeLost)} vs. 20% threshold ${fmt(stayTotal5yr * 0.2)}` }
+  ];
+
+  const scoreTotal = scores.filter(s => s.pass).length;
+  const scorePct   = Math.round(scoreTotal / scores.length * 100);
+
+  let verdict, verdictSub;
+  if (scorePct >= 80) {
+    verdict = 'Buyout Favored — Strong Financial Case';
+    verdictSub = `${scoreTotal}/${scores.length} financial factors support taking the buyout.`;
+  } else if (scorePct >= 60) {
+    verdict = 'Borderline — Depends on Private Offer Quality';
+    verdictSub = `${scoreTotal}/${scores.length} financial factors favor exit. Job offer certainty is the swing variable.`;
+  } else {
+    verdict = 'Stay — Financial Profile Favors Remaining';
+    verdictSub = `${scoreTotal}/${scores.length} financial factors favor staying. Review pension and offer scenarios carefully.`;
+  }
+
+  _lastResult = {
+    currentSalary, yearsService, currentAge, retirementSystem, retirementAge,
+    severancePay, continuedHealthMos, taxRate, monthlyHealthCost, pensionReducPct,
+    privateOfferLow, privateOfferBase, privateOfferHigh, searchMonths, stayYears,
+    netSeverance, healthBridgeValue, netBuyout, annualPensionFull, annualPensionEarly,
+    pensionLifetimeLost, incomeLostSearch, stayTotal5yr,
+    exitTotalLow, exitTotalBase, exitTotalHigh, netGainLoss,
+    scores, scoreTotal, scorePct, verdict, verdictSub
+  };
+
+  renderResults(_lastResult);
+}
+
+function fmt(n){ return '$' + Math.round(Math.abs(n)).toLocaleString(); }
+
+function renderResults(r) {
+  document.getElementById('verdict').textContent    = r.verdict;
+  document.getElementById('verdictSub').textContent = r.verdictSub;
+  document.getElementById('netBuyout').textContent      = fmt(r.netBuyout);
+  document.getElementById('healthBridge').textContent   = fmt(r.healthBridgeValue);
+  document.getElementById('pensionCost').textContent    = r.pensionLifetimeLost > 0 ? fmt(r.pensionLifetimeLost) : 'N/A';
+  document.getElementById('incomeLostSearch').textContent = fmt(r.incomeLostSearch);
+  document.getElementById('netGainLoss').textContent    = (r.netGainLoss >= 0 ? '+' : '–') + fmt(r.netGainLoss);
+
+  // Year table
+  const stayYr = (r.currentSalary * (1 - r.taxRate)).toFixed(0);
+  const rows = [];
+  for (let y = 1; y <= 5; y++) {
+    const stayAmt = +stayYr;
+    const gapFactor = y === 1 ? (12 - r.searchMonths) / 12 : 1;
+    const exLow  = r.privateOfferLow  * gapFactor * (1 - r.taxRate) + (y === 1 ? r.netBuyout : 0);
+    const exBase = r.privateOfferBase * gapFactor * (1 - r.taxRate) + (y === 1 ? r.netBuyout : 0);
+    const exHigh = r.privateOfferHigh * gapFactor * (1 - r.taxRate) + (y === 1 ? r.netBuyout : 0);
+    rows.push(`<tr${y === 1 ? ' class="hi-row"' : ''}>
+      <td>Year ${y}${y === 1 ? ' (incl. buyout)' : ''}</td>
+      <td class="mono">${fmt(stayAmt)}</td>
+      <td class="mono" style="color:${exLow >= stayAmt ? 'var(--success)' : 'var(--danger)'}">${fmt(exLow)}</td>
+      <td class="mono" style="color:${exBase >= stayAmt ? 'var(--success)' : 'var(--danger)'}">${fmt(exBase)}</td>
+      <td class="mono" style="color:${exHigh >= stayAmt ? 'var(--success)' : 'var(--danger)'}">${fmt(exHigh)}</td>
+    </tr>`);
+  }
+  document.getElementById('yearTable').innerHTML = rows.join('');
+  document.getElementById('breakEvenNote').innerHTML =
+    r.netGainLoss > 0
+    ? `✅ At the base offer, you are ahead by ${fmt(r.netGainLoss)} over 5 years after accounting for the income gap and net buyout.`
+    : `⚠️ At the base offer, you are behind by ${fmt(Math.abs(r.netGainLoss))} over 5 years. A higher offer or shorter search window is needed to break even.`;
+
+  // Pension table
+  document.getElementById('pensionTable').innerHTML = r.retirementSystem !== 'none' ? `
+    <tr><td>Estimated annual pension (full)</td><td class="mono">${fmt(r.annualPensionFull)}</td><td class="mono">${fmt(r.annualPensionEarly)}</td><td class="mono" style="color:var(--danger)">–${fmt(r.annualPensionFull - r.annualPensionEarly)}/yr</td></tr>
+    <tr><td>Estimated lifetime pension cost of early exit</td><td></td><td></td><td class="mono" style="color:var(--danger)">–${fmt(r.pensionLifetimeLost)}</td></tr>
+    <tr><td>Years of service at exit</td><td class="mono">${r.yearsService}</td><td class="mono">${r.yearsService}</td><td></td></tr>
+  ` : '<tr><td colspan="4" style="color:var(--muted)">No defined-benefit pension selected.</td></tr>';
+
+  document.getElementById('pensionBox').innerHTML =
+    r.retirementSystem !== 'none' && r.pensionLifetimeLost > 50000
+    ? `⚠️ Estimated lifetime pension reduction is ${fmt(r.pensionLifetimeLost)} — this is based on a ${(r.pensionReducPct * 100).toFixed(0)}% early-exit reduction applied to a simplified pension formula. Verify your actual benefit statement with your HR or OPM.`
+    : r.retirementSystem === 'none'
+    ? 'No defined-benefit pension — retirement savings impact depends on continued 401(k) / TSP contributions.'
+    : `✅ Pension impact is within acceptable range (${fmt(r.pensionLifetimeLost)} estimated lifetime reduction).`;
+
+  // Scorecard
+  document.getElementById('scoreItems').innerHTML = r.scores.map(s =>
+    `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;align-items:flex-start">
+      <span style="color:${s.pass ? 'var(--success)' : 'var(--danger)'};flex-shrink:0;font-size:15px">${s.pass ? '✓' : '✗'}</span>
+      <div><strong>${s.label}</strong><br><span style="color:var(--muted)">${s.note}</span></div>
+    </div>`
+  ).join('');
+  document.getElementById('scoreBar').style.width = r.scorePct + '%';
+  document.getElementById('scorePct').textContent = r.scorePct + '%';
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+// ── Exports ───────────────────────────────────────────────────────────────────
+function exportMarkdown() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const md =
+`# Federal / Public Buyout Decision Engine — AL-150
+
+**Salary:** ${fmt(r.currentSalary)} · **Years:** ${r.yearsService} · **Age:** ${r.currentAge} · **System:** ${r.retirementSystem.toUpperCase()}
+**Severance:** ${fmt(r.severancePay)} · **Health bridge:** ${r.continuedHealthMos} mo · **Tax rate:** ${(r.taxRate*100).toFixed(0)}%
+
+## Verdict: ${r.verdict}
+${r.verdictSub}
+
+## Key Metrics
+| | Value |
+|---|---|
+| Net buyout after tax | ${fmt(r.netBuyout)} |
+| Health coverage bridge value | ${fmt(r.healthBridgeValue)} |
+| Pension lifetime cost of early exit | ${fmt(r.pensionLifetimeLost)} |
+| Income lost during search | ${fmt(r.incomeLostSearch)} |
+| 5-yr net gain/loss (base offer) | ${r.netGainLoss >= 0 ? '+' : '–'}${fmt(r.netGainLoss)} |
+
+## 5-Year Scenario Summary
+Stay: ${fmt(r.stayTotal5yr)} total | Exit Low: ${fmt(r.exitTotalLow)} | Exit Base: ${fmt(r.exitTotalBase)} | Exit High: ${fmt(r.exitTotalHigh)}
+
+## Scorecard
+${r.scores.map(s => `- ${s.pass ? '[x]' : '[ ]'} ${s.label} — ${s.note}`).join('\n')}
+**Score: ${r.scoreTotal}/${r.scores.length} (${r.scorePct}%)**
+
+---
+*Generated by ApexLogics AL-150 · apexlogics.org · Pension estimates simplified — verify with OPM/HR*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'buyout-decision-AL150.md'; a.click();
+}
+
+function exportAP2() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "buyout_decision_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-150",
+    tool_id: "143-federal-buyout-decision",
+    inputs: {
+      currentSalary: r.currentSalary, yearsService: r.yearsService, currentAge: r.currentAge,
+      retirementSystem: r.retirementSystem, severancePay: r.severancePay,
+      continuedHealthMonths: r.continuedHealthMos, taxRate: r.taxRate,
+      monthlyHealthCost: r.monthlyHealthCost, pensionReductionPct: r.pensionReducPct,
+      privateOfferBase: r.privateOfferBase, searchMonths: r.searchMonths
+    },
+    outputs: {
+      netBuyout: Math.round(r.netBuyout), healthBridgeValue: Math.round(r.healthBridgeValue),
+      pensionLifetimeLost: Math.round(r.pensionLifetimeLost),
+      fiveYearNetGainLoss: Math.round(r.netGainLoss),
+      scorecard: r.scorePct, verdict: r.verdict
+    },
+    downstream_handoff_candidates: ["AL-141", "AL-143", "AL-120"],
+    metadata: { license: "CC-BY-4.0", data_vintage: "VSIP cap 5 USC §3523; FERS/CSRS simplified formulas; ACA/COBRA cost estimates" }
+  };
+  const AP2Schema = {
+    validMandateTypes: ['buyout_decision_record'],
+    validate: function(p) {
+      const errors = [];
+      ['ap2_version','mandate_type','al_id','inputs','outputs'].forEach(k => {
+        if (!p[k]) errors.push('missing: ' + k);
+      });
+      if (p.mandate_type && !this.validMandateTypes.includes(p.mandate_type))
+        errors.push('unrecognized mandate_type: ' + p.mandate_type);
+      return { valid: errors.length === 0, errors };
+    }
+  };
+  const vr = AP2Schema.validate(payload);
+  if (!vr.valid) { alert('AP2 validation error: ' + vr.errors.join(', ')); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'ap2-buyout-decision-AL150.json'; a.click();
+}
+</script>
+</body>
+</html>

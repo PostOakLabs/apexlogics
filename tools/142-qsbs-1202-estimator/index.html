@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QSBS §1202 Exclusion Estimator | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--coral:#F07167;--coral-dim:rgba(240,113,103,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;--warn:#FBBF24;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--coral);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--coral);border-color:var(--coral);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:960px;margin:0 auto}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:660px}
+.pii-banner{max-width:960px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:960px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:660px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--coral)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.checkbox-row{display:flex;align-items:center;gap:10px;padding:8px 0}
+.checkbox-row input[type=checkbox]{width:18px;height:18px;accent-color:var(--coral);flex-shrink:0}
+.checkbox-row label{font-size:13px;color:var(--text);cursor:pointer;margin:0}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary{background:var(--coral);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--coral);color:var(--coral)}
+.result-hidden{display:none}
+.result-hero{background:linear-gradient(135deg,var(--coral-dim),rgba(232,168,56,.06));border:2px solid rgba(240,113,103,.3);border-radius:12px;padding:24px;margin-bottom:20px;text-align:center}
+.result-hero .rec{font-family:var(--font-serif);font-size:28px;margin:8px 0;color:var(--coral)}
+.result-hero .sublabel{font-size:13px;color:var(--muted);margin-top:4px}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.metric-card .val{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--coral);margin-bottom:4px}
+.metric-card .lbl{font-size:12px;color:var(--muted)}
+.checklist{list-style:none;padding:0;margin:0}
+.checklist li{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;align-items:flex-start}
+.checklist li:last-child{border-bottom:none}
+.chk-pass{color:var(--success);font-size:16px;flex-shrink:0;margin-top:1px}
+.chk-fail{color:var(--danger);font-size:16px;flex-shrink:0;margin-top:1px}
+.chk-warn{color:var(--warn);font-size:16px;flex-shrink:0;margin-top:1px}
+.tier-table{width:100%;border-collapse:collapse;margin:12px 0}
+.tier-table th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:2px solid var(--border)}
+.tier-table td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:14px}
+.tier-table td.mono{font-family:var(--font-mono)}
+.tier-table tr.active-tier td{font-weight:600;background:rgba(240,113,103,.06);color:var(--coral)}
+.warn-box{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--warn);margin-top:14px}
+.info-box{background:rgba(76,175,125,.07);border:1px solid rgba(76,175,125,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--success);margin-top:14px}
+.danger-box{background:rgba(232,85,85,.07);border:1px solid rgba(232,85,85,.3);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--danger);margin-top:14px}
+.routing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.routing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:flex-start;gap:10px;text-decoration:none}
+.routing-card:hover{border-color:var(--coral);text-decoration:none}
+.routing-card .r-icon{font-size:20px}
+.routing-card .r-title{font-weight:600;color:var(--coral);margin-bottom:2px;font-size:13px}
+.routing-card .r-desc{font-size:12px;color:var(--muted)}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.mcp-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px}
+.mcp-panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.mcp-endpoint{font-family:var(--font-mono);font-size:12px;color:var(--coral);background:var(--bg);padding:8px 12px;border-radius:6px;word-break:break-all}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tag-amber{background:rgba(232,168,56,.15);color:var(--amber)}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}
+footer.tool-footer a:hover{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <div class="logo">Apex <span>Logics</span></div>
+</nav>
+
+<div class="hero">
+  <div style="margin-bottom:10px"><span class="tag tag-amber">Startup Equity</span></div>
+  <h1>QSBS §1202 Exclusion Estimator</h1>
+  <p>Estimate your IRC §1202 capital gains exclusion on Qualified Small Business Stock — check eligibility, find your tier (50%/75%/100%), and calculate the federal tax saving.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+
+<!-- Card 1: Company -->
+<div class="card">
+  <h2>Company & Stock Details</h2>
+  <div class="grid-3">
+    <div class="field">
+      <label for="acquireDate">Date Stock Acquired (approximate year)</label>
+      <select id="acquireDate">
+        <option value="pre2010">Before Aug 11, 2010</option>
+        <option value="2010">Aug 11, 2010 – Sep 27, 2010</option>
+        <option value="2010b">Sep 28, 2010 – Dec 31, 2010</option>
+        <option value="2011plus" selected>Jan 1, 2011 or later</option>
+      </select>
+      <span class="hint">Determines exclusion tier (50/75/100%)</span>
+    </div>
+    <div class="field">
+      <label for="grossAssets">C-Corp Gross Assets at Issuance ($M)</label>
+      <input type="number" id="grossAssets" value="20" min="0" step="1">
+      <span class="hint">Must be ≤$50M at time of issuance and immediately after</span>
+    </div>
+    <div class="field">
+      <label for="holdYears">Holding Period (years from acquisition to sale)</label>
+      <input type="number" id="holdYears" value="6" min="0" step="0.5">
+      <span class="hint">Must hold >5 years to claim §1202 exclusion</span>
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:16px">
+    <div class="field">
+      <label for="costBasis">Your Cost Basis / Amount Paid ($)</label>
+      <input type="number" id="costBasis" value="10000" min="0" step="1000">
+    </div>
+    <div class="field">
+      <label for="saleProceeds">Expected Sale Proceeds ($)</label>
+      <input type="number" id="saleProceeds" value="2000000" min="0" step="10000">
+    </div>
+  </div>
+</div>
+
+<!-- Card 2: Eligibility Checklist -->
+<div class="card">
+  <h2>Eligibility Checklist</h2>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Check all boxes that apply to your situation. All items must be met for §1202 exclusion.</p>
+  <div class="checkbox-row"><input type="checkbox" id="isCCorp" checked><label for="isCCorp">Stock is in a domestic C-corporation (not S-corp, LLC, LP, or foreign entity)</label></div>
+  <div class="checkbox-row"><input type="checkbox" id="isOriginalIssue" checked><label for="isOriginalIssue">Stock was acquired as original issue (directly from company, not secondary market)</label></div>
+  <div class="checkbox-row"><input type="checkbox" id="isActiveBusiness" checked><label for="isActiveBusiness">Company is an active business in a qualifying trade (not professional services, finance, hospitality, farming)</label></div>
+  <div class="checkbox-row"><input type="checkbox" id="cashOrService" checked><label for="cashOrService">Stock acquired in exchange for money, property, or services (not via conversion of existing shares)</label></div>
+  <div class="checkbox-row"><input type="checkbox" id="notPublic" checked><label for="notPublic">Company was not publicly traded at time of issuance</label></div>
+  <div class="checkbox-row"><input type="checkbox" id="noRepurchase" checked><label for="noRepurchase">No significant stock repurchase by the company within 2 years before/after issuance</label></div>
+</div>
+
+<!-- Card 3: Tax Rates -->
+<div class="card">
+  <h2>Your Tax Rates</h2>
+  <div class="grid-2">
+    <div class="field">
+      <label for="ltcgRate">Federal LTCG Rate</label>
+      <select id="ltcgRate">
+        <option value="0.15">15%</option>
+        <option value="0.20" selected>20%</option>
+        <option value="0.238">23.8% (with 3.8% NIIT)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="stateRate">State Capital Gains Rate (%)</label>
+      <input type="number" id="stateRate" value="0" min="0" max="15" step="0.1">
+      <span class="hint">Many states do NOT conform to §1202 (e.g., CA, MA, PA). Enter 0 if state conforms or no state tax.</span>
+    </div>
+  </div>
+</div>
+
+<div style="margin-bottom:24px">
+  <button class="btn btn-primary" onclick="calculate()">Estimate §1202 Exclusion →</button>
+</div>
+
+<!-- Results -->
+<div id="results" class="result-hidden">
+
+  <div class="result-hero">
+    <div style="font-size:13px;color:var(--muted)">§1202 QSBS Result</div>
+    <div class="rec" id="mainResult">—</div>
+    <div class="sublabel" id="mainSub">—</div>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="val" id="exclusionPct">—</div>
+      <div class="lbl">Exclusion tier (federal)</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="excludedGain">—</div>
+      <div class="lbl">Gain excluded from federal tax</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="taxWithout">—</div>
+      <div class="lbl">Federal tax without §1202</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="taxWith">—</div>
+      <div class="lbl">Federal tax with §1202</div>
+    </div>
+    <div class="metric-card">
+      <div class="val" id="federalSaving">—</div>
+      <div class="lbl">Federal tax saving</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Eligibility Status</h2>
+    <ul class="checklist" id="eligChecklist"></ul>
+    <div id="eligSummaryBox"></div>
+  </div>
+
+  <div class="card">
+    <h2>Exclusion Tier Table</h2>
+    <table class="tier-table">
+      <thead><tr>
+        <th>Acquisition Period</th><th>Exclusion %</th><th>AMT Pref</th><th>Your Tier?</th>
+      </tr></thead>
+      <tbody id="tierTableBody"></tbody>
+    </table>
+    <div class="warn-box">
+      ⚠️ <strong>Per-issuer cap:</strong> §1202 exclusion is capped at the greater of $10M or 10× adjusted basis per issuer, per taxpayer. If your gain exceeds this, the excess is taxed normally. This tool models up to the $10M cap.
+    </div>
+    <div id="stateWarning" class="danger-box" style="display:none;margin-top:12px"></div>
+  </div>
+
+  <div class="card">
+    <h2>Tax Comparison</h2>
+    <table class="tier-table">
+      <thead><tr><th>Scenario</th><th>Gain Taxable</th><th>Federal Tax</th><th>State Tax</th><th>Total</th></tr></thead>
+      <tbody id="taxCompareBody"></tbody>
+    </table>
+    <div class="info-box" id="holdPeriodNote"></div>
+  </div>
+
+  <div class="card">
+    <h2>State Conformity Note</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Many states do not conform to IRC §1202, meaning your state will tax the full gain even if the federal exclusion applies. Prominent non-conforming states include California, Massachusetts, Pennsylvania, New Jersey, and Alabama. Always verify with a tax advisor for your specific state.</p>
+    <div class="info-box" style="margin-top:0">
+      💡 If your state doesn't conform and you have an 83(b) election on record, your state LTCG will be calculated on the full gain. Factor this into your exit planning — the federal saving may be partially offset by state tax.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Next Steps</h2>
+    <div class="routing-grid">
+      <a href="../140-83b-election-decision/index.html" class="routing-card">
+        <span class="r-icon">📋</span>
+        <div><div class="r-title">83(b) Election Engine</div><div class="r-desc">Filing 83(b) starts your QSBS hold-period clock (AL-147)</div></div>
+      </a>
+      <a href="../141-equity-exit-waterfall/index.html" class="routing-card">
+        <span class="r-icon">💧</span>
+        <div><div class="r-title">Exit Waterfall Modeler</div><div class="r-desc">What's left after preferences — before §1202 savings (AL-148)</div></div>
+      </a>
+      <a href="../109-iso-amt-planner/index.html" class="routing-card">
+        <span class="r-icon">🔢</span>
+        <div><div class="r-title">ISO-AMT Planner</div><div class="r-desc">28% AMT applies to excluded gain pre-2010 tiers (AL-116)</div></div>
+      </a>
+    </div>
+    <div class="results-export-row">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+    </div>
+  </div>
+
+  <div class="mcp-panel">
+    <h3>MCP Integration</h3>
+    <div class="mcp-endpoint">GET https://apexlogics.org/.well-known/mcp.json → tool: estimate_qsbs_1202</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Inbound: 83(b) Election Engine (AL-147), Exit Waterfall (AL-148) · Downstream: ISO-AMT Planner (AL-116)</p>
+  </div>
+
+</div><!-- /results -->
+</div><!-- /main -->
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-149 · Data: IRC §1202 (TCJA 2017 permanent, OBBBA 2025 confirmed); gain caps per statute
+</footer>
+
+<script>
+// ── Constants ─────────────────────────────────────────────────────────────────
+// IRC §1202 QSBS exclusion tiers — statutory, durable
+// 100% exclusion: stock acquired on/after Sep 28, 2010 (Small Business Jobs Act)
+// 75% exclusion: stock acquired Aug 11 – Sep 27, 2010 (Hiring Incentives to Restore Employment Act)
+// 50% exclusion: stock acquired before Aug 11, 2010 (original §1202)
+// Hold period: >5 years (IRC §1202(a))
+// Cap: greater of $10M or 10× adjusted basis per issuer (IRC §1202(b))
+// Gross assets cap: ≤$50M at issuance (IRC §1202(d))
+// AMT preference: pre-2010 stock (50%/75% tiers) has 7% AMT preference item on excluded gain
+// Source: IRC §1202; TCJA 2017; OBBBA 2025 (confirmed permanent)
+const QSBS_CAP = 10_000_000; // $10M per issuer per taxpayer (statutory minimum cap)
+const GROSS_ASSETS_LIMIT = 50; // $50M C-corp gross assets at issuance
+
+const TIERS = [
+  { id:'pre2010',  label:'Before Aug 11, 2010',             pct:0.50, amtPref:true  },
+  { id:'2010',     label:'Aug 11 – Sep 27, 2010',           pct:0.75, amtPref:true  },
+  { id:'2010b',    label:'Sep 28 – Dec 31, 2010',           pct:1.00, amtPref:false },
+  { id:'2011plus', label:'Jan 1, 2011 or later',            pct:1.00, amtPref:false }
+];
+
+let _lastResult = null;
+
+function calculate() {
+  const acquireDate     = document.getElementById('acquireDate').value;
+  const grossAssets     = +document.getElementById('grossAssets').value;
+  const holdYears       = +document.getElementById('holdYears').value;
+  const costBasis       = +document.getElementById('costBasis').value;
+  const saleProceeds    = +document.getElementById('saleProceeds').value;
+  const ltcgRate        = +document.getElementById('ltcgRate').value;
+  const stateRate       = +document.getElementById('stateRate').value / 100;
+
+  const isCCorp         = document.getElementById('isCCorp').checked;
+  const isOriginalIssue = document.getElementById('isOriginalIssue').checked;
+  const isActiveBiz     = document.getElementById('isActiveBusiness').checked;
+  const cashOrService   = document.getElementById('cashOrService').checked;
+  const notPublic       = document.getElementById('notPublic').checked;
+  const noRepurchase    = document.getElementById('noRepurchase').checked;
+
+  const gain = Math.max(0, saleProceeds - costBasis);
+  const tier = TIERS.find(t => t.id === acquireDate);
+  const exclusionPct = tier.pct;
+  const holdOk = holdYears > 5;
+  const assetOk = grossAssets <= GROSS_ASSETS_LIMIT;
+  const coreCrit = isCCorp && isOriginalIssue && isActiveBiz && cashOrService && notPublic && noRepurchase;
+
+  const eligible = coreCrit && holdOk && assetOk;
+
+  // Exclusion capped at $10M (or 10× basis — using $10M floor for simplicity)
+  const tenXBasis = 10 * costBasis;
+  const cap = Math.max(QSBS_CAP, tenXBasis);
+  const excludableGain = Math.min(gain, cap);
+  const excludedGain = eligible ? excludableGain * exclusionPct : 0;
+  const taxableGain  = eligible ? gain - excludedGain : gain;
+
+  const federalTaxWithout  = gain * ltcgRate;
+  const federalTaxWith     = taxableGain * ltcgRate;
+  const federalSaving      = eligible ? federalTaxWithout - federalTaxWith : 0;
+
+  const stateTaxWithout    = gain * stateRate;
+  const stateTaxWith       = stateRate > 0 ? gain * stateRate : 0; // state typically doesn't conform
+
+  _lastResult = {
+    acquireDate, grossAssets, holdYears, costBasis, saleProceeds,
+    ltcgRate, stateRate, isCCorp, isOriginalIssue, isActiveBiz,
+    cashOrService, notPublic, noRepurchase,
+    gain, tier, exclusionPct, holdOk, assetOk, coreCrit, eligible,
+    cap, excludableGain, excludedGain, taxableGain,
+    federalTaxWithout, federalTaxWith, federalSaving,
+    stateTaxWithout, stateTaxWith
+  };
+
+  renderResults(_lastResult);
+}
+
+function renderResults(r) {
+  const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString();
+  const fmtPct = p => (p * 100).toFixed(0) + '%';
+
+  // Main result
+  let mainRes, mainSub;
+  if (!r.coreCrit) {
+    mainRes = 'Not Eligible — Checklist Fails';
+    mainSub = 'One or more core eligibility requirements are not met. Review the checklist below.';
+  } else if (!r.holdOk) {
+    mainRes = `Hold Period Insufficient (${r.holdYears} yr of >5 yr required)`;
+    mainSub = 'Stock must be held more than 5 years to claim §1202 exclusion.';
+  } else if (!r.assetOk) {
+    mainRes = `Gross Assets Exceed $50M — Not Eligible`;
+    mainSub = 'Company gross assets at issuance must be ≤$50M for §1202 qualification.';
+  } else {
+    mainRes = `${fmtPct(r.exclusionPct)} Exclusion · ${fmt(r.federalSaving)} Federal Tax Saving`;
+    mainSub = `${fmt(r.excludedGain)} of ${fmt(r.gain)} gain excluded under §1202 (${r.tier.label})`;
+  }
+
+  document.getElementById('mainResult').textContent = mainRes;
+  document.getElementById('mainSub').textContent   = mainSub;
+
+  document.getElementById('exclusionPct').textContent    = r.eligible ? fmtPct(r.exclusionPct) : 'N/A';
+  document.getElementById('excludedGain').textContent    = r.eligible ? fmt(r.excludedGain) : '$0';
+  document.getElementById('taxWithout').textContent      = fmt(r.federalTaxWithout);
+  document.getElementById('taxWith').textContent         = r.eligible ? fmt(r.federalTaxWith) : fmt(r.federalTaxWithout);
+  document.getElementById('federalSaving').textContent   = fmt(r.federalSaving);
+
+  // Eligibility checklist
+  const checks = [
+    [r.coreCrit ? r.isCCorp : false, 'Domestic C-corporation (not S-corp, LLC, or foreign)'],
+    [r.isOriginalIssue, 'Original issue — acquired directly from company'],
+    [r.isActiveBiz, 'Active qualifying business (not professional services, finance, hospitality)'],
+    [r.cashOrService, 'Acquired for money, property, or services'],
+    [r.notPublic, 'Company was not publicly traded at issuance'],
+    [r.noRepurchase, 'No significant stock repurchase within 2 years of issuance'],
+    [r.assetOk, `C-corp gross assets ≤$50M at issuance (entered: $${r.grossAssets}M)`],
+    [r.holdOk, `Hold period >5 years (entered: ${r.holdYears} yr)`]
+  ];
+  document.getElementById('eligChecklist').innerHTML = checks.map(([pass, text]) =>
+    `<li><span class="${pass ? 'chk-pass' : 'chk-fail'}">${pass ? '✓' : '✗'}</span><span>${text}</span></li>`
+  ).join('');
+
+  const allPass = checks.every(([p]) => p);
+  document.getElementById('eligSummaryBox').innerHTML = allPass
+    ? `<div class="info-box" style="margin-top:12px">✅ All §1202 eligibility requirements met. You qualify for the ${fmtPct(r.exclusionPct)} exclusion tier.</div>`
+    : `<div class="danger-box" style="margin-top:12px">❌ One or more requirements not met — §1202 exclusion is not available on this stock.</div>`;
+
+  // Tier table
+  document.getElementById('tierTableBody').innerHTML = TIERS.map(t =>
+    `<tr${t.id === r.tier.id ? ' class="active-tier"' : ''}>
+      <td>${t.label}</td>
+      <td class="mono">${fmtPct(t.pct)}</td>
+      <td>${t.amtPref ? '7% pref item' : 'No AMT pref'}</td>
+      <td>${t.id === r.tier.id ? '◀ Your tier' : ''}</td>
+    </tr>`
+  ).join('');
+
+  // State warning
+  const stateWarn = document.getElementById('stateWarning');
+  if (r.stateRate > 0) {
+    stateWarn.style.display = 'block';
+    stateWarn.innerHTML = `⚠️ <strong>State non-conformity:</strong> You entered a ${(r.stateRate*100).toFixed(1)}% state rate. Many states (CA, MA, PA, NJ, AL) do not conform to §1202 and will tax the full gain. State tax estimated: ${fmt(r.stateTaxWith)} (full gain × ${(r.stateRate*100).toFixed(1)}%). This reduces your net saving — verify your state's conformity with a tax advisor.`;
+  } else {
+    stateWarn.style.display = 'none';
+  }
+
+  // Tax comparison table
+  const withTotal  = r.federalTaxWith + r.stateTaxWith;
+  const withoutTotal = r.federalTaxWithout + r.stateTaxWithout;
+  document.getElementById('taxCompareBody').innerHTML = `
+    <tr>
+      <td>Without §1202</td>
+      <td class="mono">${fmt(r.gain)}</td>
+      <td class="mono">${fmt(r.federalTaxWithout)}</td>
+      <td class="mono">${r.stateRate > 0 ? fmt(r.stateTaxWithout) : 'N/A'}</td>
+      <td class="mono">${fmt(withoutTotal)}</td>
+    </tr>
+    <tr class="active-tier">
+      <td>With §1202 (${r.eligible ? fmtPct(r.exclusionPct) + ' excl.' : 'not eligible'})</td>
+      <td class="mono">${fmt(r.taxableGain)}</td>
+      <td class="mono">${fmt(r.federalTaxWith)}</td>
+      <td class="mono">${r.stateRate > 0 ? fmt(r.stateTaxWith) : 'N/A'}</td>
+      <td class="mono">${fmt(withTotal)}</td>
+    </tr>
+    <tr>
+      <td><strong>Saving</strong></td>
+      <td></td>
+      <td class="mono" style="color:var(--success)">+${fmt(r.federalSaving)}</td>
+      <td class="mono" style="color:var(--danger)">${r.stateRate > 0 ? '–$0 (state)' : 'N/A'}</td>
+      <td class="mono" style="color:var(--success)">+${fmt(r.federalSaving)}</td>
+    </tr>`;
+
+  // Hold period note
+  document.getElementById('holdPeriodNote').innerHTML = r.eligible
+    ? `✅ You meet the >5-year hold requirement. Remember: the clock starts at acquisition (or grant date if §83(b) election was filed for restricted stock).`
+    : r.holdOk
+    ? `⚠️ Hold period met, but other criteria failed — see eligibility checklist.`
+    : `📅 ${5 - r.holdYears > 0 ? `Hold for ${(5 - r.holdYears).toFixed(1)} more years` : 'Hold period requirement not yet met'} to qualify for §1202. Consider whether a §1045 rollover into another QSBS is available before the 5-year mark if you need liquidity.`;
+
+  document.getElementById('results').classList.remove('result-hidden');
+}
+
+// ── Exports ───────────────────────────────────────────────────────────────────
+function fmtD(n){ return '$' + Math.round(n).toLocaleString(); }
+
+function exportMarkdown() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const fmtPct = p => (p * 100).toFixed(0) + '%';
+  const md =
+`# QSBS §1202 Exclusion Estimator — AL-149
+
+**Acquisition:** ${r.tier.label} · **Hold:** ${r.holdYears} yr · **Basis:** ${fmtD(r.costBasis)} · **Proceeds:** ${fmtD(r.saleProceeds)}
+**Total gain:** ${fmtD(r.gain)} · **LTCG rate:** ${fmtPct(r.ltcgRate)} · **State rate:** ${(r.stateRate*100).toFixed(1)}%
+
+## §1202 Eligibility: ${r.eligible ? '✅ ELIGIBLE' : '❌ NOT ELIGIBLE'}
+
+## Tax Impact
+| | Amount |
+|---|---|
+| Gain excluded from federal tax | ${fmtD(r.excludedGain)} (${fmtPct(r.exclusionPct)}) |
+| Federal tax **without** §1202 | ${fmtD(r.federalTaxWithout)} |
+| Federal tax **with** §1202 | ${fmtD(r.federalTaxWith)} |
+| **Federal tax saving** | **${fmtD(r.federalSaving)}** |
+${r.stateRate > 0 ? `| State tax (state likely non-conforming) | ${fmtD(r.stateTaxWith)} |` : ''}
+
+## Cap Applied
+$10M cap (or 10× basis = ${fmtD(10 * r.costBasis)}); effective cap = ${fmtD(r.cap)}
+
+⚠️ *Consult a tax advisor. Many states do not conform to §1202.*
+
+---
+*Generated by ApexLogics AL-149 · apexlogics.org · Data: IRC §1202 (OBBBA 2025 permanent)*`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'qsbs-1202-AL149.md'; a.click();
+}
+
+function exportAP2() {
+  if (!_lastResult) { alert('Run the calculator first.'); return; }
+  const r = _lastResult;
+  const payload = {
+    ap2_version: "2.0",
+    mandate_type: "qsbs_exclusion_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-149",
+    tool_id: "142-qsbs-1202-estimator",
+    inputs: {
+      acquisitionPeriod: r.acquireDate,
+      grossAssetsAtIssuanceMillion: r.grossAssets,
+      holdYears: r.holdYears,
+      costBasis: r.costBasis,
+      saleProceeds: r.saleProceeds,
+      ltcgRate: r.ltcgRate,
+      stateRate: r.stateRate,
+      eligibilityFlags: {
+        isCCorp: r.isCCorp, isOriginalIssue: r.isOriginalIssue,
+        isActiveBusiness: r.isActiveBiz, cashOrService: r.cashOrService,
+        notPublic: r.notPublic, noRepurchase: r.noRepurchase
+      }
+    },
+    outputs: {
+      eligible: r.eligible,
+      exclusionTier: (r.exclusionPct * 100).toFixed(0) + '%',
+      totalGain: Math.round(r.gain),
+      excludedGain: Math.round(r.excludedGain),
+      taxableGain: Math.round(r.taxableGain),
+      federalTaxWithout: Math.round(r.federalTaxWithout),
+      federalTaxWith: Math.round(r.federalTaxWith),
+      federalSaving: Math.round(r.federalSaving),
+      capApplied: Math.round(r.cap),
+      amtPreferenceItem: r.tier.amtPref
+    },
+    downstream_handoff_candidates: ["AL-116"],
+    metadata: { license: "CC-BY-4.0", data_vintage: "IRC §1202; OBBBA 2025 (permanent exclusion confirmed)" }
+  };
+  const AP2Schema = {
+    validMandateTypes: ['qsbs_exclusion_record'],
+    validate: function(p) {
+      const errors = [];
+      ['ap2_version','mandate_type','al_id','inputs','outputs'].forEach(k => {
+        if (!p[k]) errors.push('missing: ' + k);
+      });
+      if (p.mandate_type && !this.validMandateTypes.includes(p.mandate_type))
+        errors.push('unrecognized mandate_type: ' + p.mandate_type);
+      return { valid: errors.length === 0, errors };
+    }
+  };
+  const vr = AP2Schema.validate(payload);
+  if (!vr.valid) { alert('AP2 validation error: ' + vr.errors.join(', ')); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'ap2-qsbs-1202-AL149.json'; a.click();
+}
+</script>
+</body>
+</html>
