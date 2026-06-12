@@ -1,9 +1,9 @@
 # Apex Logics — Career & Education Finance Suite
 
-> 28 deterministic, browser-based tools for career ROI, education finance, compensation analysis, licensing, and immigration.  
+> A growing suite of deterministic, browser-based calculators for career ROI, education finance, compensation analysis, licensing, immigration, and workforce development.  
 > Built by [Post Oak Labs](https://postoaklabs.com) · [Apex Advisory](https://apexadvisory.site) · Live at [apexlogics.org](https://apexlogics.org)
 
-🔒 **Zero PII** · 📡 **Zero APIs** · 💻 **Client-Side Only** · 🌍 **6-Language i18n** · 📜 **CC BY 4.0**
+🔒 **Zero PII** · 📡 **Zero APIs** · 💻 **Client-Side Only** · 📜 **CC BY 4.0**
 
 ---
 
@@ -12,64 +12,87 @@
 A privacy-first, deterministic tool suite covering:
 
 - Career ROI modeling & transition planning
-- Education finance (FAFSA, student loans, graduate school)
-- Compensation analysis (equity, total comp, offer negotiation)
+- Education finance (FAFSA, student loans, graduate school, OBBBA)
+- Compensation analysis (equity, total comp, offer negotiation, raise strategy)
 - Test prep & certification investment analysis
-- International student cost modeling
-- Professional licensing & visa strategy
-- Workforce program ROI & career resilience scoring
+- International student cost modeling & immigration strategy
+- Professional licensing & visa pathways
+- Workforce program ROI & career resilience
+- Trade & veteran career transitions
+- Childcare economics & parental leave
 - AP2 mandate exports for AI-assisted advisory handoffs
+
+**Current tool count, workflows, and guides:** see [`llms.txt`](llms.txt) or [`suite-registry.json`](suite-registry.json).
+
+---
 
 ## Repository Structure
 
 ```
 apexlogics/
-├── index.html          ← Homepage (28 tool cards)
-├── tools/              ← 28 self-contained tool pages (one subdir each)
+├── index.html              ← Homepage (tool cards + workflow links)
+├── tools/                  ← Self-contained tool pages (one subdir each)
 │   └── {slug}/
-│       └── index.html
-├── assets/             ← Brand assets (SVG logos)
-├── scripts/            ← CI validation scripts
-├── sitemap.html        ← Human-readable sitemap
-├── sitemap.xml         ← Machine-readable sitemap
-├── suite-registry.json ← Machine-readable tool index
-├── llms.txt            ← Agent-readable suite index
-└── .github/workflows/  ← Deploy pipeline (preflight → rsync → smoke test)
+│       ├── index.html      ← Single-file tool (inline CSS/JS)
+│       └── manifest.json   ← MCP tool definition + AP2 schema
+├── workflows/              ← Multi-tool decision journeys
+├── guides/                 ← Topic hubs (student loans, selected studies, etc.)
+├── assets/                 ← Brand assets (SVG logos)
+├── scripts/                ← CI validation scripts
+├── sitemap.html            ← Human-readable sitemap
+├── sitemap.xml             ← Machine-readable sitemap
+├── suite-registry.json     ← Machine-readable tool index (authoritative counts)
+├── llms.txt                ← Agent-readable suite index
+├── .well-known/mcp.json    ← MCP discovery endpoint
+└── .github/workflows/      ← Deploy pipeline (preflight → rsync → smoke test)
 ```
+
+---
 
 ## Architecture
 
 - **Single-file tools:** Each lives in `tools/{slug}/index.html` with fully inline CSS/JS. No build step, no dependencies, no CDN calls after page load.
 - **Deterministic execution:** Rule-based math, schema validation, static reference tables. Reproducible outputs.
-- **AP2-compliant exports:** Machine-readable policy mandates + Markdown audit trails, validated before download.
-- **i18n:** Full UI chrome translation across `EN · ES · FR · AR · PT · 中文`.
+- **AP2-compliant exports:** Machine-readable policy mandates (v2.0 flat schema) + Markdown audit trails, validated before download.
+- **English-only UI.** No i18n toggle.
+
+---
 
 ## Technical Specifications
 
 | Item | Detail |
 |------|--------|
-| Build contract | `CLAUDE.md` (architecture rules) |
-| Storage | `sessionStorage` for `apex_lang` + `apex_intro_dismissed` only. No `localStorage`, cookies, or IndexedDB. |
+| Build contract | `CLAUDE.md` in parent folder (internal) |
+| Storage | Minimal `sessionStorage` only — no `localStorage`, cookies, or IndexedDB |
 | Network | Zero `fetch`, CDN, WebWorker, or external API calls after page load |
 | PII banner | All tools display: *"🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab."* |
-| Export format | AP2 v1.0 mandate JSON + Markdown |
+| Export format | AP2 v2.0 mandate JSON + Markdown (Tier 1 mandatory); CSV/PDF/SVG optional by tool type |
 | License | CC BY 4.0 |
+
+---
 
 ## Deploy Pipeline
 
 Every push to `main` runs:
 
-1. **Pre-flight** — index sync check (every tool subdir has a homepage card), CRLF guard
+1. **Pre-flight** — index sync check (every tool subdir has a hub card), JS syntax gate, CRLF guard
 2. **Deploy** — rsync to DreamHost via SSH (excludes `.git/`, `scripts/`, `*.md`, etc.)
 3. **Smoke test** — HTTP 200 check against live domain
 
 Required GitHub Secrets: `DH_SSH_KEY`, `DH_SSH_USER`, `DH_SSH_HOST`, `DH_WEB_ROOT`, `DH_SITE_URL`
 
+---
+
 ## Adding a Tool
 
 1. Create `tools/{kebab-slug}/index.html` (single self-contained file per architecture rules)
-2. Add a card to `index.html` with `href="tools/{kebab-slug}/index.html"`
-3. Push — CI validates and deploys automatically
+2. Create `tools/{kebab-slug}/manifest.json` with required fields (`al_id`, `sister_suite`, `consulting_site`)
+3. Add a card to `index.html`
+4. Update `suite-registry.json`, `llms.txt`, `sitemap.xml`, `sitemap.html`
+5. Run `node scripts/check_tools.js` — must exit 0
+6. Push — CI validates and deploys automatically
+
+---
 
 ## Links
 
