@@ -174,15 +174,7 @@ input[readonly]{color:var(--muted);cursor:default;}
 /* ── EXPORT ROW ──────────────────────────────────────────── */
 .results-export-row{margin-top:1.5rem;padding:1rem 1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;}
 .export-label{font-size:.75rem;color:var(--muted);font-family:var(--font-mono);flex:1;min-width:160px;}
-/* ── MCP PANEL ───────────────────────────────────────────── */
-.mcp-panel{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-top:2rem;}
-.mcp-section { max-width: 680px; margin: 24px auto 0; }
 
-.mcp-toggle{width:100%;background:var(--surface);border:none;padding:.85rem 1.25rem;text-align:left;color:var(--muted);font-size:.78rem;font-family:var(--font-mono);cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:color .15s;}
-.mcp-toggle:hover{color:var(--body);}
-.mcp-body{display:none;padding:1.25rem;background:var(--surface-2);border-top:1px solid var(--border);}
-.mcp-body.open{display:block;}
-pre.mcp-json{font-family:var(--font-mono);font-size:.72rem;color:var(--body);white-space:pre-wrap;word-break:break-all;line-height:1.55;}
 /* ── FOOTER ──────────────────────────────────────────────── */
 .tool-footer{border-top:1px solid var(--border);padding:2rem 1.5rem;text-align:center;color:var(--muted);font-size:.75rem;margin-top:3rem;}
 .tool-footer a{color:var(--muted);}
@@ -201,6 +193,10 @@ pre.mcp-json{font-family:var(--font-mono);font-size:.72rem;color:var(--body);whi
   .nav-links{gap:.5rem;}
   .tool-h1{font-size:1.4rem;}
 }
+.mfst-btn{width:100%;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;margin-top:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+.mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+.mfst-body{display:none;margin-top:1px;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+.mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
 </style>
 </head>
 <body>
@@ -444,16 +440,10 @@ pre.mcp-json{font-family:var(--font-mono);font-size:.72rem;color:var(--body);whi
 </main>
 
 <!-- ══ FOOTER ════════════════════════════════════════════════ -->
-<div class="mcp-section"><button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">
-    MCP Tool Manifest
-  </button>
-  <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
-    <pre id="mcpManifestPre"></pre>
-  </div>
+<button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+<div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
 
-</div>
-
-  <footer class="tool-footer">
+<footer class="tool-footer">
   <a href="../../about.html">About</a> · CC BY 4.0 · AL-23 · Data vintage: 2025 (IRS Rev. Proc. 2024-25). Not financial or tax advice.
 </footer>
 
@@ -1153,7 +1143,6 @@ function exportMarkdown() {
   );
 }
 
-/* ── MCP TOGGLE ────────────────────────────────────────────── */
 function toggleMcp(btn) {
   const body = document.getElementById('mcp-body');
   const isOpen = body.classList.toggle('open');
@@ -1215,21 +1204,17 @@ document.addEventListener('DOMContentLoaded', () => {
   addPlan();
 });
 
-/* -- MCP TOGGLE -- */
-function toggleMCP() {
-  const btn   = document.getElementById('mcpToggleBtn');
-  const panel = document.getElementById('mcpPanel');
-  const pre   = document.getElementById('mcpManifestPre');
-  const open  = panel.classList.toggle('open');
-  btn.classList.toggle('open', open);
-  btn.setAttribute('aria-expanded', open);
-  if (open && !pre.textContent) {
-    const manifest = {
+;
+    pre.textContent = JSON.stringify(manifest, null, 2);
+  }
+}
+
+const MANIFEST = {
   "tool_id": "04-benefits-open-enrollment-optimizer",
   "al_id": "AL-23",
   "version": "1.0.0",
   "title": "Benefits Open Enrollment Optimizer",
-  "description": "Compare up to 3 employer health plans by expected annual cost (premium + estimated OOP), model HSA/FSA tax savings including FICA exemption for HSA, and calculate 401(k) match capture rate. All inputs user-supplied \u2014 zero embedded employer plan data.",
+  "description": "Compare up to 3 employer health plans by expected annual cost (premium + estimated OOP), model HSA/FSA tax savings including FICA exemption for HSA, and calculate 401(k) match capture rate. All inputs user-supplied — zero embedded employer plan data.",
   "category": "compensation_offers",
   "journeys": [
     "compensation_benefits"
@@ -1256,17 +1241,202 @@ function toggleMCP() {
   ],
   "status": "shipped",
   "maintenance": "zero",
-  "data_vintage": "2025 IRS limits: HSA self-only $4,300 \u00b7 HSA family $8,550 \u00b7 FSA $3,300 \u00b7 FSA carryover $660 \u00b7 401(k) $23,500 (IRS Rev. Proc. 2024-25 \u00b7 IR-2024-285). Limits are user-editable; no employer plan data embedded.",
-  "ap2_export": true,
-  "ap2_mandate_types": [
-    "benefits_election_record"
-  ],
-  "license": "CC-BY-4.0",
-  "execution": {
-    "type": "browser-javascript",
-    "entry": "index.html",
-    "function_name": "runAnalysis",
-    "timeout_ms": 3000
+  "data_vintage": "2025 IRS limits: HSA self-only $4,300 · HSA family $8,550 · FSA $3,300 · FSA carryover $660 · 401(k) $23,500 (IRS Rev. Proc. 2024-25 · IR-2024-285). Limits are user-editable; no employer plan data embedded.",
+  "frozen_baseline": false,
+  "input_schema": {
+    "type": "object",
+    "required": [
+      "plans",
+      "expected_spend",
+      "coverage_type"
+    ],
+    "properties": {
+      "coverage_type": {
+        "type": "string",
+        "enum": [
+          "self",
+          "self_spouse",
+          "self_child",
+          "family"
+        ]
+      },
+      "expected_spend": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Anticipated annual medical spend in USD (prescriptions, visits, procedures)"
+      },
+      "marginal_tax_rate_pct": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 60,
+        "default": 25,
+        "description": "Combined federal + state marginal income tax rate as a percentage"
+      },
+      "plans": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 3,
+        "items": {
+          "type": "object",
+          "required": [
+            "name",
+            "monthly_premium"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "hdhp",
+                "ppo",
+                "hmo",
+                "epo",
+                "other"
+              ]
+            },
+            "monthly_premium": {
+              "type": "number",
+              "minimum": 0
+            },
+            "deductible_individual": {
+              "type": "number",
+              "minimum": 0
+            },
+            "deductible_family": {
+              "type": "number",
+              "minimum": 0
+            },
+            "oop_max_individual": {
+              "type": "number",
+              "minimum": 0
+            },
+            "oop_max_family": {
+              "type": "number",
+              "minimum": 0
+            },
+            "coinsurance_pct": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "employer_hsa_seed": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      },
+      "hsa_fsa": {
+        "type": "object",
+        "properties": {
+          "account_type": {
+            "type": "string",
+            "enum": [
+              "hsa_self",
+              "hsa_family",
+              "fsa",
+              "none"
+            ]
+          },
+          "employee_contribution": {
+            "type": "number",
+            "minimum": 0
+          },
+          "employer_contribution": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      },
+      "retirement": {
+        "type": "object",
+        "properties": {
+          "annual_salary": {
+            "type": "number",
+            "minimum": 0
+          },
+          "contrib_pct": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "match_rate_pct": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 200
+          },
+          "match_cap_pct": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "irs_401k_limit": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "recommended_plan": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "net_annual_cost": {
+            "type": "number"
+          },
+          "estimated_oop": {
+            "type": "number"
+          },
+          "annual_premium": {
+            "type": "number"
+          }
+        }
+      },
+      "all_plans": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "net_annual_cost": {
+              "type": "number"
+            },
+            "estimated_oop": {
+              "type": "number"
+            }
+          }
+        }
+      },
+      "hsa_fsa_tax_savings": {
+        "type": "number",
+        "description": "Total federal + FICA tax savings from HSA/FSA election"
+      },
+      "match_received": {
+        "type": "number",
+        "description": "Annual employer 401(k) match dollars captured"
+      },
+      "match_leave_on_table": {
+        "type": "number",
+        "description": "Annual employer match dollars forfeited by under-contributing"
+      },
+      "match_capture_rate_pct": {
+        "type": "number",
+        "description": "Percentage of max possible employer match being captured"
+      }
+    }
   },
   "mcp_tool_definition": {
     "name": "optimize_benefits_enrollment",
@@ -1319,12 +1489,31 @@ function toggleMCP() {
         }
       }
     }
-  }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "runAnalysis",
+    "timeout_ms": 3000
+  },
+  "ap2_export": true,
+  "ap2_mandate_types": [
+    "benefits_election_record"
+  ],
+  "regulatory_citations": [
+    "IRS Rev. Proc. 2024-25 — 2025 HSA contribution limits: self-only $4,300, family $8,550",
+    "IRS IR-2024-285 — 2025 401(k) elective deferral limit $23,500",
+    "IRS Publication 969 — Health Savings Accounts and other tax-favored health plans",
+    "IRC Section 125 — Cafeteria plan FICA exclusion for HSA and FSA payroll deductions",
+    "ACA Section 1302(c) — Out-of-pocket maximum limits (updated annually by HHS)"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
 };
-    pre.textContent = JSON.stringify(manifest, null, 2);
-  }
-}
 
+/* ── MCP / MANIFEST TOGGLE (standardized) ── */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';a.textContent='▼';}}
 </script>
 </body>
 </html>

@@ -275,32 +275,6 @@ input[type="number"]::placeholder { color:var(--muted); }
   font-size:.7rem; font-weight:500;
 }
 
-/* ════════════════════════ MCP PANEL ════════════════════════ */
-.mcp-section { max-width: 680px; margin: 24px auto 0; }
-
-.mcp-toggle {
-  background:var(--bg-2); border:1px solid var(--border);
-  border-radius:var(--radius-lg); margin-bottom:18px;
-}
-.mcp-toggle summary {
-  padding:14px 22px;
-  font-family:'JetBrains Mono',monospace; font-size:.6rem;
-  letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
-  cursor:pointer; list-style:none;
-}
-.mcp-toggle summary::before { content:"▸ "; }
-.mcp-toggle[open] summary::before { content:"▾ "; }
-.mcp-panel {
-  padding:0 22px 22px;
-  font-family:'JetBrains Mono',monospace; font-size:.65rem; line-height:1.6;
-  color:var(--body);
-}
-.mcp-panel pre {
-  background:var(--bg-3); border:1px solid var(--border);
-  border-radius:var(--radius); padding:14px; overflow-x:auto;
-  font-size:.62rem; color:var(--text);
-}
-
 /* ════════════════════════ TOAST ════════════════════════ */
 .toast {
   position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
@@ -333,6 +307,10 @@ input[type="number"]::placeholder { color:var(--muted); }
 
 /* helpers */
 .hidden { display:none !important; }
+.mfst-btn{width:100%;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;margin-top:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+.mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+.mfst-body{display:none;margin-top:1px;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+.mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
 </style>
 </head>
 <body>
@@ -632,16 +610,10 @@ input[type="number"]::placeholder { color:var(--muted); }
   <!-- MCP PANEL -->
 
   <!-- ════════════════════════ FOOTER ════════════════════════ -->
-  <div class="mcp-section"><button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">
-    MCP Tool Manifest
-  </button>
-  <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
-    <pre id="mcpManifestPre"></pre>
-  </div>
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+<div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
 
-  </div>
-
-  <footer class="tool-footer">
+<footer class="tool-footer">
   <a href="../../about.html">About</a> · CC BY 4.0 · AL-17 · Data as of 2026-27 award year (Federal Register 2025-10243)
 </footer>
 
@@ -1373,16 +1345,12 @@ function setLang(lang) {
   setLang(lang);
 })();
 
-/* -- MCP TOGGLE -- */
-function toggleMCP() {
-  const btn   = document.getElementById('mcpToggleBtn');
-  const panel = document.getElementById('mcpPanel');
-  const pre   = document.getElementById('mcpManifestPre');
-  const open  = panel.classList.toggle('open');
-  btn.classList.toggle('open', open);
-  btn.setAttribute('aria-expanded', open);
-  if (open && !pre.textContent) {
-    const manifest = {
+;
+    pre.textContent = JSON.stringify(manifest, null, 2);
+  }
+}
+
+const MANIFEST = {
   "tool_id": "02-fafsa-sai-simulator",
   "al_id": "AL-17",
   "version": "1.1.0",
@@ -1407,16 +1375,122 @@ function toggleMCP() {
   "status": "live",
   "maintenance": "medium",
   "data_vintage": "2026-27 award year (Federal Register 2025-10243, June 5, 2025; FSA Handbook 2026-27 Ch. 3; Pell Grant DCL Jan 30, 2026)",
-  "ap2_export": true,
-  "ap2_mandate_types": [
-    "fafsa_sai_estimate"
-  ],
-  "license": "CC-BY-4.0",
-  "execution": {
-    "type": "browser-javascript",
-    "entry": "index.html",
-    "function_name": "calculate",
-    "timeout_ms": 5000
+  "frozen_baseline": false,
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "formula": {
+        "type": "string",
+        "enum": [
+          "A",
+          "B",
+          "C"
+        ],
+        "description": "A=dependent student; B=independent w/o dependents; C=independent w/ dependents"
+      },
+      "familySize": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 20
+      },
+      "marital": {
+        "type": "string",
+        "enum": [
+          "single",
+          "married"
+        ]
+      },
+      "agi": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Applicant or parent AGI from 2024 Form 1040 line 11"
+      },
+      "untaxed": {
+        "type": "number",
+        "minimum": 0
+      },
+      "taxes": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Federal income taxes paid (Form 1040 line 24)"
+      },
+      "lowerEarnerWages": {
+        "type": "number",
+        "minimum": 0,
+        "description": "For Employment Expense Allowance (two-earner households)"
+      },
+      "assets": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Net assets excl. primary home and qualified retirement accounts"
+      },
+      "studentIncome": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Formula A only — student's own AGI"
+      },
+      "studentTaxes": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Formula A only"
+      },
+      "studentAssets": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Formula A only"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "48",
+          "AK",
+          "HI"
+        ],
+        "description": "For FPL lookup"
+      }
+    },
+    "required": [
+      "formula",
+      "agi"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "sai": {
+        "type": "integer",
+        "minimum": -1500,
+        "description": "Student Aid Index, USD"
+      },
+      "pell_tier": {
+        "type": "string",
+        "enum": [
+          "max",
+          "partial",
+          "min",
+          "none"
+        ]
+      },
+      "pell_award": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 7395,
+        "description": "Estimated Pell Grant award in USD"
+      },
+      "pell_pathway": {
+        "type": "string",
+        "description": "Plain-English explanation of which Pell tier triggered and why"
+      },
+      "breakdown": {
+        "type": "object",
+        "description": "Step-by-step calculation breakdown for transparency"
+      }
+    },
+    "required": [
+      "sai",
+      "pell_tier",
+      "pell_award"
+    ]
   },
   "mcp_tool_definition": {
     "name": "estimate_fafsa_sai",
@@ -1476,12 +1550,34 @@ function toggleMCP() {
         "agi"
       ]
     }
-  }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 5000
+  },
+  "ap2_export": true,
+  "ap2_mandate_types": [
+    "fafsa_sai_estimate"
+  ],
+  "downstream_handoff_candidates": [
+    "AL-02",
+    "AL-26"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0",
+  "regulatory_citations": [
+    "https://www.federalregister.gov/documents/2025/06/05/2025-10243/federal-need-analysis-methodology-for-the-2026-27-award-year-federal-pell-grant-federal-work-study",
+    "https://fsapartners.ed.gov/knowledge-center/fsa-handbook/2026-2027/application-and-verification-guide/ch3-student-aid-index-sai-and-pell-grant-eligibility",
+    "https://fsapartners.ed.gov/knowledge-center/library/dear-colleague-letters/2026-01-30/2026-27-federal-pell-grant-maximum-and-minimum-award-amounts",
+    "https://aspe.hhs.gov/sites/default/files/documents/7240229f28375f54435c5b83a3764cd1/detailed-guidelines-2024.pdf"
+  ]
 };
-    pre.textContent = JSON.stringify(manifest, null, 2);
-  }
-}
 
+/* ── MCP / MANIFEST TOGGLE (standardized) ── */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';a.textContent='▼';}}
 </script>
 </body>
 </html>

@@ -90,11 +90,6 @@
     .export-btn:hover { border-color: var(--accent); color: var(--accent); }
     .export-btn.ap2 { border-color: rgba(167,139,250,0.4); color: var(--accent); }
     .export-btn.ap2:hover { background: var(--accent-dim); }
-    .mcp-section { max-width: 680px; margin: 24px auto 0; }
-    .mcp-toggle { background: none; border: 1px dashed var(--border); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 8px 14px; border-radius: 6px; cursor: pointer; width: 100%; text-align: left; margin-top: 24px; }
-    .mcp-panel { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 8px; }
-    .mcp-panel.open { display: block; }
-    .mcp-pre { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
     .tool-footer { border-top: 1px solid var(--border); padding: 1.75rem 1.5rem; margin-top: 3rem; font-size: 0.78rem; color: var(--text-muted, var(--muted)); font-family: 'JetBrains Mono', monospace; text-align: center; }
     .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
     .tool-footer a:hover { color: var(--text, var(--body)); }
@@ -104,7 +99,11 @@
       .tool-title { font-size: 1.8rem; }
       .results-export-row { flex-direction: column; }
     }
-  </style>
+  .mfst-btn{width:100%;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;margin-top:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+.mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+.mfst-body{display:none;margin-top:1px;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+.mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+</style>
 </head>
 <body>
 
@@ -142,7 +141,6 @@
   <div class="tool-vintage">📊 Zero — pure NPV math on user-supplied inputs. No embedded program databases.</div>
 
   <div class="pii-banner"><div class="pii-inner"><span>🔒</span><span data-i18n="pii">All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span></div></div>
-
 
   <div class="card">
     <div class="card-title">Current Situation <span class="badge">Your Profile</span></div>
@@ -272,14 +270,10 @@
     </div>
   </div>
 
-  <div class="mcp-section">
-    <button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">▸ Developer / Agent Integration (manifest.json)</button>
-    <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
-      <pre class="mcp-pre" id="mcpManifestPre"></pre>
-    </div>
-  </div>
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+<div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
 
-  <footer class="tool-footer">
+<footer class="tool-footer">
     <a href="../../about.html">About</a> · CC BY 4.0 · AL-57 · Data: EMBA/FT program costs 2024–25
   </footer>
 
@@ -516,27 +510,6 @@ function exportAP2() {
   setTimeout(() => URL.revokeObjectURL(a.href), 60000);
 }
 
-function toggleMCP() {
-  const panel = $('mcpPanel'), btn = $('mcpToggleBtn');
-  const open = panel.classList.toggle('open');
-  btn.textContent = (open ? '▾ ' : '▸ ') + 'Developer / Agent Integration (manifest.json)';
-  btn.setAttribute('aria-expanded', open);
-  if (open && !$('mcpManifestPre').textContent) {
-    $('mcpManifestPre').textContent = JSON.stringify({
-      al_id:'AL-57', version:'1.0.0', title:'Executive MBA vs. Full-Time MBA Decision Engine',
-      slug:'52-exec-mba-vs-fulltime-mba-engine',
-      description:'10-year NPV comparison of EMBA (keep working), Full-Time MBA (quit for 2 years), and No MBA paths. Models employer sponsorship, 2-year salary gap, career pivot feasibility, and break-even year.',
-      category:'education_path_roi', journeys:['education_path','career_navigation'],
-      personas:['working_professional','student','counselor'],
-      tags:['emba','executive-mba','full-time-mba','mba','career-pivot','npv','employer-sponsorship'],
-      status:'shipped', maintenance:'zero',
-      ap2_export:true, ap2_mandate_types:['exec_mba_record'],
-      downstream_handoff_candidates:['AL-29','AL-52','AL-26'],
-      sister_suite:'https://ainumbers.co', consulting_site:'https://apexadvisory.site', license:'CC-BY-4.0'
-    }, null, 2);
-  }
-}
-
 const I18N_CHROME = {
   en: {
     pii: 'All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.',
@@ -577,6 +550,54 @@ function setLang(lang) {
   const s = sessionStorage.getItem('apex_lang');
   setLang(s || ({en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'})[(navigator.language||'en').slice(0,2)] || 'en');
 })();
+
+const MANIFEST = {
+  "al_id": "AL-57",
+  "version": "1.0.0",
+  "title": "Executive MBA vs. Full-Time MBA Decision Engine",
+  "slug": "52-exec-mba-vs-fulltime-mba-engine",
+  "file_path": "tools/52-exec-mba-vs-fulltime-mba-engine/index.html",
+  "description": "10-year NPV comparison of three paths: EMBA (keep working), Full-Time MBA (2-year leave), and No MBA. Models employer sponsorship, 2-year forgone salary, career pivot feasibility by goal type, salary lift timing, and year-by-year break-even.",
+  "category": "education_path_roi",
+  "journeys": [
+    "education_path",
+    "career_navigation"
+  ],
+  "personas": [
+    "working_professional",
+    "student",
+    "counselor"
+  ],
+  "tags": [
+    "emba",
+    "executive-mba",
+    "full-time-mba",
+    "mba",
+    "career-pivot",
+    "npv",
+    "employer-sponsorship",
+    "break-even"
+  ],
+  "status": "shipped",
+  "maintenance": "zero",
+  "data_vintage": "Zero — pure NPV math on user-supplied inputs",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": [
+    "exec_mba_record"
+  ],
+  "downstream_handoff_candidates": [
+    "AL-29",
+    "AL-52",
+    "AL-26"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+/* ── MCP / MANIFEST TOGGLE (standardized) ── */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';a.textContent='▼';}}
 </script>
 </body>
 </html>

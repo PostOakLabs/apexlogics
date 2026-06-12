@@ -583,40 +583,6 @@ select.field-input option { background: var(--bg-3); }
 /* ============================================================
    MCP PANEL
    ============================================================ */
-.mcp-section { max-width: 680px; margin: 24px auto 0; }
-
-.mcp-toggle {
-  background: none;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  font-family: 'Sora', sans-serif;
-  font-size: 12px;
-  padding: 8px 14px;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: all .15s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-.mcp-toggle:hover { color: var(--teal); border-color: var(--teal); }
-.mcp-toggle:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
-.mcp-panel {
-  display: none;
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: 20px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  color: var(--body);
-  overflow-x: auto;
-  white-space: pre;
-  line-height: 1.6;
-}
-.mcp-panel.open { display: block; }
 
 /* ============================================================
    TOAST
@@ -729,6 +695,10 @@ select.field-input option { background: var(--bg-3); }
 [dir="rtl"] .tax-table td { text-align: right; }
 [dir="rtl"] .tax-table td.amount { text-align: left; }
 [dir="rtl"] .results-export-row { flex-direction: row-reverse; }
+.mfst-btn{width:100%;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;margin-top:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+.mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+.mfst-body{display:none;margin-top:1px;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+.mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
 </style>
 </head>
 <body>
@@ -975,23 +945,15 @@ select.field-input option { background: var(--bg-3); }
        ============================================================ -->
     <span id="mcpArrow">▶</span> MCP Manifest
   </button>
-  <div class="mcp-panel" id="mcpPanel" aria-hidden="true" role="region" aria-label="MCP manifest JSON"></div>
-
-</main><!-- end main-wrap -->
+  </main><!-- end main-wrap -->
 
 <!-- ============================================================
      FOOTER — CONTRACT §6.2 — exact attribution required
      ============================================================ -->
-<div class="mcp-section"><button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">
-    MCP Tool Manifest
-  </button>
-  <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
-    <pre id="mcpManifestPre"></pre>
-  </div>
+<button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+<div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
 
-</div>
-
-  <footer class="tool-footer">
+<footer class="tool-footer">
   <a href="../../about.html">About</a> · CC BY 4.0 · AL-24 · Data as of 2024 · Tax model: IRS Pub 15-T 2024
 </footer>
 
@@ -1945,21 +1907,12 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeAP2Help();
 });
 
-/* -- MCP TOGGLE -- */
-function toggleMCP() {
-  const btn   = document.getElementById('mcpToggleBtn');
-  const panel = document.getElementById('mcpPanel');
-  const pre   = document.getElementById('mcpManifestPre');
-  const open  = panel.classList.toggle('open');
-  btn.classList.toggle('open', open);
-  btn.setAttribute('aria-expanded', open);
-  if (open && !pre.textContent) {
-    const manifest = {
+const MANIFEST = {
   "tool_id": "08-severance-decision-engine",
   "al_id": "AL-24",
   "version": "1.1.0",
   "title": "Separation Package Analyzer",
-  "description": "Models the after-tax take-home value of a separation package offer. Handles lump-sum (IRS supplemental 22%/37% flat rate, no FICA) and salary-continuation (2024 IRS Pub 15-T brackets, FICA applicable) payment structures. User-entered state income tax rate. Optional runway estimate (net take-home \u00f7 monthly expenses). Inline legal disclaimer. AP2 export with downstream handoff to AL-08+14.",
+  "description": "Models the after-tax take-home value of a separation package offer. Handles lump-sum (IRS supplemental 22%/37% flat rate, no FICA) and salary-continuation (2024 IRS Pub 15-T brackets, FICA applicable) payment structures. User-entered state income tax rate. Optional runway estimate (net take-home ÷ monthly expenses). Inline legal disclaimer. AP2 export with downstream handoff to AL-08+14.",
   "category": "career_transition_mobility",
   "journeys": [
     "career_navigation",
@@ -1983,17 +1936,89 @@ function toggleMCP() {
   ],
   "status": "shipped",
   "maintenance": "low",
-  "data_vintage": "IRS Publication 15-T (2024) \u00b7 IRS Rev. Proc. 2023-34 (2024 brackets) \u00b7 2024 FICA wage base $168,600",
-  "ap2_export": true,
-  "ap2_mandate_types": [
-    "severance_decision_record"
-  ],
-  "license": "CC-BY-4.0",
-  "execution": {
-    "type": "browser-javascript",
-    "entry": "index.html",
-    "function_name": "calculate",
-    "timeout_ms": 1000
+  "data_vintage": "IRS Publication 15-T (2024) · IRS Rev. Proc. 2023-34 (2024 brackets) · 2024 FICA wage base $168,600",
+  "frozen_baseline": false,
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "payment_type": {
+        "type": "string",
+        "enum": [
+          "lump_sum",
+          "salary_continuation"
+        ]
+      },
+      "gross_package_usd": {
+        "type": "number",
+        "description": "Total gross separation package amount in USD"
+      },
+      "current_annual_salary_usd": {
+        "type": "number",
+        "description": "Current annual base salary for withholding reference"
+      },
+      "filing_status": {
+        "type": "string",
+        "enum": [
+          "single",
+          "mfj",
+          "hoh"
+        ]
+      },
+      "state_tax_rate_pct": {
+        "type": "number",
+        "description": "User-entered state income tax rate as a percentage (0–15)"
+      },
+      "monthly_expenses_usd": {
+        "type": "number",
+        "description": "Monthly living expenses for runway calculation (optional)"
+      },
+      "cobra_premium_usd": {
+        "type": "number",
+        "description": "Monthly COBRA continuation premium during job search (optional)"
+      },
+      "ui_weekly_benefit_usd": {
+        "type": "number",
+        "description": "Estimated weekly unemployment insurance benefit (optional; reduces burn rate)"
+      },
+      "prior_year_ss_wages_usd": {
+        "type": "number",
+        "description": "Prior-year Social Security wages; used to compute remaining FICA-subject headroom under the $168,600 wage base (optional)"
+      }
+    },
+    "required": [
+      "payment_type",
+      "gross_package_usd",
+      "filing_status"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "gross_package_usd": {
+        "type": "number"
+      },
+      "federal_tax_usd": {
+        "type": "number"
+      },
+      "fica_tax_usd": {
+        "type": "number"
+      },
+      "state_tax_usd": {
+        "type": "number"
+      },
+      "net_takeHome_usd": {
+        "type": "number"
+      },
+      "effective_tax_rate_pct": {
+        "type": "number"
+      },
+      "runway_months": {
+        "type": [
+          "number",
+          "null"
+        ]
+      }
+    }
   },
   "mcp_tool_definition": {
     "name": "analyze_separation_package",
@@ -2025,7 +2050,7 @@ function toggleMCP() {
         },
         "state_tax_rate_pct": {
           "type": "number",
-          "description": "State income tax rate as a percentage (0\u201315); 0 for no-income-tax states"
+          "description": "State income tax rate as a percentage (0–15); 0 for no-income-tax states"
         },
         "monthly_expenses_usd": {
           "type": "number",
@@ -2050,12 +2075,34 @@ function toggleMCP() {
         "filing_status"
       ]
     }
-  }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 1000
+  },
+  "ap2_export": true,
+  "ap2_mandate_types": [
+    "severance_decision_record"
+  ],
+  "ap2_inbound_mandate_types": [],
+  "downstream_handoff_candidates": [
+    "AL-08+14"
+  ],
+  "regulatory_citations": [
+    "IRS Publication 15-T, Federal Income Tax Withholding Methods (2024)",
+    "IRS Revenue Procedure 2023-34 — 2024 income tax brackets",
+    "IRC §3402 — Income Tax Collected at Source",
+    "IRC §3121(a) — FICA wage definition (salary continuation vs. lump-sum treatment)"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
 };
-    pre.textContent = JSON.stringify(manifest, null, 2);
-  }
-}
 
+/* ── MCP / MANIFEST TOGGLE (standardized) ── */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';a.textContent='▼';}}
 </script>
 </body>
 </html>

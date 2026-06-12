@@ -228,27 +228,11 @@ select option { background:var(--bg-3); color:var(--bright); }
   .results-export-row{flex-direction:column;align-items:flex-start;}
   .metrics-grid{grid-template-columns:1fr 1fr;}
 }
-/* -- MCP PANEL -- */
-.mcp-section { max-width: 680px; margin: 24px auto 0; }
 
-.mcp-toggle {
-  display:flex; align-items:center; gap:8px; cursor:pointer;
-  background:none; border:1px solid var(--border); border-radius:var(--radius,4px);
-  color:var(--muted); padding:.45rem 1rem; font-size:.65rem;
-  font-family:'JetBrains Mono',monospace; letter-spacing:.07em;
-  transition:all .15s; margin-bottom:12px;
-}
-.mcp-toggle:hover { border-color:var(--border-2); color:var(--body); }
-.mcp-toggle.open::before { transform:rotate(90deg); }
-.mcp-panel {
-  display:none; background:var(--bg-2,#0C1220); border:1px solid var(--border);
-  border-radius:var(--radius-lg,6px); padding:16px; margin-bottom:16px;
-}
-.mcp-panel.open { display:block; }
-.mcp-panel pre {
-  font-family:'JetBrains Mono',monospace; font-size:.68rem; color:var(--body);
-  line-height:1.55; overflow-x:auto; white-space:pre-wrap; word-break:break-word; margin:0;
-}
+.mfst-btn{width:100%;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;margin-top:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+.mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+.mfst-body{display:none;margin-top:1px;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+.mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
 </style>
 </head>
 <body>
@@ -560,16 +544,7 @@ select option { background:var(--bg-3); color:var(--bright); }
     </div><!-- /results-tab2 -->
   </div><!-- /tab-2 -->
 
-  <!-- MANIFEST TOGGLE — always visible, outside results (CONTRACT pattern) -->
-  <div class="toggle-wrap">
-    <div class="toggle-header" onclick="toggleSection('manifest')" id="manifest-hdr">
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="toggle-label">manifest.json · Tool Discovery &amp; MCP</span>
-    </div>
-    <div class="toggle-body" id="manifest">
-      <pre id="manifest-content"></pre>
-    </div>
-  </div>
+  
 
   <!-- AP2 INBOUND TOGGLE — below manifest (AL-13+ pattern, CONTRACT §6.4) -->
   <div class="toggle-wrap">
@@ -605,16 +580,10 @@ select option { background:var(--bg-3); color:var(--bright); }
 <div class="toast" id="toast"></div>
 
 <!-- FOOTER — CONTRACT §6.2 attribution -->
-<div class="mcp-section"><button class="mcp-toggle" id="mcpToggleBtn" onclick="toggleMCP()" aria-expanded="false" aria-controls="mcpPanel">
-    MCP Tool Manifest
-  </button>
-  <div class="mcp-panel" id="mcpPanel" role="region" aria-label="MCP manifest">
-    <pre id="mcpManifestPre"></pre>
-  </div>
+<button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+<div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
 
-</div>
-
-  <footer class="tool-footer">
+<footer class="tool-footer">
   <a href="../../about.html">About</a> · CC BY 4.0 · AL-05 · Data as of Jan 2026 · State 529 rules vary — verify deduction caps with your state
 </footer>
 
@@ -1313,7 +1282,6 @@ function exportAP2Tab1(){
   downloadText(JSON.stringify(mandate,null,2),`AL-05_education-savings-projector_${tsCompact()}.ap2.json`,'application/json');
   showToast(t('toast_ap2'),'success');
   // Update manifest panel preview
-  document.getElementById('manifest-content').textContent=JSON.stringify(buildManifest(),null,2);
 }
 
 function exportAP2Tab2(){
@@ -1429,96 +1397,9 @@ function buildManifest(){
 }
 
 /* ─── INIT MANIFEST DISPLAY ──────────────────────────────────────── */
-document.getElementById('manifest-content').textContent=JSON.stringify(buildManifest(),null,2);
 
-
-/* -- MCP TOGGLE -- */
-function toggleMCP() {
-  const btn   = document.getElementById('mcpToggleBtn');
-  const panel = document.getElementById('mcpPanel');
-  const pre   = document.getElementById('mcpManifestPre');
-  const open  = panel.classList.toggle('open');
-  btn.classList.toggle('open', open);
-  btn.setAttribute('aria-expanded', open);
-  if (open && !pre.textContent) {
-    const manifest = {
-  "tool_id": "24-education-savings-projector",
-  "al_id": "AL-05",
-  "version": "1.0.0",
-  "title": "Education Savings Projector",
-  "description": "Projects 529 plan growth to a target year and models the impact of plan assets on FAFSA Student Aid Index (SAI). Tab 1: 529 balance projection with state tax deduction benefit and investment growth. Tab 2: SAI asset impact modeler \u2014 shows how 529 and non-529 assets shift the SAI and estimated financial aid eligibility. Covers SECURE 2.0 Roth rollover provision (IRC \u00a7529(c)(3)(E)).",
-  "category": "student_finance_debt",
-  "journeys": [
-    "education_path"
-  ],
-  "personas": [
-    "student",
-    "parent",
-    "counselor"
-  ],
-  "tags": [
-    "529",
-    "education savings",
-    "fafsa",
-    "sai",
-    "college",
-    "tax deduction",
-    "secure 2.0",
-    "roth rollover",
-    "financial aid"
-  ],
-  "status": "shipped",
-  "maintenance": "very_low",
-  "data_vintage": "IRS Pub. 970 (2025) \u00b7 State 529 rules Jan 2026 \u00b7 NCES IPEDS 2023-24 \u00b7 SECURE 2.0 Act",
-  "ap2_export": true,
-  "ap2_mandate_types": [
-    "education_savings_record"
-  ],
-  "license": "CC-BY-4.0",
-  "execution": {
-    "type": "browser-javascript",
-    "entry": "index.html",
-    "function_name": "runTab1",
-    "secondary_function_names": [
-      "runTab2"
-    ],
-    "timeout_ms": 3000
-  },
-  "mcp_tool_definition": {
-    "name": "project_education_savings",
-    "description": "Project 529 plan growth and model SAI/financial-aid impact. Tab 1: projects balance at enrollment using compound growth and state tax deduction. Tab 2: estimates SAI shift from 529 vs. non-529 asset treatment under FAFSA formula. Covers SECURE 2.0 Roth rollover provision.",
-    "inputSchema": {
-      "type": "object",
-      "required": [
-        "current_balance",
-        "years_to_enrollment"
-      ],
-      "properties": {
-        "current_balance": {
-          "type": "number",
-          "description": "Current 529 balance"
-        },
-        "annual_contribution": {
-          "type": "number",
-          "description": "Annual contribution"
-        },
-        "years_to_enrollment": {
-          "type": "integer",
-          "description": "Years until college"
-        },
-        "growth_rate_pct": {
-          "type": "number",
-          "default": 6.0,
-          "description": "Annual growth rate %"
-        }
-      }
-    }
-  }
-};
-    pre.textContent = JSON.stringify(manifest, null, 2);
-  }
-}
-
+/* ── MCP / MANIFEST TOGGLE (standardized) ── */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(buildManifest(),null,2);}else{b.style.display='none';a.textContent='▼';}}
 </script>
 </body>
 </html>
