@@ -141,9 +141,9 @@ input:focus,select:focus{outline:none;border-color:var(--accent)}
 .logo-org { color:var(--muted); font-size:.8rem; }
 .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-family:'JetBrains Mono',monospace; line-height:1; }
 @media (max-width:600px) { .logo-tag { display:none; } }
-.mfst-btn{width:100%;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;margin-top:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+.mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
 .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
-.mfst-body{display:none;margin-top:1px;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+.mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
 .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
 </style>
 </head>
@@ -940,17 +940,21 @@ function showToast(msg,type='info'){
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),4000);
 }
 
-;
-    pre.textContent = JSON.stringify(manifest, null, 2);
-  }
-}
-
-const MANIFEST = {
+/* -- MCP TOGGLE -- */
+function toggleMCP() {
+  const btn   = document.getElementById('mcpToggleBtn');
+  const panel = document.getElementById('mcpPanel');
+  const pre   = document.getElementById('mcpManifestPre');
+  const open  = panel.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    const manifest = {
   "tool_id": "26-geo-fiscal-arbitrage-simulator",
   "al_id": "AL-04",
   "version": "1.0.0",
   "title": "Geo-Fiscal Arbitrage Simulator",
-  "description": "Models purchasing power equivalence across 70 US metros by combining cost-of-living index with state income tax. Tab 1: salary equivalence — enter a salary in one metro and get the purchasing-power-equivalent salary in any comparison metro. Tab 2: remote pay policy impact — models the net delta when employer applies geographic pay adjustments. Category weights: housing 30%, food 14%, healthcare 10%, transport 12%, misc 34%.",
+  "description": "Models purchasing power equivalence across 70 US metros by combining cost-of-living index with state income tax. Tab 1: salary equivalence \u2014 enter a salary in one metro and get the purchasing-power-equivalent salary in any comparison metro. Tab 2: remote pay policy impact \u2014 models the net delta when employer applies geographic pay adjustments. Category weights: housing 30%, food 14%, healthcare 10%, transport 12%, misc 34%.",
   "category": "compensation_offers",
   "journeys": [
     "compensation_benefits"
@@ -969,76 +973,21 @@ const MANIFEST = {
     "purchasing power"
   ],
   "status": "shipped",
-  "shipped_date": "2026-05-21",
-  "display_num": "#26",
   "maintenance": "low",
-  "data_vintage": "70-metro CoL index (C2ER/Numbeo est. 2025-26) · 8-tier state effective rates · category weights: housing 30%, food 14%, healthcare 10%, transport 12%, misc 34%",
-  "frozen_baseline": false,
-  "input_schema": {
-    "type": "object",
-    "required": [
-      "salary",
-      "origin_metro",
-      "target_metro"
+  "data_vintage": "70-metro CoL index (C2ER/Numbeo est. 2025-26) \u00b7 8-tier state effective rates \u00b7 category weights: housing 30%, food 14%, healthcare 10%, transport 12%, misc 34%",
+  "ap2_export": true,
+  "ap2_mandate_types": [
+    "geo_arbitrage_record"
+  ],
+  "license": "CC-BY-4.0",
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "runTab1",
+    "secondary_function_names": [
+      "runTab2"
     ],
-    "properties": {
-      "salary": {
-        "type": "number",
-        "minimum": 0,
-        "description": "Current annual salary in USD"
-      },
-      "origin_metro": {
-        "type": "string",
-        "description": "Origin metro name from the 70-metro index"
-      },
-      "target_metro": {
-        "type": "string",
-        "description": "Target metro for equivalence comparison"
-      },
-      "remote_pay_policy": {
-        "type": "string",
-        "enum": [
-          "none",
-          "national_rate",
-          "geo_adjusted"
-        ],
-        "default": "none",
-        "description": "Employer remote pay policy for Tab 2"
-      },
-      "adjustment_pct": {
-        "type": "number",
-        "description": "Employer-applied geographic pay adjustment %"
-      }
-    }
-  },
-  "output_schema": {
-    "type": "object",
-    "properties": {
-      "equiv_salary": {
-        "type": "number",
-        "description": "Purchasing-power-equivalent salary in target metro"
-      },
-      "col_index_origin": {
-        "type": "number",
-        "description": "CoL index for origin metro (US avg = 100)"
-      },
-      "col_index_target": {
-        "type": "number",
-        "description": "CoL index for target metro"
-      },
-      "state_tax_delta": {
-        "type": "number",
-        "description": "Effective state tax rate difference (decimal)"
-      },
-      "net_pp_delta": {
-        "type": "number",
-        "description": "Net purchasing power delta after CoL + tax adjustment"
-      },
-      "remote_net_impact": {
-        "type": "number",
-        "description": "Net dollar impact of remote pay policy (Tab 2)"
-      }
-    }
+    "timeout_ms": 5000
   },
   "mcp_tool_definition": {
     "name": "simulate_geo_arbitrage",
@@ -1065,34 +1014,14 @@ const MANIFEST = {
         }
       }
     }
-  },
-  "execution": {
-    "type": "browser-javascript",
-    "entry": "index.html",
-    "function_name": "runTab1",
-    "secondary_function_names": [
-      "runTab2"
-    ],
-    "timeout_ms": 5000
-  },
-  "ap2_export": true,
-  "ap2_mandate_types": [
-    "geo_arbitrage_record"
-  ],
-  "ap2_inbound_mandate_types": [
-    "offer_negotiation_record"
-  ],
-  "downstream_handoff_candidates": [
-    "AL-01",
-    "AL-25"
-  ],
-  "sister_suite": "https://ainumbers.co",
-  "consulting_site": "https://apexadvisory.site",
-  "license": "CC-BY-4.0"
+  }
 };
+    pre.textContent = JSON.stringify(manifest, null, 2);
+  }
+}
 
-/* ── MCP / MANIFEST TOGGLE (standardized) ── */
-function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';a.textContent='▼';}}
+/* ── MCP / MANIFEST TOGGLE (standardized, additive) ── */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(buildManifest(),null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
 </script>
 <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
 <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>

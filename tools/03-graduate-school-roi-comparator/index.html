@@ -160,6 +160,8 @@ select option{background:var(--bg-3);}
 .btn-subtitle{font-size:.5rem;color:var(--muted);letter-spacing:.04em;text-transform:none;}
 .btn-help{width:28px;height:28px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:500;flex-shrink:0;}
 
+/* MCP PANEL */
+
 /* TOAST */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 18px;border-radius:var(--radius);font-family:'JetBrains Mono',monospace;font-size:.72rem;z-index:300;box-shadow:var(--shadow);opacity:0;transition:opacity .2s;pointer-events:none;max-width:520px;text-align:center;}
 .toast.show{opacity:1;}
@@ -189,9 +191,9 @@ select option{background:var(--bg-3);}
 .disclaimer{margin-top:18px;padding:14px 18px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--body);font-size:.7rem;line-height:1.55;}
 .hidden{display:none!important;}
 .section-divider{border:none;border-top:1px solid var(--border);margin:28px 0;}
-.mfst-btn{width:100%;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;margin-top:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+.mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
 .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
-.mfst-body{display:none;margin-top:1px;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+.mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
 .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
 </style>
 </head>
@@ -1384,13 +1386,102 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 });
 
-;
+/* -- MCP TOGGLE -- */
+function toggleMCP() {
+  const btn   = document.getElementById('mcpToggleBtn');
+  const panel = document.getElementById('mcpPanel');
+  const pre   = document.getElementById('mcpManifestPre');
+  const open  = panel.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    const manifest = {
+  "tool_id": "03-graduate-school-roi-comparator",
+  "al_id": "AL-26",
+  "version": "1.0.0",
+  "title": "Graduate School ROI Comparator",
+  "description": "Compare up to 3 graduate programs side-by-side on NPV, IRR, break-even, and total investment. Uses NCES IPEDS 2023-24 tuition data and BLS OEWS May 2023 wage benchmarks. Accepts AP2 inbound mandates from AL-02 (Credential ROI Suite) and AL-17 (FAFSA SAI Simulator).",
+  "category": "education_path_roi",
+  "journeys": [
+    "education_path"
+  ],
+  "personas": [
+    "student",
+    "career_changer",
+    "working_professional",
+    "counselor"
+  ],
+  "tags": [
+    "graduate school",
+    "roi",
+    "npv",
+    "irr",
+    "mba",
+    "tuition",
+    "salary premium",
+    "break-even",
+    "nces",
+    "bls",
+    "career investment"
+  ],
+  "status": "shipped",
+  "maintenance": "low",
+  "data_vintage": "NCES IPEDS 2023-24 \u00b7 BLS OEWS May 2023 \u00b7 MBA Employment Reports 2023",
+  "ap2_export": true,
+  "ap2_mandate_types": [
+    "graduate_school_roi_record"
+  ],
+  "license": "CC-BY-4.0",
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "runComparison",
+    "timeout_ms": 5000
+  },
+  "mcp_tool_definition": {
+    "name": "compare_graduate_school_roi",
+    "description": "Compare up to 3 graduate programs on NPV, IRR, break-even, and total investment. Returns full ROI analysis using NCES IPEDS 2023-24 tuition data and BLS OEWS May 2023 wage benchmarks. Accepts AP2 inbound mandates from AL-02 and AL-17.",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "programs",
+        "current_salary"
+      ],
+      "properties": {
+        "programs": {
+          "type": "array",
+          "maxItems": 3,
+          "description": "Array of up to 3 graduate programs to compare"
+        },
+        "current_salary": {
+          "type": "number",
+          "description": "Pre-degree annual salary in USD"
+        },
+        "career_horizon_years": {
+          "type": "number",
+          "default": 25,
+          "description": "Total years from today for NPV/IRR calculation"
+        },
+        "discount_rate_pct": {
+          "type": "number",
+          "default": 5,
+          "description": "Discount rate as a percentage (e.g. 5 = 5%)"
+        },
+        "salary_growth_pct": {
+          "type": "number",
+          "default": 2,
+          "description": "Annual salary growth rate as a percentage"
+        }
+      }
+    }
+  }
+};
     pre.textContent = JSON.stringify(manifest, null, 2);
   }
 }
 
-/* ── MCP / MANIFEST TOGGLE (standardized) ── */
-function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';a.textContent='▼';}}
+/* ── MCP / MANIFEST TOGGLE (standardized, additive) ── */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
 </script>
 <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
 <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>

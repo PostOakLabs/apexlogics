@@ -323,6 +323,8 @@ optgroup { color:var(--teal); font-style:normal; font-weight:600; }
 }
 .popover-close:hover { border-color:var(--teal); color:var(--teal); }
 
+/* ════ MCP PANEL ════ */
+
 /* ════ FOOTER ════ */
 .tool-footer {
   text-align:center; padding:24px;
@@ -339,9 +341,9 @@ optgroup { color:var(--teal); font-style:normal; font-weight:600; }
   .results-export-row { flex-direction:column; align-items:flex-start; }
   .overview-grid { grid-template-columns:1fr 1fr; }
 }
-.mfst-btn{width:100%;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;margin-top:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+.mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
 .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
-.mfst-body{display:none;margin-top:1px;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+.mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
 .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
 </style>
 </head>
@@ -1450,6 +1452,57 @@ function exportAP2() {
    MCP PANEL TOGGLE + MANIFEST CONTENT
    Collapsed by default per CONTRACT §1.2
    ───────────────────────────────────────────────────────────────── */
+function toggleMCP() {
+  const btn   = document.getElementById('mcpToggleBtn');
+  const panel = document.getElementById('mcpPanel');
+  const pre   = document.getElementById('mcpManifestPre');
+  const open  = panel.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    // Populate manifest inline (no fetch) on first open
+    const manifest = {
+      tool_id: "apprenticeship-matcher",
+      al_id: "AL-11",
+      version: "1.0.0",
+      title: "Apprenticeship & Earn-and-Learn Matcher",
+      description: "Matches users to DOL RAPIDS Registered Apprenticeship programs by occupation. Returns wage progression model (start/midpoint/completion), cost model (typically $0 for registered programs), ROI vs. current income, and application guidance.",
+      category: "workforce_development",
+      journeys: ["career_navigation", "education_path"],
+      personas: ["student", "career_changer", "working_professional", "counselor"],
+      tags: ["apprenticeship", "earn-and-learn", "DOL RAPIDS", "workforce", "trades", "healthcare", "IT", "manufacturing"],
+      status: "shipped",
+      maintenance: "very_low",
+      data_vintage: "DOL RAPIDS 2023 · BLS OEWS May 2023",
+      frozen_baseline: true,
+      ap2_export: true,
+      ap2_mandate_types: ["apprenticeship_match_record"],
+      sister_suite: "https://ainumbers.co",
+      consulting_site: "https://apexadvisory.site",
+      license: "CC-BY-4.0",
+      execution: {
+        type: "browser-javascript",
+        entry: "index.html",
+        function_name: "findPrograms",
+        timeout_ms: 3000
+      },
+      mcp_tool_definition: {
+        name: "match_apprenticeship_program",
+        description: "Match a user to DOL RAPIDS registered apprenticeship programs by occupation. Returns wage progression, cost model, ROI vs. current income, and application guidance.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            occupation: { type: "string", enum: Object.keys(OCC_DATA), description: "Occupation key from AL-11 data registry" },
+            state: { type: "string", description: "State of interest (optional)" },
+            current_income: { type: "number", minimum: 0, description: "Current annual income in USD (0 if not employed)" }
+          },
+          required: ["occupation"]
+        }
+      }
+    };
+    pre.textContent = JSON.stringify(manifest, null, 2);
+  }
+}
 
 /* ─────────────────────────────────────────────────────────────────
    AP2 HELP POPOVER — CONTRACT Appendix C
@@ -1689,8 +1742,8 @@ const MANIFEST = {
   "license": "CC-BY-4.0"
 };
 
-/* ── MCP / MANIFEST TOGGLE (standardized) ── */
-function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';a.textContent='▼';}}
+/* ── MCP / MANIFEST TOGGLE (standardized, additive) ── */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
 </script>
 </body>
 </html>

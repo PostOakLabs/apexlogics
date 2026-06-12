@@ -85,9 +85,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(7,11,20,.92);backdrop-filt
 .export-btn:hover{border-color:var(--accent);color:var(--accent)}
 .tool-footer{border-top:1px solid var(--border);padding:1.75rem 1.5rem;margin-top:3rem;font-size:.78rem;color:var(--dim);font-family:var(--font-mono);text-align:center}
 .tool-footer a{color:var(--dim);text-decoration:none}.tool-footer a:hover{color:var(--body)}
-.mfst-btn{width:100%;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;margin-top:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+.mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
 .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
-.mfst-body{display:none;margin-top:1px;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+.mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
 .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
 </style>
 </head>
@@ -499,104 +499,17 @@ function dl(content, filename, type) {
 function getManifest() {
   return { "tool_id":"105-hdhp-vs-ppo-break-even","al_id":"AL-112","version":"1.0.0","title":"HDHP vs. PPO Break-Even Calculator","category":"compensation_benefits","status":"shipped","maintenance":"very_low","data_vintage":"IRS HSA limits 2026","ap2_export":true,"ap2_mandate_types":["health_plan_breakeven_record"],"downstream_handoff_candidates":["AL-23","AL-01"],"sister_suite":"https://ainumbers.co","consulting_site":"https://apexadvisory.site","license":"CC-BY-4.0","mcp_annotations":{"readOnlyHint":true,"idempotentHint":true} };
 }
+function toggleMCP() {
+  const panel = document.getElementById('mcpPanel');
+  const btn = document.getElementById('mcpToggleBtn');
+  const pre = document.getElementById('mcpManifestPre');
+  const open = panel.classList.toggle('open');
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) pre.textContent = JSON.stringify(getManifest(), null, 2);
+}
 
-const MANIFEST = {
-  "tool_id": "105-hdhp-vs-ppo-break-even",
-  "al_id": "AL-112",
-  "version": "1.0.0",
-  "title": "HDHP vs. PPO Break-Even Calculator",
-  "description": "Find the annual medical-spend level at which an HDHP+HSA beats a PPO in total out-of-pocket cost, including the HSA tax benefit. Plots the full cost curve $0–$20k and identifies the break-even spend point.",
-  "category": "compensation_benefits",
-  "display_number": 105,
-  "status": "shipped",
-  "launched": "2026-06-09",
-  "maintenance": "very_low",
-  "data_vintage": "IRS HSA limits 2026",
-  "ap2_export": true,
-  "ap2_mandate_types": [
-    "health_plan_breakeven_record"
-  ],
-  "ap2_inbound_mandate_types": [],
-  "downstream_handoff_candidates": [
-    "AL-23",
-    "AL-01"
-  ],
-  "sister_suite": "https://ainumbers.co",
-  "consulting_site": "https://apexadvisory.site",
-  "license": "CC-BY-4.0",
-  "mcp_annotations": {
-    "readOnlyHint": true,
-    "idempotentHint": true
-  },
-  "execution": {
-    "type": "browser-javascript",
-    "entry": "index.html",
-    "function_name": "calcBreakEven",
-    "timeout_ms": 3000
-  },
-  "mcp_tool_definition": {
-    "name": "hdhp_vs_ppo_break_even",
-    "description": "Calculate the medical-spend break-even point where HDHP+HSA beats PPO in annual total cost, including HSA tax shield. Returns break-even spend, net savings at expected spend, and plan recommendation.",
-    "inputSchema": {
-      "type": "object",
-      "required": [
-        "hdhp_premium_monthly",
-        "ppo_premium_monthly",
-        "hdhp_deductible",
-        "ppo_deductible"
-      ],
-      "properties": {
-        "hdhp_premium_monthly": {
-          "type": "number"
-        },
-        "ppo_premium_monthly": {
-          "type": "number"
-        },
-        "hdhp_deductible": {
-          "type": "number"
-        },
-        "ppo_deductible": {
-          "type": "number"
-        },
-        "hdhp_oop_max": {
-          "type": "number",
-          "default": 7000
-        },
-        "ppo_oop_max": {
-          "type": "number",
-          "default": 5000
-        },
-        "coinsurance_pct": {
-          "type": "number",
-          "default": 20
-        },
-        "employer_hsa_contribution": {
-          "type": "number",
-          "default": 0
-        },
-        "expected_annual_spend": {
-          "type": "number",
-          "default": 3000
-        },
-        "marginal_tax_rate_pct": {
-          "type": "number",
-          "default": 22
-        },
-        "coverage": {
-          "type": "string",
-          "enum": [
-            "individual",
-            "family"
-          ],
-          "default": "individual"
-        }
-      }
-    }
-  }
-};
-
-/* ── MCP / MANIFEST TOGGLE (standardized) ── */
-function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';a.textContent='▼';}}
+/* ── MCP / MANIFEST TOGGLE (standardized, additive) ── */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(getManifest(),null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
 </script>
 </body>
 </html>

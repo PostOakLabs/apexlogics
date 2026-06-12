@@ -141,6 +141,8 @@
     .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
     .ap2-hint a { color: var(--text-dim); text-decoration: none; }
 
+    /* MCP */
+
     .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
     .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
     .tool-footer a:hover { color: var(--text, var(--body)); }
@@ -151,9 +153,9 @@
       .tool-title { font-size: 1.8rem; }
       .results-export-row { flex-direction: column; }
     }
-  .mfst-btn{width:100%;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;margin-top:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+  .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
 .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
-.mfst-body{display:none;margin-top:1px;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+.mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
 .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
 </style>
 </head>
@@ -676,7 +678,53 @@ function dlFile(name, content, type) {
 }
 
 // ── MCP PANEL ─────────────────────────────────────────────────────────────────
-, null, 2);
+function toggleMCP() {
+  const panel=$('mcpPanel'), btn=$('mcpToggleBtn'), pre=$('mcpManifestPre');
+  const open = panel.classList.toggle('open');
+  btn.setAttribute('aria-expanded', open);
+  if (open && !pre.textContent) {
+    pre.textContent = JSON.stringify({
+  "tool_id": "37-workforce-pell-credential-ranker",
+  "al_id": "AL-42",
+  "version": "1.0.0",
+  "title": "Workforce Pell Credential Value Ranker",
+  "description": "Ranks 21 Workforce Pell-eligible short-term credentials by ROI, wage gain, demand, and Pell coverage — personalized to the user's base Pell eligibility. Embeds BLS OEWS May 2023 wage data and BLS OOH 2024-34 demand projections for 21 credentials across healthcare, IT/cyber, skilled trades, manufacturing, transportation, and financial services. AP2 v2.0 mandate type: workforce_pell_credential_rank.",
+  "category": "workforce_development",
+  "journeys": ["education_path", "career_navigation"],
+  "personas": ["student", "career_changer", "working_professional", "counselor"],
+  "tags": ["pell-grant", "workforce-pell", "credentials", "obbba", "roi", "wage-gain", "bls"],
+  "status": "shipped",
+  "maintenance": "low",
+  "data_vintage": "BLS OEWS May 2023; BLS OOH 2024-34; ED Pell Grant 2026-27; OBBBA P.L. 119-21",
+  "ap2_export": true,
+  "ap2_mandate_types": ["workforce_pell_credential_rank"],
+  "ap2_inbound_mandate_types": ["workforce_pell_record", "fafsa_sai_estimate"],
+  "downstream_handoff_candidates": ["AL-41", "AL-01"],
+  "regulatory_citations": [
+    "BLS OEWS May 2023 — national occupational wage statistics",
+    "BLS OOH 2024-34 — 10-year employment projections",
+    "ED Dear Colleague Letter 2026-01-30 — 2026-27 Pell max/min",
+    "OBBBA P.L. 119-21 (July 4, 2025) — Workforce Pell proration formula"
+  ],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0",
+  "execution": { "type": "browser-javascript", "entry": "index.html", "function_name": "calculate", "timeout_ms": 3000 },
+  "mcp_tool_definition": {
+    "name": "rank_workforce_pell_credentials",
+    "description": "Given AGI or SAI, family size, current income, and optional budget, ranks 21 Workforce Pell-eligible credentials by ROI, wage gain, demand, and Pell coverage. Returns top 5 credentials with award amounts, net cost, BLS entry wages, and 10-yr demand projections. Deterministic.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "agi": {"type":"number"}, "sai": {"type":"number"},
+        "family_size": {"type":"integer","minimum":1,"maximum":8},
+        "current_income": {"type":"number"},
+        "max_oop_budget": {"type":"number"},
+        "category_filter": {"type":"string"}
+      }
+    }
+  }
+}, null, 2);
   }
 }
 
@@ -874,8 +922,8 @@ const MANIFEST = {
   "license": "CC-BY-4.0"
 };
 
-/* ── MCP / MANIFEST TOGGLE (standardized) ── */
-function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';a.textContent='▼';}}
+/* ── MCP / MANIFEST TOGGLE (standardized, additive) ── */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
 </script>
 </body>
 </html>
