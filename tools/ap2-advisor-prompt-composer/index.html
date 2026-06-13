@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AP2 Advisor Prompt Composer | Apex Logics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--amber:#E8A838;--ink:#1a1a2e;--muted:#6b7280;--border:#e2e8f0;--bg:#f8fafc;--card:#fff;--accent:#3b5bdb;--green:#16a34a;--red:#dc2626;--radius:10px;--mono:'JetBrains Mono',monospace;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;font-size:15px;line-height:1.6;}
+/* Nav */
+.nav{display:flex;align-items:center;gap:12px;padding:14px 24px;border-bottom:1px solid var(--border);background:var(--card);}
+.nav-logo{display:flex;align-items:center;gap:8px;text-decoration:none;}
+.logo-mark{width:28px;height:28px;background:var(--ink);border-radius:6px;display:flex;align-items:center;justify-content:center;}
+.logo-mark svg{width:16px;height:16px;fill:var(--amber);}
+.logo-word{font-family:'DM Serif Display',serif;font-size:1.15rem;color:var(--ink);}
+.logo-word span{color:var(--amber);}
+.nav-back{margin-left:auto;font-size:.8rem;color:var(--muted);text-decoration:none;padding:5px 12px;border:1px solid var(--border);border-radius:20px;transition:all .2s;}
+.nav-back:hover{background:var(--ink);color:#fff;border-color:var(--ink);}
+/* Layout */
+.page{max-width:960px;margin:0 auto;padding:32px 20px 80px;}
+h1.tool-title{font-family:'DM Serif Display',serif;font-size:1.9rem;margin-bottom:6px;}
+.tool-subtitle{color:var(--muted);font-size:.9rem;margin-bottom:24px;}
+/* Intro card */
+.intro-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:28px;}
+.intro-card p{color:var(--muted);font-size:.88rem;line-height:1.7;}
+/* PII Banner */
+.pii-banner{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 16px;font-size:.8rem;color:#166534;margin-bottom:24px;display:flex;align-items:center;gap:8px;}
+/* Form sections */
+.section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;}
+.section-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:12px;}
+textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:12px;font-family:var(--mono);font-size:.78rem;line-height:1.5;resize:vertical;min-height:140px;background:#fafafa;color:var(--ink);}
+textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,91,219,.1);}
+.controls-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:16px;}
+select,input[type=checkbox]{font-family:'Sora',sans-serif;font-size:.85rem;}
+select{width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;background:var(--card);color:var(--ink);cursor:pointer;}
+select:focus{outline:none;border-color:var(--accent);}
+.ctrl-label{font-size:.8rem;font-weight:600;color:var(--ink);margin-bottom:6px;display:block;}
+.toggle-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.toggle-row label{font-size:.83rem;color:var(--muted);cursor:pointer;}
+input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
+/* Buttons */
+.btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 22px;border-radius:8px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:600;border:none;cursor:pointer;transition:all .2s;}
+.btn-primary{background:var(--ink);color:#fff;}
+.btn-primary:hover{background:#111827;}
+.btn-primary:disabled{background:#9ca3af;cursor:not-allowed;}
+.btn-outline{background:transparent;color:var(--ink);border:1.5px solid var(--border);}
+.btn-outline:hover{border-color:var(--ink);}
+.btn-green{background:#dcfce7;color:var(--green);border:1px solid #bbf7d0;}
+.btn-green:hover{background:#bbf7d0;}
+.btn-small{font-size:.78rem;padding:6px 14px;}
+/* Artifact pills */
+.artifact-pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;min-height:28px;}
+.a-pill{display:flex;align-items:center;gap:6px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:16px;padding:4px 10px;font-size:.76rem;color:#1d4ed8;}
+.a-pill .rm{cursor:pointer;color:#6b7280;font-size:.9rem;}
+.a-pill .rm:hover{color:var(--red);}
+/* Results */
+.results{margin-top:28px;display:none;}
+.result-section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px;}
+.result-section h3{font-family:'DM Serif Display',serif;font-size:1.1rem;margin-bottom:14px;}
+pre.prompt-output{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:16px;font-family:var(--mono);font-size:.77rem;line-height:1.65;white-space:pre-wrap;word-break:break-word;max-height:500px;overflow-y:auto;color:#1e293b;}
+.link-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;}
+.deep-link{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;font-size:.83rem;font-weight:600;text-decoration:none;transition:all .2s;}
+.link-claude{background:#6b21a8;color:#fff;}
+.link-claude:hover{background:#581c87;}
+.link-gpt{background:#10a37f;color:#fff;}
+.link-gpt:hover{background:#0d8a6b;}
+.hash-footer{font-family:var(--mono);font-size:.72rem;color:var(--muted);background:#f1f5f9;border-radius:6px;padding:10px 14px;margin-top:12px;line-height:1.7;border-left:3px solid var(--border);}
+/* Export row */
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);}
+.export-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:7px;font-size:.8rem;font-weight:600;border:1.5px solid var(--border);background:var(--card);cursor:pointer;color:var(--ink);transition:all .2s;}
+.export-btn:hover{background:#f1f5f9;}
+.export-btn:disabled{opacity:.4;cursor:not-allowed;}
+/* mfst toggle */
+.mfst-btn{font-size:.75rem;color:var(--muted);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;margin-top:8px;}
+.mfst-body{display:none;margin-top:12px;}
+.mfst-body pre{font-family:var(--mono);font-size:.72rem;background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:12px;overflow:auto;max-height:320px;white-space:pre-wrap;}
+/* Footer */
+.tool-footer{text-align:center;color:var(--muted);font-size:.78rem;margin-top:48px;padding-top:20px;border-top:1px solid var(--border);}
+.tool-footer a{color:var(--muted);text-decoration:none;}
+.tool-footer a:hover{color:var(--ink);}
+/* Error */
+.parse-error{background:#fef2f2;border:1px solid #fecaca;color:var(--red);border-radius:8px;padding:10px 14px;font-size:.8rem;margin-top:8px;display:none;}
+/* Chain depth badge */
+.chain-badge{display:inline-block;background:#ede9fe;color:#6d28d9;border-radius:4px;font-size:.72rem;padding:2px 7px;font-family:var(--mono);margin-left:6px;vertical-align:middle;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../../index.html" class="nav-logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 16 16"><polygon points="8,1 15,14 1,14"/></svg>
+    </div>
+    <span class="logo-word">Apex <span>Logics</span>.org</span>
+  </a>
+  <a href="../../index.html" class="nav-back">← All Tools</a>
+</nav>
+
+<div class="page">
+  <h1 class="tool-title">AP2 Advisor Prompt Composer</h1>
+  <p class="tool-subtitle">Transform AP2 decision artifacts into advisor-framed LLM prompts with provenance chain — Claude.ai &amp; ChatGPT deep links included.</p>
+
+  <div class="pii-banner">
+    🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.
+  </div>
+
+  <!-- Step 1: Paste artifacts -->
+  <div class="section">
+    <div class="section-label">Step 1 — Paste AP2 Artifact(s)</div>
+    <p style="font-size:.83rem;color:var(--muted);margin-bottom:12px;">Paste one or more AP2 JSON artifacts from any Apex Logics tool. You can paste a single object <code>{…}</code> or a JSON array <code>[{…},{…}]</code>.</p>
+    <textarea id="pasteArea" placeholder='{"ap2_version":"2.1.0","mandate_type":"credential_roi_evaluation", ...}'></textarea>
+    <div class="parse-error" id="parseError"></div>
+    <div class="artifact-pills" id="artifactPills"></div>
+    <div class="btn-row" style="margin-top:12px;">
+      <button class="btn btn-outline btn-small" onclick="parseInput()">📥 Parse JSON</button>
+      <button class="btn btn-outline btn-small" onclick="clearArtifacts()">✕ Clear</button>
+    </div>
+  </div>
+
+  <!-- Step 2: Options -->
+  <div class="section">
+    <div class="section-label">Step 2 — Prompt Options</div>
+    <div class="controls-row">
+      <div>
+        <span class="ctrl-label">Task Frame</span>
+        <select id="taskFrame">
+          <option value="plain_summary">Plain Summary</option>
+          <option value="next_steps" selected>Next Steps</option>
+          <option value="compare_options">Compare Options</option>
+          <option value="advisor_questions">Advisor Questions</option>
+          <option value="explainer">Methodology Explainer</option>
+        </select>
+      </div>
+      <div>
+        <span class="ctrl-label">Audience / Persona</span>
+        <select id="audienceSel">
+          <option value="the user">General (no override)</option>
+          <option value="a student">Student</option>
+          <option value="a working professional">Working Professional</option>
+          <option value="a career changer">Career Changer</option>
+          <option value="a parent">Parent</option>
+          <option value="a veteran">Veteran</option>
+          <option value="a nurse or healthcare worker">Nurse / Healthcare Worker</option>
+          <option value="a trades worker">Trades Worker</option>
+          <option value="a federal employee">Federal Employee</option>
+          <option value="a counselor or advisor">Counselor / Advisor</option>
+          <option value="a freelancer or independent contractor">Freelancer / Contractor</option>
+          <option value="a graduate school applicant">Grad School Applicant</option>
+          <option value="an immigrant or visa holder">Immigrant / Visa Holder</option>
+          <option value="a new parent or caregiver">New Parent / Caregiver</option>
+          <option value="an employer or HR professional">Employer / HR Professional</option>
+        </select>
+      </div>
+      <div>
+        <span class="ctrl-label">Tone</span>
+        <select id="toneSel">
+          <option value="professional">Professional</option>
+          <option value="plain_language">Plain Language</option>
+          <option value="coaching">Coaching / Encouraging</option>
+        </select>
+      </div>
+    </div>
+    <div class="toggle-row">
+      <input type="checkbox" id="citationsToggle" checked>
+      <label for="citationsToggle">Include regulatory citations</label>
+      &nbsp;&nbsp;
+      <input type="checkbox" id="escalToggle" checked>
+      <label for="escalToggle">Include escalation conditions</label>
+      &nbsp;&nbsp;
+      <input type="checkbox" id="stochToggle" checked>
+      <label for="stochToggle">Require stochastic framing rules</label>
+    </div>
+  </div>
+
+  <!-- Generate button -->
+  <div class="btn-row">
+    <button class="btn btn-primary" id="generateBtn" onclick="generatePrompt()" disabled>
+      ✦ Generate Advisor Prompt
+    </button>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+    <div class="result-section">
+      <h3>Generated Prompt <span id="chainBadge"></span></h3>
+      <pre class="prompt-output" id="promptOutput"></pre>
+      <div class="hash-footer" id="hashFooter"></div>
+
+      <div class="link-row">
+        <a id="claudeLink" class="deep-link link-claude" href="#" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="8"/></svg>
+          Open in Claude.ai
+        </a>
+        <a id="gptLink" class="deep-link link-gpt" href="#" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect rx="3" width="16" height="16"/></svg>
+          Open in ChatGPT
+        </a>
+        <button class="btn btn-green btn-small" onclick="copyPrompt()">📋 Copy Prompt</button>
+      </div>
+
+      <div class="results-export-row">
+        <button class="export-btn" id="mdExportBtn" onclick="exportMarkdown()">⬇ Markdown</button>
+        <button class="export-btn" id="ap2ExportBtn" onclick="exportAP2()">⬇ AP2 JSON</button>
+      </div>
+
+      <button class="mfst-btn" onclick="toggleMfst()">⟐ Manifest</button>
+      <div class="mfst-body" id="mfstBody">
+        <pre id="mfstCode"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-153 · Data: AP2 v2.1.0 (2026-06-13)
+</footer>
+
+<script>
+'use strict';
+
+// ── Inline advisor template data ─────────────────────────────────────────────
+// Compact representation of advisor-templates.json domain_defaults + key templates.
+// Full JSON lives at /data/advisor-templates.json (not fetched at runtime).
+
+const TASK_FRAMES = {
+  plain_summary:   'Summarize the following decision-tool results in plain language for {{PERSONA}}.',
+  next_steps:      'Based on the following tool results, outline concrete next steps {{PERSONA}} should take, in priority order.',
+  compare_options: 'Compare the options surfaced in the following results and explain the key trade-offs for {{PERSONA}}.',
+  advisor_questions:'You are preparing a meeting with {{PERSONA}}. Based on the following tool output, generate 5–8 probing advisor questions to deepen understanding before making recommendations.',
+  explainer:       'Explain the methodology, assumptions, and limitations of the following decision-tool output so {{PERSONA}} can evaluate how much weight to give it.'
+};
+
+const TONE_MAP = {
+  professional:  'Use a professional, evidence-based tone suitable for a financial or career advisor.',
+  plain_language:'Use plain, jargon-free language. Avoid technical terms where possible; define them if unavoidable.',
+  coaching:      'Use a warm, encouraging coaching tone. Acknowledge the complexity of the decision while keeping the user motivated to take action.'
+};
+
+const DOMAIN_TEMPLATES = {
+  'education-roi': {
+    citations: ['BLS OEWS (bls.gov/oes)','NCES IPEDS (nces.ed.gov/ipeds)'],
+    stochastic: ['Project salary premiums as median outcomes observed in BLS OEWS data — individual results vary by employer, geography, and experience.','Break-even and NPV are deterministic given stated inputs; flag sensitivity to discount rate.'],
+    escalation: ['If NPV is negative at a 5% discount rate, flag as financially marginal and recommend independent verification.','If program cost exceeds 2× the annual salary premium, flag affordability risk.']
+  },
+  'student-loans': {
+    citations: ['P.L. 119-21 (OBBBA 2025) — Grad PLUS eliminated new borrowers after July 1, 2026; RAP replaces IDR plans','34 CFR Part 685 — PSLF qualifying requirements','Pell Grant $7,395 maximum AY2026-27 (ED DCL GEN-26-01)'],
+    stochastic: ['Repayment projections assume unchanged income and tax filing status; actual forgiveness timelines depend on annual IDR recertification and policy continuity.','PSLF forgiveness is tax-free federally (IRC §108(f)(1)); state tax treatment varies.'],
+    escalation: ['If projected loan balance exceeds 2× starting salary, escalate to a nonprofit student loan specialist (NFCC member).','If borrower is within 24 months of PSLF forgiveness, recommend MOHELA verification before any refinancing.']
+  },
+  'compensation': {
+    citations: ['BLS OEWS (bls.gov/oes)','IRS Rev. Proc. 2025-32 — 2026 tax parameters','OPM GS Pay Tables (opm.gov/pay-leave) if applicable'],
+    stochastic: ['Compensation benchmarks reflect published survey medians; individual offers depend on company size, geography, and negotiating leverage.','Equity projections assume vesting on schedule; actual value depends on exit event and valuation.'],
+    escalation: ['If equity constitutes more than 30% of total comp, recommend independent equity valuation review.','If relocation is involved, verify state tax treatment of signing bonus and equity.']
+  },
+  'equity-tax': {
+    citations: ['IRC §83 (property transferred in connection with services)','IRC §421, §422 (statutory stock options — ISOs)','IRC §1202 — QSBS; OBBBA cap $15M for stock acquired after July 4, 2025 (P.L. 119-21)','IRS Rev. Proc. 2025-32 — AMT exemption 2026'],
+    stochastic: ['Tax estimates are illustrative under stated assumptions; actual tax liability requires a licensed CPA or tax attorney.','AMT exposure depends on total AMTI including all preference items.'],
+    escalation: ['If estimated ISO AMT exposure exceeds $25,000, recommend immediate CPA consultation before exercise.','If company is pre-exit and equity exceeds 5× annual salary in potential value, recommend legal review of §83(b) deadlines.']
+  },
+  'tax-se': {
+    citations: ['IRC §1401 (SE tax — 15.3% on 92.35% of net SE income; SS portion caps at $184,500 2026 wage base)','IRC §164(f) (50% SE tax deductible)','IRC §199A (QBI 20% deduction; SSTB phaseout $201,775/$403,500 single/MFJ 2026)','IRS Rev. Proc. 2025-32'],
+    stochastic: ['SE tax estimates assume no W-2 wages offsetting the Social Security wage base.','QBI deduction availability depends on SSTB status, W-2 wages, and qualified property.'],
+    escalation: ['If net SE income exceeds $200,000, recommend CPA review of S-corp election break-even.','If QBI is material (>$10,000), recommend annual review as thresholds index to inflation.']
+  },
+  'tax-retirement': {
+    citations: ['IRC §401(k), §403(b), §457(b) — 2026 deferral $24,500; catch-up 50+ $8,000; super catch-up 60-63 $11,250 (IRS Notice 2025-67)','IRC §408 — IRA limit $7,500 2026 (catch-up $1,000)'],
+    stochastic: ["Retirement projections use stated rate-of-return assumptions; report as 'at X% hypothetical return', not 'you will have $Y at retirement'.",'Roth vs. traditional analysis depends on expected future tax rate, which is unknown.'],
+    escalation: ['If employer plan is a non-governmental 457(b), note creditor risk (assets are employer general assets).','If early distribution is being considered, escalate for 72(t) SEPP or hardship documentation.']
+  },
+  'immigration': {
+    citations: ['INA (8 USC §1101 et seq.)','8 CFR §214.2 (nonimmigrant status requirements)','USCIS filing fees — uscis.gov/forms (approximate; subject to change)','DOS Visa Bulletin (travel.state.gov)'],
+    stochastic: ['Processing times are estimates based on published USCIS data; actual timelines vary by service center, category, and premium processing.','Priority date advancement for EB categories is speculative; retrogression is common.'],
+    escalation: ['Any immigration strategy with material financial consequences must be verified by a licensed immigration attorney before action.','If employer sponsorship is involved, confirm AC21 portability rights before any job change.']
+  },
+  'career': {
+    citations: ['BLS OEWS (bls.gov/oes)','BLS Occupational Outlook Handbook (bls.gov/ooh)','BLS JOLTS (job openings data)'],
+    stochastic: ['Automation exposure scores are population-level risk indicators from task-composition studies; individual job security depends on employer, role scope, and adaptability.','Career transition timelines reflect median search durations; individual results depend on network, geography, and market conditions.'],
+    escalation: ['If automation exposure score exceeds 70%, recommend immediate skills gap analysis before any layoff or planned exit.','If career break exceeds 18 months, recommend a reentry income gap analysis before committing to an exit date.']
+  },
+  'healthcare': {
+    citations: ['ACA §36B — Premium Tax Credit; enhanced PTC expired 12/31/2025; 400% FPL cliff reinstated 2026','IRS Rev. Proc. 2025-19 — 2026 HSA limits: self-only $4,400, family $8,750','COBRA — 29 USC §1161 (18-month continuation at 102% of group premium)'],
+    stochastic: ['HDHP/PPO break-even depends on actual healthcare utilization; present as scenarios, not predictions.','ACA premium estimates use benchmark Silver plan data; actual premiums depend on plan selection.'],
+    escalation: ['If leaving employer coverage within 60 days, flag the SEP deadline for Marketplace enrollment.','If COBRA is being considered for more than 3 months, compare against Marketplace options first.']
+  },
+  'veteran': {
+    citations: ['38 USC Chapter 33 — Post-9/11 GI Bill; tuition cap $29,920.95 AY2025-26; BAH E-5 w/dependents','38 USC Chapter 30 — MGIB $2,518/month FY2026 full-time','10 USC §1143a — SkillBridge authorization','va.gov — eligibility and benefit verification'],
+    stochastic: ['GI Bill benefit figures are for full-time enrollment at 100% entitlement; actual benefit depends on enrollment status and remaining entitlement months.'],
+    escalation: ['If remaining GI Bill entitlement is less than 12 months, recommend accelerated program planning.','Any VA benefit strategy should be verified through a VSO or directly with VA.gov before enrollment.']
+  },
+  'trades': {
+    citations: ['BLS OEWS — construction and extraction occupations (bls.gov/oes)','DOL Registered Apprenticeship (apprenticeship.gov)','NCCER certification standards (nccer.org)'],
+    stochastic: ['Wage progression estimates use BLS OEWS medians by experience tier; union vs. non-union wages differ materially by local JATC agreement.'],
+    escalation: ["If considering an employer-sponsored apprenticeship, verify RAPIDS registration before enrollment.",'If overtime is assumed in wage projections, note that overtime is employer-discretionary.']
+  },
+  'childcare': {
+    citations: ['IRC §129 — DC-FSA; $7,500 per household maximum 2026 (OBBBA-permanent)','IRC §21 — CDCTC; expense cap $3,000 one child / $6,000 two+; credit rate 20%–35% by income','IRS Publication 503'],
+    stochastic: ['CDCTC and DC-FSA benefit calculations assume federal tax; state treatment varies.','DC-FSA use-it-or-lose-it rule applies unless employer plan permits carryover or grace period.'],
+    escalation: ['DC-FSA and CDCTC cannot apply to the same expenses; coordinate with payroll for FSA enrollment deadlines.','Two-earner households: both spouses must have earned income to claim either benefit.']
+  },
+  'legal-hr': {
+    citations: ['State noncompete enforceability law (varies — CA, ND, OK, MN ban; MA, IL, WA restrict by salary/type)','FTC Rule on Noncompetes (16 CFR Part 910) — litigation status uncertain as of 2026'],
+    stochastic: ['Enforceability scores are modeled on published state law trends — not legal opinions; individual enforceability depends on scope, consideration, and jurisdiction.'],
+    escalation: ['Any career move triggering a potential noncompete claim must be reviewed by an employment attorney before resignation.']
+  },
+  'family': {
+    citations: ['FMLA — 29 USC §2601 (12 weeks unpaid; employer ≥50 employees)','State paid family leave laws (CA, NY, NJ, WA, CO, MA, OR, DC — vary by benefit and duration)','IRC §21, §129 (dependent care tax benefits)'],
+    stochastic: ['Income gap projections depend on employer policy, state PFL benefit, and savings rate; report as scenario analysis.'],
+    escalation: ['If caregiver is considering a break exceeding 6 months, recommend a return-to-work scenario analysis before the leave begins.']
+  },
+  'education-finance': {
+    citations: ['20 USC §1087 — FAFSA/SAI calculation methodology','IRC §529 — qualified education savings plans','Pell Grant $7,395 max AY2026-27 (ED DCL GEN-26-01)','studentaid.gov'],
+    stochastic: ['SAI is illustrative; actual financial aid depends on IRS data match and verification. Families with unusual income should contact the financial aid office directly.'],
+    escalation: ['If family has significant non-retirement assets, recommend CSS Profile college evaluation alongside FAFSA schools.']
+  },
+  'licensing': {
+    citations: ['NCSBN (ncsbn.org) for nursing compacts','NCEES (ncees.org) for engineering reciprocity','State professional licensing boards (varies by profession and state)'],
+    stochastic: ['License reciprocity timelines are based on published board data; actual processing and documentation requirements vary by state.'],
+    escalation: ['Any multistate license strategy should be verified with each target state board before making career moves.','If a disciplinary record exists, recommend pre-application inquiry with the licensing board.']
+  },
+  'workforce': {
+    citations: ['BLS OEWS (bls.gov/oes)','WIOA (29 USC §3101 et seq.)','apprenticeship.gov — DOL registered programs'],
+    stochastic: ['Program ROI estimates use BLS median wages; outcomes depend on program quality, local labor demand, and participant effort.'],
+    escalation: ['If program is funded by a WIOA ITA, verify it appears on the state ETPL.']
+  },
+  'general': {
+    citations: ['Source citations appear in the artifact\'s regulatory_citations and data_vintage fields'],
+    stochastic: ['Report all projections as scenario-dependent estimates under stated assumptions, not guarantees.','Flag any input requiring user estimation as an assumption.'],
+    escalation: ['If this decision involves a material financial commitment (>$10,000 or >3 months of income), recommend independent professional review.']
+  }
+};
+
+// Per-mandate-type domain lookups for the most common types
+const MANDATE_DOMAIN = {
+  credential_roi_evaluation:'education-roi', human_capital_assessment:'career',
+  automation_exposure_score:'career', career_resilience_score:'career',
+  workforce_program_roi:'workforce', career_pivot_assessment:'career',
+  career_transition_record:'career', scholarship_pipeline_plan:'education-finance',
+  fafsa_sai_estimate:'education-finance', exam_pathway_plan:'licensing',
+  benefits_election_record:'compensation', severance_decision_record:'compensation',
+  offer_negotiation_record:'compensation', graduate_school_roi_record:'education-roi',
+  apprenticeship_match_record:'workforce', cpd_credit_record:'licensing',
+  job_search_roi_record:'career', career_break_record:'career',
+  total_comp_record:'compensation', geo_arbitrage_record:'compensation',
+  education_savings_record:'education-finance', visa_strategy_record:'immigration',
+  license_reciprocity_record:'licensing', loan_repayment_record:'student-loans',
+  freelance_total_cost_record:'tax-se', mba_roi_evaluation:'education-roi',
+  test_prep_roi_record:'education-roi', international_student_cost_record:'education-roi',
+  parent_college_roi_record:'education-roi', equity_compensation_record:'equity-tax',
+  ai_skills_premium_record:'career', federal_comp_record:'compensation',
+  education_path_record:'education-roi', remote_tax_record:'tax',
+  noncompete_risk_record:'legal-hr', professional_degree_record:'education-roi',
+  military_civilian_record:'compensation', workforce_pell_record:'education-finance',
+  workforce_pell_credential_rank:'education-finance', net_worth_trajectory_record:'general',
+  signing_bonus_record:'compensation', gig_income_record:'tax-se',
+  cert_renewal_forecast_record:'licensing', isa_loan_record:'education-finance',
+  dual_enrollment_record:'education-roi', deferred_comp_457b_record:'tax-retirement',
+  tutor_roi_record:'education-roi', test_retake_record:'education-roi',
+  mba_portfolio_record:'education-roi', tuition_reimbursement_record:'compensation',
+  phd_pivot_record:'education-roi', law_school_roi_record:'education-roi',
+  test_choice_record:'education-roi', exec_mba_record:'education-roi',
+  stem_opt_record:'immigration', english_test_choice_record:'education-roi',
+  lsat_tier_record:'education-roi', mba_scholarship_record:'education-roi',
+  consulting_roi_record:'education-roi', mba_yield_record:'education-roi',
+  dual_degree_record:'education-roi', online_mba_record:'education-roi',
+  mba_waitlist_record:'education-roi', deferred_mba_record:'education-roi',
+  mba_reapplicant_record:'education-roi', mba_format_geo_record:'education-roi',
+  law_ed_record:'education-roi', mim_mba_timing_record:'education-roi',
+  trade_wage_progression_record:'trades', trade_cert_roi_record:'trades',
+  contractor_launch_record:'tax-se', gi_bill_benefit_record:'veteran',
+  skillbridge_credential_record:'veteran', veteran_income_bridge_record:'veteran',
+  dependent_care_fsa_cdctc_record:'childcare', parental_leave_income_record:'family',
+  travel_nurse_comp_record:'healthcare', shift_differential_optimizer_record:'healthcare',
+  qsbs_exclusion_record:'equity-tax', equity_exit_waterfall_record:'equity-tax',
+  option_exercise_window_record:'equity-tax', '83b_election_record':'equity-tax',
+  severance_ui_timing_record:'compensation', federal_buyout_record:'compensation',
+  h1b_risk_record:'immigration', greencard_wait_record:'immigration',
+  solo_401k_sep_record:'tax-retirement', rsu_withholding_record:'equity-tax',
+  iso_amt_record:'equity-tax', pslf_record:'student-loans',
+  student_loan_refi_record:'student-loans', espp_record:'equity-tax',
+  scorp_election_record:'tax-se', qbi_199a_record:'tax-se',
+  scorp_comp_record:'tax-se', home_office_record:'tax-se',
+  caregiver_income_record:'family', freelance_quarterly_tax_record:'tax-se',
+  rap_standard_record:'student-loans', rap_income_driven_record:'student-loans',
+  '529_lifelong_record':'education-finance', ai_displacement_record:'career',
+  hdhp_ppo_record:'healthcare', employer_training_record:'compensation',
+  turnover_cost_record:'compensation', retention_roi_record:'compensation',
+  promotion_job_hop_record:'career', nbct_roi_record:'education-roi',
+  educator_degree_record:'education-roi', teacher_pension_record:'tax-retirement',
+  skillbridge_record:'veteran', trade_specialization_record:'trades',
+  parental_leave_record:'family', cobra_aca_record:'healthcare',
+  nursing_ladder_record:'healthcare', internship_roi_record:'education-roi',
+  community_college_roi_record:'education-roi', grad_cert_masters_record:'education-roi',
+  adult_learner_roi_record:'education-roi', advisor_prompt_record:'general'
+};
+
+// ── State ──────────────────────────────────────────────────────────────────────
+let _artifacts = [];
+let _lastComposerSession = null;
+let _lastExecutionHash = null;
+
+// ── URL param: auto-load AP2 payload ─────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const ap2param = params.get('ap2');
+  if (ap2param) {
+    try {
+      const decoded = JSON.parse(decodeURIComponent(ap2param));
+      document.getElementById('pasteArea').value = JSON.stringify(decoded, null, 2);
+      parseInput();
+    } catch(e) { /* ignore malformed URL param */ }
+  }
+  // Also check sessionStorage for _ap2LastMandate (set by tool "Open Advisor" buttons)
+  try {
+    const stored = sessionStorage.getItem('_ap2LastMandate');
+    if (stored && !ap2param && _artifacts.length === 0) {
+      document.getElementById('pasteArea').value = stored;
+      parseInput();
+    }
+  } catch(e) {}
+});
+
+// ── Parse pasted JSON ─────────────────────────────────────────────────────────
+function parseInput() {
+  const raw = document.getElementById('pasteArea').value.trim();
+  const errEl = document.getElementById('parseError');
+  errEl.style.display = 'none';
+  if (!raw) return;
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch(e) {
+    errEl.textContent = 'Invalid JSON: ' + e.message;
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const items = Array.isArray(parsed) ? parsed : [parsed];
+  let added = 0;
+  for (const item of items) {
+    if (!item || typeof item !== 'object') continue;
+    // Validate minimally: must have mandate_type or ap2_version
+    if (!item.mandate_type && !item.ap2_version) {
+      errEl.textContent = 'Warning: object missing mandate_type field. Adding anyway.';
+      errEl.style.display = 'block';
+    }
+    _artifacts.push(item);
+    added++;
+  }
+
+  renderPills();
+  document.getElementById('pasteArea').value = '';
+  document.getElementById('generateBtn').disabled = _artifacts.length === 0;
+}
+
+function clearArtifacts() {
+  _artifacts = [];
+  renderPills();
+  document.getElementById('generateBtn').disabled = true;
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('parseError').style.display = 'none';
+}
+
+function removeArtifact(i) {
+  _artifacts.splice(i, 1);
+  renderPills();
+  document.getElementById('generateBtn').disabled = _artifacts.length === 0;
+}
+
+function renderPills() {
+  const el = document.getElementById('artifactPills');
+  el.innerHTML = _artifacts.map((a, i) => {
+    const mt = a.mandate_type || 'unknown';
+    const alId = a.al_id || '';
+    const label = [mt, alId].filter(Boolean).join(' · ');
+    return `<div class="a-pill"><span>📄 ${escHtml(label)}</span><span class="rm" onclick="removeArtifact(${i})">✕</span></div>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Build prompt ──────────────────────────────────────────────────────────────
+function getDomain(mandateType) {
+  return MANDATE_DOMAIN[mandateType] || 'general';
+}
+
+function getTemplate(domain) {
+  return DOMAIN_TEMPLATES[domain] || DOMAIN_TEMPLATES.general;
+}
+
+function buildArtifactSummary(artifact) {
+  const mt = artifact.mandate_type || 'unknown';
+  const toolName = artifact.tool_name || artifact.tool_id || mt;
+  const alId = artifact.al_id || '';
+  const vintage = artifact.data_vintage || artifact.timestamp || '';
+  const execHash = artifact.execution_hash || '';
+  const chain = artifact.chain || {};
+  const chainDepth = chain.depth || 0;
+
+  // Flatten key/value pairs from output_payload or top-level fields
+  const skip = new Set(['ap2_version','mandate_type','tool_name','tool_id','al_id',
+    'data_vintage','timestamp','execution_hash','chain','generated_at','export_type',
+    'ap2_schema','policy_parameters','regulatory_context','stochastic_context']);
+  const payload = artifact.output_payload || artifact;
+  const lines = [];
+
+  // Include policy_parameters if present
+  if (artifact.policy_parameters && typeof artifact.policy_parameters === 'object') {
+    lines.push('INPUTS (policy_parameters):');
+    for (const [k, v] of Object.entries(artifact.policy_parameters)) {
+      if (v !== null && v !== undefined) {
+        lines.push(`  ${k}: ${formatVal(v)}`);
+      }
+    }
+  }
+
+  lines.push('RESULTS (output_payload):');
+  const src = artifact.output_payload || artifact;
+  for (const [k, v] of Object.entries(src)) {
+    if (!skip.has(k) && v !== null && v !== undefined) {
+      lines.push(`  ${k}: ${formatVal(v)}`);
+    }
+  }
+
+  // Chain context
+  if (chainDepth > 0 && chain.parent_hash) {
+    lines.push(`CHAIN: depth ${chainDepth}, parent_hash ${chain.parent_hash}`);
+  }
+
+  return {
+    text: `Tool: ${toolName}${alId ? ' (' + alId + ')' : ''}\nMandate type: ${mt}\nData vintage: ${vintage}\n${lines.join('\n')}`,
+    execHash, chainDepth, vintage, mt, toolName, alId
+  };
+}
+
+function formatVal(v) {
+  if (typeof v === 'number') return v.toLocaleString('en-US', {maximumFractionDigits:2});
+  if (typeof v === 'object') return JSON.stringify(v);
+  return String(v);
+}
+
+async function generatePrompt() {
+  if (_artifacts.length === 0) return;
+
+  const taskFrame = document.getElementById('taskFrame').value;
+  const audience  = document.getElementById('audienceSel').value;
+  const tone      = document.getElementById('toneSel').value;
+  const inclCitations = document.getElementById('citationsToggle').checked;
+  const inclEscal     = document.getElementById('escalToggle').checked;
+  const inclStoch     = document.getElementById('stochToggle').checked;
+
+  // Determine primary domain from first artifact
+  const primary = _artifacts[0];
+  const mt = primary.mandate_type || 'general';
+  const domain = getDomain(mt);
+  const tpl = getTemplate(domain);
+
+  // Build artifact summaries
+  const summaries = _artifacts.map(a => buildArtifactSummary(a));
+  const artifactBlock = summaries.map((s, i) =>
+    `--- Artifact ${i+1} (${s.mt}) ---\n${s.text}`
+  ).join('\n\n');
+
+  const taskInstruction = TASK_FRAMES[taskFrame].replace(/{{PERSONA}}/g, audience);
+  const toneInstruction = TONE_MAP[tone];
+
+  // Resolve vintage from first artifact
+  const vintage = summaries[0]?.vintage || 'see artifact';
+
+  // Build prompt sections
+  const parts = [];
+
+  parts.push(`Task: ${taskInstruction}`);
+  parts.push(`Audience: ${audience}`);
+  parts.push(`Tone: ${toneInstruction}`);
+
+  if (inclCitations && tpl.citations?.length) {
+    parts.push(`Regulatory Citations:\n${tpl.citations.map(c => '• ' + c).join('\n')}`);
+  }
+
+  if (inclStoch && tpl.stochastic?.length) {
+    parts.push(`Stochastic Framing Requirements:\n${tpl.stochastic.map(r => '• ' + r).join('\n')}`);
+  }
+
+  parts.push(`--- AP2 Artifact Data ---\n${artifactBlock}`);
+
+  if (inclEscal && tpl.escalation?.length) {
+    parts.push(`Escalation Conditions (flag these explicitly if applicable):\n${tpl.escalation.map(e => '• ' + e).join('\n')}`);
+  }
+
+  // Chain hash footer
+  const maxChainDepth = Math.max(...summaries.map(s => s.chainDepth || 0));
+  const parentHashes = summaries.map(s => s.execHash).filter(Boolean);
+
+  const promptText = parts.join('\n\n');
+
+  // Compute our own execution hash for the composer session
+  const sessionPayload = {
+    mandate_type: 'advisor_prompt_record',
+    task_frame: taskFrame,
+    audience,
+    tone,
+    artifact_count: _artifacts.length,
+    primary_mandate_type: mt,
+    domain,
+    include_citations: inclCitations,
+    include_escalation: inclEscal,
+    include_stochastic: inclStoch,
+    prompt_length: promptText.length
+  };
+
+  let execHash = null;
+  try {
+    execHash = await ap2Hash(sessionPayload, {});
+  } catch(e) {
+    execHash = 'sha256:unavailable';
+  }
+  _lastExecutionHash = execHash;
+
+  // Build chain info for footer
+  const chainLine = parentHashes.length > 0
+    ? `Parent artifact hash(es): ${parentHashes.join(', ')}`
+    : 'No parent hashes (first tool in chain)';
+  const hashFooterText =
+    `Composer execution hash: ${execHash}\n` +
+    `${chainLine}\n` +
+    `Chain depth: ${maxChainDepth + 1} · Generated: ${new Date().toISOString().slice(0,16).replace('T',' ')} UTC`;
+
+  // Store session for AP2 export
+  _lastComposerSession = {
+    ap2_version: '2.1.0',
+    mandate_type: 'advisor_prompt_record',
+    al_id: 'AL-153',
+    tool_name: 'AP2 Advisor Prompt Composer',
+    tool_id: 'ap2-advisor-prompt-composer',
+    generated_at: new Date().toISOString(),
+    data_vintage: 'AP2 schema v2.1.0 (2026-06-13)',
+    execution_hash: execHash,
+    chain: {
+      depth: maxChainDepth + 1,
+      parent_hashes: parentHashes,
+      parent_mandate_types: summaries.map(s => s.mt)
+    },
+    policy_parameters: {
+      task_frame: taskFrame,
+      audience,
+      tone,
+      include_citations: inclCitations,
+      include_escalation: inclEscal,
+      include_stochastic: inclStoch,
+      artifact_count: _artifacts.length
+    },
+    output_payload: {
+      prompt_length_chars: promptText.length,
+      primary_mandate_type: mt,
+      domain,
+      artifact_mandate_types: summaries.map(s => s.mt)
+    },
+    regulatory_context: {
+      domain_citations: inclCitations ? (tpl.citations || []) : []
+    }
+  };
+
+  // ── Render ──────────────────────────────────────────────────────────────────
+  document.getElementById('promptOutput').textContent = promptText;
+  document.getElementById('hashFooter').textContent = hashFooterText;
+
+  // Chain badge
+  const badge = document.getElementById('chainBadge');
+  badge.className = 'chain-badge';
+  badge.textContent = `chain depth: ${maxChainDepth + 1}`;
+
+  // Deep links
+  const encoded = encodeURIComponent(promptText);
+  const claudeUrl = `https://claude.ai/new?q=${encoded}`;
+  const gptUrl    = `https://chatgpt.com/?q=${encoded}`;
+  document.getElementById('claudeLink').href = claudeUrl;
+  document.getElementById('gptLink').href    = gptUrl;
+
+  // Show results
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ── AP2 WebCrypto hash (CG-28 permitted async) ────────────────────────────────
+async function ap2Hash(policyParams, outputPayload) {
+  const payload = JSON.stringify({
+    policy_parameters: sortKeys(policyParams),
+    output_payload:    sortKeys(outputPayload)
+  });
+  const enc  = new TextEncoder().encode(payload);
+  const buf  = await crypto.subtle.digest('SHA-256', enc);
+  const hex  = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  return 'sha256:' + hex;
+}
+
+function sortKeys(obj) {
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return obj;
+  return Object.fromEntries(Object.keys(obj).sort().map(k => [k, sortKeys(obj[k])]));
+}
+
+// ── Copy ──────────────────────────────────────────────────────────────────────
+function copyPrompt() {
+  const text = document.getElementById('promptOutput').textContent;
+  navigator.clipboard.writeText(text).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+}
+
+// ── Exports ───────────────────────────────────────────────────────────────────
+function exportMarkdown() {
+  if (!_lastComposerSession) return;
+  const prompt = document.getElementById('promptOutput').textContent;
+  const date = new Date().toISOString().slice(0,10);
+  const mt = _lastComposerSession.output_payload?.primary_mandate_type || 'advisor';
+  const md = [
+    `# Advisor Prompt — ${mt}`,
+    `*Generated ${date} by AP2 Advisor Prompt Composer (AL-153)*`,
+    '',
+    '## Prompt',
+    '',
+    prompt,
+    '',
+    '---',
+    '## Provenance',
+    '',
+    `- Execution hash: \`${_lastComposerSession.execution_hash}\``,
+    `- Chain depth: ${_lastComposerSession.chain?.depth || 1}`,
+    `- Parent mandate types: ${(_lastComposerSession.chain?.parent_mandate_types || []).join(', ') || '(none)'}`,
+    `- Data vintage: ${_lastComposerSession.data_vintage}`,
+    `- Task frame: ${_lastComposerSession.policy_parameters?.task_frame}`,
+    `- Audience: ${_lastComposerSession.policy_parameters?.audience}`
+  ].join('\n');
+
+  dl(md, `advisor-prompt-${mt}-${date}.md`, 'text/markdown');
+}
+
+function exportAP2() {
+  if (!_lastComposerSession) return;
+  const json = JSON.stringify(_lastComposerSession, null, 2);
+  const mt   = _lastComposerSession.output_payload?.primary_mandate_type || 'advisor';
+  const date = new Date().toISOString().slice(0,10);
+  window._ap2LastMandate = json;
+  dl(json, `advisor-prompt-${mt}-${date}.ap2.json`, 'application/json');
+}
+
+function dl(content, filename, mime) {
+  const blob = URL.createObjectURL(new Blob([content], {type: mime + ';charset=utf-8'}));
+  const a = document.createElement('a');
+  a.href = blob; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(blob), 10000);
+}
+
+// ── mfst toggle (CG-24) ───────────────────────────────────────────────────────
+const MANIFEST = {"tool_id":"ap2-advisor-prompt-composer","al_id":"AL-153","version":"1.0.0","title":"AP2 Advisor Prompt Composer","category":"agentic_tooling","ap2_mandate_types":["advisor_prompt_record"],"sister_suite":"https://ainumbers.co","consulting_site":"https://apexadvisory.site","mcp_tool_definition":{"name":"ap2_advisor_prompt_composer","description":"Transform AP2 decision artifacts into advisor-framed LLM prompts with domain-specific regulatory citations, stochastic framing rules, and execution-hash provenance."}};
+
+function toggleMfst() {
+  const body = document.getElementById('mfstBody');
+  const code = document.getElementById('mfstCode');
+  if (body.style.display === 'block') {
+    body.style.display = 'none';
+  } else {
+    if (!code.textContent) code.textContent = JSON.stringify(MANIFEST, null, 2);
+    body.style.display = 'block';
+  }
+}
+</script>
+</body>
+</html>
