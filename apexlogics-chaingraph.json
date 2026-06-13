@@ -1,0 +1,280 @@
+{
+  "$schema": "https://apexlogics.org/schema/chaingraph-v1.0.json",
+  "version": "1.0.0-scaffold",
+  "updated": "2026-06-13",
+  "maintainer": "Apex Advisors",
+  "status": "SCAFFOLD — metadata + journeys complete; nodes[] to be script-generated from tool manifests (see generation_contract).",
+  "description": "Machine-readable index of the ApexLogics decision chain-graph: tool nodes + persona journeys. Each tool emits a typed AP2 artifact with a verifiable execution_hash and chain block; journeys are persona-grouped sequences of tools with verified artifact pass-through. Linked from llms.txt and embedded as JSON-LD on the hub. Primary agent-discovery surface.",
+  "hub_url": "https://apexlogics.org/index.html",
+  "mcp_server": "https://apexlogics.org/.well-known/mcp.json",
+  "license": "CC BY 4.0",
+  "suite_claim": "Client-side, zero-PII life-decision tools whose exports are typed, chainable, and traceable to a reproducible execution hash — verifiable end-to-end, agent-composable, and hand-off-ready to an LLM or human advisor.",
+
+  "five_tests": [
+    "Emits a typed AP2 decision artifact (ap2_version 2.1.0, mandate_type, tool_id, execution_hash, chain block, payload, audit_signature)",
+    "Exposes an MCP tools/call endpoint with typed inputSchema, deterministic output parseable without vision",
+    "Exports a decision, not reference data — an ROI, break-even, eligibility verdict, or determination",
+    "Is chainable — its mandate_type is a valid inbound type for >=1 other tool (seed edges from CONTRACT §6.3 handoff map)",
+    "Carries a verifiable anchor — execution_hash recomputable client-side via WebCrypto SHA-256 (CONTRACT §4.4 / CG-28)"
+  ],
+
+  "model": {
+    "rule": "1 chaingraph = 1 persona. A chaingraph bundles that persona's journeys behind an up-front selector (user picks scenario -> only their journey renders). Personas never mix.",
+    "conversion": "in place — each former workflow keeps its URL; upgraded to verified artifact pass-through.",
+    "embed": "minimal compute per step + shared constants module (apex-constants-2026.js). Do not replicate full tools into chaingraphs.",
+    "ap2_version": "2.1.0",
+    "locked": "2026-06-13"
+  },
+
+  "chain_block_spec": {
+    "parent_hashes": "sha256:<execution_hash> of each upstream artifact consumed this run",
+    "parent_tool_ids": "tool_id of each parent",
+    "chain_depth": "0 for root; max(parent depths)+1 for chained artifacts",
+    "hash": "sha256 over sorted-key, whitespace-stripped JSON of {policy_parameters, output_payload} via WebCrypto crypto.subtle.digest — identical canonicalization to AINumbers ChainGraph, so hashes are cross-suite verifiable",
+    "verification": "re-run the parent tool with the same inputs, recompute the hash, confirm the cited value"
+  },
+
+  "constants_ssot_ref": "apex-constants-2026.js (CONTRACT §3.5)",
+  "advisor_prompt_composer": "ap2-advisor-prompt-composer (PTG analogue; template registry repo/data/advisor-templates.json)",
+  "mandate_type_registry_ref": "data/advisor-templates.json",
+
+  "personas": [
+    "worker", "grad-applicant", "freelancer", "immigrant-visa-holder", "student",
+    "federal-employee", "educator", "new-parent-caregiver", "employer", "parent",
+    "veteran", "trades", "nurse-healthcare"
+  ],
+
+  "journeys": [
+    {
+      "id": "worker",
+      "persona": "worker",
+      "display_name": "Worker / Employee Decisions",
+      "url": "/chaingraphs/worker.html",
+      "selector": "themed",
+      "themes": [
+        {
+          "theme": "Career change",
+          "sub_journeys": [
+            { "id": "ai-career-transition-playbook", "label": "AI career transition", "nodes": ["AL-34","AL-02","AL-06","AL-03"] },
+            { "id": "career-pivot-playbook", "label": "Career pivot", "nodes": ["AL-30","AL-31","AL-32","AL-42"] },
+            { "id": "ai-displacement-career-transition", "label": "AI displacement", "nodes": ["AL-111","AL-06","AL-02","AL-45"] },
+            { "id": "mid-career-credential-stack-planner", "label": "Mid-career credential stack", "nodes": ["AL-34","AL-64","AL-53","AL-02","AL-06"] },
+            { "id": "career-exit-restart-planner", "label": "Exit & restart", "nodes": ["AL-55","AL-26","AL-44","AL-19"] }
+          ]
+        },
+        {
+          "theme": "Offers & comp",
+          "sub_journeys": [
+            { "id": "new-offer-suite", "label": "New offer", "nodes": ["AL-42","AL-01","AL-41","AL-40"] },
+            { "id": "remote-work-relocation-suite", "label": "Remote / relocation", "nodes": ["AL-36","AL-37","AL-41","AL-42"] },
+            { "id": "underpaid-stay-and-ask", "label": "Am I underpaid?", "nodes": ["AL-135","AL-136"] },
+            { "id": "employer-benefits-decision", "label": "Employer benefits", "nodes": ["AL-112","AL-23","AL-01"] },
+            { "id": "employer-education-benefit-maximizer", "label": "Tuition benefit", "nodes": ["AL-53","AL-02","AL-66","AL-47"] },
+            { "id": "credentialing-fast-track", "label": "Credentialing fast-track", "nodes": ["AL-65","AL-43","AL-46","AL-47"] }
+          ]
+        },
+        {
+          "theme": "Equity",
+          "sub_journeys": [
+            { "id": "equity-compensation-decisions", "label": "Equity comp (RSU/ISO/ESPP)", "nodes": ["AL-122","AL-116","AL-117"] },
+            { "id": "equity-exit-planning", "label": "Equity exit / 83(b)", "nodes": ["AL-147","AL-148"] }
+          ]
+        },
+        {
+          "theme": "Separation",
+          "sub_journeys": [
+            { "id": "job-separation-financial-playbook", "label": "Job separation", "nodes": ["AL-141","AL-143","AL-142"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "grad-applicant",
+      "persona": "grad-applicant",
+      "display_name": "Graduate / Professional School",
+      "url": "/chaingraphs/grad-applicant.html",
+      "selector": "flat",
+      "sub_journeys": [
+        { "id": "grad-mba-decision", "label": "Grad school / MBA (merged)", "nodes": ["AL-02","AL-63","AL-51","AL-64","AL-04","AL-13"], "note": "merge of grad-school-decision-engine + mba-aspirant-playbook (approved 2026-06-13)" },
+        { "id": "law-professional-school-journey", "label": "Law / professional school", "nodes": ["AL-39","AL-58","AL-51","AL-67","AL-13"] },
+        { "id": "lsat-to-jd-career-planner", "label": "LSAT to JD", "nodes": ["AL-62","AL-51","AL-69","AL-70","AL-13"] },
+        { "id": "mba-ding-comeback-planner", "label": "MBA ding -> comeback", "nodes": ["AL-70","AL-63","AL-64","AL-71"], "note": "verify AL-70 duplicate during conversion" }
+      ]
+    },
+    {
+      "id": "freelancer",
+      "persona": "freelancer",
+      "display_name": "Freelancer / Self-Employed",
+      "url": "/chaingraphs/freelancer.html",
+      "selector": "flat",
+      "sub_journeys": [
+        { "id": "freelance-leap-calculator", "label": "Going freelance", "nodes": ["AL-29","AL-24","AL-35","AL-25"] },
+        { "id": "freelance-tax-lifecycle", "label": "Freelance tax lifecycle", "nodes": ["AL-123","AL-118","AL-119"] },
+        { "id": "self-employment-tax-optimizer", "label": "Advanced SE tax (QBI/S-corp)", "nodes": ["AL-144","AL-145","AL-146"] }
+      ]
+    },
+    {
+      "id": "immigrant-visa-holder",
+      "persona": "immigrant-visa-holder",
+      "display_name": "Immigrant / Visa-Holder",
+      "url": "/chaingraphs/immigrant-visa-holder.html",
+      "selector": "flat",
+      "sub_journeys": [
+        { "id": "international-career-navigator", "label": "F-1 / landing analysis", "nodes": ["AL-61","AL-62","AL-02","AL-41"] },
+        { "id": "international-mba-complete-journey", "label": "International MBA", "nodes": ["AL-61","AL-63","AL-51","AL-64","AL-68"] },
+        { "id": "immigration-career-planner", "label": "H-1B / green card", "nodes": ["AL-151","AL-152"] }
+      ]
+    },
+    {
+      "id": "student",
+      "persona": "student",
+      "display_name": "Student — Loans & Paths",
+      "url": "/chaingraphs/student.html",
+      "selector": "flat",
+      "sub_journeys": [
+        { "id": "education-path-decision-engine", "label": "Education path", "nodes": ["AL-45","AL-59","AL-04","AL-13"] },
+        { "id": "student-loan-repayment-decision", "label": "Student loan repayment (merged)", "nodes": ["AL-13","AL-109","AL-110","AL-108","AL-120","AL-121"], "note": "merge of student-loan-payoff-decisions + 2026-borrower-decision-journey (approved 2026-06-13)" }
+      ]
+    },
+    {
+      "id": "federal-employee",
+      "persona": "federal-employee",
+      "display_name": "Federal Employee",
+      "url": "/chaingraphs/federal-employee.html",
+      "selector": "flat",
+      "sub_journeys": [
+        { "id": "federal-job-decision-suite", "label": "Federal vs. private", "nodes": ["AL-38","AL-37","AL-41","AL-40"] },
+        { "id": "qsbs-federal-career-transition", "label": "QSBS + buyout", "nodes": ["AL-149","AL-150"] }
+      ]
+    },
+    {
+      "id": "educator",
+      "persona": "educator",
+      "display_name": "Educator / Teacher",
+      "url": "/chaingraphs/educator.html",
+      "selector": "flat",
+      "sub_journeys": [
+        { "id": "teacher-career-compensation", "label": "Teacher career & comp", "nodes": ["AL-125","AL-126","AL-127","AL-128"] },
+        { "id": "course-design-studio", "label": "Course design studio", "nodes": ["AL-78","AL-74","AL-75","AL-76"] }
+      ]
+    },
+    {
+      "id": "new-parent-caregiver",
+      "persona": "new-parent-caregiver",
+      "display_name": "New Parent / Caregiver",
+      "url": "/chaingraphs/new-parent-caregiver.html",
+      "selector": "flat",
+      "sub_journeys": [
+        { "id": "working-parent-childcare", "label": "Working parent childcare", "nodes": ["AL-92","AL-137","AL-138","AL-28"] },
+        { "id": "sandwich-generation-career-break", "label": "Caregiving career break", "nodes": ["AL-124","AL-14"] }
+      ]
+    },
+    {
+      "id": "employer",
+      "persona": "employer",
+      "display_name": "Employer (HR / People)",
+      "url": "/chaingraphs/employer.html",
+      "selector": "flat",
+      "sub_journeys": [
+        { "id": "corporate-upskilling-roi", "label": "Upskilling ROI", "nodes": ["AL-02","AL-07","AL-113"] },
+        { "id": "employer-talent-retention", "label": "Talent retention", "nodes": ["AL-114","AL-115","AL-01"] }
+      ]
+    },
+    {
+      "id": "parent",
+      "persona": "parent",
+      "display_name": "Parent — College Funder",
+      "url": "/chaingraphs/parent.html",
+      "selector": "single",
+      "sub_journeys": [
+        { "id": "college-financial-planning-suite", "label": "College financial planning", "nodes": ["AL-59","AL-60","AL-50","AL-17","AL-13"], "note": "resolve AL-60 (retired) during conversion" }
+      ]
+    },
+    {
+      "id": "veteran",
+      "persona": "veteran",
+      "display_name": "Veteran Transition",
+      "url": "/chaingraphs/veteran.html",
+      "selector": "single",
+      "sub_journeys": [
+        { "id": "veteran-transition-gi-bill", "label": "GI Bill & transition", "nodes": ["AL-132","AL-133","AL-134"] }
+      ]
+    },
+    {
+      "id": "trades",
+      "persona": "trades",
+      "display_name": "Skilled Trades",
+      "url": "/chaingraphs/trades.html",
+      "selector": "single",
+      "sub_journeys": [
+        { "id": "skilled-trades-career-builder", "label": "Trades career builder", "nodes": ["AL-129","AL-130","AL-131"] }
+      ]
+    },
+    {
+      "id": "nurse-healthcare",
+      "persona": "nurse-healthcare",
+      "display_name": "Nurse / Healthcare",
+      "url": "/chaingraphs/nurse-healthcare.html",
+      "selector": "single",
+      "sub_journeys": [
+        { "id": "nurse-shift-travel-comp", "label": "Shift & travel comp", "nodes": ["AL-97","AL-139","AL-140","AL-28"] }
+      ]
+    }
+  ],
+
+  "generation_contract": {
+    "note": "nodes[] is GENERATED, not hand-maintained, to preserve single-source-of-truth (manifests are the source). Build script: repo/scripts/build_chaingraph.js (to be written). Runs when node/sandbox is available, same place as check_tools.js.",
+    "per_node_fields": ["tool_id (NN-slug)", "al_id", "display_name", "mcp_name", "mandate_type", "category", "persona (single)", "url", "input_schema_ref", "consumes", "feeds", "data_vintage", "status"],
+    "edge_source": "consumes/feeds seeded from CONTRACT §6.3 AP2 handoff map (25 pairs) + each tool's ap2_inbound_mandate_types / downstream_handoff_candidates manifest fields",
+    "al_id_resolution": "resolve combined/retired AL-IDs before generation: AL-06+16 (combined), AL-60 (retired)"
+  },
+
+  "nodes_sample_note": "Illustrative shapes only. mcp_name values here are PROVISIONAL and must be confirmed/overwritten by the generator from each tool's manifest/embedded MANIFEST. mandate_type qsbs_exclusion_record (142) is confirmed; grad_loan_gap_record and gi_bill_benefit_record are provisional.",
+  "nodes_sample": [
+    {
+      "tool_id": "142-qsbs-1202-estimator",
+      "al_id": "AL-149",
+      "display_name": "QSBS §1202 Exclusion Estimator",
+      "mcp_name": "estimate_qsbs_1202_exclusion",
+      "mandate_type": "qsbs_exclusion_record",
+      "category": "equity-tax",
+      "persona": "worker",
+      "url": "/tools/142-qsbs-1202-estimator/",
+      "consumes": ["AL-148"],
+      "feeds": [],
+      "data_vintage": "IRC §1202; OBBBA 2025 / P.L. 119-21",
+      "status": "live"
+    },
+    {
+      "tool_id": "102-grad-loan-cap-gap-planner",
+      "al_id": "AL-109",
+      "display_name": "Grad Loan Cap Gap Planner",
+      "mcp_name": "plan_grad_loan_cap_gap",
+      "mandate_type": "grad_loan_gap_record",
+      "category": "student-finance",
+      "persona": "grad-applicant",
+      "url": "/tools/102-grad-loan-cap-gap-planner/",
+      "consumes": [],
+      "feeds": ["AL-13"],
+      "data_vintage": "OBBBA 2025 / P.L. 119-21",
+      "status": "live"
+    },
+    {
+      "tool_id": "125-gi-bill-benefit-maximizer",
+      "al_id": "AL-132",
+      "display_name": "GI Bill Benefit Maximizer",
+      "mcp_name": "maximize_gi_bill_benefit",
+      "mandate_type": "gi_bill_benefit_record",
+      "category": "veteran",
+      "persona": "veteran",
+      "url": "/tools/125-gi-bill-benefit-maximizer/",
+      "consumes": [],
+      "feeds": ["AL-133"],
+      "data_vintage": "VA Post-9/11 AY2025-26; MGIB FY2026",
+      "status": "live"
+    }
+  ],
+  "nodes": [],
+
+  "llms_txt_note": "Linked from llms.txt and embedded as JSON-LD on the hub. CG-23 parity: this file's journey/node counts must reconcile with hub/registry/sitemap each ship cycle."
+}
