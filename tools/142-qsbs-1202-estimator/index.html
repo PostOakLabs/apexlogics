@@ -114,19 +114,20 @@ footer.tool-footer a:hover{color:var(--amber)}
         <option value="pre2010">Before Aug 11, 2010</option>
         <option value="2010">Aug 11, 2010 – Sep 27, 2010</option>
         <option value="2010b">Sep 28, 2010 – Dec 31, 2010</option>
-        <option value="2011plus" selected>Jan 1, 2011 or later</option>
+        <option value="2011plus">Jan 1, 2011 – Jul 4, 2025</option>
+        <option value="obbba" selected>After Jul 4, 2025 (OBBBA)</option>
       </select>
-      <span class="hint">Determines exclusion tier (50/75/100%)</span>
+      <span class="hint">Pre-7/4/2025: tier by acquisition date. OBBBA: tier by holding period.</span>
     </div>
     <div class="field">
       <label for="grossAssets">C-Corp Gross Assets at Issuance ($M)</label>
       <input type="number" id="grossAssets" value="20" min="0" step="1">
-      <span class="hint">Must be ≤$50M at time of issuance and immediately after</span>
+      <span class="hint">≤$50M (stock acquired on/before Jul 4, 2025) or ≤$75M (OBBBA) at issuance</span>
     </div>
     <div class="field">
       <label for="holdYears">Holding Period (years from acquisition to sale)</label>
       <input type="number" id="holdYears" value="6" min="0" step="0.5">
-      <span class="hint">Must hold >5 years to claim §1202 exclusion</span>
+      <span class="hint">Pre-7/4/2025 stock: >5 yrs for 100%. OBBBA stock: 50%/75%/100% at 3/4/5 yrs.</span>
     </div>
   </div>
   <div class="grid-2" style="margin-top:16px">
@@ -224,7 +225,7 @@ footer.tool-footer a:hover{color:var(--amber)}
       <tbody id="tierTableBody"></tbody>
     </table>
     <div class="warn-box">
-      ⚠️ <strong>Per-issuer cap:</strong> §1202 exclusion is capped at the greater of $10M or 10× adjusted basis per issuer, per taxpayer. If your gain exceeds this, the excess is taxed normally. This tool models up to the $10M cap.
+      ⚠️ <strong>Per-issuer cap:</strong> §1202 exclusion is capped at the greater of the statutory cap — <strong>$10M</strong> for stock acquired on/before Jul 4, 2025, or <strong>$15M</strong> for OBBBA stock acquired after (indexed after 2026) — or 10× adjusted basis per issuer, per taxpayer. Gain above the cap is taxed normally.
     </div>
     <div id="stateWarning" class="danger-box" style="display:none;margin-top:12px"></div>
   </div>
@@ -278,29 +279,43 @@ footer.tool-footer a:hover{color:var(--amber)}
 <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
 
 <footer class="tool-footer">
-  <a href="../../about.html">About</a> · CC BY 4.0 · AL-149 · Data: IRC §1202 (TCJA 2017 permanent, OBBBA 2025 confirmed); gain caps per statute
+  <a href="../../about.html">About</a> · CC BY 4.0 · AL-149 · Data: IRC §1202 (TCJA 2017; OBBBA 2025 / P.L. 119-21 — $15M cap & 3/4/5-yr tiers for stock acquired after Jul 4, 2025)
 </footer>
 
 <script>
 // ── Constants ─────────────────────────────────────────────────────────────────
-// IRC §1202 QSBS exclusion tiers — statutory, durable
-// 100% exclusion: stock acquired on/after Sep 28, 2010 (Small Business Jobs Act)
-// 75% exclusion: stock acquired Aug 11 – Sep 27, 2010 (Hiring Incentives to Restore Employment Act)
-// 50% exclusion: stock acquired before Aug 11, 2010 (original §1202)
-// Hold period: >5 years (IRC §1202(a))
-// Cap: greater of $10M or 10× adjusted basis per issuer (IRC §1202(b))
-// Gross assets cap: ≤$50M at issuance (IRC §1202(d))
-// AMT preference: pre-2010 stock (50%/75% tiers) has 7% AMT preference item on excluded gain
-// Source: IRC §1202; TCJA 2017; OBBBA 2025 (confirmed permanent)
-const QSBS_CAP = 10_000_000; // $10M per issuer per taxpayer (statutory minimum cap)
-const GROSS_ASSETS_LIMIT = 50; // $50M C-corp gross assets at issuance
+// IRC §1202 QSBS exclusion — TWO REGIMES:
+//
+// PRE-OBBBA (stock acquired on/before Jul 4, 2025): tier set by ACQUISITION DATE.
+//   100%: acquired on/after Sep 28, 2010 · 75%: Aug 11–Sep 27, 2010 · 50%: before Aug 11, 2010
+//   Hold: >5 years (IRC §1202(a)). Cap: greater of $10M or 10× basis. Gross assets ≤$50M.
+//
+// OBBBA (stock acquired AFTER Jul 4, 2025; P.L. 119-21): tier set by HOLDING PERIOD.
+//   50% at ≥3 yrs · 75% at ≥4 yrs · 100% at ≥5 yrs.
+//   Cap: greater of $15M or 10× basis (indexed for inflation after 2026).
+//   Gross assets ≤$75M at issuance (indexed after 2026). No AMT preference.
+//
+// AMT preference (7% of excluded gain) applies only to pre-2010 (50%/75%) tiers.
+// Source: IRC §1202; TCJA 2017; OBBBA 2025 (P.L. 119-21)
+const QSBS_CAP       = 10_000_000; // pre-OBBBA: $10M per issuer per taxpayer
+const QSBS_CAP_OBBBA = 15_000_000; // OBBBA: $15M per issuer (stock acquired after Jul 4, 2025)
+const GROSS_ASSETS_LIMIT       = 50; // pre-OBBBA: $50M C-corp gross assets at issuance
+const GROSS_ASSETS_LIMIT_OBBBA = 75; // OBBBA: $75M C-corp gross assets at issuance
 
 const TIERS = [
   { id:'pre2010',  label:'Before Aug 11, 2010',             pct:0.50, amtPref:true  },
   { id:'2010',     label:'Aug 11 – Sep 27, 2010',           pct:0.75, amtPref:true  },
   { id:'2010b',    label:'Sep 28 – Dec 31, 2010',           pct:1.00, amtPref:false },
-  { id:'2011plus', label:'Jan 1, 2011 or later',            pct:1.00, amtPref:false }
+  { id:'2011plus', label:'Jan 1, 2011 – Jul 4, 2025',       pct:1.00, amtPref:false }
 ];
+
+// OBBBA holding-period tier (stock acquired after Jul 4, 2025)
+function obbbaTier(holdYears) {
+  if (holdYears >= 5) return { id:'obbba', label:'OBBBA · held ≥5 yrs', pct:1.00, amtPref:false };
+  if (holdYears >= 4) return { id:'obbba', label:'OBBBA · held ≥4 yrs', pct:0.75, amtPref:false };
+  if (holdYears >= 3) return { id:'obbba', label:'OBBBA · held ≥3 yrs', pct:0.50, amtPref:false };
+  return { id:'obbba', label:'OBBBA · held <3 yrs', pct:0, amtPref:false };
+}
 
 let _lastResult = null;
 
@@ -321,17 +336,21 @@ function calculate() {
   const noRepurchase    = document.getElementById('noRepurchase').checked;
 
   const gain = Math.max(0, saleProceeds - costBasis);
-  const tier = TIERS.find(t => t.id === acquireDate);
+  const isObbba = acquireDate === 'obbba';
+  const tier = isObbba ? obbbaTier(holdYears) : TIERS.find(t => t.id === acquireDate);
   const exclusionPct = tier.pct;
-  const holdOk = holdYears > 5;
-  const assetOk = grossAssets <= GROSS_ASSETS_LIMIT;
+  const minHoldYears = isObbba ? 3 : 5;
+  const holdOk = isObbba ? holdYears >= 3 : holdYears > 5;
+  const assetLimit = isObbba ? GROSS_ASSETS_LIMIT_OBBBA : GROSS_ASSETS_LIMIT;
+  const assetOk = grossAssets <= assetLimit;
   const coreCrit = isCCorp && isOriginalIssue && isActiveBiz && cashOrService && notPublic && noRepurchase;
 
-  const eligible = coreCrit && holdOk && assetOk;
+  const eligible = coreCrit && holdOk && assetOk && exclusionPct > 0;
 
-  // Exclusion capped at $10M (or 10× basis — using $10M floor for simplicity)
+  // Per-issuer cap: greater of statutory cap or 10× adjusted basis
+  const capBase = isObbba ? QSBS_CAP_OBBBA : QSBS_CAP;
   const tenXBasis = 10 * costBasis;
-  const cap = Math.max(QSBS_CAP, tenXBasis);
+  const cap = Math.max(capBase, tenXBasis);
   const excludableGain = Math.min(gain, cap);
   const excludedGain = eligible ? excludableGain * exclusionPct : 0;
   const taxableGain  = eligible ? gain - excludedGain : gain;
@@ -348,6 +367,7 @@ function calculate() {
     ltcgRate, stateRate, isCCorp, isOriginalIssue, isActiveBiz,
     cashOrService, notPublic, noRepurchase,
     gain, tier, exclusionPct, holdOk, assetOk, coreCrit, eligible,
+    isObbba, minHoldYears, assetLimit, capBase,
     cap, excludableGain, excludedGain, taxableGain,
     federalTaxWithout, federalTaxWith, federalSaving,
     stateTaxWithout, stateTaxWith
@@ -366,11 +386,13 @@ function renderResults(r) {
     mainRes = 'Not Eligible — Checklist Fails';
     mainSub = 'One or more core eligibility requirements are not met. Review the checklist below.';
   } else if (!r.holdOk) {
-    mainRes = `Hold Period Insufficient (${r.holdYears} yr of >5 yr required)`;
-    mainSub = 'Stock must be held more than 5 years to claim §1202 exclusion.';
+    mainRes = `Hold Period Insufficient (${r.holdYears} yr of ${r.isObbba ? '≥3' : '>5'} yr required)`;
+    mainSub = r.isObbba
+      ? 'OBBBA stock must be held ≥3 years for any §1202 exclusion (50% at 3 yrs, 75% at 4, 100% at 5).'
+      : 'Stock must be held more than 5 years to claim §1202 exclusion.';
   } else if (!r.assetOk) {
-    mainRes = `Gross Assets Exceed $50M — Not Eligible`;
-    mainSub = 'Company gross assets at issuance must be ≤$50M for §1202 qualification.';
+    mainRes = `Gross Assets Exceed $${r.assetLimit}M — Not Eligible`;
+    mainSub = `Company gross assets at issuance must be ≤$${r.assetLimit}M for §1202 qualification.`;
   } else {
     mainRes = `${fmtPct(r.exclusionPct)} Exclusion · ${fmt(r.federalSaving)} Federal Tax Saving`;
     mainSub = `${fmt(r.excludedGain)} of ${fmt(r.gain)} gain excluded under §1202 (${r.tier.label})`;
@@ -393,8 +415,8 @@ function renderResults(r) {
     [r.cashOrService, 'Acquired for money, property, or services'],
     [r.notPublic, 'Company was not publicly traded at issuance'],
     [r.noRepurchase, 'No significant stock repurchase within 2 years of issuance'],
-    [r.assetOk, `C-corp gross assets ≤$50M at issuance (entered: $${r.grossAssets}M)`],
-    [r.holdOk, `Hold period >5 years (entered: ${r.holdYears} yr)`]
+    [r.assetOk, `C-corp gross assets ≤$${r.assetLimit}M at issuance (entered: $${r.grossAssets}M)`],
+    [r.holdOk, `Hold period ${r.isObbba ? '≥3 years (tiered)' : '>5 years'} (entered: ${r.holdYears} yr)`]
   ];
   document.getElementById('eligChecklist').innerHTML = checks.map(([pass, text]) =>
     `<li><span class="${pass ? 'chk-pass' : 'chk-fail'}">${pass ? '✓' : '✗'}</span><span>${text}</span></li>`
@@ -405,15 +427,29 @@ function renderResults(r) {
     ? `<div class="info-box" style="margin-top:12px">✅ All §1202 eligibility requirements met. You qualify for the ${fmtPct(r.exclusionPct)} exclusion tier.</div>`
     : `<div class="danger-box" style="margin-top:12px">❌ One or more requirements not met — §1202 exclusion is not available on this stock.</div>`;
 
-  // Tier table
-  document.getElementById('tierTableBody').innerHTML = TIERS.map(t =>
-    `<tr${t.id === r.tier.id ? ' class="active-tier"' : ''}>
-      <td>${t.label}</td>
-      <td class="mono">${fmtPct(t.pct)}</td>
-      <td>${t.amtPref ? '7% pref item' : 'No AMT pref'}</td>
-      <td>${t.id === r.tier.id ? '◀ Your tier' : ''}</td>
-    </tr>`
-  ).join('');
+  // Tier table — OBBBA shows holding-period tiers; pre-OBBBA shows acquisition-date tiers
+  const active = pct => Math.abs(pct - r.exclusionPct) < 0.001 && r.eligible;
+  document.getElementById('tierTableBody').innerHTML = r.isObbba
+    ? [
+        { label:'OBBBA · held ≥3 yrs', pct:0.50 },
+        { label:'OBBBA · held ≥4 yrs', pct:0.75 },
+        { label:'OBBBA · held ≥5 yrs', pct:1.00 }
+      ].map(t =>
+        `<tr${active(t.pct) ? ' class="active-tier"' : ''}>
+          <td>${t.label}</td>
+          <td class="mono">${fmtPct(t.pct)}</td>
+          <td>No AMT pref</td>
+          <td>${active(t.pct) ? '◀ Your tier' : ''}</td>
+        </tr>`
+      ).join('')
+    : TIERS.map(t =>
+        `<tr${t.id === r.tier.id ? ' class="active-tier"' : ''}>
+          <td>${t.label}</td>
+          <td class="mono">${fmtPct(t.pct)}</td>
+          <td>${t.amtPref ? '7% pref item' : 'No AMT pref'}</td>
+          <td>${t.id === r.tier.id ? '◀ Your tier' : ''}</td>
+        </tr>`
+      ).join('');
 
   // State warning
   const stateWarn = document.getElementById('stateWarning');
@@ -452,10 +488,10 @@ function renderResults(r) {
 
   // Hold period note
   document.getElementById('holdPeriodNote').innerHTML = r.eligible
-    ? `✅ You meet the >5-year hold requirement. Remember: the clock starts at acquisition (or grant date if §83(b) election was filed for restricted stock).`
+    ? `✅ You meet the ${r.isObbba ? `${r.holdYears}-year hold for the ${fmtPct(r.exclusionPct)} tier` : '>5-year hold requirement'}. The clock starts at acquisition (or grant date if a §83(b) election was filed for restricted stock).${r.isObbba && r.exclusionPct < 1 ? ' Holding longer reaches the next tier (75% at 4 yrs, 100% at 5 yrs).' : ''}`
     : r.holdOk
     ? `⚠️ Hold period met, but other criteria failed — see eligibility checklist.`
-    : `📅 ${5 - r.holdYears > 0 ? `Hold for ${(5 - r.holdYears).toFixed(1)} more years` : 'Hold period requirement not yet met'} to qualify for §1202. Consider whether a §1045 rollover into another QSBS is available before the 5-year mark if you need liquidity.`;
+    : `📅 ${r.minHoldYears - r.holdYears > 0 ? `Hold for ${(r.minHoldYears - r.holdYears).toFixed(1)} more years` : 'Hold period requirement not yet met'} to qualify for §1202${r.isObbba ? ' (minimum 3 years for the 50% tier under OBBBA)' : ''}. Consider whether a §1045 rollover into another QSBS is available if you need liquidity sooner.`;
 
   document.getElementById('results').classList.remove('result-hidden');
 }
@@ -485,12 +521,12 @@ function exportMarkdown() {
 ${r.stateRate > 0 ? `| State tax (state likely non-conforming) | ${fmtD(r.stateTaxWith)} |` : ''}
 
 ## Cap Applied
-$10M cap (or 10× basis = ${fmtD(10 * r.costBasis)}); effective cap = ${fmtD(r.cap)}
+${r.isObbba ? '$15M (OBBBA)' : '$10M'} statutory cap (or 10× basis = ${fmtD(10 * r.costBasis)}); effective cap = ${fmtD(r.cap)}
 
 ⚠️ *Consult a tax advisor. Many states do not conform to §1202.*
 
 ---
-*Generated by ApexLogics AL-149 · apexlogics.org · Data: IRC §1202 (OBBBA 2025 permanent)*`;
+*Generated by ApexLogics AL-149 · apexlogics.org · Data: IRC §1202 (OBBBA 2025 / P.L. 119-21)*`;
   const blob = new Blob([md], { type: 'text/markdown' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = 'qsbs-1202-AL149.md'; a.click();
@@ -532,7 +568,7 @@ function exportAP2() {
       amtPreferenceItem: r.tier.amtPref
     },
     downstream_handoff_candidates: ["AL-116"],
-    metadata: { license: "CC-BY-4.0", data_vintage: "IRC §1202; OBBBA 2025 (permanent exclusion confirmed)" }
+    metadata: { license: "CC-BY-4.0", data_vintage: "IRC §1202; OBBBA 2025 / P.L. 119-21 ($15M cap, 3/4/5-yr tiers, $75M gross-assets for stock acquired after Jul 4, 2025)" }
   };
   const AP2Schema = {
     validMandateTypes: ['qsbs_exclusion_record'],
@@ -580,7 +616,7 @@ const MANIFEST = {
   ],
   "status": "live",
   "maintenance": "low",
-  "data_vintage": "IRC §1202 statutory; OBBBA 2025 (exclusion permanent); gain caps per statute",
+  "data_vintage": "IRC §1202 statutory; OBBBA 2025 / P.L. 119-21 ($15M cap, 3/4/5-yr tiers, $75M gross-assets for stock acquired after Jul 4, 2025)",
   "ap2_export": true,
   "ap2_mandate_types": [
     "qsbs_exclusion_record"
