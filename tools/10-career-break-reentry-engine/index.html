@@ -742,7 +742,7 @@ const STRINGS = {
 
 // ── AP2 Schema ─────────────────────────────────────────────────────────────────
 const AP2Schema = {
-  required: ['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata'],
+  required: ['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata','chaingraph_version'],
   validMandateTypes: [
     'credential_roi_evaluation','human_capital_assessment','automation_exposure_score',
     'career_resilience_score','workforce_program_roi','career_pivot_assessment',
@@ -759,8 +759,8 @@ const AP2Schema = {
     const e = [];
     this.required.forEach(k => { if (m[k] == null) e.push('missing: ' + k); });
     if (m.ap2_version !== '1.0') e.push('ap2_version must be "1.0"');
-    if (m.mandate_type && !this.validMandateTypes.includes(m.mandate_type))
-      e.push('unknown mandate_type: ' + m.mandate_type);
+    if (m.ap2_mandate_type && !this.validMandateTypes.includes(m.ap2_mandate_type))
+      e.push('unknown mandate_type: ' + m.ap2_mandate_type);
     if (m.audit_metadata && m.audit_metadata.client_side_executed !== true)
       e.push('client_side_executed must be true');
     if (m.audit_metadata && m.audit_metadata.zero_pii_verified !== true)
@@ -1330,6 +1330,17 @@ function auditMeta() {
   };
 }
 
+/* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+      : v;
+  const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
 // ── Tab 1 Markdown export ─────────────────────────────────────────────────────
 function exportTab1MD() {
   if (!tab1Result) return;
@@ -1389,7 +1400,7 @@ function exportTab1MD() {
 }
 
 // ── Tab 1 AP2 export ──────────────────────────────────────────────────────────
-function exportTab1AP2() {
+async function exportTab1AP2() {
   if (!tab1Result) return;
   const r = tab1Result;
   const mandate = {
@@ -1429,6 +1440,20 @@ function exportTab1AP2() {
     downstream_handoff_candidates: ['AL-03', 'AL-08+14'],
     audit_metadata: auditMeta()
   };
+
+  // ── ChainGraph L1 + L2 ──
+  mandate.chaingraph_version = "0.1.0";
+  if (mandate.ap2_mandate_type == null) mandate.ap2_mandate_type = mandate.mandate_type || mandate.record_type || mandate.type || null;
+  mandate.mandate_type = "org.apexlogics/career_mobility";
+  if (!mandate.al_id) mandate.al_id = mandate.tool_id || "AL-28";
+  mandate.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try { const _cgIn = new URLSearchParams(location.search).get("ap2"); if (_cgIn) { const _cgP = JSON.parse(_cgIn); if (_cgP && _cgP.execution_hash) { mandate.chain = { parent_hashes:[_cgP.execution_hash], parent_tool_ids:[_cgP.tool_id||_cgP.al_id||null], chain_depth:((_cgP.chain&&_cgP.chain.chain_depth)||0)+1 }; } } } catch(_e){}
+  const _cgDomain = {}; for (const _k in mandate) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","valid_from","valid_until","last_reviewed","audit_metadata","ap2_version","schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = mandate[_k]; }
+  mandate.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  mandate.output_payload = _cgDomain;
+  mandate.compliance_flags = [];
+  mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
 
   // Validate before download (CONTRACT §3.3)
   const errors = AP2Schema.validate(mandate);
@@ -1543,7 +1568,7 @@ function exportTab2MD() {
 }
 
 // ── Tab 2 AP2 export ──────────────────────────────────────────────────────────
-function exportTab2AP2() {
+async function exportTab2AP2() {
   if (!tab2Result) return;
   const r = tab2Result;
   const ind = INDUSTRIES[r.industryKey];
@@ -1585,6 +1610,20 @@ function exportTab2AP2() {
     downstream_handoff_candidates: ['AL-03'],
     audit_metadata: auditMeta()
   };
+
+  // ── ChainGraph L1 + L2 ──
+  mandate.chaingraph_version = "0.1.0";
+  if (mandate.ap2_mandate_type == null) mandate.ap2_mandate_type = mandate.mandate_type || mandate.record_type || mandate.type || null;
+  mandate.mandate_type = "org.apexlogics/career_mobility";
+  if (!mandate.al_id) mandate.al_id = mandate.tool_id || "AL-28";
+  mandate.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try { const _cgIn = new URLSearchParams(location.search).get("ap2"); if (_cgIn) { const _cgP = JSON.parse(_cgIn); if (_cgP && _cgP.execution_hash) { mandate.chain = { parent_hashes:[_cgP.execution_hash], parent_tool_ids:[_cgP.tool_id||_cgP.al_id||null], chain_depth:((_cgP.chain&&_cgP.chain.chain_depth)||0)+1 }; } } } catch(_e){}
+  const _cgDomain = {}; for (const _k in mandate) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","valid_from","valid_until","last_reviewed","audit_metadata","ap2_version","schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = mandate[_k]; }
+  mandate.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  mandate.output_payload = _cgDomain;
+  mandate.compliance_flags = [];
+  mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
 
   // Validate before download (CONTRACT §3.3)
   const errors = AP2Schema.validate(mandate);
@@ -1644,8 +1683,9 @@ function showImportBadge(tab, sourceName) {
 // Core inbound mandate handler
 function applyInboundMandate(mandate) {
   window._ap2InboundSource = mandate.al_id || mandate.tool_id || 'unknown';
+  const _inType = mandate.ap2_mandate_type || mandate.mandate_type;
 
-  if (mandate.mandate_type === 'severance_decision_record') {
+  if (_inType === 'severance_decision_record') {
     // Pre-fill Tab 1 from AL-24 output
     if (mandate.payload && mandate.payload.cobra_monthly_est)
       setVal('cobraPremium', mandate.payload.cobra_monthly_est);
@@ -1653,14 +1693,14 @@ function applyInboundMandate(mandate) {
       setVal('savings', mandate.payload.net_take_home);
   }
 
-  if (mandate.mandate_type === 'job_search_roi_record') {
+  if (_inType === 'job_search_roi_record') {
     // Pre-fill Tab 2 from AL-27 output
     if (mandate.payload && mandate.payload.target_salary_usd)
       setVal('targetIncome', mandate.payload.target_salary_usd);
   }
 
-  if (mandate.mandate_type === 'graduate_school_roi_record' ||
-      mandate.mandate_type === 'credential_roi_evaluation') {
+  if (_inType === 'graduate_school_roi_record' ||
+      _inType === 'credential_roi_evaluation') {
     // Pre-fill reentry cost fields where applicable
     if (mandate.payload && mandate.payload.annual_tuition_usd)
       setVal('retrainingCost', mandate.payload.annual_tuition_usd);

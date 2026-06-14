@@ -758,17 +758,17 @@ function runTab2() {
 // AP2 SCHEMA
 // ═══════════════════════════════════════════════════════════
 const AP2Schema={
-  required:['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata'],
+  required:['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata','chaingraph_version'],
   validMandateTypes:['credential_roi_evaluation','human_capital_assessment','automation_exposure_score','career_resilience_score','workforce_program_roi','career_pivot_assessment','career_transition_record','scholarship_pipeline_plan','fafsa_sai_estimate','exam_pathway_plan','benefits_election_record','severance_decision_record','offer_negotiation_record','graduate_school_roi_record','apprenticeship_match_record','cpd_credit_record','job_search_roi_record','career_break_record','loan_repayment_record','freelance_total_cost_record','education_savings_record','total_comp_record','geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_evaluation','test_prep_roi_record','international_student_cost_record','parent_college_roi_record','equity_compensation_record'],
-  validate(m){const e=[];if(!m||typeof m!=='object')return{valid:false,errors:['not an object']};this.required.forEach(k=>{if(m[k]===undefined||m[k]===null)e.push('missing: '+k);});if(m.ap2_version!=='1.0')e.push('ap2_version must be 1.0');if(m.mandate_type&&!this.validMandateTypes.includes(m.mandate_type))e.push('unknown mandate_type');if(m.al_id&&!/^AL-\d{1,2}(\+\d{1,2})?$/.test(m.al_id))e.push('al_id invalid');if(m.audit_metadata){if(m.audit_metadata.client_side_executed!==true)e.push('client_side_executed must be true');if(m.audit_metadata.zero_pii_verified!==true)e.push('zero_pii_verified must be true');if(m.audit_metadata.deterministic_run!==true)e.push('deterministic_run must be true');}return{valid:e.length===0,errors:e};}
+  validate(m){const e=[];if(!m||typeof m!=='object')return{valid:false,errors:['not an object']};this.required.forEach(k=>{if(m[k]===undefined||m[k]===null)e.push('missing: '+k);});if(m.ap2_version!=='1.0')e.push('ap2_version must be 1.0');if(m.ap2_mandate_type&&!this.validMandateTypes.includes(m.ap2_mandate_type))e.push('unknown ap2_mandate_type');if(m.al_id&&!/^AL-\d{1,2}(\+\d{1,2})?$/.test(m.al_id))e.push('al_id invalid');if(m.audit_metadata){if(m.audit_metadata.client_side_executed!==true)e.push('client_side_executed must be true');if(m.audit_metadata.zero_pii_verified!==true)e.push('zero_pii_verified must be true');if(m.audit_metadata.deterministic_run!==true)e.push('deterministic_run must be true');}return{valid:e.length===0,errors:e};}
 };
 function tsCompact(){return new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);}
 function uuidv4(){return'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&0x3|0x8)).toString(16)});}
 
-function buildAP2(tab){
+async function buildAP2(tab){
   const r=tab===1?tab1Result:tab2Result;if(!r)return null;
   const strongPaths = tab===1?(r.results||[]).filter(p=>p.score.strength==='strong').map(p=>p.label):[];
-  return{
+  const m={
     ap2_version:'1.0',mandate_id:uuidv4(),issued_at:new Date().toISOString(),issued_by:'apexlogics.org',
     tool_id:'visa-strategy-navigator',tool_version:'1.0.0',al_id:'AL-09',mandate_type:'visa_strategy_record',
     jurisdiction:['US'],
@@ -805,10 +805,24 @@ function buildAP2(tab){
     downstream_handoff_candidates:['AL-31'],
     audit_metadata:{execution_hash:null,client_side_executed:true,zero_pii_verified:true,deterministic_run:true,data_vintage:'2026-01-01'}
   };
+  // ── ChainGraph L1 + L2 ──
+  m.chaingraph_version = "0.1.0";
+  if (m.ap2_mandate_type == null) m.ap2_mandate_type = m.mandate_type || m.record_type || m.type || null;
+  m.mandate_type = "org.apexlogics/immigration_assessment";
+  if (!m.al_id) m.al_id = m.tool_id || "AL-09";
+  m.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try { const _cgIn = new URLSearchParams(location.search).get("ap2"); if (_cgIn) { const _cgP = JSON.parse(_cgIn); if (_cgP && _cgP.execution_hash) { m.chain = { parent_hashes:[_cgP.execution_hash], parent_tool_ids:[_cgP.tool_id||_cgP.al_id||null], chain_depth:((_cgP.chain&&_cgP.chain.chain_depth)||0)+1 }; } } } catch(_e){}
+  const _cgDomain = {}; for (const _k in m) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","valid_from","valid_until","last_reviewed","ap2_version","schema_version","ap2_schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = m[_k]; }
+  m.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  m.output_payload = _cgDomain;
+  m.compliance_flags = [];
+  m.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  m.execution_hash = await apexHash(m.policy_parameters, m.output_payload);
+  return m;
 }
 function exportAP2(){doAP2Export(1,'AL-09_visa-pathway_');}
 function exportAP2Tab2(){doAP2Export(2,'AL-09_gc-timeline_');}
-function doAP2Export(tab,prefix){const m=buildAP2(tab);if(!m){showToast('Run analysis first','error');return;}const v=AP2Schema.validate(m);if(!v.valid){showToast('AP2 error: '+v.errors.join('; '),'error');return;}download(JSON.stringify(m,null,2),prefix+tsCompact()+'.ap2.json','application/json');showToast('AP2 mandate downloaded','success');}
+async function doAP2Export(tab,prefix){const m=await buildAP2(tab);if(!m){showToast('Run analysis first','error');return;}const v=AP2Schema.validate(m);if(!v.valid){showToast('AP2 error: '+v.errors.join('; '),'error');return;}download(JSON.stringify(m,null,2),prefix+tsCompact()+'.ap2.json','application/json');showToast('AP2 mandate downloaded','success');}
 
 function exportMarkdown1(){
   const r=tab1Result;if(!r){showToast('Run analysis first','error');return;}
@@ -827,6 +841,17 @@ function exportMarkdown2(){
 }
 
 function download(content,filename,type){const b=new Blob([content],{type});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=filename;a.click();URL.revokeObjectURL(a.href);}
+
+/* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+      : v;
+  const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
+}
 
 // ═══════════════════════════════════════════════════════════
 // MANIFEST

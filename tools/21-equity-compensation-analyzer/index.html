@@ -709,7 +709,7 @@ const AP2Schema = {
   required: [
     'ap2_version','mandate_id','issued_at','issued_by',
     'tool_id','tool_version','al_id','mandate_type',
-    'payload','summary','audit_metadata'
+    'payload','summary','audit_metadata','chaingraph_version'
   ],
   validMandateTypes: [
     'credential_roi_evaluation','human_capital_assessment',
@@ -731,7 +731,7 @@ const AP2Schema = {
     if (!m || typeof m !== 'object') return { valid:false, errors:['mandate is not an object'] };
     this.required.forEach(k => { if (m[k] === undefined || m[k] === null) errors.push(`missing required field: ${k}`); });
     if (m.ap2_version !== '1.0') errors.push('ap2_version must be "1.0"');
-    if (m.mandate_type && !this.validMandateTypes.includes(m.mandate_type)) errors.push(`mandate_type "${m.mandate_type}" not in enum`);
+    if (m.ap2_mandate_type && !this.validMandateTypes.includes(m.ap2_mandate_type)) errors.push(`ap2_mandate_type "${m.ap2_mandate_type}" not in enum`);
     if (m.al_id && !/^AL-\d{1,2}(\+\d{1,2})?$/.test(m.al_id)) errors.push(`al_id "${m.al_id}" malformed`);
     if (m.audit_metadata) {
       if (m.audit_metadata.client_side_executed !== true) errors.push('audit_metadata.client_side_executed must be true');
@@ -830,6 +830,17 @@ function showToast(msg, type='') {
 function npv(cashflows, rate) {
   return cashflows.reduce((acc, cf, i) => acc + cf / Math.pow(1 + rate, i + 1), 0);
 }
+/* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+      : v;
+  const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
 function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1130,7 +1141,7 @@ function renderGrantResults(r) {
   `;
 
   // Narrative
-  let narrative = `Your <strong>${r.totalShares.toLocaleString()}-share ${grantLabel} grant</strong> is projected to be worth
+  let narrative = `Your <strong>${r.totalShares.toLocaleString('en-US')}-share ${grantLabel} grant</strong> is projected to be worth
     <strong>${fmtMoney(r.totalIntrinsic)}</strong> in gross value across the vesting schedule (${r.appreciation}% annual appreciation).
     After an estimated combined tax rate of <strong>${fmtPct(r.effectiveRate*100)}</strong>, your take-home is
     <strong>${fmtMoney(r.totalAfterTax)}</strong> (NPV <strong>${fmtMoney(r.npv4yr)}</strong> at 7%).
@@ -1278,7 +1289,7 @@ function loadAp2Inbound() {
 // ════════════════════════════════════════════════════════════
 // EXPORTS
 // ════════════════════════════════════════════════════════════
-function exportAP2() {
+async function exportAP2() {
   if (!lastResults) { showToast('Run Grant Analysis first.', 'error'); return; }
   const r = lastResults;
   const now = new Date();
@@ -1317,7 +1328,7 @@ function exportAP2() {
         gross: Math.round(e.intrinsic), tax: Math.round(e.tax), after_tax: Math.round(e.afterTax)
       }))
     },
-    summary: `${r.totalShares.toLocaleString()}-share ${r.grantType.toUpperCase()} grant. Total gross: ${fmtMoney(r.totalIntrinsic)}. After-tax: ${fmtMoney(r.totalAfterTax)} (${fmtPct(r.effectiveRate*100)} combined rate). NPV: ${fmtMoney(r.npv4yr)}. Cash-equiv salary: ${fmtMoney(r.cashEquivSalary)}/yr.${r.amtData && r.amtData.amtTax > 0 ? ` AMT risk: ${fmtMoney(r.amtData.amtTax)}.` : ''}`,
+    summary: `${r.totalShares.toLocaleString('en-US')}-share ${r.grantType.toUpperCase()} grant. Total gross: ${fmtMoney(r.totalIntrinsic)}. After-tax: ${fmtMoney(r.totalAfterTax)} (${fmtPct(r.effectiveRate*100)} combined rate). NPV: ${fmtMoney(r.npv4yr)}. Cash-equiv salary: ${fmtMoney(r.cashEquivSalary)}/yr.${r.amtData && r.amtData.amtTax > 0 ? ` AMT risk: ${fmtMoney(r.amtData.amtTax)}.` : ''}`,
     agent_instructions: [
       'All tax figures are simplified estimates. IRC §422 qualifying disposition rules must be verified with a tax advisor.',
       'Downstream to AL-25 (Offer Negotiation Suite) if user is negotiating equity-heavy offer.',
@@ -1337,6 +1348,19 @@ function exportAP2() {
       data_vintage: '2024'
     }
   };
+  // ── ChainGraph L1 + L2 ──
+  mandate.chaingraph_version = "0.1.0";
+  if (mandate.ap2_mandate_type == null) mandate.ap2_mandate_type = mandate.mandate_type || mandate.record_type || mandate.type || null;
+  mandate.mandate_type = "org.apexlogics/compensation_assessment";
+  if (!mandate.al_id) mandate.al_id = mandate.tool_id || "AL-33";
+  mandate.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try { const _cgIn = new URLSearchParams(location.search).get("ap2"); if (_cgIn) { const _cgP = JSON.parse(_cgIn); if (_cgP && _cgP.execution_hash) { mandate.chain = { parent_hashes:[_cgP.execution_hash], parent_tool_ids:[_cgP.tool_id||_cgP.al_id||null], chain_depth:((_cgP.chain&&_cgP.chain.chain_depth)||0)+1 }; } } } catch(_e){}
+  const _cgDomain = {}; for (const _k in mandate) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","valid_from","valid_until","last_reviewed","ap2_version","schema_version","ap2_schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = mandate[_k]; }
+  mandate.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  mandate.output_payload = _cgDomain;
+  mandate.compliance_flags = [];
+  mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
   const result = AP2Schema.validate(mandate);
   if (!result.valid) {
     showToast('AP2 validation failed: ' + result.errors.join('; '), 'error');
@@ -1358,7 +1382,7 @@ function exportMarkdown() {
   lines.push(`**⚠ Disclaimer:** Estimates only. Not tax or legal advice. Consult a CPA / attorney before any exercise or sale decision.`);
   lines.push(``);
   lines.push(`## Grant Summary`);
-  lines.push(`- Type: ${grantLabel} | Shares: ${r.totalShares.toLocaleString()} | FMV at grant: ${fmtMoney(r.currentFMV)}`);
+  lines.push(`- Type: ${grantLabel} | Shares: ${r.totalShares.toLocaleString('en-US')} | FMV at grant: ${fmtMoney(r.currentFMV)}`);
   lines.push(`- Vesting: ${r.schedKey} from ${r.grantYear} | Appreciation: ${r.appreciation}%/yr`);
   lines.push(`- Federal rate: ${fmtPct(r.ordinaryRate)} ordinary | State: ${fmtPct(r.stateRate)} | Effective: ${fmtPct(r.effectiveRate*100)}`);
   if (r.grantType !== 'rsu') lines.push(`- Strike price: ${fmtMoney(r.strikePrice)}`);
@@ -1376,7 +1400,7 @@ function exportMarkdown() {
   lines.push(`## Vesting Schedule`);
   lines.push(`| Year | Shares | Gross | Tax | After-Tax |`);
   lines.push(`|---|---|---|---|---|`);
-  r.events.forEach(e => lines.push(`| ${e.year} | ${e.shares.toLocaleString()} | ${fmtMoney(e.intrinsic)} | ${fmtMoney(e.tax)} | ${fmtMoney(e.afterTax)} |`));
+  r.events.forEach(e => lines.push(`| ${e.year} | ${e.shares.toLocaleString('en-US')} | ${fmtMoney(e.intrinsic)} | ${fmtMoney(e.tax)} | ${fmtMoney(e.afterTax)} |`));
   lines.push(``);
   lines.push(`---`);
   lines.push(`<a href="../../about.html">About</a> · ApexLogics.org · CC BY 4.0 · AL-33`);

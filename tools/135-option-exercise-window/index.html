@@ -358,11 +358,11 @@ function calculate() {
   } else if (cashShortfall && exercisableShares < vestedShares * 0.1) {
     verdict = 'Insufficient Cash — Lapse or Partial';
     verdictClass = 'verdict-caution';
-    verdictReason = `You can only afford ${exercisableShares.toLocaleString()} of ${vestedShares.toLocaleString()} shares within your cash limit`;
+    verdictReason = `You can only afford ${exercisableShares.toLocaleString('en-US')} of ${vestedShares.toLocaleString('en-US')} shares within your cash limit`;
   } else if (evExercise > 0) {
-    verdict = 'Exercise ' + (cashShortfall ? exercisableShares.toLocaleString() + ' Shares' : 'All Vested Shares');
+    verdict = 'Exercise ' + (cashShortfall ? exercisableShares.toLocaleString('en-US') + ' Shares' : 'All Vested Shares');
     verdictClass = 'verdict-exercise';
-    verdictReason = `Positive EV of $${Math.round(evExercise).toLocaleString()} — deadline: ${windowDays} days`;
+    verdictReason = `Positive EV of $${Math.round(evExercise).toLocaleString('en-US')} — deadline: ${windowDays} days`;
   } else {
     verdict = 'Caution — EV Near Zero';
     verdictClass = 'verdict-caution';
@@ -380,7 +380,7 @@ function calculate() {
 }
 
 function renderResults(r) {
-  const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString();
+  const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
 
   document.getElementById('mainVerdict').textContent = r.verdict;
   document.getElementById('mainVerdict').className = 'verdict ' + (
@@ -389,13 +389,13 @@ function renderResults(r) {
   );
   document.getElementById('verdictReason').textContent =
     r.underwater ? `FMV ($${r.fmv.toFixed(2)}) ≤ strike ($${r.strikePrice.toFixed(2)}) — no intrinsic value` :
-    r.cashShortfall ? `Cash limit: can exercise ${r.exercisableShares.toLocaleString()} of ${r.vestedShares.toLocaleString()} shares` :
+    r.cashShortfall ? `Cash limit: can exercise ${r.exercisableShares.toLocaleString('en-US')} of ${r.vestedShares.toLocaleString('en-US')} shares` :
     `Window: ${r.windowDays} days from termination date`;
 
   document.getElementById('exerciseCost').textContent = fmt(r.exerciseCost);
   document.getElementById('spreadVal').textContent    = r.spread >= 0 ? fmt(r.spread) : '—';
   document.getElementById('evExercise').textContent   = fmt(r.evExercise);
-  document.getElementById('maxAffordable').textContent = r.exercisableShares.toLocaleString() + ' sh';
+  document.getElementById('maxAffordable').textContent = r.exercisableShares.toLocaleString('en-US') + ' sh';
 
   // Scenario table
   document.getElementById('scenarioTable').innerHTML = r.scenarioRows.map(s => `
@@ -418,7 +418,7 @@ function renderResults(r) {
   document.getElementById('amtWarning').style.display = r.amtFlag ? 'block' : 'none';
   if (r.amtFlag) {
     document.getElementById('amtWarning').innerHTML =
-      `⚠️ <strong>ISO AMT exposure flag:</strong> Exercising all ${r.vestedShares.toLocaleString()} ISOs creates an AMT preference item of approximately ${fmt(r.amtSpread)}. This may trigger Alternative Minimum Tax. Use the <a href="../109-iso-amt-calculator/index.html">ISO-AMT Calculator (AL-116)</a> to model your exact AMT liability before exercising.`;
+      `⚠️ <strong>ISO AMT exposure flag:</strong> Exercising all ${r.vestedShares.toLocaleString('en-US')} ISOs creates an AMT preference item of approximately ${fmt(r.amtSpread)}. This may trigger Alternative Minimum Tax. Use the <a href="../109-iso-amt-calculator/index.html">ISO-AMT Calculator (AL-116)</a> to model your exact AMT liability before exercising.`;
   }
 
   document.getElementById('nsoNote').style.display  = r.optionType === 'nso' ? 'block' : 'none';
@@ -434,7 +434,7 @@ function renderResults(r) {
   document.getElementById('cashConstraintNote').style.display = r.cashShortfall ? 'block' : 'none';
   if (r.cashShortfall) {
     document.getElementById('cashConstraintNote').innerHTML =
-      `⚠️ <strong>Cash constraint:</strong> Exercising all ${r.vestedShares.toLocaleString()} shares costs ${fmt(r.exerciseCost)}. Your stated cash limit covers only ${r.exercisableShares.toLocaleString()} shares. Consider partial exercise — prioritize the lowest-strike or highest-EV tranche.`;
+      `⚠️ <strong>Cash constraint:</strong> Exercising all ${r.vestedShares.toLocaleString('en-US')} shares costs ${fmt(r.exerciseCost)}. Your stated cash limit covers only ${r.exercisableShares.toLocaleString('en-US')} shares. Consider partial exercise — prioritize the lowest-strike or highest-EV tranche.`;
   }
 
   document.getElementById('lapseNote').style.display = r.underwater ? 'block' : 'none';
@@ -449,18 +449,18 @@ function renderResults(r) {
 function exportMarkdown() {
   if (!_lastResult) { alert('Run the calculator first.'); return; }
   const r = _lastResult;
-  const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString();
+  const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
   const md =
 `# Option Exercise Window — AL-142
 
-**${r.vestedShares.toLocaleString()} vested ${r.optionType.toUpperCase()}s** · Strike: $${r.strikePrice.toFixed(2)} · FMV: $${r.fmv.toFixed(2)} · Window: ${r.windowDays} days
+**${r.vestedShares.toLocaleString('en-US')} vested ${r.optionType.toUpperCase()}s** · Strike: $${r.strikePrice.toFixed(2)} · FMV: $${r.fmv.toFixed(2)} · Window: ${r.windowDays} days
 
 ## Recommendation: ${r.verdict}
 
 ## Exercise Cost Summary
 - Total exercise cost (all shares): ${fmt(r.exerciseCost)}
 - Spread at current FMV: ${fmt(r.spread)}
-- Max shares within cash limit (${fmt(r.cashAvailable)}): ${r.exercisableShares.toLocaleString()} shares
+- Max shares within cash limit (${fmt(r.cashAvailable)}): ${r.exercisableShares.toLocaleString('en-US')} shares
 
 ## Scenario EV
 | Scenario | Exit $/sh | P | Net | EV |

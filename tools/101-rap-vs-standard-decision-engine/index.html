@@ -813,16 +813,16 @@ function calcCompare() {
     <div class="comp-card ${rapWins ? 'winner' : ''}">
       ${rapWins ? '<div class="winner-badge">Lower Total Cost</div>' : ''}
       <div class="comp-card-label">RAP — Repayment Assistance Plan</div>
-      <div class="comp-stat"><span class="comp-stat-val">$${Math.round(rapPmt1.monthly).toLocaleString()}<span style="font-size:.7rem;color:var(--dim)">/mo (yr 1)</span></span><span class="comp-stat-lbl">Year 1 monthly payment (${(rapPmt1.pct*100).toFixed(1)}% of AGI)</span></div>
-      <div class="comp-stat"><span class="comp-stat-val" style="color:${rap.forgiven>0?'var(--green)':'#e8edf5'}">$${Math.round(rap.totalPaid).toLocaleString()}</span><span class="comp-stat-lbl">Total paid ${rap.forgiven>100?'(+ '+fmt$(rap.forgiven)+' forgiven)':'(fully amortized)'}</span></div>
+      <div class="comp-stat"><span class="comp-stat-val">$${Math.round(rapPmt1.monthly).toLocaleString('en-US')}<span style="font-size:.7rem;color:var(--dim)">/mo (yr 1)</span></span><span class="comp-stat-lbl">Year 1 monthly payment (${(rapPmt1.pct*100).toFixed(1)}% of AGI)</span></div>
+      <div class="comp-stat"><span class="comp-stat-val" style="color:${rap.forgiven>0?'var(--green)':'#e8edf5'}">$${Math.round(rap.totalPaid).toLocaleString('en-US')}</span><span class="comp-stat-lbl">Total paid ${rap.forgiven>100?'(+ '+fmt$(rap.forgiven)+' forgiven)':'(fully amortized)'}</span></div>
       <div class="comp-stat"><span class="comp-stat-val">${rap.months === 360 ? '30 yr' : Math.round(rap.months/12)+' yr'}</span><span class="comp-stat-lbl">Term / payoff</span></div>
       ${pslfNote}
     </div>
     <div class="comp-card ${!rapWins && !pslfEligible ? 'winner' : ''}">
       ${!rapWins && !pslfEligible ? '<div class="winner-badge" style="background:rgba(99,102,241,.15);border-color:#6366f1;color:#818cf8">Lower Total Cost</div>' : ''}
       <div class="comp-card-label">Standard 10-Year Plan</div>
-      <div class="comp-stat"><span class="comp-stat-val">$${Math.round(std.pmt).toLocaleString()}<span style="font-size:.7rem;color:var(--dim)">/mo</span></span><span class="comp-stat-lbl">Fixed monthly payment</span></div>
-      <div class="comp-stat"><span class="comp-stat-val">$${Math.round(std.totalPaid).toLocaleString()}</span><span class="comp-stat-lbl">Total paid (no forgiveness)</span></div>
+      <div class="comp-stat"><span class="comp-stat-val">$${Math.round(std.pmt).toLocaleString('en-US')}<span style="font-size:.7rem;color:var(--dim)">/mo</span></span><span class="comp-stat-lbl">Fixed monthly payment</span></div>
+      <div class="comp-stat"><span class="comp-stat-val">$${Math.round(std.totalPaid).toLocaleString('en-US')}</span><span class="comp-stat-lbl">Total paid (no forgiveness)</span></div>
       <div class="comp-stat"><span class="comp-stat-val">10 yr</span><span class="comp-stat-lbl">Term / payoff</span></div>
     </div>`;
 
@@ -965,13 +965,13 @@ function calcPSLF() {
 }
 
 /* ── FORMATTERS ── */
-function fmt$(n) { return '$' + Math.round(n).toLocaleString(); }
+function fmt$(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
 
 /* ── EXPORT MARKDOWN ── */
 function exportMD() {
   if (!lastResult) return;
   const { balance, rate, agi, family, incGrowth, rap, std, rapPmt1, pslfEligible } = lastResult;
-  const ts = new Date().toLocaleDateString();
+  const ts = new Date().toLocaleDateString('en-US');
   const md = `# RAP vs. Standard Decision Engine — Results\n\n**Generated:** ${ts} | AL-108 · ApexLogics\n\n## Inputs\n| Field | Value |\n|---|---|\n| Loan Balance | ${fmt$(balance)} |\n| Interest Rate | ${rate}% |\n| AGI | ${fmt$(agi)} |\n| Family Size | ${family} |\n| Income Growth | ${incGrowth}%/yr |\n\n## Comparison\n| Metric | RAP (30-yr) | Standard (10-yr) |\n|---|---|---|\n| Yr 1 Payment | ${fmt$(rapPmt1.monthly)}/mo | ${fmt$(std.pmt)}/mo |\n| Total Paid | ${fmt$(rap.totalPaid)} | ${fmt$(std.totalPaid)} |\n| Total Interest | ${fmt$(rap.totalInterest)} | ${fmt$(std.totalInterest)} |\n| Balance Forgiven | ${rap.forgiven > 100 ? fmt$(rap.forgiven) : '—'} | — |\n| Net Cost | ${fmt$(rap.totalPaid - (rap.forgiven > 100 ? rap.forgiven : 0))} | ${fmt$(std.totalPaid)} |\n| PSLF Eligible | Yes | Yes (no balance) |\n\n*RAP formula: OBBBA 2025 / HHS FPL 2026. Not financial advice.*\n`;
   const blob = new Blob([md], { type: 'text/markdown' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'rap_vs_standard_results.md'; a.click(); URL.revokeObjectURL(a.href);
@@ -980,7 +980,7 @@ function exportMD() {
 function exportMD2() {
   if (!lastPSLFResult) return;
   const { made, remaining, forgiveYear, forgiven, totalPaidPSLF, pslfSavings, bal, rapPmt } = lastPSLFResult;
-  const md = `# RAP PSLF Analysis — Results\n\n**Generated:** ${new Date().toLocaleDateString()} | AL-108 · ApexLogics\n\n## PSLF Path\n| Metric | Value |\n|---|---|\n| RAP Monthly Payment | ${fmt$(rapPmt)}/mo |\n| Payments Made | ${made} of 120 |\n| Payments Remaining | ${remaining} |\n| Est. Forgiveness Year | ${forgiveYear} |\n| Est. Balance Forgiven | ${fmt$(forgiven)} |\n| Total Paid (RAP+PSLF) | ${fmt$(totalPaidPSLF)} |\n| Savings vs. Standard | ${fmt$(Math.max(0,pslfSavings))} |\n\n*PSLF forgiveness is tax-free. Verify at studentaid.gov/pslf.*\n`;
+  const md = `# RAP PSLF Analysis — Results\n\n**Generated:** ${new Date().toLocaleDateString('en-US')} | AL-108 · ApexLogics\n\n## PSLF Path\n| Metric | Value |\n|---|---|\n| RAP Monthly Payment | ${fmt$(rapPmt)}/mo |\n| Payments Made | ${made} of 120 |\n| Payments Remaining | ${remaining} |\n| Est. Forgiveness Year | ${forgiveYear} |\n| Est. Balance Forgiven | ${fmt$(forgiven)} |\n| Total Paid (RAP+PSLF) | ${fmt$(totalPaidPSLF)} |\n| Savings vs. Standard | ${fmt$(Math.max(0,pslfSavings))} |\n\n*PSLF forgiveness is tax-free. Verify at studentaid.gov/pslf.*\n`;
   const blob = new Blob([md], { type: 'text/markdown' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'rap_pslf_results.md'; a.click(); URL.revokeObjectURL(a.href);
 }

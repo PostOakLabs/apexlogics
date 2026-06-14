@@ -1077,7 +1077,7 @@ function runTab2() {
       cumAfterTax += afterTax;
       tableRows += `<tr>
         <td>Year ${yr}</td>
-        <td>${(pct*100).toFixed(1)}% (${Math.round(shares).toLocaleString()} shares)</td>
+        <td>${(pct*100).toFixed(1)}% (${Math.round(shares).toLocaleString('en-US')} shares)</td>
         <td>${fmt(priceAtVest,0)}/share</td>
         <td>${fmt(vestValue)}</td>
         <td style="color:var(--red)">−${fmt(tax)}</td>
@@ -1089,7 +1089,7 @@ function runTab2() {
       <div class="panel">
         <div class="panel-title">RSU Vesting Schedule — Year-by-Year</div>
         <div class="stat-row">
-          <div class="stat-box"><div class="stat-label">Total Shares</div><div class="stat-value">${Math.round(rsuShares).toLocaleString()}</div><div class="stat-note">@ ${fmt(rsuPrice,0)}/share grant price</div></div>
+          <div class="stat-box"><div class="stat-label">Total Shares</div><div class="stat-value">${Math.round(rsuShares).toLocaleString('en-US')}</div><div class="stat-note">@ ${fmt(rsuPrice,0)}/share grant price</div></div>
           <div class="stat-box"><div class="stat-label">Vest Schedule</div><div class="stat-value" style="font-size:.8rem">${rsuVestSched.replace(/_/g,' ')}</div></div>
           <div class="stat-box" style="border-color:var(--accent);background:var(--accent-dim)"><div class="stat-label">Total After-Tax</div><div class="stat-value" style="color:var(--accent)">${fmt(cumAfterTax)}</div><div class="stat-note">@${rsuTaxRate}% combined tax rate, ${rsuGrowthPct>0?'+':''}${rsuGrowthPct}% annual growth</div></div>
         </div>
@@ -1136,7 +1136,7 @@ function runTab2() {
         <div class="panel-title">Stock Options — Black-Scholes Fair Value</div>
         <div class="stat-row">
           <div class="stat-box"><div class="stat-label">BS Fair Value / Option</div><div class="stat-value">${fmt(bsValue,0)}</div><div class="stat-note">σ=${Math.round(optVol*100)}%, T=${optExpiry}yr, r=4.5%</div></div>
-          <div class="stat-box"><div class="stat-label">Total BS Fair Value</div><div class="stat-value">${fmt(totalBSValue)}</div><div class="stat-note">${optShares.toLocaleString()} options × ${fmt(bsValue,0)}</div></div>
+          <div class="stat-box"><div class="stat-label">Total BS Fair Value</div><div class="stat-value">${fmt(totalBSValue)}</div><div class="stat-note">${optShares.toLocaleString('en-US')} options × ${fmt(bsValue,0)}</div></div>
           <div class="stat-box"><div class="stat-label">Intrinsic Value Today</div><div class="stat-value">${fmt(intrinsicTotal)}</div><div class="stat-note">${fmt(intrinsicPerShare,0)}/option in-the-money</div></div>
           <div class="stat-box"><div class="stat-label">Break-Even Price</div><div class="stat-value">${fmt(breakEven,0)}/share</div><div class="stat-note">Strike + BS premium</div></div>
           <div class="stat-box" style="border-color:var(--accent);background:var(--accent-dim)"><div class="stat-label">After-Tax BS Value</div><div class="stat-value" style="color:var(--accent)">${fmt(afterTaxBS)}</div><div class="stat-note">At ${optTaxRate}% tax rate</div></div>
@@ -1168,7 +1168,7 @@ function runTab2() {
 // AP2 SCHEMA VALIDATION
 // ═══════════════════════════════════════════════════════════
 const AP2Schema = {
-  required: ['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata'],
+  required: ['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata','chaingraph_version'],
   validMandateTypes: [
     'credential_roi_evaluation','human_capital_assessment','automation_exposure_score',
     'career_resilience_score','workforce_program_roi','career_pivot_assessment',
@@ -1184,7 +1184,7 @@ const AP2Schema = {
     if (!mandate || typeof mandate !== 'object') return { valid: false, errors: ['mandate is not an object'] };
     this.required.forEach(k => { if (mandate[k] === undefined || mandate[k] === null) errors.push(`missing required field: ${k}`); });
     if (mandate.ap2_version !== '1.0') errors.push('ap2_version must be "1.0"');
-    if (mandate.mandate_type && !this.validMandateTypes.includes(mandate.mandate_type)) errors.push(`unrecognized mandate_type: ${mandate.mandate_type}`);
+    if (mandate.ap2_mandate_type && !this.validMandateTypes.includes(mandate.ap2_mandate_type)) errors.push(`unrecognized ap2_mandate_type: ${mandate.ap2_mandate_type}`);
     if (mandate.al_id && !/^AL-\d{1,2}(\+\d{1,2})?$/.test(mandate.al_id)) errors.push(`al_id format invalid: ${mandate.al_id}`);
     if (mandate.audit_metadata && mandate.audit_metadata.client_side_executed !== true) errors.push('audit_metadata.client_side_executed must be true');
     if (mandate.audit_metadata && mandate.audit_metadata.zero_pii_verified !== true) errors.push('audit_metadata.zero_pii_verified must be true');
@@ -1199,10 +1199,21 @@ function uuidv4() { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/
 // ═══════════════════════════════════════════════════════════
 // AP2 EXPORT — TAB 1
 // ═══════════════════════════════════════════════════════════
-function buildAP2Mandate() {
+/* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+      : v;
+  const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function buildAP2Mandate() {
   const r = offerData[activeOffer];
   if (!r) return null;
-  return {
+  const mandate = {
     ap2_version: '1.0',
     mandate_id: uuidv4(),
     issued_at: new Date().toISOString(),
@@ -1261,10 +1272,24 @@ function buildAP2Mandate() {
       data_vintage: '2026-01-01'
     }
   };
+  // ── ChainGraph L1 + L2 ──
+  mandate.chaingraph_version = "0.1.0";
+  if (mandate.ap2_mandate_type == null) mandate.ap2_mandate_type = mandate.mandate_type || mandate.record_type || mandate.type || null;
+  mandate.mandate_type = "org.apexlogics/compensation_assessment";
+  if (!mandate.al_id) mandate.al_id = mandate.tool_id || "AL-01";
+  mandate.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try { const _cgIn = new URLSearchParams(location.search).get("ap2"); if (_cgIn) { const _cgP = JSON.parse(_cgIn); if (_cgP && _cgP.execution_hash) { mandate.chain = { parent_hashes:[_cgP.execution_hash], parent_tool_ids:[_cgP.tool_id||_cgP.al_id||null], chain_depth:((_cgP.chain&&_cgP.chain.chain_depth)||0)+1 }; } } } catch(_e){}
+  const _cgDomain = {}; for (const _k in mandate) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","valid_from","valid_until","last_reviewed","ap2_version","schema_version","ap2_schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = mandate[_k]; }
+  mandate.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  mandate.output_payload = _cgDomain;
+  mandate.compliance_flags = [];
+  mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
+  return mandate;
 }
 
-function exportAP2() {
-  const mandate = buildAP2Mandate();
+async function exportAP2() {
+  const mandate = await buildAP2Mandate();
   if (!mandate) { showToast('Run analysis first', 'error'); return; }
   const result = AP2Schema.validate(mandate);
   if (!result.valid) { showToast('AP2 validation failed: ' + result.errors.join('; '), 'error'); return; }
@@ -1279,10 +1304,10 @@ function exportAP2() {
 // ═══════════════════════════════════════════════════════════
 // AP2 EXPORT — TAB 2
 // ═══════════════════════════════════════════════════════════
-function buildAP2MandateTab2() {
+async function buildAP2MandateTab2() {
   if (!tab2Result) return null;
   const r = tab2Result;
-  return {
+  const mandate = {
     ap2_version: '1.0',
     mandate_id: uuidv4(),
     issued_at: new Date().toISOString(),
@@ -1308,7 +1333,7 @@ function buildAP2MandateTab2() {
       options_after_tax_bs_value: r.afterTaxBS || 0,
       options_tax_rate: r.optTaxRate || 0
     },
-    summary: `Equity deep dive: ${r.type.replace('_',' ')}. ${r.rsuGrant?`RSU grant ${fmt(r.rsuGrant)}, after-tax cumulative ${fmt(r.cumAfterTax)}.`:''} ${r.optShares?`${r.optShares.toLocaleString()} options, BS fair value ${fmt(r.totalBSValue)}, after-tax ${fmt(r.afterTaxBS)}.`:''}`,
+    summary: `Equity deep dive: ${r.type.replace('_',' ')}. ${r.rsuGrant?`RSU grant ${fmt(r.rsuGrant)}, after-tax cumulative ${fmt(r.cumAfterTax)}.`:''} ${r.optShares?`${r.optShares.toLocaleString('en-US')} options, BS fair value ${fmt(r.totalBSValue)}, after-tax ${fmt(r.afterTaxBS)}.`:''}`,
     agent_instructions: ['Use equity values for full compensation comparison.','Pass to AL-33 for advanced equity analysis.'],
     valid_from: new Date().toISOString(),
     valid_until: new Date(Date.now() + 90*24*60*60*1000).toISOString(),
@@ -1318,10 +1343,24 @@ function buildAP2MandateTab2() {
     downstream_handoff_candidates: ['AL-33'],
     audit_metadata: { execution_hash: null, client_side_executed: true, zero_pii_verified: true, deterministic_run: true, data_vintage: '2026-01-01' }
   };
+  // ── ChainGraph L1 + L2 ──
+  mandate.chaingraph_version = "0.1.0";
+  if (mandate.ap2_mandate_type == null) mandate.ap2_mandate_type = mandate.mandate_type || mandate.record_type || mandate.type || null;
+  mandate.mandate_type = "org.apexlogics/compensation_assessment";
+  if (!mandate.al_id) mandate.al_id = mandate.tool_id || "AL-01";
+  mandate.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try { const _cgIn = new URLSearchParams(location.search).get("ap2"); if (_cgIn) { const _cgP = JSON.parse(_cgIn); if (_cgP && _cgP.execution_hash) { mandate.chain = { parent_hashes:[_cgP.execution_hash], parent_tool_ids:[_cgP.tool_id||_cgP.al_id||null], chain_depth:((_cgP.chain&&_cgP.chain.chain_depth)||0)+1 }; } } } catch(_e){}
+  const _cgDomain = {}; for (const _k in mandate) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","valid_from","valid_until","last_reviewed","ap2_version","schema_version","ap2_schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = mandate[_k]; }
+  mandate.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  mandate.output_payload = _cgDomain;
+  mandate.compliance_flags = [];
+  mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
+  return mandate;
 }
 
-function exportAP2Tab2() {
-  const mandate = buildAP2MandateTab2();
+async function exportAP2Tab2() {
+  const mandate = await buildAP2MandateTab2();
   if (!mandate) { showToast('Run equity analysis first', 'error'); return; }
   const result = AP2Schema.validate(mandate);
   if (!result.valid) { showToast('AP2 validation failed: ' + result.errors.join('; '), 'error'); return; }
@@ -1396,7 +1435,7 @@ _Generated by ApexLogics · AL-01 Total Compensation Suite · ${ts}_
 |---|---|
 | Total Grant Value | ${fmt(r.rsuGrant)} |
 | Grant Price | ${fmt(r.rsuPrice,0)}/share |
-| Total Shares | ${Math.round(r.rsuShares).toLocaleString()} |
+| Total Shares | ${Math.round(r.rsuShares).toLocaleString('en-US')} |
 | Vest Schedule | ${r.rsuVestSched.replace(/_/g,' ')} |
 | Annual Growth Assumed | ${r.rsuGrowthPct}% |
 | Tax Rate | ${r.rsuTaxRate}% |
@@ -1406,7 +1445,7 @@ _Generated by ApexLogics · AL-01 Total Compensation Suite · ${ts}_
   if (r.optShares) md += `## Stock Options Analysis (Black-Scholes)
 | Metric | Value |
 |---|---|
-| Options Granted | ${r.optShares.toLocaleString()} |
+| Options Granted | ${r.optShares.toLocaleString('en-US')} |
 | Strike Price | ${fmt(r.optStrike,0)}/share |
 | Current Price | ${fmt(r.optCurrent,0)}/share |
 | Assumed Volatility | ${Math.round(r.optVol*100)}% |
@@ -1573,7 +1612,7 @@ function showAP2Help() {
 // ═══════════════════════════════════════════════════════════
 function fmt(n, decimals) {
   if (n === undefined || n === null || isNaN(n)) return '—';
-  if (decimals === 0) return '$' + Math.round(n).toLocaleString();
+  if (decimals === 0) return '$' + Math.round(n).toLocaleString('en-US');
   return '$' + n.toFixed(decimals !== undefined ? decimals : 0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 

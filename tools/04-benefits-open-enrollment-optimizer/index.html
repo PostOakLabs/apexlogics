@@ -604,19 +604,19 @@ function onAccountTypeChange() {
 
   if (type === 'hsa_self') {
     noteHsa.classList.remove('hidden'); noteFsa.classList.add('hidden'); carryoverField.style.display = 'none';
-    limitNote.textContent = `2026 HSA self-only limit: $${HSA_LIMITS_2026.self.toLocaleString()} · Verify at IRS.gov each year.`;
+    limitNote.textContent = `2026 HSA self-only limit: $${HSA_LIMITS_2026.self.toLocaleString('en-US')} · Verify at IRS.gov each year.`;
     contribAmt.max = HSA_LIMITS_2026.self;
     contribAmt.value = Math.min(+contribAmt.value || 3000, HSA_LIMITS_2026.self);
     contribLabel.textContent = 'Your HSA Contribution ($)';
   } else if (type === 'hsa_family') {
     noteHsa.classList.remove('hidden'); noteFsa.classList.add('hidden'); carryoverField.style.display = 'none';
-    limitNote.textContent = `2026 HSA family limit: $${HSA_LIMITS_2026.family.toLocaleString()} · Verify at IRS.gov each year.`;
+    limitNote.textContent = `2026 HSA family limit: $${HSA_LIMITS_2026.family.toLocaleString('en-US')} · Verify at IRS.gov each year.`;
     contribAmt.max = HSA_LIMITS_2026.family;
     contribAmt.value = Math.min(+contribAmt.value || 4000, HSA_LIMITS_2026.family);
     contribLabel.textContent = 'Your HSA Contribution ($)';
   } else if (type === 'fsa') {
     noteHsa.classList.add('hidden'); noteFsa.classList.remove('hidden'); carryoverField.style.display = 'flex';
-    limitNote.textContent = `2026 FSA limit: $${FSA_LIMIT_2026.toLocaleString()} · Verify at IRS.gov each year.`;
+    limitNote.textContent = `2026 FSA limit: $${FSA_LIMIT_2026.toLocaleString('en-US')} · Verify at IRS.gov each year.`;
     contribAmt.max = FSA_LIMIT_2026;
     contribAmt.value = Math.min(+contribAmt.value || 1500, FSA_LIMIT_2026);
     contribLabel.textContent = 'Your FSA Contribution ($)';
@@ -821,7 +821,7 @@ function renderSummaryCards(planResults, bestIdx, taxSavings, matchResult, planS
     {
       label: 'HSA/FSA Tax Savings',
       value: taxSavings.accountType === 'none' ? '—' : fmt$(taxSavings.totalSavings),
-      sub: taxSavings.totalSavings > 0 ? `Federal + FICA on $${(+document.getElementById('contrib-amount').value||0).toLocaleString()}` : 'No account elected',
+      sub: taxSavings.totalSavings > 0 ? `Federal + FICA on $${(+document.getElementById('contrib-amount').value||0).toLocaleString('en-US')}` : 'No account elected',
       cls: taxSavings.totalSavings > 0 ? 'good' : ''
     },
     {
@@ -967,12 +967,12 @@ const AP2Schema = {
     'equity_compensation_record'
   ],
   required: ['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version',
-             'al_id','mandate_type','payload','summary','audit_metadata'],
+             'al_id','mandate_type','payload','summary','audit_metadata','chaingraph_version'],
   validate(mandate) {
     const errors = [];
     this.required.forEach(f => { if (mandate[f] === undefined) errors.push(`Missing required field: ${f}`); });
-    if (mandate.mandate_type && !this.validMandateTypes.includes(mandate.mandate_type))
-      errors.push(`mandate_type "${mandate.mandate_type}" is not recognized`);
+    if (mandate.ap2_mandate_type && !this.validMandateTypes.includes(mandate.ap2_mandate_type))
+      errors.push(`mandate_type "${mandate.ap2_mandate_type}" is not recognized`);
     if (mandate.ap2_version && mandate.ap2_version !== '1.0')
       errors.push(`ap2_version must be "1.0"`);
     return errors;
@@ -980,7 +980,7 @@ const AP2Schema = {
 };
 
 /* ── EXPORT: AP2 JSON ──────────────────────────────────────── */
-function buildAP2Mandate() {
+async function buildAP2Mandate() {
   const r = window._lastResult;
   if (!r) return null;
 
@@ -1045,6 +1045,20 @@ function buildAP2Mandate() {
     }
   };
 
+  // ── ChainGraph L1 + L2 ──
+  mandate.chaingraph_version = "0.1.0";
+  if (mandate.ap2_mandate_type == null) mandate.ap2_mandate_type = mandate.mandate_type || mandate.record_type || mandate.type || null;
+  mandate.mandate_type = "org.apexlogics/compensation_assessment";
+  if (!mandate.al_id) mandate.al_id = mandate.tool_id || "AL-23";
+  mandate.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try { const _cgIn = new URLSearchParams(location.search).get("ap2"); if (_cgIn) { const _cgP = JSON.parse(_cgIn); if (_cgP && _cgP.execution_hash) { mandate.chain = { parent_hashes:[_cgP.execution_hash], parent_tool_ids:[_cgP.tool_id||_cgP.al_id||null], chain_depth:((_cgP.chain&&_cgP.chain.chain_depth)||0)+1 }; } } } catch(_e){}
+  const _cgDomain = {}; for (const _k in mandate) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","audit_metadata","ap2_version","schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = mandate[_k]; }
+  mandate.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  mandate.output_payload = _cgDomain;
+  mandate.compliance_flags = [];
+  mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
+
   const errors = AP2Schema.validate(mandate);
   if (errors.length > 0) {
     console.error('AP2 validation errors:', errors);
@@ -1057,7 +1071,7 @@ function buildSummaryText(r) {
   const best = r.plans[r.bestIdx];
   const lines = [`Recommended health plan: ${best.plan.name} (net annual cost: ${fmt$(best.cost.netCost)}).`];
   if (r.taxSavings.totalSavings > 0) {
-    lines.push(`HSA/FSA election (${r.inputs.accountType.replace('_',' ')}): $${r.inputs.employeeContrib.toLocaleString()} contribution yields ${fmt$(r.taxSavings.totalSavings)} in tax savings.`);
+    lines.push(`HSA/FSA election (${r.inputs.accountType.replace('_',' ')}): $${r.inputs.employeeContrib.toLocaleString('en-US')} contribution yields ${fmt$(r.taxSavings.totalSavings)} in tax savings.`);
   }
   if (r.matchResult.maxPossibleMatch > 0) {
     if (r.matchResult.leaveOnTable > 0) {
@@ -1069,15 +1083,26 @@ function buildSummaryText(r) {
   return lines.join(' ');
 }
 
-function exportAP2() {
+async function exportAP2() {
   if (!window._lastResult) { alert('Run the analysis first.'); return; }
-  const mandate = buildAP2Mandate();
+  const mandate = await buildAP2Mandate();
   if (!mandate) { alert('AP2 validation failed — check console for details.'); return; }
   downloadFile(
     'AL23_benefits_election_record_' + dateStamp() + '.ap2.json',
     JSON.stringify(mandate, null, 2),
     'application/json'
   );
+}
+
+/* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+      : v;
+  const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
 /* ── EXPORT: MARKDOWN ──────────────────────────────────────── */
@@ -1087,7 +1112,7 @@ function exportMarkdown() {
   const best = r.plans[r.bestIdx];
   const lines = [
     '# Benefits Open Enrollment Analysis',
-    `*Generated by ApexLogics AL-23 · ${new Date().toLocaleDateString()}*`,
+    `*Generated by ApexLogics AL-23 · ${new Date().toLocaleDateString('en-US')}*`,
     '',
     '## Health Plan Recommendation',
     '',
@@ -1174,7 +1199,7 @@ function showHelp() {
 /* ── UTILS ─────────────────────────────────────────────────── */
 function fmt$(n) {
   if (n == null || isNaN(n)) return '—';
-  return '$' + Math.round(n).toLocaleString();
+  return '$' + Math.round(n).toLocaleString('en-US');
 }
 
 function dateStamp() {

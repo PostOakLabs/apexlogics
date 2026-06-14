@@ -1020,7 +1020,7 @@ function calcAll() {
   document.getElementById('pslf_payment').value = Math.round(idrPmt);
 }
 
-function fmt$(n) { return '$' + Math.round(n).toLocaleString(); }
+function fmt$(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
 function fmtYr(months) {
   const y = Math.floor(months/12), m = months%12;
   if (m===0) return y + ' yr';
@@ -1182,8 +1182,8 @@ function showAP2Badge(msg) {
 function exportMarkdown() {
   if (!lastResults) return;
   const { bal, rate, agi, plans, bestIdx } = lastResults;
-  let md = `# Student Loan Repayment Analysis\n\nGenerated: ${new Date().toLocaleDateString()}\n\n`;
-  md += `**Loan Balance:** $${bal.toLocaleString()} | **Rate:** ${rate}% | **AGI:** $${agi.toLocaleString()}\n\n`;
+  let md = `# Student Loan Repayment Analysis\n\nGenerated: ${new Date().toLocaleDateString('en-US')}\n\n`;
+  md += `**Loan Balance:** $${bal.toLocaleString('en-US')} | **Rate:** ${rate}% | **AGI:** $${agi.toLocaleString('en-US')}\n\n`;
   md += `## Plan Comparison\n\n| Plan | Mo. Payment (Yr1) | Total Paid | Total Interest | Forgiven | Payoff |\n|---|---|---|---|---|---|\n`;
   plans.forEach((p, i) => {
     const yr = new Date().getFullYear() + Math.floor(p.months/12);
@@ -1196,7 +1196,7 @@ function exportMarkdown() {
 function exportPSLFMarkdown() {
   if (!lastPSLFResult) return;
   const r = lastPSLFResult;
-  let md = `# PSLF Optimizer Results\n\nGenerated: ${new Date().toLocaleDateString()}\n\n`;
+  let md = `# PSLF Optimizer Results\n\nGenerated: ${new Date().toLocaleDateString('en-US')}\n\n`;
   md += `**Employer Type:** ${r.employer} | **Repayment Plan:** ${r.plan}\n\n`;
   md += `**Loan Balance:** ${fmt$(r.bal)} | **Rate:** ${r.rate}%\n\n`;
   md += `## PSLF Track\n\n`;
@@ -1216,7 +1216,7 @@ const AP2Schema = {
   required: [
     'ap2_version','mandate_id','issued_at','issued_by',
     'tool_id','tool_version','al_id','mandate_type',
-    'payload','summary','audit_metadata'
+    'payload','summary','audit_metadata','chaingraph_version'
   ],
   validMandateTypes: [
     'credential_roi_evaluation','human_capital_assessment',
@@ -1238,7 +1238,7 @@ const AP2Schema = {
     if (!m || typeof m !== 'object') return { valid:false, errors:['mandate is not an object'] };
     this.required.forEach(k => { if (m[k] === undefined || m[k] === null) errors.push(`missing required field: ${k}`); });
     if (m.ap2_version !== '1.0') errors.push('ap2_version must be "1.0"');
-    if (m.mandate_type && !this.validMandateTypes.includes(m.mandate_type)) errors.push(`mandate_type "${m.mandate_type}" not in enum`);
+    if (m.ap2_mandate_type && !this.validMandateTypes.includes(m.ap2_mandate_type)) errors.push(`ap2_mandate_type "${m.ap2_mandate_type}" not in enum`);
     if (m.al_id && !/^AL-\d{1,2}(\+\d{1,2})?$/.test(m.al_id)) errors.push(`al_id "${m.al_id}" malformed`);
     if (m.audit_metadata) {
       if (m.audit_metadata.client_side_executed !== true) errors.push('audit_metadata.client_side_executed must be true');
@@ -1254,12 +1254,12 @@ function uuidv4() {
     (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
 }
 
-function buildAP2(type) {
+async function buildAP2(type) {
   if (!lastResults) return null;
   const { bal, rate, agi, family, plans, bestIdx } = lastResults;
   const best = plans[bestIdx];
   const now = new Date();
-  return {
+  const mandate = {
     ap2_version: '1.0',
     mandate_id: uuidv4(),
     issued_at: now.toISOString(),
@@ -1290,7 +1290,7 @@ function buildAP2(type) {
       downstream_handoff_candidates: ['AL-26'],
       data_vintage: '2026-01'
     },
-    summary: `Loan balance: $${bal.toLocaleString()} at ${rate}%. Best plan: ${best ? best.name : 'N/A'} — $${best ? Math.round(best.payment).toLocaleString() : 'N/A'}/mo, $${best ? Math.round(best.totalPaid).toLocaleString() : 'N/A'} total paid, $${best ? Math.round(best.forgiven||0).toLocaleString() : '0'} forgiven.`,
+    summary: `Loan balance: $${bal.toLocaleString('en-US')} at ${rate}%. Best plan: ${best ? best.name : 'N/A'} — $${best ? Math.round(best.payment).toLocaleString('en-US') : 'N/A'}/mo, $${best ? Math.round(best.totalPaid).toLocaleString('en-US') : 'N/A'} total paid, $${best ? Math.round(best.forgiven||0).toLocaleString('en-US') : '0'} forgiven.`,
     audit_metadata: {
       execution_hash: null,
       client_side_executed: true,
@@ -1299,10 +1299,24 @@ function buildAP2(type) {
       data_vintage: '2026-01'
     }
   };
+  // ── ChainGraph L1 + L2 ──
+  mandate.chaingraph_version = "0.1.0";
+  if (mandate.ap2_mandate_type == null) mandate.ap2_mandate_type = mandate.mandate_type || mandate.record_type || mandate.type || null;
+  mandate.mandate_type = "org.apexlogics/student_finance";
+  if (!mandate.al_id) mandate.al_id = mandate.tool_id || "AL-13";
+  mandate.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try { const _cgIn = new URLSearchParams(location.search).get("ap2"); if (_cgIn) { const _cgP = JSON.parse(_cgIn); if (_cgP && _cgP.execution_hash) { mandate.chain = { parent_hashes:[_cgP.execution_hash], parent_tool_ids:[_cgP.tool_id||_cgP.al_id||null], chain_depth:((_cgP.chain&&_cgP.chain.chain_depth)||0)+1 }; } } } catch(_e){}
+  const _cgDomain = {}; for (const _k in mandate) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","valid_from","valid_until","last_reviewed","ap2_version","schema_version","ap2_schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = mandate[_k]; }
+  mandate.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  mandate.output_payload = _cgDomain;
+  mandate.compliance_flags = [];
+  mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
+  return mandate;
 }
 
-function exportAP2() {
-  const ap2 = buildAP2();
+async function exportAP2() {
+  const ap2 = await buildAP2();
   if (!ap2) return;
   const result = AP2Schema.validate(ap2);
   if (!result.valid) {
@@ -1312,7 +1326,7 @@ function exportAP2() {
   download('loan_repayment_record.ap2.json', JSON.stringify(ap2, null, 2));
 }
 
-function exportPSLFAP2() {
+async function exportPSLFAP2() {
   if (!lastPSLFResult) return;
   const now = new Date();
   const ap2 = {
@@ -1336,7 +1350,7 @@ function exportPSLFAP2() {
       estimated_pslf_savings: Math.round(Math.max(0, lastPSLFResult.pslfSavings)),
       data_vintage: '2026-01'
     },
-    summary: `PSLF track: ${lastPSLFResult.plan} plan, ${lastPSLFResult.employer} employer. ${lastPSLFResult.made} payments made, ${lastPSLFResult.remaining} remaining. Estimated forgiveness: ${lastPSLFResult.forgiveYear}. Estimated forgiven: $${Math.round(lastPSLFResult.forgiven).toLocaleString()}.`,
+    summary: `PSLF track: ${lastPSLFResult.plan} plan, ${lastPSLFResult.employer} employer. ${lastPSLFResult.made} payments made, ${lastPSLFResult.remaining} remaining. Estimated forgiveness: ${lastPSLFResult.forgiveYear}. Estimated forgiven: $${Math.round(lastPSLFResult.forgiven).toLocaleString('en-US')}.`,
     audit_metadata: {
       execution_hash: null,
       client_side_executed: true,
@@ -1345,12 +1359,36 @@ function exportPSLFAP2() {
       data_vintage: '2026-01'
     }
   };
+  // ── ChainGraph L1 + L2 ──
+  ap2.chaingraph_version = "0.1.0";
+  if (ap2.ap2_mandate_type == null) ap2.ap2_mandate_type = ap2.mandate_type || ap2.record_type || ap2.type || null;
+  ap2.mandate_type = "org.apexlogics/student_finance";
+  if (!ap2.al_id) ap2.al_id = ap2.tool_id || "AL-13";
+  ap2.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try { const _cgIn = new URLSearchParams(location.search).get("ap2"); if (_cgIn) { const _cgP = JSON.parse(_cgIn); if (_cgP && _cgP.execution_hash) { ap2.chain = { parent_hashes:[_cgP.execution_hash], parent_tool_ids:[_cgP.tool_id||_cgP.al_id||null], chain_depth:((_cgP.chain&&_cgP.chain.chain_depth)||0)+1 }; } } } catch(_e){}
+  const _cgDomain = {}; for (const _k in ap2) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","valid_from","valid_until","last_reviewed","ap2_version","schema_version","ap2_schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = ap2[_k]; }
+  ap2.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  ap2.output_payload = _cgDomain;
+  ap2.compliance_flags = [];
+  ap2.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  ap2.execution_hash = await apexHash(ap2.policy_parameters, ap2.output_payload);
   const result = AP2Schema.validate(ap2);
   if (!result.valid) {
     showToast('AP2 validation failed: ' + result.errors.join('; '), 'error');
     return;
   }
   download('pslf_record.ap2.json', JSON.stringify(ap2, null, 2));
+}
+
+/* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+      : v;
+  const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
 function download(filename, content) {

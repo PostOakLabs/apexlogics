@@ -1744,7 +1744,7 @@ const AP2Schema = {
   required: [
     'ap2_version', 'mandate_id', 'issued_at', 'issued_by',
     'tool_id', 'tool_version', 'al_id', 'mandate_type',
-    'payload', 'summary', 'audit_metadata'
+    'payload', 'summary', 'audit_metadata', 'chaingraph_version'
   ],
   validMandateTypes: [
     'credential_roi_evaluation', 'human_capital_assessment',
@@ -1770,8 +1770,8 @@ const AP2Schema = {
       if (mandate[k] === undefined || mandate[k] === null) errors.push('missing: ' + k);
     });
     if (mandate.ap2_version !== '1.0') errors.push('ap2_version must be "1.0"');
-    if (mandate.mandate_type && !this.validMandateTypes.includes(mandate.mandate_type))
-      errors.push('unrecognized mandate_type: ' + mandate.mandate_type);
+    if (mandate.ap2_mandate_type && !this.validMandateTypes.includes(mandate.ap2_mandate_type))
+      errors.push('unrecognized mandate_type: ' + mandate.ap2_mandate_type);
     if (mandate.al_id && !/^AL-\d{1,2}(\+\d{1,2})?$/.test(mandate.al_id))
       errors.push('al_id format invalid');
     if (mandate.audit_metadata) {
@@ -1789,7 +1789,7 @@ const AP2Schema = {
 /* ============================================================
    AP2 MANDATE BUILDER — CONTRACT §3.1
    ============================================================ */
-function buildAP2Mandate() {
+async function buildAP2Mandate() {
   const r = lastResult;
   const statusMap = { single: 'Single', mfj: 'Married Filing Jointly', hoh: 'Head of Household' };
   const typeLabel = r.paymentType === 'lump_sum' ? 'Lump Sum Payment' : 'Salary Continuation';
@@ -1797,7 +1797,7 @@ function buildAP2Mandate() {
   /* Plain English summary — 1-2 sentences */
   const summary = `${typeLabel} of ${fmt(r.grossPackage)} yields an estimated net take-home of ${fmt(r.netTakeHome)} (${r.effectiveTaxRate.toFixed(1)}% effective tax rate) after federal, state, and FICA withholding.${r.runwayMonths !== null ? ` At ${fmt(r.monthlyExpenses)}/month in expenses, this provides approximately ${r.runwayMonths.toFixed(1)} months of financial runway.` : ''}`;
 
-  return {
+  const mandate = {
     ap2_version: '1.0',
     mandate_id: genUUID(r.grossPackage + '|' + r.paymentType + '|' + r.filingStatus + '|' + r.stateRate),
     issued_at: new Date().toISOString(),
@@ -1853,12 +1853,38 @@ function buildAP2Mandate() {
       data_vintage: 'IRS Rev. Proc. 2025-32 · SSA 2026 wage base $184,500 · User-entered state rate'
     }
   };
+
+  // ── ChainGraph L1 + L2 ──
+  mandate.chaingraph_version = "0.1.0";
+  if (mandate.ap2_mandate_type == null) mandate.ap2_mandate_type = mandate.mandate_type || mandate.record_type || mandate.type || null;
+  mandate.mandate_type = "org.apexlogics/career_mobility";
+  if (!mandate.al_id) mandate.al_id = mandate.tool_id || "AL-24";
+  mandate.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try { const _cgIn = new URLSearchParams(location.search).get("ap2"); if (_cgIn) { const _cgP = JSON.parse(_cgIn); if (_cgP && _cgP.execution_hash) { mandate.chain = { parent_hashes:[_cgP.execution_hash], parent_tool_ids:[_cgP.tool_id||_cgP.al_id||null], chain_depth:((_cgP.chain&&_cgP.chain.chain_depth)||0)+1 }; } } } catch(_e){}
+  const _cgDomain = {}; for (const _k in mandate) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","valid_from","valid_until","last_reviewed","audit_metadata","ap2_version","schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = mandate[_k]; }
+  mandate.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  mandate.output_payload = _cgDomain;
+  mandate.compliance_flags = [];
+  mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
+  return mandate;
+}
+
+/* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+      : v;
+  const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
 /** AP2 export — validate AP2 mandate and download */
-function exportAP2() {
-  if (!window._lastResult) { showToast('Run the calculator first.', 'warn'); return; }
-  const mandate = buildAP2(window._lastResult);
+async function exportAP2() {
+  if (!lastResult) { showToast('Run the calculator first.', 'warn'); return; }
+  const mandate = await buildAP2Mandate();
   const result = AP2Schema.validate(mandate);
   if (!result.valid) {
     showToast('AP2 validation failed: ' + result.errors.join('; '), 'error');

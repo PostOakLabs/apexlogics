@@ -663,7 +663,7 @@ function onBootcampSelect() {
   document.getElementById('bc-cost').value = bc.cost;
   document.getElementById('bc-duration').value = (bc.weeks / 52).toFixed(2);
   document.getElementById('bc-cost-hint').textContent =
-    `Typical range: $${bc.cost_low.toLocaleString()} – $${bc.cost_high.toLocaleString()} (CIRR/SwitchUp 2023)`;
+    `Typical range: $${bc.cost_low.toLocaleString('en-US')} – $${bc.cost_high.toLocaleString('en-US')} (CIRR/SwitchUp 2023)`;
   document.getElementById('bc-role').value = bc.role;
   onBcRoleChange();
 }
@@ -700,7 +700,7 @@ function onDegTierSelect() {
   document.getElementById('deg-tuition').value = tier.cost_yr;
   document.getElementById('deg-years').value = tier.years;
   document.getElementById('deg-tuition-hint').textContent =
-    `Benchmark: $${tier.cost_yr.toLocaleString()}/yr (NCES IPEDS 2022-23). Override as needed.`;
+    `Benchmark: $${tier.cost_yr.toLocaleString('en-US')}/yr (NCES IPEDS 2022-23). Override as needed.`;
 }
 
 function onDegFieldChange() {
@@ -966,17 +966,17 @@ const AP2Schema = {
     'equity_compensation_record'
   ],
   required: ['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version',
-             'al_id','mandate_type','payload','summary','audit_metadata'],
+             'al_id','mandate_type','payload','summary','audit_metadata','chaingraph_version'],
   validate(m) {
     const errors = [];
     this.required.forEach(f => { if (m[f] == null) errors.push('Missing: ' + f); });
-    if (m.mandate_type && !this.validMandateTypes.includes(m.mandate_type))
-      errors.push('Unrecognized mandate_type: ' + m.mandate_type);
+    if (m.ap2_mandate_type && !this.validMandateTypes.includes(m.ap2_mandate_type))
+      errors.push('Unrecognized mandate_type: ' + m.ap2_mandate_type);
     return errors;
   }
 };
 
-function buildAP2Mandate() {
+async function buildAP2Mandate() {
   const r = window._lastResult;
   if (!r) return null;
   const { inp, roi } = r;
@@ -1025,24 +1025,49 @@ function buildAP2Mandate() {
     }
   };
 
+  // ── ChainGraph L1 + L2 ──
+  mandate.chaingraph_version = "0.1.0";
+  if (mandate.ap2_mandate_type == null) mandate.ap2_mandate_type = mandate.mandate_type || mandate.record_type || mandate.type || null;
+  mandate.mandate_type = "org.apexlogics/education_roi";
+  if (!mandate.al_id) mandate.al_id = mandate.tool_id || "AL-02";
+  mandate.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try { const _cgIn = new URLSearchParams(location.search).get("ap2"); if (_cgIn) { const _cgP = JSON.parse(_cgIn); if (_cgP && _cgP.execution_hash) { mandate.chain = { parent_hashes:[_cgP.execution_hash], parent_tool_ids:[_cgP.tool_id||_cgP.al_id||null], chain_depth:((_cgP.chain&&_cgP.chain.chain_depth)||0)+1 }; } } } catch(_e){}
+  const _cgDomain = {}; for (const _k in mandate) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","audit_metadata","ap2_version","schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = mandate[_k]; }
+  mandate.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  mandate.output_payload = _cgDomain;
+  mandate.compliance_flags = [];
+  mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
+
   const errs = AP2Schema.validate(mandate);
   if (errs.length) { console.error('AP2 validation:', errs); return null; }
   return mandate;
+}
+
+/* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+      : v;
+  const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
 function buildSummaryText(inp, roi) {
   const tabLabel = { bootcamp:'Bootcamp', degree:'Degree', cert:'Certification' }[inp.tab];
   const parts = [`${tabLabel}: ${inp.credentialName}.`];
   parts.push(`Total investment: ${fmt$(roi.totalInvestment)} (${fmt$(roi.totalDirectCost)} direct + ${fmt$(roi.oppCost)} foregone income).`);
-  parts.push(`Annual salary premium: ${fmt$(roi.annualPremium)} ($${inp.currentSalary.toLocaleString()} → $${inp.postSalary.toLocaleString()}).`);
+  parts.push(`Annual salary premium: ${fmt$(roi.annualPremium)} ($${inp.currentSalary.toLocaleString('en-US')} → $${inp.postSalary.toLocaleString('en-US')}).`);
   parts.push(`${inp.careerHorizon}-yr NPV at ${inp.discountRate}%: ${fmt$(roi.npv)}.`);
   if (roi.paybackYears) parts.push(`Break-even: ${roi.paybackYears.toFixed(1)} years.`);
   return parts.join(' ');
 }
 
 /* ── SEND TO AL-26 ─────────────────────────────────────────── */
-function sendToAL26() {
-  const mandate = buildAP2Mandate();
+async function sendToAL26() {
+  const mandate = await buildAP2Mandate();
   if (!mandate) { alert('Run the analysis first, then send to AL-26.'); return; }
   const encoded = encodeURIComponent(JSON.stringify(mandate));
   const al26url = '../graduate-school-roi-comparator/index.html?ap2=' + encoded;
@@ -1050,9 +1075,9 @@ function sendToAL26() {
 }
 
 /* ── EXPORT: AP2 JSON ──────────────────────────────────────── */
-function exportAP2() {
+async function exportAP2() {
   if (!window._lastResult) { alert('Run the analysis first.'); return; }
-  const mandate = buildAP2Mandate();
+  const mandate = await buildAP2Mandate();
   if (!mandate) { alert('AP2 validation failed — check console.'); return; }
   downloadFile('AL02_credential_roi_evaluation_' + dateStamp() + '.ap2.json',
     JSON.stringify(mandate, null, 2), 'application/json');
@@ -1066,7 +1091,7 @@ function exportMarkdown() {
   const role = BLS_ROLES.find(r => r.key === inp.roleKey);
   const lines = [
     `# Credential ROI Analysis — ${inp.credentialName}`,
-    `*Generated by ApexLogics AL-02 · ${new Date().toLocaleDateString()}*`,
+    `*Generated by ApexLogics AL-02 · ${new Date().toLocaleDateString('en-US')}*`,
     `*Credential type: ${tabLabel}*`,
     '',
     '## ROI Summary',
@@ -1124,7 +1149,7 @@ function showHelp() {
 }
 
 /* ── UTILS ─────────────────────────────────────────────────── */
-function fmt$(n) { return n == null || isNaN(n) ? '—' : '$' + Math.round(n).toLocaleString(); }
+function fmt$(n) { return n == null || isNaN(n) ? '—' : '$' + Math.round(n).toLocaleString('en-US'); }
 function dateStamp() { return new Date().toISOString().slice(0,10).replace(/-/g,''); }
 function genUUID() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
