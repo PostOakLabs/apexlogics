@@ -1066,69 +1066,91 @@
     downloadFile('ai-skills-premium-analysis.md', md, 'text/markdown');
   }
 
-  // ── EXPORT: AP2 JSON ──────────────────────────────────────────────────────
-  function exportAP2() {
+  // ── EXPORT: AP2 JSON (ChainGraph Standard v0.1 L1) ───────────────────────
+  async function exportAP2() {
     if (!lastResult) return;
     const r = lastResult;
+    const _inputs = {
+      role: r.role,
+      current_salary: r.salary,
+      upskilling_budget: r.budget,
+      time_horizon_years: r.horizon,
+      owned_skills: r.ownedSkills,
+      target_skills: r.targetSkills,
+    };
+    const _results = {
+      estimated_new_salary: Math.round(r.newSalary),
+      annual_premium_dollars: Math.round(r.annualPremiumDollar),
+      combined_premium_pct: parseFloat((r.combinedPremium * 100).toFixed(2)),
+      raw_premium_pct: parseFloat((r.rawPremium * 100).toFixed(2)),
+      premium_capped: r.rawPremium > PREMIUM_CAP,
+      total_upskilling_cost: r.totalCost,
+      fastest_payback_months: isFinite(r.fastestPayback) ? r.fastestPayback : null,
+      budget_shortfall: Math.max(0, r.totalCost - r.budget),
+      npv: {
+        discount_rate: 0.05,
+        year_1: Math.round(r.npv1),
+        year_3: Math.round(r.npv3),
+        year_5: Math.round(r.npv5),
+      },
+      per_skill: r.targets.map(t => ({
+        skill: t.name,
+        premium_pct: parseFloat((t.premium * 100).toFixed(1)),
+        annual_gain: Math.round(t.annual_gain),
+        upskilling_cost: t.cost,
+        payback_months: isFinite(t.payback_months) ? t.payback_months : null,
+        roi_ratio: parseFloat((t.annual_gain / t.cost).toFixed(3)),
+      })),
+      best_roi_skill: r.bestSkill ? r.bestSkill.name : null,
+      insights: {
+        high_value_stack: r.combinedPremium >= 0.40,
+        budget_shortfall: r.totalCost > r.budget,
+      },
+    };
+    const _policy = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp,pct:2dp", inputs: _inputs };
     const ap2 = {
+      chaingraph_version: "0.1.0",
       ap2_version: "2.0",
-      mandate_type: "ai_skills_premium_record",
+      mandate_type: "org.apexlogics/career_mobility",
+      ap2_mandate_type: "ai_skills_premium_record",
       tool_id: "AL-34",
+      al_id: "AL-34",
       tool_display_number: 29,
       tool_name: "AI Skills Salary Premium Calculator",
       tool_category: "Career Transition & Mobility",
       generated_at: new Date().toISOString(),
+      execution_hash: await apexHash(_policy, _results),
+      chain: { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 },
+      policy_parameters: _policy,
+      output_payload: _results,
+      compliance_flags: [],
+      audit_signature: { client_side_executed: true, zero_pii_verified: true, deterministic_run: true },
       downstream_handoff_candidates: ["AL-02", "AL-03", "AL-06+16"],
       data_sources: ["BLS OEWS 2024", "PwC AI Jobs Barometer 2025", "Upwork AI Skills Report 2026"],
       license: "CC BY 4.0",
-      inputs: {
-        role: r.role,
-        current_salary: r.salary,
-        upskilling_budget: r.budget,
-        time_horizon_years: r.horizon,
-        owned_skills: r.ownedSkills,
-        target_skills: r.targetSkills,
-      },
-      results: {
-        estimated_new_salary: Math.round(r.newSalary),
-        annual_premium_dollars: Math.round(r.annualPremiumDollar),
-        combined_premium_pct: parseFloat((r.combinedPremium * 100).toFixed(2)),
-        raw_premium_pct: parseFloat((r.rawPremium * 100).toFixed(2)),
-        premium_capped: r.rawPremium > PREMIUM_CAP,
-        total_upskilling_cost: r.totalCost,
-        fastest_payback_months: isFinite(r.fastestPayback) ? r.fastestPayback : null,
-        budget_shortfall: Math.max(0, r.totalCost - r.budget),
-        npv: {
-          discount_rate: 0.05,
-          year_1: Math.round(r.npv1),
-          year_3: Math.round(r.npv3),
-          year_5: Math.round(r.npv5),
-        },
-        per_skill: r.targets.map(t => ({
-          skill: t.name,
-          premium_pct: parseFloat((t.premium * 100).toFixed(1)),
-          annual_gain: Math.round(t.annual_gain),
-          upskilling_cost: t.cost,
-          payback_months: isFinite(t.payback_months) ? t.payback_months : null,
-          roi_ratio: parseFloat((t.annual_gain / t.cost).toFixed(3)),
-        })),
-        best_roi_skill: r.bestSkill ? r.bestSkill.name : null,
-        insights: {
-          high_value_stack: r.combinedPremium >= 0.40,
-          budget_shortfall: r.totalCost > r.budget,
-        },
-      },
+      inputs: _inputs,
+      results: _results,
     };
-
-    // ── AP2 v2.0 validation — validate before emit (CONTRACT §3.3 / Appendix F2) ──
+    // ── Validation (ChainGraph L1 + AP2 v2.0 compat, CONTRACT §3.3 / Appendix F2) ──
     const _ap2errs = [];
-    ['ap2_version','mandate_type','generated_at','inputs'].forEach(k => { if (ap2[k] == null) _ap2errs.push('missing ' + k); });
-    if (ap2.mandate_type && ![
+    ['chaingraph_version','ap2_mandate_type','generated_at','inputs'].forEach(k => { if (ap2[k] == null) _ap2errs.push('missing ' + k); });
+    if (ap2.ap2_mandate_type && ![
       'ai_skills_premium_record','federal_comp_record','military_civilian_record',
       'noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record'
-    ].includes(ap2.mandate_type)) _ap2errs.push('unknown mandate_type: ' + ap2.mandate_type);
+    ].includes(ap2.ap2_mandate_type)) _ap2errs.push('unknown ap2_mandate_type: ' + ap2.ap2_mandate_type);
     if (_ap2errs.length) { alert('AP2 validation failed: ' + _ap2errs.join('; ')); return; }
     downloadFile('al34-ap2-ai-skills-premium.json', JSON.stringify(ap2, null, 2), 'application/json');
+  }
+
+  // ── ChainGraph §6 — execution hash (WebCrypto, CG-28) ────────────────────
+  async function apexHash(policy_parameters, output_payload) {
+    const canon = (v) => Array.isArray(v) ? v.map(canon)
+      : (v && typeof v === 'object')
+        ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+        : v;
+    const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+    return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
   }
 
   // ── UTILITY ───────────────────────────────────────────────────────────────

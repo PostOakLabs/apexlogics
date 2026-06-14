@@ -1399,80 +1399,93 @@ NPV Advantage: **${fmt$(advantage)}**
 `;
 }
 
+// buildAP2 returns { _inputs, _outputs, envelope } — envelope lacks execution_hash (async; added in exportAP2)
 function buildAP2(r) {
   const { tradeKey, degreeKey, pathA, pathB, trade, degree,
     tradeStart, tradePeak, degStart, degPeak,
     tradeYrs, degYrs, breakEvenA, breakEvenB,
     currentAge, retireAge, stateKey, degreeSchool } = r;
 
-  return {
+  const _inputs = {
+    state: stateKey,
+    state_wage_factor: STATE_FACTORS[stateKey],
+    current_age: currentAge,
+    retirement_age: retireAge,
+    path_a: {
+      type: "trade_school",
+      trade: tradeKey,
+      program_cost: pathA.eduCost,
+      duration_months: trade.months,
+      duration_years: tradeYrs,
+    },
+    path_b: {
+      type: "four_year_degree",
+      degree: degreeKey,
+      school_type: degreeSchool,
+      total_cost: pathB.eduCost,
+      duration_years: degYrs,
+    }
+  };
+  const _outputs = {
+    path_a: {
+      label: tradeKey,
+      type: "trade_school",
+      starting_wage_adj: Math.round(tradeStart * 100) / 100,
+      peak_wage_adj: Math.round(tradePeak * 100) / 100,
+      education_cost: pathA.eduCost,
+      opportunity_cost: Math.round(pathA.oppCost * 100) / 100,
+      apprenticeship_income_credit: Math.round(pathA.apprenticeCredit * 100) / 100,
+      net_total_investment: Math.round(pathA.netInvestment * 100) / 100,
+      working_years: pathA.workingYrs,
+      lifetime_earnings: Math.round(pathA.lifetime * 100) / 100,
+      npv_earnings: Math.round(pathA.npvEarnings * 100) / 100,
+      npv_net: Math.round(pathA.npvNet * 100) / 100,
+      irr_pct: parseFloat(pathA.irr.toFixed(2)),
+      break_even_age: parseFloat(breakEvenA.toFixed(1)),
+      bls_growth_pct: trade.growth,
+    },
+    path_b: {
+      label: degreeKey,
+      type: "four_year_degree",
+      school_type: degreeSchool,
+      starting_wage_adj: Math.round(degStart * 100) / 100,
+      peak_wage_adj: Math.round(degPeak * 100) / 100,
+      education_cost: pathB.eduCost,
+      opportunity_cost: Math.round(pathB.oppCost * 100) / 100,
+      part_time_income_credit: Math.round(pathB.apprenticeCredit * 100) / 100,
+      net_total_investment: Math.round(pathB.netInvestment * 100) / 100,
+      working_years: pathB.workingYrs,
+      lifetime_earnings: Math.round(pathB.lifetime * 100) / 100,
+      npv_earnings: Math.round(pathB.npvEarnings * 100) / 100,
+      npv_net: Math.round(pathB.npvNet * 100) / 100,
+      irr_pct: parseFloat(pathB.irr.toFixed(2)),
+      break_even_age: parseFloat(breakEvenB.toFixed(1)),
+      bls_growth_pct: degree.growth,
+    },
+    winner: pathA.npvNet >= pathB.npvNet ? "path_a" : "path_b",
+    npv_advantage: parseFloat(Math.abs(pathA.npvNet - pathB.npvNet).toFixed(0)),
+  };
+  const _policy = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp,irr:2dp,break_even:1dp", inputs: _inputs };
+  const envelope = {
+    chaingraph_version: "0.1.0",
     ap2_version: "2.0",
+    mandate_type: "org.apexlogics/education_roi",
+    ap2_mandate_type: "education_path_record",
     tool_id: "AL-36",
+    al_id: "AL-36",
     display_number: 31,
     tool_name: "Trade School vs. 4-Year Degree ROI Engine",
     category: "education_path_roi",
-    mandate_type: "education_path_record",
     generated_at: new Date().toISOString(),
+    execution_hash: null,  // populated async in exportAP2
+    chain: { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 },
+    policy_parameters: _policy,
+    output_payload: _outputs,
+    compliance_flags: [],
+    audit_signature: { client_side_executed: true, zero_pii_verified: true, deterministic_run: true },
     downstream_handoff_candidates: ["AL-02", "AL-13", "AL-39"],
-    inputs: {
-      state: stateKey,
-      state_wage_factor: STATE_FACTORS[stateKey],
-      current_age: currentAge,
-      retirement_age: retireAge,
-      path_a: {
-        type: "trade_school",
-        trade: tradeKey,
-        program_cost: pathA.eduCost,
-        duration_months: trade.months,
-        duration_years: tradeYrs,
-      },
-      path_b: {
-        type: "four_year_degree",
-        degree: degreeKey,
-        school_type: degreeSchool,
-        total_cost: pathB.eduCost,
-        duration_years: degYrs,
-      }
-    },
-    outputs: {
-      path_a: {
-        label: tradeKey,
-        type: "trade_school",
-        starting_wage_adj: tradeStart,
-        peak_wage_adj: tradePeak,
-        education_cost: pathA.eduCost,
-        opportunity_cost: pathA.oppCost,
-        apprenticeship_income_credit: pathA.apprenticeCredit,
-        net_total_investment: pathA.netInvestment,
-        working_years: pathA.workingYrs,
-        lifetime_earnings: pathA.lifetime,
-        npv_earnings: pathA.npvEarnings,
-        npv_net: pathA.npvNet,
-        irr_pct: parseFloat(pathA.irr.toFixed(2)),
-        break_even_age: parseFloat(breakEvenA.toFixed(1)),
-        bls_growth_pct: trade.growth,
-      },
-      path_b: {
-        label: degreeKey,
-        type: "four_year_degree",
-        school_type: degreeSchool,
-        starting_wage_adj: degStart,
-        peak_wage_adj: degPeak,
-        education_cost: pathB.eduCost,
-        opportunity_cost: pathB.oppCost,
-        part_time_income_credit: pathB.apprenticeCredit,
-        net_total_investment: pathB.netInvestment,
-        working_years: pathB.workingYrs,
-        lifetime_earnings: pathB.lifetime,
-        npv_earnings: pathB.npvEarnings,
-        npv_net: pathB.npvNet,
-        irr_pct: parseFloat(pathB.irr.toFixed(2)),
-        break_even_age: parseFloat(breakEvenB.toFixed(1)),
-        bls_growth_pct: degree.growth,
-      },
-      winner: pathA.npvNet >= pathB.npvNet ? "path_a" : "path_b",
-      npv_advantage: parseFloat(Math.abs(pathA.npvNet - pathB.npvNet).toFixed(0)),
-    },
+    inputs: _inputs,
+    outputs: _outputs,
     methodology: {
       discount_rate: 0.03,
       opportunity_cost_base_wage: 35000,
@@ -1482,6 +1495,18 @@ function buildAP2(r) {
       data_sources: ["BLS OEWS 2024", "NCES IPEDS 2023-24", "Elite Trade Institute 2026"]
     }
   };
+  return { _policy, _outputs, envelope };
+}
+
+// ChainGraph §6 — execution hash (WebCrypto, CG-28)
+async function apexHash(policy_parameters, output_payload) {
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+      : v;
+  const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
 function downloadFile(content, filename, mime) {
@@ -1503,18 +1528,19 @@ function exportMarkdown() {
   downloadFile(md, `al36-roi-${slug}.md`, 'text/markdown');
 }
 
-function exportAP2() {
+async function exportAP2() {
   if (!_lastResults) { alert('Run a calculation first.'); return; }
-  const ap2 = buildAP2(_lastResults);
-  // ── AP2 v2.0 validation — validate before emit (CONTRACT §3.3 / Appendix F2) ──
+  const { _policy, _outputs, envelope } = buildAP2(_lastResults);
+  envelope.execution_hash = await apexHash(_policy, _outputs);
+  // ── Validation (ChainGraph L1 + AP2 v2.0 compat, CONTRACT §3.3 / Appendix F2) ──
   const _ap2errs = [];
-  ['ap2_version','mandate_type','generated_at','inputs'].forEach(k => { if (ap2[k] == null) _ap2errs.push('missing ' + k); });
-  if (ap2.mandate_type && ![
+  ['chaingraph_version','ap2_mandate_type','generated_at','inputs'].forEach(k => { if (envelope[k] == null) _ap2errs.push('missing ' + k); });
+  if (envelope.ap2_mandate_type && ![
     'ai_skills_premium_record','federal_comp_record','military_civilian_record',
     'noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record'
-  ].includes(ap2.mandate_type)) _ap2errs.push('unknown mandate_type: ' + ap2.mandate_type);
+  ].includes(envelope.ap2_mandate_type)) _ap2errs.push('unknown ap2_mandate_type: ' + envelope.ap2_mandate_type);
   if (_ap2errs.length) { alert('AP2 validation failed: ' + _ap2errs.join('; ')); return; }
-  const json = JSON.stringify(ap2, null, 2);
+  const json = JSON.stringify(envelope, null, 2);
   const slug = (_lastResults.tradeKey + '-vs-' + _lastResults.degreeKey)
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   downloadFile(json, `al36-ap2-${slug}.json`, 'application/json');

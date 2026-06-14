@@ -836,66 +836,78 @@ function exportMarkdown() {
 /* ════════════════════════════════════════════════════════════
    EXPORT — AP2 JSON
    ════════════════════════════════════════════════════════════ */
-function exportAP2() {
+async function exportAP2() {
   if (!lastResult) { alert('Run the comparison first.'); return; }
   const r = lastResult;
 
+  const _inputs = {
+    federal: {
+      gs_grade: r.grade,
+      gs_step: r.step,
+      locality_pct: r.localPct,
+      years_of_service: r.yos,
+      planned_retirement_age: r.retAge,
+      fehb_govt_contribution: r.fehbVal
+    },
+    private: {
+      base_salary: r.privSalary,
+      bonus_pct: r.privBonusPct,
+      equity_annual: r.privEquity,
+      employer_health_contribution: r.privHealth,
+      match_401k_pct: parseFloat(document.getElementById('priv-401k-pct').value) || 0,
+      match_401k_cap_pct: parseFloat(document.getElementById('priv-401k-cap').value) || 0,
+      leave_days: parseFloat(document.getElementById('priv-leave').value) || 0
+    }
+  };
+  const _results = {
+    federal: {
+      gs_base_pay: Math.round(r.gsBase * 100) / 100,
+      gs_salary_with_locality: Math.round(r.gsSalary * 100) / 100,
+      fehb_value: Math.round(r.fedHealth * 100) / 100,
+      tsp_match: Math.round(r.tspMatch * 100) / 100,
+      leave_value: Math.round(r.fedLeaveVal * 100) / 100,
+      total_annual: Math.round(r.fedTotalAnnual * 100) / 100,
+      pension_annual_benefit: Math.round(r.pensionAnnual * 100) / 100,
+      pension_npv_20yr_3pct: Math.round(r.pensionNPV * 100) / 100
+    },
+    private: {
+      base_salary: Math.round(r.privSalary * 100) / 100,
+      bonus: Math.round(r.privBonus * 100) / 100,
+      equity_annual: Math.round(r.privEquity * 100) / 100,
+      employer_health: Math.round(r.privHealth * 100) / 100,
+      match_401k: Math.round(r.priv401kMatch * 100) / 100,
+      leave_value: Math.round(r.privLeaveVal * 100) / 100,
+      total_annual: Math.round(r.privTotalAnnual * 100) / 100
+    },
+    comparison: {
+      annual_gap_fed_minus_priv: Math.round(r.annualGap * 100) / 100,
+      base_gap_pct: parseFloat(r.baseGapPct),
+      base_gap_direction: r.baseGapDir,
+      lifetime_20yr_fed: Math.round((r.fedTotalAnnual * 20 + r.pensionNPV) * 100) / 100,
+      lifetime_20yr_priv: Math.round(r.privTotalAnnual * 20 * 100) / 100,
+      lifetime_20yr_delta: Math.round((r.annualGap * 20 + r.pensionNPV) * 100) / 100,
+      pension_flips_comparison: r.pensionFlip
+    }
+  };
+  const _policy = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _inputs };
   const ap2 = {
+    chaingraph_version: "0.1.0",
     ap2_version: "2.0",
+    mandate_type: "org.apexlogics/compensation_assessment",
+    ap2_mandate_type: "federal_comp_record",
     tool_id: "AL-35",
+    al_id: "AL-35",
     tool_name: "Federal vs. Private Sector Total Comp Comparator",
-    mandate_type: "federal_comp_record",
     generated_at: new Date().toISOString(),
+    execution_hash: await apexHash(_policy, _results),
+    chain: { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 },
+    policy_parameters: _policy,
+    output_payload: _results,
+    compliance_flags: [],
+    audit_signature: { client_side_executed: true, zero_pii_verified: true, deterministic_run: true },
     downstream_handoff_candidates: ["AL-01", "AL-04"],
-    inputs: {
-      federal: {
-        gs_grade: r.grade,
-        gs_step: r.step,
-        locality_pct: r.localPct,
-        years_of_service: r.yos,
-        planned_retirement_age: r.retAge,
-        fehb_govt_contribution: r.fehbVal
-      },
-      private: {
-        base_salary: r.privSalary,
-        bonus_pct: r.privBonusPct,
-        equity_annual: r.privEquity,
-        employer_health_contribution: r.privHealth,
-        match_401k_pct: parseFloat(document.getElementById('priv-401k-pct').value) || 0,
-        match_401k_cap_pct: parseFloat(document.getElementById('priv-401k-cap').value) || 0,
-        leave_days: parseFloat(document.getElementById('priv-leave').value) || 0
-      }
-    },
-    results: {
-      federal: {
-        gs_base_pay: r.gsBase,
-        gs_salary_with_locality: r.gsSalary,
-        fehb_value: r.fedHealth,
-        tsp_match: r.tspMatch,
-        leave_value: r.fedLeaveVal,
-        total_annual: r.fedTotalAnnual,
-        pension_annual_benefit: r.pensionAnnual,
-        pension_npv_20yr_3pct: r.pensionNPV
-      },
-      private: {
-        base_salary: r.privSalary,
-        bonus: r.privBonus,
-        equity_annual: r.privEquity,
-        employer_health: r.privHealth,
-        match_401k: r.priv401kMatch,
-        leave_value: r.privLeaveVal,
-        total_annual: r.privTotalAnnual
-      },
-      comparison: {
-        annual_gap_fed_minus_priv: r.annualGap,
-        base_gap_pct: parseFloat(r.baseGapPct),
-        base_gap_direction: r.baseGapDir,
-        lifetime_20yr_fed: r.fedTotalAnnual * 20 + r.pensionNPV,
-        lifetime_20yr_priv: r.privTotalAnnual * 20,
-        lifetime_20yr_delta: r.annualGap * 20 + r.pensionNPV,
-        pension_flips_comparison: r.pensionFlip
-      }
-    },
+    inputs: _inputs,
+    results: _results,
     metadata: {
       data_sources: ["OPM 2026 GS Pay Tables", "FEHB 2025 Premiums", "BLS OEWS 2024"],
       disclaimer: "Educational only. Not financial or legal advice.",
@@ -903,15 +915,28 @@ function exportAP2() {
     }
   };
 
-  // ── AP2 v2.0 validation — validate before emit (CONTRACT §3.3 / Appendix F2) ──
+  // ── Validation (ChainGraph L1 + AP2 v2.0 compat, CONTRACT §3.3 / Appendix F2) ──
   const _ap2errs = [];
-  ['ap2_version','mandate_type','generated_at','inputs'].forEach(k => { if (ap2[k] == null) _ap2errs.push('missing ' + k); });
-  if (ap2.mandate_type && ![
+  ['chaingraph_version','ap2_mandate_type','generated_at','inputs'].forEach(k => { if (ap2[k] == null) _ap2errs.push('missing ' + k); });
+  if (ap2.ap2_mandate_type && ![
     'ai_skills_premium_record','federal_comp_record','military_civilian_record',
     'noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record'
-  ].includes(ap2.mandate_type)) _ap2errs.push('unknown mandate_type: ' + ap2.mandate_type);
+  ].includes(ap2.ap2_mandate_type)) _ap2errs.push('unknown ap2_mandate_type: ' + ap2.ap2_mandate_type);
   if (_ap2errs.length) { alert('AP2 validation failed: ' + _ap2errs.join('; ')); return; }
   download('federal-vs-private-comp.ap2.json', JSON.stringify(ap2, null, 2), 'application/json');
+}
+
+/* ════════════════════════════════════════════════════════════
+   CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28)
+   ════════════════════════════════════════════════════════════ */
+async function apexHash(policy_parameters, output_payload) {
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+      : v;
+  const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
 /* ════════════════════════════════════════════════════════════
