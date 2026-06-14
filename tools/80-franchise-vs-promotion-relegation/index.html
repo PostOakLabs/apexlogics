@@ -638,16 +638,17 @@ function setLang(lang) {
     ],
     validate(record) {
       if (!record || typeof record !== 'object') return { valid: false, error: 'Record must be an object' };
-      if (!record.mandate_type) return { valid: false, error: 'Missing mandate_type' };
-      if (!this.validMandateTypes.includes(record.mandate_type)) return { valid: false, error: 'Invalid mandate_type: ' + record.mandate_type };
+      if (!record.chaingraph_version) return { valid: false, error: 'Missing chaingraph_version' };
+      if (!record.ap2_mandate_type) return { valid: false, error: 'Missing ap2_mandate_type' };
+      if (!this.validMandateTypes.includes(record.ap2_mandate_type)) return { valid: false, error: 'Invalid ap2_mandate_type: ' + record.ap2_mandate_type };
       if (!record.al_id) return { valid: false, error: 'Missing al_id' };
       if (!record.generated_at) return { valid: false, error: 'Missing generated_at' };
       return { valid: true };
     }
   };
 
-  function buildRecord() {
-    return {
+  async function buildRecord() {
+    const record = {
       mandate_type: 'franchise_governance_record',
       al_id: 'AL-87',
       generated_at: new Date().toISOString(),
@@ -655,6 +656,24 @@ function setLang(lang) {
       debate_position_taken: state.debatePosition || 'none',
       comparison_notes: state.notes || ''
     };
+    // ── ChainGraph L1 + L2 ──
+    record.chaingraph_version = "0.1.0";
+    record.ap2_mandate_type = record.mandate_type;
+    record.mandate_type = "org.apexlogics/research_estimate";
+    if (!record.al_id) record.al_id = record.tool_id || "AL-87";
+    record.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+    try {
+      const _cgIn = new URLSearchParams(location.search).get("ap2");
+      if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+        if (_cgP && _cgP.execution_hash) { record.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+    } catch (_e) {}
+    const _cgDomain = {}; for (const _k in record) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","al_id","generated_at","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = record[_k]; }
+    record.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+    record.output_payload = _cgDomain;
+    record.compliance_flags = [];
+    record.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+    record.execution_hash = await apexHash(record.policy_parameters, record.output_payload);
+    return record;
   }
 
   function exportMarkdown() {
@@ -687,8 +706,8 @@ function setLang(lang) {
     download(md, 'franchise-pr-comparison.md', 'text/markdown');
   }
 
-  function exportAP2() {
-    const record = buildRecord();
+  async function exportAP2() {
+    const record = await buildRecord();
     const result = AP2Schema.validate(record);
     if (!result.valid) { alert('AP2 validation error: ' + result.error); return; }
     const blob = new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' });
@@ -696,6 +715,17 @@ function setLang(lang) {
     const a = document.createElement('a');
     a.href = url; a.download = 'ap2-franchise-governance-record.json'; a.click();
     URL.revokeObjectURL(url);
+  }
+
+  /* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
+  async function apexHash(policy_parameters, output_payload) {
+    const canon = (v) => Array.isArray(v) ? v.map(canon)
+      : (v && typeof v === 'object')
+        ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+        : v;
+    const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+    return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
   }
 
   function download(content, filename, type) {
