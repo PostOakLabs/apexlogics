@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// build_chaingraph.js — generate apexlogics-chaingraph.json nodes[]
+// build_chaingraph.js — generate chaingraph.json nodes[]
 // from 145 tool manifests + CONTRACT §6.3 handoff map.
 // Run: cd repo && node scripts/build_chaingraph.js
 // Sandbox: read-only (git show); real writes happen via this script on Windows.
@@ -12,7 +12,7 @@ const path = require('path');
 // ── Paths (relative to repo root where script runs) ─────────────────────────
 const ROOT            = path.resolve(__dirname, '..');
 const TOOLS_DIR       = path.join(ROOT, 'tools');
-const GRAPH_FILE      = path.join(ROOT, 'apexlogics-chaingraph.json');
+const GRAPH_FILE      = path.join(ROOT, 'chaingraph', 'chaingraph.json');
 
 // ── §6.3 handoff map seeds (contract-canonical; supplements manifest fields) ─
 // Key = al_id (string); value = array of al_ids this tool FEEDS.
@@ -227,7 +227,7 @@ function main() {
   const out = JSON.stringify(graph, null, 2) + '\n';
   fs.writeFileSync(GRAPH_FILE, out, 'utf8');
 
-  console.log(`\n✓ wrote ${nodes.length} nodes → apexlogics-chaingraph.json`);
+  console.log(`\n✓ wrote ${nodes.length} nodes → chaingraph.json`);
   if (warnings > 0) {
     console.warn(`  ${warnings} warning(s) — review above before committing.`);
   }
