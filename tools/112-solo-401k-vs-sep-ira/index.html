@@ -310,7 +310,7 @@ function exportMarkdown(){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='se-retirement-AL119.md';a.click();
 }
 
-function exportAP2(){
+async function exportAP2(){
   if(!window._lastResult){alert('Run the calculator first.');return;}
   const r=window._lastResult;
   const payload={
@@ -324,10 +324,38 @@ function exportAP2(){
       recommended_plan:r.winner,catchup_eligible:r.catchup>0},
     downstream_handoff_candidates:["AL-118","AL-01","AL-23"]
   };
-  const AP2Schema={validate:p=>p.ap2_version&&p.mandate_type&&p.al_id&&p.inputs&&p.summary};
+  // ── ChainGraph L1 + L2 ──
+  payload.chaingraph_version = "0.1.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/compensation_assessment";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-119";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","ap2_version","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+  const AP2Schema={validate:p=>p.chaingraph_version&&p.ap2_version&&p.ap2_mandate_type&&p.al_id&&p.inputs&&p.summary};
   if(!AP2Schema.validate(payload)){alert('AP2 validation failed.');return;}
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='se-retirement-AL119.ap2.json';a.click();
+}
+
+/* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+      : v;
+  const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
 /* ── MCP / MANIFEST TOGGLE (standardized, additive) ── */

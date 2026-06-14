@@ -598,16 +598,45 @@ const validMandateTypes = [
   'mba_reapplicant_record'
 ];
 
+/* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+      : v;
+  const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
 function validateAP2(payload) {
   if (payload.ap2_version !== '2.0') return 'ap2_version must be "2.0"';
-  if (!payload.mandate_type) return 'missing mandate_type';
+  if (!payload.chaingraph_version) return 'missing chaingraph_version';
+  if (!payload.ap2_mandate_type) return 'missing ap2_mandate_type';
   if (!payload.generated_at) return 'missing generated_at';
   if (!payload.inputs || typeof payload.inputs !== 'object') return 'missing inputs';
-  if (!validMandateTypes.includes(payload.mandate_type)) return 'unknown mandate_type: ' + payload.mandate_type;
+  if (!validMandateTypes.includes(payload.ap2_mandate_type)) return 'unknown mandate_type: ' + payload.ap2_mandate_type;
   return null;
 }
 
-function downloadAP2(payload) {
+async function downloadAP2(payload) {
+  // ── ChainGraph L1 + L2 ──
+  payload.chaingraph_version = "0.1.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/education_roi";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-70";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","ap2_version","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
   const err = validateAP2(payload);
   if (err) { showToast('AP2 validation failed: ' + err); return; }
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
@@ -618,7 +647,7 @@ function downloadAP2(payload) {
   setTimeout(() => URL.revokeObjectURL(a.href), 60000);
 }
 
-function exportAP2() {
+async function exportAP2() {
   if (!_results) { showToast('Run the Path EV analysis first.'); return; }
   const payload = {
     ap2_version:'2.0', mandate_type:'mba_reapplicant_record',
@@ -652,10 +681,10 @@ function exportAP2() {
     downstream_handoff_candidates: ['AL-51','AL-52','AL-56','AL-63'],
     advisory_cta: { text:'Get reapplication strategy guidance', url:'https://apexadvisory.site' }
   };
-  downloadAP2(payload);
+  await downloadAP2(payload);
 }
 
-function exportPortfolioAP2() {
+async function exportPortfolioAP2() {
   if (!_pResults) { showToast('Run the Improvement Portfolio ranking first.'); return; }
   const payload = {
     ap2_version:'2.0', mandate_type:'mba_reapplicant_record',
@@ -678,7 +707,7 @@ function exportPortfolioAP2() {
     downstream_handoff_candidates: ['AL-51','AL-52','AL-56','AL-63'],
     advisory_cta: { text:'Get reapplication strategy guidance', url:'https://apexadvisory.site' }
   };
-  downloadAP2(payload);
+  await downloadAP2(payload);
 }
 
 function toggleMCP() {

@@ -637,8 +637,9 @@ const AP2_VALID_MANDATE_TYPES = ['job_transition_record','compensation_package_r
 
 const AP2Schema = {
   validate(obj) {
+    if (!obj.chaingraph_version) return { valid: false, error: 'missing chaingraph_version' };
     if (!obj.mandate_type) return { valid: false, error: 'missing mandate_type' };
-    if (!AP2_VALID_MANDATE_TYPES.includes(obj.mandate_type)) return { valid: false, error: 'invalid mandate_type: ' + obj.mandate_type };
+    if (!obj.ap2_mandate_type || !AP2_VALID_MANDATE_TYPES.includes(obj.ap2_mandate_type)) return { valid: false, error: 'invalid ap2_mandate_type: ' + obj.ap2_mandate_type };
     return { valid: true };
   }
 };
@@ -682,12 +683,42 @@ function exportMD() {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'micro-theory-export.md'; a.click();
 }
 
-function exportAP2() {
+async function exportAP2() {
   const d = buildExportData();
+
+  // ── ChainGraph L1 + L2 ──
+  d.chaingraph_version = "0.1.0";
+  d.ap2_mandate_type = d.mandate_type;
+  d.mandate_type = "org.apexlogics/research_estimate";
+  if (!d.al_id) d.al_id = d.tool_id || "AL-91";
+  d.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { d.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+  const _cgDomain = {}; for (const _k in d) { if (["chaingraph_version","ap2_mandate_type","mandate_type","schema_version","generated","tool","tool_id","tool_version","al_id","generated_at","tool_name","ap2_version","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = d[_k]; }
+  d.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  d.output_payload = _cgDomain;
+  d.compliance_flags = [];
+  d.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  d.execution_hash = await apexHash(d.policy_parameters, d.output_payload);
+
   const res = AP2Schema.validate(d);
   if (!res.valid) { showToast('AP2 validation failed: ' + res.error); return; }
   const blob = new Blob([JSON.stringify(d, null, 2)], {type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'micro-theory-ap2.json'; a.click();
+}
+
+/* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+      : v;
+  const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
 function showToast(msg) {

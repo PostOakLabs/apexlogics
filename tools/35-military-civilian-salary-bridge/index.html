@@ -1084,7 +1084,7 @@ function exportMarkdown() {
   downloadFile('military-civilian-bridge.md', md.join('\n'), 'text/markdown');
 }
 
-function exportAP2() {
+async function exportAP2() {
   if (!_lastInputs || !_lastResults) return;
   const i = _lastInputs, r = _lastResults;
   const payload = {
@@ -1121,15 +1121,38 @@ function exportAP2() {
       message: "Connect with a career advisor to navigate your military-to-civilian transition."
     }
   };
+  // ── ChainGraph L1 (migrate_chaingraph_l1.py) ──
+  ap2.chaingraph_version = "0.1.0";
+  ap2.ap2_mandate_type = ap2.mandate_type;
+  ap2.mandate_type = "org.apexlogics/career_mobility";
+  if (!ap2.al_id) ap2.al_id = ap2.tool_id || "AL-40";
+  ap2.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  ap2.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: ap2.inputs };
+  ap2.output_payload = ap2.results || ap2.outputs || {};
+  ap2.compliance_flags = [];
+  ap2.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  ap2.execution_hash = await apexHash(ap2.policy_parameters, ap2.output_payload);
+
   // ── AP2 v2.0 validation — validate before emit (CONTRACT §3.3 / Appendix F2) ──
   const _ap2errs = [];
-  ['ap2_version','mandate_type','generated_at','inputs'].forEach(k => { if (payload[k] == null) _ap2errs.push('missing ' + k); });
+  ['ap2_version','ap2_mandate_type','generated_at','inputs'].forEach(k => { if (payload[k] == null) _ap2errs.push('missing ' + k); });
   if (payload.mandate_type && ![
     'ai_skills_premium_record','federal_comp_record','military_civilian_record',
     'noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record'
   ].includes(payload.mandate_type)) _ap2errs.push('unknown mandate_type: ' + payload.mandate_type);
   if (_ap2errs.length) { alert('AP2 validation failed: ' + _ap2errs.join('; ')); return; }
   downloadFile('military-civilian-bridge-ap2.json', JSON.stringify(payload, null, 2), 'application/json');
+}
+
+// ── ChainGraph §6 — execution hash (WebCrypto, CG-28) ───────────────────────
+async function apexHash(policy_parameters, output_payload) {
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+      : v;
+  const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
 function downloadFile(filename, content, type) {

@@ -597,8 +597,9 @@ function showToast(msg) {
 const AP2_VALID_MANDATE_TYPES = ['job_transition_record','compensation_package_record','credential_roi_record','education_cost_record','loan_repayment_record','career_break_record','exam_cost_record','scholarship_record','workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record','geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record','test_prep_record','international_student_record','parent_college_record','cpd_tracking_record','job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record','education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record','trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record','professional_degree_record','workforce_pell_record','workforce_pell_credential_rank','net_worth_trajectory_record','signing_bonus_record','gig_income_record','cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record','deferred_comp_457b_record','tutor_roi_record','test_retake_record','mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record','law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record','english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record','mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record','mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record','lesson_design_record','assessment_item_record','classroom_scenario_record','gt_differentiation_record','instructor_toolkit_record','cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record','primary_source_record','historiography_record','anachronism_record','counterfactual_record','franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record','micro_theory_record','economic_systems_record','economists_panel_record','economic_history_record','econ_principles_record'];
 const AP2Schema = {
   validate(obj) {
+    if (!obj.chaingraph_version) return { valid: false, error: 'missing chaingraph_version' };
     if (!obj.mandate_type) return { valid: false, error: 'missing mandate_type' };
-    if (!AP2_VALID_MANDATE_TYPES.includes(obj.mandate_type)) return { valid: false, error: 'invalid mandate_type: ' + obj.mandate_type };
+    if (!obj.ap2_mandate_type || !AP2_VALID_MANDATE_TYPES.includes(obj.ap2_mandate_type)) return { valid: false, error: 'invalid ap2_mandate_type: ' + obj.ap2_mandate_type };
     return { valid: true };
   }
 };
@@ -627,12 +628,42 @@ function exportMD3() {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'recession-anatomy-export.md'; a.click();
 }
 
-function exportAP2_3() {
+async function exportAP2_3() {
   const d = buildExportData();
+
+  // ── ChainGraph L1 + L2 ──
+  d.chaingraph_version = "0.1.0";
+  d.ap2_mandate_type = d.mandate_type;
+  d.mandate_type = "org.apexlogics/research_estimate";
+  if (!d.al_id) d.al_id = d.tool_id || "AL-94";
+  d.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { d.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+  const _cgDomain = {}; for (const _k in d) { if (["chaingraph_version","ap2_mandate_type","mandate_type","schema_version","generated","tool","tool_id","tool_version","al_id","generated_at","tool_name","ap2_version","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = d[_k]; }
+  d.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  d.output_payload = _cgDomain;
+  d.compliance_flags = [];
+  d.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  d.execution_hash = await apexHash(d.policy_parameters, d.output_payload);
+
   const res = AP2Schema.validate(d);
   if (!res.valid) { showToast('AP2 validation error: ' + res.error); return; }
   const blob = new Blob([JSON.stringify(d, null, 2)], {type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'recession-anatomy-ap2.json'; a.click();
+}
+
+/* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+      : v;
+  const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
 (function() {

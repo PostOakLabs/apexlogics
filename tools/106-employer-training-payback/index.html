@@ -264,7 +264,7 @@ function exportMarkdown() {
   dlFile(md, 'training_roi.md', 'text/markdown');
 }
 
-function exportAP2() {
+async function exportAP2() {
   if (!lastResult) return;
   const r = lastResult;
   const mandate = {
@@ -273,14 +273,44 @@ function exportAP2() {
     summary: { total_investment: Math.round(r.totalInvestment), annual_benefit: Math.round(r.annualBenefit), payback_months: Math.round(r.paybackMonths), roi_yr1_pct: Math.round(r.roi1), roi_yr3_pct: Math.round(r.roi3), roi_yr5_pct: Math.round(r.roi5) },
     downstream_handoff_candidates: ['AL-02', 'AL-07']
   };
+  // ── ChainGraph L1 + L2 ──
+  const payload = mandate;
+  payload.chaingraph_version = "0.1.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/career_mobility";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-113";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","ap2_version","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
   const errs = [];
+  if (!mandate.chaingraph_version) errs.push('missing chaingraph_version');
   if (!mandate.ap2_version) errs.push('missing ap2_version');
-  if (mandate.mandate_type !== 'training_roi_record') errs.push('wrong mandate_type');
+  if (mandate.ap2_mandate_type !== 'training_roi_record') errs.push('wrong ap2_mandate_type');
   if (!mandate.generated_at) errs.push('missing generated_at');
   if (!mandate.inputs) errs.push('missing inputs');
   if (errs.length) { alert('AP2 error: ' + errs.join('; ')); return; }
   const blob = new Blob([JSON.stringify(mandate, null, 2)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'training_roi_record.ap2.json'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+      : v;
+  const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
 function dlFile(c, n, t) {

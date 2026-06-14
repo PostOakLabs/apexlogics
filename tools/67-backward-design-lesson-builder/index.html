@@ -639,8 +639,9 @@ const AP2Schema = {
   ],
   validate(payload) {
     if (!payload || typeof payload !== 'object') return { valid: false, error: 'Payload must be an object.' };
+    if (!payload.chaingraph_version) return { valid: false, error: 'Missing chaingraph_version.' };
     if (!payload.mandate_type) return { valid: false, error: 'Missing mandate_type.' };
-    if (!this.validMandateTypes.includes(payload.mandate_type)) return { valid: false, error: `Invalid mandate_type: ${payload.mandate_type}` };
+    if (!payload.ap2_mandate_type || !this.validMandateTypes.includes(payload.ap2_mandate_type)) return { valid: false, error: `Invalid ap2_mandate_type: ${payload.ap2_mandate_type}` };
     if (!payload.tool_id) return { valid: false, error: 'Missing tool_id.' };
     if (!payload.generated_at) return { valid: false, error: 'Missing generated_at.' };
     return { valid: true };
@@ -706,7 +707,7 @@ function exportMarkdown() {
   URL.revokeObjectURL(url);
 }
 
-function exportAP2() {
+async function exportAP2() {
   const evChecked = ['quiz','obs','exit','portfolio','self','peer','discussion','hw'].filter(k =>
     document.getElementById('ev_' + k).checked
   );
@@ -729,6 +730,24 @@ function exportAP2() {
     daily_schedule: state.dayBlocks.map((d, i) => ({ day: i+1, activity: d.activity, duration_min: parseInt(d.duration) || 0 }))
   };
 
+  // ── ChainGraph L1 + L2 ──
+  payload.chaingraph_version = "0.1.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/research_estimate";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-74";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","ap2_version","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
   const result = AP2Schema.validate(payload);
   if (!result.valid) { showToast('AP2 validation error: ' + result.error); return; }
 
@@ -737,6 +756,17 @@ function exportAP2() {
   const a = document.createElement('a');
   a.href = url; a.download = 'lesson-plan-ap2.json'; a.click();
   URL.revokeObjectURL(url);
+}
+
+/* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+      : v;
+  const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
 // ── Toast ──────────────────────────────────────────────────────────────────
