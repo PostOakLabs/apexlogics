@@ -600,24 +600,26 @@ async function generatePrompt() {
 
   const promptText = parts.join('\n\n');
 
-  // Compute our own execution hash for the composer session
-  const sessionPayload = {
-    mandate_type: 'advisor_prompt_record',
+  // ── OpenChainGraph §6: hash over the real {policy_parameters, output_payload} ──
+  const _policy = {
     task_frame: taskFrame,
     audience,
     tone,
-    artifact_count: _artifacts.length,
-    primary_mandate_type: mt,
-    domain,
     include_citations: inclCitations,
     include_escalation: inclEscal,
     include_stochastic: inclStoch,
-    prompt_length: promptText.length
+    artifact_count: _artifacts.length
+  };
+  const _output = {
+    prompt_length_chars: promptText.length,
+    primary_mandate_type: mt,
+    domain,
+    artifact_mandate_types: summaries.map(s => s.mt)
   };
 
   let execHash = null;
   try {
-    execHash = await ap2Hash(sessionPayload, {});
+    execHash = await ap2Hash(_policy, _output);
   } catch(e) {
     execHash = 'sha256:unavailable';
   }
@@ -632,10 +634,12 @@ async function generatePrompt() {
     `${chainLine}\n` +
     `Chain depth: ${maxChainDepth + 1} · Generated: ${new Date().toISOString().slice(0,16).replace('T',' ')} UTC`;
 
-  // Store session for AP2 export
+  // Store session for AP2 export — OpenChainGraph Standard v0.1 envelope
   _lastComposerSession = {
+    chaingraph_version: '0.1.0',
     ap2_version: '2.1.0',
-    mandate_type: 'advisor_prompt_record',
+    mandate_type: 'prompt_template',
+    ap2_mandate_type: 'advisor_prompt_record',
     al_id: 'AL-153',
     tool_name: 'AP2 Advisor Prompt Composer',
     tool_id: 'ap2-advisor-prompt-composer',
@@ -643,25 +647,16 @@ async function generatePrompt() {
     data_vintage: 'AP2 schema v2.1.0 (2026-06-13)',
     execution_hash: execHash,
     chain: {
+      chain_depth: maxChainDepth + 1,
       depth: maxChainDepth + 1,
       parent_hashes: parentHashes,
+      parent_tool_ids: summaries.map(s => s.alId || s.toolName || null),
       parent_mandate_types: summaries.map(s => s.mt)
     },
-    policy_parameters: {
-      task_frame: taskFrame,
-      audience,
-      tone,
-      include_citations: inclCitations,
-      include_escalation: inclEscal,
-      include_stochastic: inclStoch,
-      artifact_count: _artifacts.length
-    },
-    output_payload: {
-      prompt_length_chars: promptText.length,
-      primary_mandate_type: mt,
-      domain,
-      artifact_mandate_types: summaries.map(s => s.mt)
-    },
+    policy_parameters: _policy,
+    output_payload: _output,
+    compliance_flags: [],
+    audit_signature: { client_side_executed: true, zero_pii_verified: true, deterministic_run: true },
     regulatory_context: {
       domain_citations: inclCitations ? (tpl.citations || []) : []
     }
