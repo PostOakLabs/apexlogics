@@ -166,24 +166,20 @@ pre.mfst-code{font-family:var(--mono);font-size:10px;color:var(--muted);white-sp
 </div>
 <footer class="tool-footer"><a href="../about.html">About</a> · CC BY 4.0 · CG-27 · Data: AP2 v2.1.0 (2026-06-13)</footer>
 <script>
+const TOOLIDS=["125-gi-bill-benefit-maximizer","126-skillbridge-credential-transfer-roi","127-veteran-income-bridge"];
 const PERSONA='veteran',JOURNEY='veteran-transition-gi-bill';
 const S=[null,null,null];
 const STEPS_META=[{al:'AL-132',mt:'gi_bill_benefit_record'},{al:'AL-133',mt:'skillbridge_credential_record'},{al:'AL-134',mt:'veteran_income_bridge_record'}];
 
-async function apexHash(pol,out){
-  const obj={policy_parameters:pol,output_payload:out};
-  const can=JSON.stringify(obj,Object.keys(obj).sort());
-  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(can));
-  return 'sha256:'+[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
-}
+const OCG_CTX=['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];const OCG_BUILDTYPE='https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';function cgCanon(v){return Array.isArray(v)?v.map(cgCanon):(v&&typeof v==='object')?Object.keys(v).sort().reduce((o,k)=>(o[k]=cgCanon(v[k]),o),{}):v;}async function apexHash(pol,out){const can=JSON.stringify(cgCanon({policy_parameters:pol,output_payload:out}));const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(can));return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');}
 function $d(id,v){document.getElementById(id).textContent=v;}
 function fm$(n){return '$'+Math.round(n).toLocaleString();}
 function fmM(n){return n.toFixed(1)+' mo';}
-function parent(i){return S[i-1]?{hashes:[S[i-1].execution_hash],ids:[S[i-1].al_id]}:{hashes:[],ids:[]};}
+function parent(i){return S[i-1]?{hashes:[S[i-1].execution_hash],ids:[S[i-1].tool_id]}:{hashes:[],ids:[]};}
 async function record(i,pol,out){
   const p=parent(i);
   const hash=await apexHash(pol,out);
-  S[i]={step_id:'step_'+(i+1),al_id:STEPS_META[i].al,mandate_type:STEPS_META[i].mt,execution_hash:hash,chain:{parent_hashes:p.hashes,parent_tool_ids:p.ids,chain_depth:i},policy_parameters:pol,output_payload:out};
+  S[i]={'@context':OCG_CTX,chaingraph_version:'0.4.0',buildType:OCG_BUILDTYPE,compute_mode:'browser',tool_id:TOOLIDS[i],tool_version:'1.0.0',mandate_type:STEPS_META[i].mt,generated_at:new Date().toISOString(),execution_hash:hash,chain:{parent_hashes:p.hashes,parent_tool_ids:p.ids,chain_depth:i},policy_parameters:pol,output_payload:out,audit_signature:{payloadType:'application/vnd.openchain.graph+json;version=0.4',payload:'',signatures:[]}};
   const hel=document.getElementById('h'+i);
   hel.textContent='hash: '+hash;hel.classList.add('on');
   document.getElementById('b'+i).classList.add('done');
@@ -217,12 +213,12 @@ async function step2(){
   $d('v2',fm$(bridge));$d('r2',fm$(gap)+'/mo gap × '+c+' months · Annual uplift post-transition: '+fm$(uplift));
 }
 
-function buildArtifact(){return{'@context':'https://openchain.graph/spec/v0.2/context.jsonld',chaingraph_version:'0.2.0',buildType:'https://openchain.graph/spec/v0.2#WebCryptoSHA256',ap2_version:'2.1.0',al_id:'CG-27',persona:PERSONA,journey:JOURNEY,mandate_type:'chaingraph_record',chain_depth:S.filter(Boolean).length,steps:S.filter(Boolean),generated:new Date().toISOString(),audit_signature:{payloadType:'application/vnd.openchain.graph+json;version=0.2',payload:'',signatures:[]}};}
+function buildArtifact(){const steps=S.filter(Boolean);return{bundle_version:'1.0',ocg_spec_version:'0.5.0',bundle_type:'chaingraph_journey_bundle',persona:PERSONA,journey:JOURNEY,generated_at:new Date().toISOString(),chain_depth:steps.length,steps:steps};}
 
 function exportMd(){
   const done=S.filter(Boolean);if(!done.length){alert('Run at least one step first.');return;}
   let md='# Veteran Transition Chain Report\n\n**Journey:** '+JOURNEY+'\n**Generated:** '+new Date().toLocaleString()+'\n\n';
-  done.forEach((s,i)=>{md+='## Step '+(i+1)+' · '+s.al_id+'\n**Mandate:** '+s.mandate_type+'\n**Hash:** `'+s.execution_hash+'`\n**Chain Depth:** '+s.chain.chain_depth+'\n\n### Inputs\n```json\n'+JSON.stringify(s.policy_parameters,null,2)+'\n```\n\n### Outputs\n```json\n'+JSON.stringify(s.output_payload,null,2)+'\n```\n\n';});
+  done.forEach((s,i)=>{md+='## Step '+(i+1)+' · '+s.tool_id+'\n**Mandate:** '+s.mandate_type+'\n**Hash:** `'+s.execution_hash+'`\n**Chain Depth:** '+s.chain.chain_depth+'\n\n### Inputs\n```json\n'+JSON.stringify(s.policy_parameters,null,2)+'\n```\n\n### Outputs\n```json\n'+JSON.stringify(s.output_payload,null,2)+'\n```\n\n';});
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([md],{type:'text/markdown'}));a.download='veteran-chain-'+Date.now()+'.md';a.click();
 }
 function exportAP2(){
