@@ -257,7 +257,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(7,11,20,.92);backdrop-filt
 
     <div class="results-export-row">
       <button class="export-btn" id="mdBtn" onclick="exportMarkdown()">&#8595; Markdown</button>
-      <button class="export-btn" id="ap2Btn" onclick="exportAP2()">&#8595; AP2 JSON</button>
+      <button class="export-btn" id="ap2Btn" onclick="exportAP2()">&#8595; Policy Mandate (JSON)</button>
     </div>
 
     </div>
@@ -616,9 +616,15 @@ async function exportAP2() {
   payload.output_payload = _cgDomain;
   payload.compliance_flags = [];
   payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  payload.chaingraph_version = "0.4.0";
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
   const errors = validateAP2(mandate);
-  if (errors.length) { alert('AP2 validation error: ' + errors.join('; ')); return; }
+  if (errors.length) { alert('Policy Mandate validation error: ' + errors.join('; ')); return; }
   const blob = new Blob([JSON.stringify(mandate, null, 2)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = 'ai_displacement_record.ap2.json'; a.click(); URL.revokeObjectURL(a.href);

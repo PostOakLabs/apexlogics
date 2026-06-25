@@ -482,8 +482,8 @@
     <!-- EXPORT ROW -->
     <div class="results-export-row">
       <button class="export-btn" onclick="exportMarkdown()" id="mdBtn">⬇ Download Markdown</button>
-      <button class="export-btn ap2" onclick="exportAP2()" id="ap2Btn" title="For agent integration · audit trail · scenario handoff">⬇ Download AP2 JSON</button>
-      <span class="ap2-hint">AP2 v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      <button class="export-btn ap2" onclick="exportAP2()" id="ap2Btn" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+      <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
     </div>
 
   </div><!-- /results-panel -->
@@ -762,7 +762,7 @@ function exportMarkdown() {
   dlFile('workforce-pell-screener.md', lines.join('\n'), 'text/markdown');
 }
 
-// ── EXPORT: AP2 ──────────────────────────────────────────────────────────────
+// ── EXPORT: Policy Mandate ──────────────────────────────────────────────────────────────
 async function exportAP2() {
   if (!_lastInputs || !_lastResults) return;
   const i = _lastInputs, r = _lastResults;
@@ -815,8 +815,14 @@ async function exportAP2() {
   payload.output_payload = _cgDomain;
   payload.compliance_flags = [];
   payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
-  // AP2 v2.0 + OpenChainGraph validation (CONTRACT §3.2.1)
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  payload.chaingraph_version = "0.4.0";
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  // Policy Mandate v2.0 + OpenChainGraph validation (CONTRACT §3.2.1)
   const errs = [];
   ['ap2_version','chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (payload[k] == null) errs.push('missing ' + k); });
   const validTypes = [
@@ -825,7 +831,7 @@ async function exportAP2() {
     'professional_degree_record','workforce_pell_record'
   ];
   if (!validTypes.includes(payload.ap2_mandate_type)) errs.push('unknown mandate_type: ' + payload.ap2_mandate_type);
-  if (errs.length) { alert('AP2 validation failed: ' + errs.join('; ')); return; }
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
   const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
   dlFile(`AL-41_workforce-pell-screener_${ts}.ap2.json`, JSON.stringify(payload, null, 2), 'application/json');
 }

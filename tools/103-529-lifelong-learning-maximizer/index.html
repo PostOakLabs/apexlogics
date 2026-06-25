@@ -270,7 +270,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(7,11,20,.92);backdrop-filt
       </div>
       <div class="results-export-row">
         <button class="export-btn" onclick="exportMD1()" data-i18n="btn_md">Export Markdown</button>
-        <button class="export-btn" onclick="exportAP2()" data-i18n="btn_ap2">AP2 JSON</button>
+        <button class="export-btn" onclick="exportAP2()" data-i18n="btn_ap2">Policy Mandate (JSON)</button>
       </div>
     </div>
   </div><!-- /tab-elig -->
@@ -347,7 +347,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(7,11,20,.92);backdrop-filt
       </div>
       <div class="results-export-row">
         <button class="export-btn" onclick="exportMD2()" data-i18n="btn_md">Export Markdown</button>
-        <button class="export-btn" onclick="exportAP2()" data-i18n="btn_ap2">AP2 JSON</button>
+        <button class="export-btn" onclick="exportAP2()" data-i18n="btn_ap2">Policy Mandate (JSON)</button>
       </div>
     </div>
   </div><!-- /tab-plan -->
@@ -355,12 +355,12 @@ nav{position:sticky;top:0;z-index:100;background:rgba(7,11,20,.92);backdrop-filt
   <div class="ap2-inbound-wrap">
     <div class="toggle-header" onclick="toggleSection('ap2-in')" id="ap2-in-hdr">
       <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="toggle-label" data-i18n="ap2_inbound_label">AP2 Inbound — Load from AL-97 / AL-05</span>
+      <span class="toggle-label" data-i18n="ap2_inbound_label">Policy Mandate Inbound — Load from AL-97 / AL-05</span>
     </div>
     <div class="toggle-body" id="ap2-in">
-      <p style="font-size:.7rem;color:var(--dim);margin-bottom:.5rem" data-i18n="ap2_inbound_desc">Paste an AP2 mandate from another Apex Logics tool to pre-fill goal and funding inputs.</p>
+      <p style="font-size:.7rem;color:var(--dim);margin-bottom:.5rem" data-i18n="ap2_inbound_desc">Paste a Policy Mandate from another Apex Logics tool to pre-fill goal and funding inputs.</p>
       <textarea id="ap2InText" placeholder='{"mandate_type":"grad_loan_gap_record","inputs":{...}}'></textarea>
-      <button class="export-btn" onclick="loadAP2Inbound()" style="margin-top:.4rem" data-i18n="ap2_load_btn">Load AP2 Payload</button>
+      <button class="export-btn" onclick="loadAP2Inbound()" style="margin-top:.4rem" data-i18n="ap2_load_btn">Load Policy Mandate Payload</button>
     </div>
   </div>
 
@@ -457,10 +457,10 @@ const S = {
     plan_detail_title:"Contribution Detail",
     th_py_year:"Year",th_py_contrib:"Contributed",th_py_growth:"Growth",th_py_balance:"Balance",th_py_state_savings:"State Deduction Savings",
     plan_rec_title:"529 Strategy Summary",
-    btn_md:"Export Markdown",btn_ap2:"AP2 JSON",
-    ap2_inbound_label:"AP2 Inbound — Load from AL-97 / AL-05",
-    ap2_inbound_desc:"Paste an AP2 mandate from another Apex Logics tool to pre-fill inputs.",
-    ap2_load_btn:"Load AP2 Payload"
+    btn_md:"Export Markdown",btn_ap2:"Policy Mandate (JSON)",
+    ap2_inbound_label:"Policy Mandate Inbound — Load from AL-97 / AL-05",
+    ap2_inbound_desc:"Paste a Policy Mandate from another Apex Logics tool to pre-fill inputs.",
+    ap2_load_btn:"Load Policy Mandate Payload"
   }
 };
 ['es','fr','ar','pt','zh'].forEach(l=>{ S[l]=Object.assign({},S.en); });
@@ -662,7 +662,7 @@ function exportMD2(){
   dl(md, '529_contribution_plan.md', 'text/markdown');
 }
 
-/* ── AP2 EXPORT ── */
+/* ── Policy Mandate EXPORT ── */
 const validMandateTypes = ['529_lifelong_record','grad_loan_gap_record','education_savings_record'];
 function validateAP2(m){
   const e=[]; if(!m.chaingraph_version) e.push('missing chaingraph_version'); if(!m.ap2_version) e.push('missing ap2_version'); if(!m.ap2_mandate_type) e.push('missing ap2_mandate_type'); if(!m.generated_at) e.push('missing generated_at'); if(!m.inputs) e.push('missing inputs'); if(m.ap2_mandate_type&&!validMandateTypes.includes(m.ap2_mandate_type)) e.push(`unrecognized ap2_mandate_type`); return e;
@@ -727,19 +727,25 @@ async function exportAP2(){
   payload.output_payload = _cgDomain;
   payload.compliance_flags = [];
   payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
-  const errs=validateAP2(mandate); if(errs.length){ alert('AP2 error: '+errs.join('; ')); return; }
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  payload.chaingraph_version = "0.4.0";
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  const errs=validateAP2(mandate); if(errs.length){ alert('Policy Mandate error: '+errs.join('; ')); return; }
   const blob=new Blob([JSON.stringify(mandate,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='529_lifelong_record.ap2.json'; a.click(); URL.revokeObjectURL(a.href);
 }
 
-/* ── AP2 INBOUND ── */
+/* ── Policy Mandate INBOUND ── */
 function loadAP2Inbound(){
   const raw=document.getElementById('ap2InText').value.trim(); if(!raw) return;
   try{
     const m=JSON.parse(raw); const inp=m.inputs||{};
     if(inp.funding_gap||inp.total_gap) document.getElementById('goal_bal').value = inp.funding_gap||inp.total_gap;
     if(inp.annual_coa) document.getElementById('goal_bal').value = inp.annual_coa;
-  } catch(e){ alert('Invalid AP2 JSON.'); }
+  } catch(e){ alert('Invalid Policy Mandate (JSON).'); }
 }
 
 /* ── DOWNLOAD ── */

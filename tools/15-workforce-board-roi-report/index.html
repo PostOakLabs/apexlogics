@@ -223,7 +223,7 @@
 <header class="tool-header">
   <div class="tool-id-badge" data-i18n="tool_id_badge">AL · 07 · Workforce Development</div>
   <h1 class="tool-title" data-i18n="tool_title">Workforce Board ROI Report Generator</h1>
-  <p class="tool-desc" data-i18n="tool_desc">Enter your program's cost and outcome data to benchmark against WIOA PY 2023 national performance targets, calculate cost-per-outcome metrics, and model taxpayer ROI. Export a WIOA-formatted AP2 mandate for downstream AI workflows.</p>
+  <p class="tool-desc" data-i18n="tool_desc">Enter your program's cost and outcome data to benchmark against WIOA PY 2023 national performance targets, calculate cost-per-outcome metrics, and model taxpayer ROI. Export a WIOA-formatted Policy Mandate for downstream AI workflows.</p>
 </header>
 
 <!-- ──────────────────────────────────────────────────────────────────────────
@@ -387,13 +387,13 @@
         </p>
       </div>
 
-      <!-- Export row: Markdown first, AP2 second (CONTRACT §4 Tier 1) -->
+      <!-- Export row: Markdown first, Policy Mandate second (CONTRACT §4 Tier 1) -->
       <div class="results-export-row">
         <button id="btnMd"  class="btn-export md"  onclick="exportMarkdown()" disabled
           title="Run the analysis above to generate an export" data-i18n="btn_md">⬇ Markdown Report</button>
         <button id="btnAP2" class="btn-export ap2" onclick="exportAP2()" disabled
-          title="Run the analysis above to generate an AP2 mandate" data-i18n="btn_ap2">⬇ AP2 JSON Export</button>
-        <button class="btn-ap2-help" onclick="showAP2Help()" title="About AP2 Export" aria-label="About AP2 Export">?</button>
+          title="Run the analysis above to generate a Policy Mandate" data-i18n="btn_ap2">⬇ Policy Mandate (JSON) Export</button>
+        <button class="btn-ap2-help" onclick="showAP2Help()" title="About Policy Mandate Export" aria-label="About Policy Mandate Export">?</button>
       </div>
 
     </div><!-- /resultsContent -->
@@ -788,7 +788,7 @@ async function apexHash(policy_parameters, output_payload) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AP2 FILE NAME HELPER — {al_id}_{tool_id}_{YYYYMMDDHHMMSS}.ap2.json
+// Policy Mandate FILE NAME HELPER — {al_id}_{tool_id}_{YYYYMMDDHHMMSS}.ap2.json
 // ─────────────────────────────────────────────────────────────────────────────
 function ap2FileName() {
   const now = new Date();
@@ -804,7 +804,7 @@ function ap2FileName() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AP2 EXPORT
+// Policy Mandate EXPORT
 // ─────────────────────────────────────────────────────────────────────────────
 async function exportAP2() {
   if (!lastReport) { alert('Please generate a report first.'); return; }
@@ -898,10 +898,16 @@ async function exportAP2() {
   mandate.compliance_flags = [];
   mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
   mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
+  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  mandate.chaingraph_version = "0.4.0";
+  mandate['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  mandate.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  mandate.compute_mode = 'browser';
+  if (typeof mandate.tool_version === 'undefined') mandate.tool_version = '1.0.0';
 
   const result = AP2Schema.validate(mandate);
   if (!result.valid) {
-    alert('AP2 schema validation failed:\n' + result.errors.join('\n'));
+    alert('Policy Mandate schema validation failed:\n' + result.errors.join('\n'));
     return;
   }
 
@@ -1012,12 +1018,12 @@ ${benchRows}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AP2 HELP POPOVER (CONTRACT §3.3 — pull-revelation, never auto-displayed)
+// Policy Mandate HELP POPOVER (CONTRACT §3.3 — pull-revelation, never auto-displayed)
 // ─────────────────────────────────────────────────────────────────────────────
 function showAP2Help() {
   alert(
-    'AP2 Export — Agent Purchase Protocol v1.0\n\n' +
-    'The AP2 JSON file encodes your workforce ROI report as a structured mandate that AI agents ' +
+    'Policy Mandate Export — Agent Purchase Protocol v1.0\n\n' +
+    'The Policy Mandate (JSON) file encodes your workforce ROI report as a structured mandate that AI agents ' +
     'and MCP-enabled tools can consume. The mandate_type "workforce_program_roi" is specific to AL-07.\n\n' +
     'The export includes:\n' +
     '• Program information and WIOA PY 2023 outcomes\n' +
@@ -1081,7 +1087,7 @@ const I18N = {
     nav_back:         '← All Tools',
     tool_id_badge:    'AL-07 · Workforce Development',
     tool_title:       'Workforce Board ROI Report Generator',
-    tool_desc:        "Enter your program's cost and outcome data to benchmark against WIOA PY 2023 national performance targets, calculate cost-per-outcome metrics, and model taxpayer ROI. Export a WIOA-formatted AP2 mandate for downstream AI workflows.",
+    tool_desc:        "Enter your program's cost and outcome data to benchmark against WIOA PY 2023 national performance targets, calculate cost-per-outcome metrics, and model taxpayer ROI. Export a WIOA-formatted Policy Mandate for downstream AI workflows.",
     sect_program:     'Program Information',
     sect_outcomes:    'WIOA Performance Outcomes',
     outcomes_hint:    "Enter your program's reported outcomes. Leave blank if not applicable for this program type.",
@@ -1093,7 +1099,7 @@ const I18N = {
     sect_roi:         '3-Year Program ROI Summary',
     roi_method:       'Tax recapture assumes ~30% combined effective rate (federal income + FICA + state avg.). Annualized from Q2 median earnings (×4). Wage gain vs. BLS QCEW sector baseline. Methodology: DOL ETA workforce ROI framework; IMPAQ International (2013) net impact and benefit-cost model.',
     btn_md:           '⬇ Markdown Report',
-    btn_ap2:          '⬇ AP2 JSON Export',
+    btn_ap2:          '⬇ Policy Mandate (JSON) Export',
   },
   es: {}, fr: {}, ar: { lang_dir: 'rtl' }, pt: {}, zh: {},
 };

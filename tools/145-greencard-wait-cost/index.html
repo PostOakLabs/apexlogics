@@ -272,7 +272,7 @@ footer.tool-footer a:hover{color:var(--amber)}
     </div>
     <div class="results-export-row">
       <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
-      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ Policy Mandate Record</button>
     </div>
   </div>
 
@@ -508,7 +508,13 @@ async function exportAP2() {
   payload.output_payload = _cgDomain;
   payload.compliance_flags = [];
   payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  payload.chaingraph_version = "0.4.0";
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
   const AP2Schema = {
     validMandateTypes: ['greencard_wait_record'],
     validate: function(p) {
@@ -522,7 +528,7 @@ async function exportAP2() {
     }
   };
   const vr = AP2Schema.validate(payload);
-  if (!vr.valid) { alert('AP2 validation error: ' + vr.errors.join(', ')); return; }
+  if (!vr.valid) { alert('Policy Mandate validation error: ' + vr.errors.join(', ')); return; }
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = 'ap2-greencard-wait-AL152.json'; a.click();

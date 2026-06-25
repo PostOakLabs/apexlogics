@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CPD / CPE Credit Tracker — ApexLogics</title>
-<meta name="description" content="Track continuing education credits for CPA, CLE, HR (SHRM/HRCI), and CME/CEU. Gap calculator, deadline pace model, and AP2 export. Browser-only. Zero PII. Built by Apex Advisors.">
+<meta name="description" content="Track continuing education credits for CPA, CLE, HR (SHRM/HRCI), and CME/CEU. Gap calculator, deadline pace model, and Policy Mandate export. Browser-only. Zero PII. Built by Apex Advisors.">
 <link rel="canonical" href="https://apexlogics.org/tools/12-cpd-credit-tracker/">
 <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -551,11 +551,11 @@ td input[type="text"], td input[type="number"], td input[type="date"] {
         <span class="btn-subtitle">Human-readable summary</span>
       </button>
       <button class="btn" id="ap2ExportBtn" disabled onclick="exportAP2()"
-              title="Run the analysis above to generate an AP2 mandate">
-        Export AP2 JSON
+              title="Run the analysis above to generate a Policy Mandate">
+        Export Policy Mandate (JSON)
         <span class="btn-subtitle">Agent integration · audit trail</span>
       </button>
-      <button class="btn btn-help" onclick="showAP2Help()" aria-label="What is AP2?">?</button>
+      <button class="btn btn-help" onclick="showAP2Help()" aria-label="What is Policy Mandate?">?</button>
     </div>
   </div><!-- /results-panel -->
 
@@ -569,8 +569,8 @@ td input[type="text"], td input[type="number"], td input[type="date"] {
 <!-- ════ POPOVER ════ -->
 <div class="popover-overlay" id="ap2Popover" onclick="closePopover()">
   <div class="popover-box" onclick="event.stopPropagation()">
-    <h3>What is AP2?</h3>
-    <p>AP2 (Agent Purchase Protocol) is Google's open agent authorization standard (announced September 2025). Exporting your results as an AP2 JSON file lets an AI agent carry your CPD scenario — profession, credits earned, deadline, gap — into a downstream tool like the Human Capital Engine (AL-03) without re-entering data.</p>
+    <h3>What is Policy Mandate?</h3>
+    <p>Policy Mandate (Agent Purchase Protocol) is Google's open agent authorization standard (announced September 2025). Exporting your results as a Policy Mandate (JSON) file lets an AI agent carry your CPD scenario — profession, credits earned, deadline, gap — into a downstream tool like the Human Capital Engine (AL-03) without re-entering data.</p>
     <p>The file contains no personal data — only the credential type, credit counts, and computed gap metrics you chose to calculate.</p>
     <p><a href="https://ap2-protocol.org/" target="_blank" rel="noopener">Learn more at ap2-protocol.org →</a></p>
     <button class="popover-close" onclick="closePopover()">Close</button>
@@ -582,7 +582,7 @@ td input[type="text"], td input[type="number"], td input[type="date"] {
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════════
-   AP2 Schema Validator — ApexLogics Contract Appendix F
+   Policy Mandate Schema Validator — ApexLogics Contract Appendix F
    Inlined per CONTRACT §0: zero external dependencies.
    Uses sessionStorage only for 'apex_lang'. No localStorage. No cookies.
    ═══════════════════════════════════════════════════════════════════════ */
@@ -1029,7 +1029,7 @@ function tsCompact() {
   ].join('');
 }
 
-/* ════ AP2 MANDATE BUILDER ════ */
+/* ════ Policy Mandate MANDATE BUILDER ════ */
 async function buildAP2Mandate() {
   const r = lastResult;
   const seed = [r.profKey, r.deadline, r.totalEarned, r.totalRequired].join('|');
@@ -1115,7 +1115,13 @@ async function buildAP2Mandate() {
   mandate.output_payload = _cgDomain;
   mandate.compliance_flags = [];
   mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
+  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  mandate.chaingraph_version = "0.4.0";
+  mandate['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  mandate.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  mandate.compute_mode = 'browser';
+  if (typeof mandate.tool_version === 'undefined') mandate.tool_version = '1.0.0';
+
   return mandate;
 }
 
@@ -1136,7 +1142,7 @@ async function exportAP2() {
   const mandate = await buildAP2Mandate();
   const result  = AP2Schema.validate(mandate);
   if (!result.valid) {
-    showToast('AP2 validation failed: ' + result.errors.join('; '), 'error');
+    showToast('Policy Mandate validation failed: ' + result.errors.join('; '), 'error');
     return;
   }
   const blob = new Blob([JSON.stringify(mandate, null, 2)], { type: 'application/json' });
@@ -1311,7 +1317,7 @@ function toggleMCP() {
   "mcp_tool_definition": {
     "name": "track_cpd_cpe_credits",
     "tool_number": "AL-18",
-    "description": "Tracks CPD/CPE credits for CPA, CLE, HR (SHRM/HRCI), and CME/CEU credentials. Computes gap to renewal deadline, ethics minimum status, and pace model. Returns AP2 cpd_credit_record mandate with downstream handoff candidates to AL-03 (Human Capital Engine) and AL-20 (Exam Cost Planner).",
+    "description": "Tracks CPD/CPE credits for CPA, CLE, HR (SHRM/HRCI), and CME/CEU credentials. Computes gap to renewal deadline, ethics minimum status, and pace model. Returns Policy Mandate cpd_credit_record mandate with downstream handoff candidates to AL-03 (Human Capital Engine) and AL-20 (Exam Cost Planner).",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1388,7 +1394,7 @@ const TRANSLATIONS = {
     lbl_hours_per_week: 'Available Hours / Week',
     err_no_data: 'Add at least one activity and fill in all required fields.',
     toast_exported: 'Report downloaded.',
-    toast_ap2: 'AP2 JSON downloaded.'
+    toast_ap2: 'Policy Mandate (JSON) downloaded.'
   },
   es: { lang_dir: 'ltr' },
   fr: { lang_dir: 'ltr' },
@@ -1570,7 +1576,7 @@ const MANIFEST = {
   "mcp_tool_definition": {
     "name": "track_cpd_cpe_credits",
     "tool_number": "AL-18",
-    "description": "Tracks CPD/CPE credits for CPA, CLE, HR (SHRM/HRCI), and CME/CEU credentials. Computes gap to renewal deadline, ethics minimum status, and pace model. Returns AP2 cpd_credit_record mandate with downstream handoff candidates to AL-03 (Human Capital Engine) and AL-20 (Exam Cost Planner).",
+    "description": "Tracks CPD/CPE credits for CPA, CLE, HR (SHRM/HRCI), and CME/CEU credentials. Computes gap to renewal deadline, ethics minimum status, and pace model. Returns Policy Mandate cpd_credit_record mandate with downstream handoff candidates to AL-03 (Human Capital Engine) and AL-20 (Exam Cost Planner).",
     "inputSchema": {
       "type": "object",
       "properties": {

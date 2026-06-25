@@ -358,7 +358,7 @@ nav{display:block;background:rgba(7,11,20,.92);backdrop-filter:blur(12px);border
           Export Markdown<span class="btn-sub">Cert ROI plan</span>
         </button>
         <button class="btn" id="ap2-btn-1" disabled onclick="exportAP2tab1()">
-          Export AP2 JSON<span class="btn-sub">human_capital_assessment</span>
+          Export Policy Mandate (JSON)<span class="btn-sub">human_capital_assessment</span>
         </button>
         <button class="btn btn-help" onclick="showAP2Help()">?</button>
       </div>
@@ -460,7 +460,7 @@ nav{display:block;background:rgba(7,11,20,.92);backdrop-filter:blur(12px);border
           Export Markdown<span class="btn-sub">Career capital report</span>
         </button>
         <button class="btn" id="ap2-btn-2" disabled onclick="exportAP2tab2()">
-          Export AP2 JSON<span class="btn-sub">human_capital_assessment</span>
+          Export Policy Mandate (JSON)<span class="btn-sub">human_capital_assessment</span>
         </button>
         <button class="btn btn-help" onclick="showAP2Help()">?</button>
       </div>
@@ -830,7 +830,7 @@ function runCareerCapital(){
   document.getElementById('results-2').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
-/* ══ AP2 / EXPORT UTILITIES ══ */
+/* ══ Policy Mandate / EXPORT UTILITIES ══ */
 const AP2Schema={
   required:['chaingraph_version','ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata'],
   validMandateTypes:['credential_roi_evaluation','human_capital_assessment','automation_exposure_score','career_resilience_score','workforce_program_roi','career_pivot_assessment','career_transition_record','scholarship_pipeline_plan','fafsa_sai_estimate','exam_pathway_plan','benefits_election_record','severance_decision_record','offer_negotiation_record','graduate_school_roi_record','apprenticeship_match_record','cpd_credit_record','job_search_roi_record','career_break_record',
@@ -854,7 +854,7 @@ async function apexHash(policy_parameters, output_payload) {
 }
 function tsCompact(){const d=new Date();return d.getFullYear()+(d.getMonth()+1).toString().padStart(2,'0')+d.getDate().toString().padStart(2,'0')+d.getHours().toString().padStart(2,'0')+d.getMinutes().toString().padStart(2,'0');}
 
-/* ─ AP2 Tab 1 ─ */
+/* ─ Policy Mandate Tab 1 ─ */
 async function buildMandateTab1(){
   const r=window._certResult;if(!r)return null;
   const m={
@@ -888,13 +888,19 @@ async function buildMandateTab1(){
   m.output_payload = _cgDomain;
   m.compliance_flags = [];
   m.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  m.execution_hash = await apexHash(m.policy_parameters, m.output_payload);
+  m.execution_hash = await apexHash(m.policy_parameters, m.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  m.chaingraph_version = "0.4.0";
+  m['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  m.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  m.compute_mode = 'browser';
+  if (typeof m.tool_version === 'undefined') m.tool_version = '1.0.0';
+
   const v=AP2Schema.validate(m);
-  if(!v.valid){showToast('AP2 validation failed: '+v.errors.join('; '),'error');return null;}
+  if(!v.valid){showToast('Policy Mandate validation failed: '+v.errors.join('; '),'error');return null;}
   return m;
 }
 
-/* ─ AP2 Tab 2 ─ */
+/* ─ Policy Mandate Tab 2 ─ */
 async function buildMandateTab2(){
   const r=window._capitalResult;if(!r)return null;
   const m={
@@ -930,14 +936,20 @@ async function buildMandateTab2(){
   m.output_payload = _cgDomain;
   m.compliance_flags = [];
   m.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  m.execution_hash = await apexHash(m.policy_parameters, m.output_payload);
+  m.execution_hash = await apexHash(m.policy_parameters, m.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  m.chaingraph_version = "0.4.0";
+  m['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  m.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  m.compute_mode = 'browser';
+  if (typeof m.tool_version === 'undefined') m.tool_version = '1.0.0';
+
   const v=AP2Schema.validate(m);
-  if(!v.valid){showToast('AP2 validation failed: '+v.errors.join('; '),'error');return null;}
+  if(!v.valid){showToast('Policy Mandate validation failed: '+v.errors.join('; '),'error');return null;}
   return m;
 }
 
-async function exportAP2tab1(){const m=await buildMandateTab1();if(!m)return;downloadJSON(m,'AL-03_cert-roi_'+tsCompact()+'.ap2.json');showToast('AP2 mandate downloaded ✓','success');}
-async function exportAP2tab2(){const m=await buildMandateTab2();if(!m)return;downloadJSON(m,'AL-03_career-capital_'+tsCompact()+'.ap2.json');showToast('AP2 mandate downloaded ✓','success');}
+async function exportAP2tab1(){const m=await buildMandateTab1();if(!m)return;downloadJSON(m,'AL-03_cert-roi_'+tsCompact()+'.ap2.json');showToast('Policy Mandate downloaded ✓','success');}
+async function exportAP2tab2(){const m=await buildMandateTab2();if(!m)return;downloadJSON(m,'AL-03_career-capital_'+tsCompact()+'.ap2.json');showToast('Policy Mandate downloaded ✓','success');}
 function downloadJSON(obj,filename){const b=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=filename;a.click();URL.revokeObjectURL(a.href);}
 
 /* ─ Markdown exports ─ */
@@ -1009,7 +1021,7 @@ function exportMarkdown2(){
 /* ── Toast ── */
 let toastTimer=null;
 function showToast(msg,type='success'){const t=document.getElementById('toast');t.textContent=msg;t.className=type;t.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.style.display='none';},4000);}
-function showAP2Help(){showToast('AP2 (Agent Purchase Protocol) — structured mandate for AI agent workflows. Learn more: ap2-protocol.org','success');}
+function showAP2Help(){showToast('Policy Mandate (Agent Purchase Protocol) — structured mandate for AI agent workflows. Learn more: ap2-protocol.org','success');}
 
 /* ── Init ── */
 initCertSelect();

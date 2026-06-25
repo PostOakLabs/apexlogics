@@ -205,7 +205,7 @@ input:focus,select:focus{outline:none;border-color:var(--border-focus);}
 
     <div class="results-export-row">
       <button class="export-btn" onclick="exportTransitionMD()">⬇ Markdown</button>
-      <button class="export-btn ap2" onclick="exportTransitionAP2()">⬇ AP2 JSON</button>
+      <button class="export-btn ap2" onclick="exportTransitionAP2()">⬇ Policy Mandate (JSON)</button>
     </div>
     </div>
 
@@ -242,7 +242,7 @@ function setLang(lang){
   setLang(s||({en:'en',es:'es',fr:'fr',ar:'ar',pt:'pt',zh:'zh'})[(navigator.language||'en').slice(0,2)]||'en');
 })();
 
-// ── AP2 Schema ─────────────────────────────────────────────────────────
+// ── Policy Mandate Schema ─────────────────────────────────────────────────────────
 const AP2Schema={
   validMandateTypes:['nursing_career_record','side_hustle_transition_record','l1_interference_spanish_record','game_theory_record'],
   validate(payload){
@@ -446,9 +446,15 @@ async function exportTransitionAP2() {
   payload.output_payload = _cgDomain;
   payload.compliance_flags = [];
   payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  payload.chaingraph_version = "0.4.0";
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
   const result=AP2Schema.validate(payload);
-  if(!result.valid){showToast('AP2 validation failed: '+result.error);return;}
+  if(!result.valid){showToast('Policy Mandate validation failed: '+result.error);return;}
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);

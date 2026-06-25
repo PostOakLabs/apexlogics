@@ -415,7 +415,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(7,11,20,.92);backdrop-filt
         </button>
         <button class="export-btn ap2" onclick="exportAP2()" data-i18n="btn_ap2">
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-          AP2 JSON
+          Policy Mandate (JSON)
         </button>
       </div>
     </div>
@@ -587,15 +587,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(7,11,20,.92);backdrop-filt
 
   
 
-  <!-- AP2 INBOUND -->
+  <!-- Policy Mandate INBOUND -->
   <div class="toggle-wrap">
     <div class="toggle-header" onclick="toggleSection('ap2-in')" id="ap2-in-hdr">
       <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="toggle-label" data-i18n="ap2_inbound_label">AP2 Inbound — Load from AL-25</span>
+      <span class="toggle-label" data-i18n="ap2_inbound_label">Policy Mandate Inbound — Load from AL-25</span>
     </div>
     <div class="toggle-body" id="ap2-in">
       <textarea id="ap2InText" placeholder='{"mandate_type":"offer_negotiation_record","payload":{...}}'></textarea>
-      <button class="load-btn" onclick="loadAP2Inbound()" data-i18n="ap2_load_btn">Load AP2 Payload</button>
+      <button class="load-btn" onclick="loadAP2Inbound()" data-i18n="ap2_load_btn">Load Policy Mandate Payload</button>
     </div>
   </div>
 
@@ -919,7 +919,7 @@ function toggleSection(id) {
   hdr.classList.toggle('open', open);
 }
 
-/* ── AP2 INBOUND ── */
+/* ── Policy Mandate INBOUND ── */
 function loadAP2Inbound() {
   try {
     const raw = document.getElementById('ap2InText').value.trim();
@@ -931,7 +931,7 @@ function loadAP2Inbound() {
       showAP2Badge('Loaded from AL-25 · Offer Negotiation Suite');
     }
     toggleSection('ap2-in');
-  } catch(e) { alert('Invalid AP2 JSON: ' + e.message); }
+  } catch(e) { alert('Invalid Policy Mandate (JSON): ' + e.message); }
 }
 
 function showAP2Badge(msg) {
@@ -1051,10 +1051,16 @@ async function exportAP2() {
   ap2.output_payload = _cgDomain;
   ap2.compliance_flags = [];
   ap2.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  ap2.execution_hash = await apexHash(ap2.policy_parameters, ap2.output_payload);
+  ap2.execution_hash = await apexHash(ap2.policy_parameters, ap2.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  ap2.chaingraph_version = "0.4.0";
+  ap2['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  ap2.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  ap2.compute_mode = 'browser';
+  if (typeof ap2.tool_version === 'undefined') ap2.tool_version = '1.0.0';
+
   const result = AP2Schema.validate(ap2);
   if (!result.valid) {
-    showToast('AP2 validation failed: ' + result.errors.join('; '), 'error');
+    showToast('Policy Mandate validation failed: ' + result.errors.join('; '), 'error');
     return;
   }
   download('freelance_1099_record.ap2.json', JSON.stringify(ap2, null, 2));
@@ -1118,7 +1124,7 @@ const STRINGS = {
     gap_title:"Gap Analysis — What Drives the Premium",
     quarterly_label:"Est. Quarterly Tax Payments",
     quarterly_dates:"Due: Apr 15 · Jun 16 · Sep 15 · Jan 15, 2027",
-    btn_md:"Export Markdown", btn_ap2:"AP2 JSON",
+    btn_md:"Export Markdown", btn_ap2:"Policy Mandate (JSON)",
     card_ded_context:"Income Context", card_ded_list:"2026 Deductions Checklist",
     lbl_ded_gross:"Estimated 1099 Annual Gross ($)",
     hint_ded_gross:"From Tab 1, or enter your expected contract rate.",
@@ -1143,8 +1149,8 @@ const STRINGS = {
     ded_equipment_name:"Equipment & Hardware (Section 179)",
     ded_equipment_desc:"Computers, monitors, peripherals. Section 179 allows full expensing in year of purchase.",
     unit_peryear:"$/yr",
-    ap2_inbound_label:"AP2 Inbound — Load from AL-25",
-    ap2_load_btn:"Load AP2 Payload"
+    ap2_inbound_label:"Policy Mandate Inbound — Load from AL-25",
+    ap2_load_btn:"Load Policy Mandate Payload"
   },
   es:{
     pii_banner:"🔒 Todos los datos se procesan localmente en tu navegador. No se transmite ningún dato.",
@@ -1184,7 +1190,7 @@ const STRINGS = {
     gap_title:"Análisis de Brecha — Qué Impulsa la Prima",
     quarterly_label:"Pagos Trimestrales de Impuestos Est.",
     quarterly_dates:"Vencimiento: 15 abr · 16 jun · 15 sep · 15 ene 2027",
-    btn_md:"Exportar Markdown", btn_ap2:"AP2 JSON",
+    btn_md:"Exportar Markdown", btn_ap2:"Policy Mandate (JSON)",
     card_ded_context:"Contexto de Ingresos", card_ded_list:"Lista de Deducciones 2026",
     lbl_ded_gross:"Ingreso Bruto 1099 Estimado ($)",
     hint_ded_gross:"Del Tab 1 o tu tarifa de contrato esperada.",
@@ -1209,8 +1215,8 @@ const STRINGS = {
     ded_equipment_name:"Equipo y Hardware (Sección 179)",
     ded_equipment_desc:"Computadoras, monitores, periféricos. La Sección 179 permite la deducción total en el año de compra.",
     unit_peryear:"$/año",
-    ap2_inbound_label:"AP2 Entrante — Cargar desde AL-25",
-    ap2_load_btn:"Cargar Payload AP2"
+    ap2_inbound_label:"Policy Mandate Entrante — Cargar desde AL-25",
+    ap2_load_btn:"Cargar Payload Policy Mandate"
   },
   fr:{
     pii_banner:"🔒 Toutes les données sont traitées localement dans votre navigateur. Aucune donnée n'est transmise.",
@@ -1250,7 +1256,7 @@ const STRINGS = {
     gap_title:"Analyse des Écarts — Ce Qui Motive la Prime",
     quarterly_label:"Paiements Trimestriels d'Impôts Est.",
     quarterly_dates:"Échéances: 15 avr · 16 juin · 15 sep · 15 jan 2027",
-    btn_md:"Exporter Markdown", btn_ap2:"AP2 JSON",
+    btn_md:"Exporter Markdown", btn_ap2:"Policy Mandate (JSON)",
     card_ded_context:"Contexte de Revenu", card_ded_list:"Liste de Déductions 2026",
     lbl_ded_gross:"Revenu Brut 1099 Estimé ($)",
     hint_ded_gross:"De l'onglet 1 ou votre taux contractuel attendu.",
@@ -1275,8 +1281,8 @@ const STRINGS = {
     ded_equipment_name:"Équipement et Matériel (Section 179)",
     ded_equipment_desc:"Ordinateurs, moniteurs, périphériques. Section 179 permet la déduction totale l'année d'achat.",
     unit_peryear:"$/an",
-    ap2_inbound_label:"AP2 Entrant — Charger depuis AL-25",
-    ap2_load_btn:"Charger le Payload AP2"
+    ap2_inbound_label:"Policy Mandate Entrant — Charger depuis AL-25",
+    ap2_load_btn:"Charger le Payload Policy Mandate"
   },
   ar:{
     pii_banner:"🔒 جميع البيانات تُعالج محليًا في متصفحك. لا تُرسل أي بيانات.",
@@ -1312,7 +1318,7 @@ const STRINGS = {
     gap_title:"تحليل الفجوة",
     quarterly_label:"دفعات الضرائب الربع سنوية المقدرة",
     quarterly_dates:"الاستحقاق: 15 أبر · 16 يون · 15 سبت · 15 يناير 2027",
-    btn_md:"تصدير Markdown", btn_ap2:"AP2 JSON",
+    btn_md:"تصدير Markdown", btn_ap2:"Policy Mandate (JSON)",
     card_ded_context:"سياق الدخل", card_ded_list:"قائمة تخفيضات 2026",
     lbl_ded_gross:"الإجمالي 1099 المقدر ($)",
     hint_ded_gross:"من التبويب 1 أو معدل عقدك المتوقع.",
@@ -1337,7 +1343,7 @@ const STRINGS = {
     ded_equipment_name:"المعدات والأجهزة (القسم 179)",
     ded_equipment_desc:"أجهزة الكمبيوتر والشاشات. يسمح القسم 179 بالخصم الكامل في سنة الشراء.",
     unit_peryear:"$/سنة",
-    ap2_inbound_label:"AP2 وارد — تحميل من AL-25",
+    ap2_inbound_label:"Policy Mandate وارد — تحميل من AL-25",
     ap2_load_btn:"تحميل AP2"
   },
   pt:{
@@ -1378,7 +1384,7 @@ const STRINGS = {
     gap_title:"Análise de Lacuna — O Que Impulsiona o Prêmio",
     quarterly_label:"Pagamentos Trimestrais de Impostos Est.",
     quarterly_dates:"Vencimento: 15 abr · 16 jun · 15 set · 15 jan 2027",
-    btn_md:"Exportar Markdown", btn_ap2:"AP2 JSON",
+    btn_md:"Exportar Markdown", btn_ap2:"Policy Mandate (JSON)",
     card_ded_context:"Contexto de Renda", card_ded_list:"Lista de Deduções 2026",
     lbl_ded_gross:"Renda Bruta 1099 Estimada ($)",
     hint_ded_gross:"Do Tab 1 ou sua taxa de contrato esperada.",
@@ -1403,8 +1409,8 @@ const STRINGS = {
     ded_equipment_name:"Equipamentos e Hardware (Seção 179)",
     ded_equipment_desc:"Computadores, monitores, periféricos. A Seção 179 permite dedução total no ano de compra.",
     unit_peryear:"$/ano",
-    ap2_inbound_label:"AP2 Entrada — Carregar de AL-25",
-    ap2_load_btn:"Carregar Payload AP2"
+    ap2_inbound_label:"Policy Mandate Entrada — Carregar de AL-25",
+    ap2_load_btn:"Carregar Payload Policy Mandate"
   },
   zh:{
     pii_banner:"🔒 所有输入均在您的浏览器中本地处理。不传输任何数据。",
@@ -1444,7 +1450,7 @@ const STRINGS = {
     gap_title:"差距分析 — 溢价驱动因素",
     quarterly_label:"预计季度税款",
     quarterly_dates:"到期：4月15日 · 6月16日 · 9月15日 · 2027年1月15日",
-    btn_md:"导出 Markdown", btn_ap2:"AP2 JSON",
+    btn_md:"导出 Markdown", btn_ap2:"Policy Mandate (JSON)",
     card_ded_context:"收入背景", card_ded_list:"2026年扣除项清单",
     lbl_ded_gross:"预计1099年总收入 ($)",
     hint_ded_gross:"来自标签1，或输入您的预期合同费率。",
@@ -1469,8 +1475,8 @@ const STRINGS = {
     ded_equipment_name:"设备和硬件（第179条）",
     ded_equipment_desc:"电脑、显示器、外设。第179条允许在购买年度全额扣除。",
     unit_peryear:"$/年",
-    ap2_inbound_label:"AP2 导入 — 从 AL-25 加载",
-    ap2_load_btn:"加载 AP2 数据"
+    ap2_inbound_label:"Policy Mandate 导入 — 从 AL-25 加载",
+    ap2_load_btn:"加载 Policy Mandate 数据"
   }
 };
 
@@ -1524,7 +1530,7 @@ function updateManifest() {
 })();
 
 // ════════════════════════════════════════════════════════════
-// AP2 INBOUND URL-PARAM DISPATCH — CONTRACT §6.4 / Appendix G
+// Policy Mandate INBOUND URL-PARAM DISPATCH — CONTRACT §6.4 / Appendix G
 // Reuses loadAP2Inbound() — same dispatcher as the paste fallback.
 // ════════════════════════════════════════════════════════════
 function parseAP2Inbound() {

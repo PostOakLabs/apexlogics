@@ -219,8 +219,8 @@
     <!-- EXPORT -->
     <div class="results-export-row">
       <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
-      <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download AP2 JSON</button>
-      <span class="ap2-hint">AP2 v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+      <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
     </div>
 
   </div>
@@ -550,7 +550,7 @@ function exportMarkdown() {
   dlFile('cert-renewal-forecast.md', lines.filter(Boolean).join('\n'), 'text/markdown');
 }
 
-// ── EXPORT: AP2 ───────────────────────────────────────────────────────────────
+// ── EXPORT: Policy Mandate ───────────────────────────────────────────────────────────────
 async function exportAP2() {
   if (!_lastResults) return;
   const r = _lastResults;
@@ -604,7 +604,13 @@ async function exportAP2() {
   payload.output_payload = _cgDomain;
   payload.compliance_flags = [];
   payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  payload.chaingraph_version = "0.4.0";
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
   const errs = [];
   ['ap2_version','chaingraph_version','mandate_type','generated_at','inputs'].forEach(k=>{if(!payload[k])errs.push('missing '+k);});
   const valid = [
@@ -614,7 +620,7 @@ async function exportAP2() {
     'signing_bonus_record','gig_income_record','cert_renewal_forecast_record'
   ];
   if (!valid.includes(payload.ap2_mandate_type)) errs.push('unknown mandate_type');
-  if (errs.length) { alert('AP2 validation failed: ' + errs.join('; ')); return; }
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
   const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
   dlFile(`AL-46_cert-renewal-forecast_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
 }
@@ -648,7 +654,7 @@ function toggleMCP() {
   "al_id": "AL-46",
   "version": "1.0.0",
   "title": "Certification Renewal Cost Forecaster",
-  "description": "6-year renewal cash-flow planner for up to 6 professional certifications. Embeds 19 credentials (PMP, CISSP, CPA, AWS, CompTIA, PE, CFA, SHRM, HRCI, ASQ, CCNA, CKA, and more) with renewal cycles, fees, CEU requirements, and study hour estimates. Detects collision years. AP2 v2.0: cert_renewal_forecast_record.",
+  "description": "6-year renewal cash-flow planner for up to 6 professional certifications. Embeds 19 credentials (PMP, CISSP, CPA, AWS, CompTIA, PE, CFA, SHRM, HRCI, ASQ, CCNA, CKA, and more) with renewal cycles, fees, CEU requirements, and study hour estimates. Detects collision years. Policy Mandate v2.0: cert_renewal_forecast_record.",
   "category": "licensing_credentials",
   "journeys": ["education_path", "career_navigation"],
   "personas": ["working_professional", "career_changer", "counselor"],
@@ -748,7 +754,7 @@ const MANIFEST = {
   "al_id": "AL-46",
   "version": "1.0.0",
   "title": "Certification Renewal Cost Forecaster",
-  "description": "6-year renewal cash-flow planner for up to 6 professional certifications. Embeds 19 credentials (PMP, CISSP, CPA, AWS, CompTIA, PE, CFA, SHRM, HRCI, ASQ, CCNA, CKA, CDL, and more) with renewal cycles, fees, CEU requirements, and study hour estimates. Detects collision years. AP2 v2.0: cert_renewal_forecast_record.",
+  "description": "6-year renewal cash-flow planner for up to 6 professional certifications. Embeds 19 credentials (PMP, CISSP, CPA, AWS, CompTIA, PE, CFA, SHRM, HRCI, ASQ, CCNA, CKA, CDL, and more) with renewal cycles, fees, CEU requirements, and study hour estimates. Detects collision years. Policy Mandate v2.0: cert_renewal_forecast_record.",
   "category": "licensing_credentials",
   "journeys": [
     "education_path",

@@ -246,10 +246,10 @@
   <div class="tab-pane" id="tabPane3">
     <div class="card">
       <div class="card-title">Export Item Bank</div>
-      <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:20px;">Export all saved items from your bank. The Markdown export produces a formatted item set suitable for pasting into a document. The AP2 export captures the last item built (current state of the Item Builder).</p>
+      <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:20px;">Export all saved items from your bank. The Markdown export produces a formatted item set suitable for pasting into a document. The Policy Mandate export captures the last item built (current state of the Item Builder).</p>
       <div class="results-export-row">
         <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown (All Items)</button>
-        <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON (Current Item)</button>
+        <button class="export-btn ap2" onclick="exportAP2()">⬇ Policy Mandate (JSON) (Current Item)</button>
       </div>
     </div>
   </div>
@@ -454,7 +454,7 @@ function renderBank() {
   `).join('');
 }
 
-// ── AP2 Schema ─────────────────────────────────────────────────────────────
+// ── Policy Mandate Schema ─────────────────────────────────────────────────────────────
 const AP2Schema = {
   validMandateTypes: [
     'job_transition_record','compensation_package_record','credential_roi_record','education_cost_record',
@@ -562,9 +562,15 @@ async function exportAP2() {
   payload.compliance_flags = [];
   payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
   payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  payload.chaingraph_version = "0.4.0";
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
 
   const result = AP2Schema.validate(payload);
-  if (!result.valid) { showToast('AP2 validation error: ' + result.error); return; }
+  if (!result.valid) { showToast('Policy Mandate validation error: ' + result.error); return; }
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);

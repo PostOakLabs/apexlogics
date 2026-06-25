@@ -220,7 +220,7 @@
         </div>
         <div class="results-export-row">
           <button class="export-btn" onclick="exportMd()">⬇ Markdown</button>
-          <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+          <button class="export-btn ap2" onclick="exportAP2()">⬇ Policy Mandate (JSON)</button>
         </div>
       </div>
     </div>
@@ -584,8 +584,14 @@ async function exportAP2() {
   payload.compliance_flags = [];
   payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
   payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  payload.chaingraph_version = "0.4.0";
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
 
-  if (!AP2Schema.validate(payload)) { showToast('AP2 validation failed.'); return; }
+  if (!AP2Schema.validate(payload)) { showToast('Policy Mandate validation failed.'); return; }
   download('error-correction-ap2.json', JSON.stringify(payload, null, 2), 'application/json');
 }
 

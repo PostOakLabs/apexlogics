@@ -284,9 +284,9 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);margin-top:12px
   <!-- PII BANNER -->
   <div class="pii-notice"><span>🔒</span><span data-i18n="pii">All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span></div>
 
-  <!-- AP2 paste button -->
+  <!-- Policy Mandate paste button -->
   <div style="margin-bottom:18px;">
-    <button class="export-btn" onclick="openAP2Modal()" style="font-size:.7rem;">⬇ Paste AP2 Input</button>
+    <button class="export-btn" onclick="openAP2Modal()" style="font-size:.7rem;">⬇ Paste Policy Mandate Input</button>
   </div>
 
   <!-- ══════════════════════════════════════════
@@ -294,7 +294,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);margin-top:12px
   ══════════════════════════════════════════ -->
   <div class="tab-section active" id="tab1">
 
-    <!-- Import badge (shown after AP2 inbound) -->
+    <!-- Import badge (shown after Policy Mandate inbound) -->
     <div class="import-badge" id="import-badge-tab1">✓ Imported from Offer Negotiation Suite (AL-25)</div>
 
     <!-- Overview Inputs -->
@@ -454,8 +454,8 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);margin-top:12px
       <!-- Export Row -->
       <div class="results-export-row">
         <button class="export-btn" id="t1MdBtn" onclick="downloadT1Markdown()" disabled>⬇ Download Markdown</button>
-        <button class="export-btn" id="t1Ap2Btn" onclick="downloadT1AP2()" disabled>⬇ Download AP2 JSON</button>
-        <button class="help-btn" title="AP2 JSON follows the job_search_roi_record mandate type. Validated before download." aria-label="Export help">ℹ</button>
+        <button class="export-btn" id="t1Ap2Btn" onclick="downloadT1AP2()" disabled>⬇ Download Policy Mandate (JSON)</button>
+        <button class="help-btn" title="Policy Mandate (JSON) follows the job_search_roi_record mandate type. Validated before download." aria-label="Export help">ℹ</button>
       </div>
     </div><!-- /tab1Results -->
 
@@ -595,8 +595,8 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);margin-top:12px
       <!-- Export Row -->
       <div class="results-export-row">
         <button class="export-btn" id="t2MdBtn" onclick="downloadT2Markdown()" disabled>⬇ Download Markdown</button>
-        <button class="export-btn" id="t2Ap2Btn" onclick="downloadT2AP2()" disabled>⬇ Download AP2 JSON</button>
-        <button class="help-btn" title="AP2 JSON follows the job_search_roi_record mandate type (tab: accept_vs_continue). Validated before download." aria-label="Export help">ℹ</button>
+        <button class="export-btn" id="t2Ap2Btn" onclick="downloadT2AP2()" disabled>⬇ Download Policy Mandate (JSON)</button>
+        <button class="help-btn" title="Policy Mandate (JSON) follows the job_search_roi_record mandate type (tab: accept_vs_continue). Validated before download." aria-label="Export help">ℹ</button>
       </div>
     </div><!-- /tab2Results -->
 
@@ -604,12 +604,12 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);margin-top:12px
 </div><!-- /container -->
 
 <!-- ══════════════════════════════════════════════
-     AP2 INBOUND MODAL
+     Policy Mandate INBOUND MODAL
 ══════════════════════════════════════════════ -->
 <div class="modal-overlay" id="ap2Modal">
   <div class="modal-box">
-    <div class="modal-title">Paste AP2 Mandate JSON</div>
-    <textarea id="ap2PasteArea" placeholder='Paste your AP2 JSON here. Accepted: offer_negotiation_record from AL-25.'></textarea>
+    <div class="modal-title">Paste Policy Mandate JSON</div>
+    <textarea id="ap2PasteArea" placeholder='Paste your Policy Mandate (JSON) here. Accepted: offer_negotiation_record from AL-25.'></textarea>
     <div class="modal-error" id="ap2ModalError"></div>
     <div class="modal-actions">
       <button class="modal-btn" onclick="processAP2Paste()">Import</button>
@@ -1170,7 +1170,7 @@ function setLang(lang) {
   });
 }
 
-/* ── AP2 INBOUND — URL PARAM ────────────── */
+/* ── Policy Mandate INBOUND — URL PARAM ────────────── */
 function parseAP2Inbound() {
   try {
     var params = new URLSearchParams(window.location.search);
@@ -1214,7 +1214,7 @@ function showImportBadge(tabId, sourceName) {
   }
 }
 
-/* ── AP2 PASTE MODAL ─────────────────────── */
+/* ── Policy Mandate PASTE MODAL ─────────────────────── */
 function openAP2Modal() {
   document.getElementById('ap2Modal').classList.add('open');
   document.getElementById('ap2PasteArea').value = '';
@@ -1233,14 +1233,14 @@ function processAP2Paste() {
     var mandate = JSON.parse(raw);
     applyAP2Mandate(mandate);
     closeAP2Modal();
-    showToast('AP2 mandate imported successfully.');
+    showToast('Policy Mandate imported successfully.');
   } catch(e) {
     errEl.textContent = 'Invalid JSON: ' + e.message;
     errEl.style.display = 'block';
   }
 }
 
-/* ── AP2 SCHEMA ──────────────────────────── */
+/* ── Policy Mandate SCHEMA ──────────────────────────── */
 var AP2Schema = {
   required: ['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version',
              'al_id','mandate_type','payload','summary','audit_metadata','chaingraph_version'],
@@ -1350,14 +1350,20 @@ async function buildTab1AP2() {
   mandate.output_payload = _cgDomain;
   mandate.compliance_flags = [];
   mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
+  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  mandate.chaingraph_version = "0.4.0";
+  mandate['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  mandate.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  mandate.compute_mode = 'browser';
+  if (typeof mandate.tool_version === 'undefined') mandate.tool_version = '1.0.0';
+
   return mandate;
 }
 
 async function downloadT1AP2() {
   var mandate = await buildTab1AP2();
   var errors  = AP2Schema.validate(mandate);
-  if (errors.length > 0) { showToast('AP2 validation error: ' + errors[0]); return; }
+  if (errors.length > 0) { showToast('Policy Mandate validation error: ' + errors[0]); return; }
   downloadJSON(mandate, 'AL-27-channel-roi.ap2.json');
 }
 
@@ -1452,7 +1458,13 @@ async function buildTab2AP2() {
   mandate.output_payload = _cgDomain;
   mandate.compliance_flags = [];
   mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
+  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  mandate.chaingraph_version = "0.4.0";
+  mandate['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  mandate.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  mandate.compute_mode = 'browser';
+  if (typeof mandate.tool_version === 'undefined') mandate.tool_version = '1.0.0';
+
   return mandate;
 }
 
@@ -1460,7 +1472,7 @@ async function downloadT2AP2() {
   if (!window._tab2Result) { showToast('Run the Tab 2 analysis first.', 'warn'); return; }
   var mandate = await buildTab2AP2();
   var errors  = AP2Schema.validate(mandate);
-  if (errors.length > 0) { showToast('AP2 validation error: ' + errors[0]); return; }
+  if (errors.length > 0) { showToast('Policy Mandate validation error: ' + errors[0]); return; }
   downloadJSON(mandate, 'AL-27-accept-vs-continue.ap2.json');
 }
 
@@ -1564,7 +1576,7 @@ function toggleMCP() {
   "mcp_tool_definition": {
     "name": "track_job_search_roi",
     "tool_number": "AL-27",
-    "description": "Model the expected ROI of job search effort by channel (referral, LinkedIn, recruiter, direct apply, cold outreach, job boards) using geometric probability models and NPV. Tab 1 computes EV/hour and channel ranking by expected offer timeline. Tab 2 computes the NPV delta of accepting a current offer vs. continuing to search, with break-even months and runway analysis. Returns two AP2-compliant mandates under job_search_roi_record: channel_roi (Tab 1) and accept_vs_continue (Tab 2). Accepts AP2 inbound from offer_negotiation_record (AL-25).",
+    "description": "Model the expected ROI of job search effort by channel (referral, LinkedIn, recruiter, direct apply, cold outreach, job boards) using geometric probability models and NPV. Tab 1 computes EV/hour and channel ranking by expected offer timeline. Tab 2 computes the NPV delta of accepting a current offer vs. continuing to search, with break-even months and runway analysis. Returns two Policy-Mandate-compliant mandates under job_search_roi_record: channel_roi (Tab 1) and accept_vs_continue (Tab 2). Accepts Policy Mandate inbound from offer_negotiation_record (AL-25).",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1713,7 +1725,7 @@ const MANIFEST = {
   "mcp_tool_definition": {
     "name": "track_job_search_roi",
     "tool_number": "AL-27",
-    "description": "Model the expected ROI of job search effort by channel (referral, LinkedIn, recruiter, direct apply, cold outreach, job boards) using geometric probability models and NPV. Tab 1 computes EV/hour and channel ranking by expected offer timeline. Tab 2 computes the NPV delta of accepting a current offer vs. continuing to search, with break-even months and runway analysis. Returns two AP2-compliant mandates under job_search_roi_record: channel_roi (Tab 1) and accept_vs_continue (Tab 2). Accepts AP2 inbound from offer_negotiation_record (AL-25).",
+    "description": "Model the expected ROI of job search effort by channel (referral, LinkedIn, recruiter, direct apply, cold outreach, job boards) using geometric probability models and NPV. Tab 1 computes EV/hour and channel ranking by expected offer timeline. Tab 2 computes the NPV delta of accepting a current offer vs. continuing to search, with break-even months and runway analysis. Returns two Policy-Mandate-compliant mandates under job_search_roi_record: channel_roi (Tab 1) and accept_vs_continue (Tab 2). Accepts Policy Mandate inbound from offer_negotiation_record (AL-25).",
     "inputSchema": {
       "type": "object",
       "properties": {

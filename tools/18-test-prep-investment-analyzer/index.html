@@ -407,8 +407,8 @@ select option { background:var(--bg-3); color:var(--bright); }
           Markdown
           <span class="btn-subtitle">report</span>
         </button>
-        <button class="btn ready" onclick="exportAP2()" title="AP2 JSON export">
-          AP2 JSON
+        <button class="btn ready" onclick="exportAP2()" title="Policy Mandate (JSON) export">
+          Policy Mandate (JSON)
           <span class="btn-subtitle">test_prep_roi_record</span>
         </button>
       </div>
@@ -572,7 +572,7 @@ const I18N = {
     btn_run_roi:"Calculate Prep ROI →",
     head_score_delta:"Score Projection", head_roi_breakdown:"ROI Breakdown",
     lbl_export:"Export", lbl_handoff:"Continue With",
-    toast_ap2:"AP2 JSON downloaded.", toast_md:"Markdown downloaded.",
+    toast_ap2:"Policy Mandate (JSON) downloaded.", toast_md:"Markdown downloaded.",
     err_invalid:"Enter a valid score to see analysis.",
     err_target_below:"Target score must be above current score."
   },
@@ -593,7 +593,7 @@ const I18N = {
     btn_run_roi:"Calcular ROI de Preparación →",
     head_score_delta:"Proyección de Puntaje", head_roi_breakdown:"Desglose de ROI",
     lbl_export:"Exportar", lbl_handoff:"Continuar Con",
-    toast_ap2:"JSON AP2 descargado.", toast_md:"Markdown descargado.",
+    toast_ap2:"JSON Policy Mandate descargado.", toast_md:"Markdown descargado.",
     err_invalid:"Ingresa un puntaje válido.", err_target_below:"El puntaje objetivo debe ser mayor al actual."
   },
   fr:{
@@ -613,7 +613,7 @@ const I18N = {
     btn_run_roi:"Calculer le ROI de Préparation →",
     head_score_delta:"Projection de Score", head_roi_breakdown:"Détail du ROI",
     lbl_export:"Exporter", lbl_handoff:"Continuer Avec",
-    toast_ap2:"JSON AP2 téléchargé.", toast_md:"Markdown téléchargé.",
+    toast_ap2:"JSON Policy Mandate téléchargé.", toast_md:"Markdown téléchargé.",
     err_invalid:"Entrez un score valide.", err_target_below:"Le score cible doit dépasser le score actuel."
   },
   ar:{
@@ -653,7 +653,7 @@ const I18N = {
     btn_run_roi:"Calcular ROI de Preparação →",
     head_score_delta:"Projeção de Pontuação", head_roi_breakdown:"Detalhamento do ROI",
     lbl_export:"Exportar", lbl_handoff:"Continuar Com",
-    toast_ap2:"JSON AP2 baixado.", toast_md:"Markdown baixado.",
+    toast_ap2:"JSON Policy Mandate baixado.", toast_md:"Markdown baixado.",
     err_invalid:"Insira uma pontuação válida.", err_target_below:"A pontuação alvo deve ser maior que a atual."
   },
   zh:{
@@ -673,7 +673,7 @@ const I18N = {
     btn_run_roi:"计算备考投资回报 →",
     head_score_delta:"分数预测", head_roi_breakdown:"投资回报细项",
     lbl_export:"导出", lbl_handoff:"继续前往",
-    toast_ap2:"AP2 JSON已下载。", toast_md:"Markdown已下载。",
+    toast_ap2:"Policy Mandate (JSON)已下载。", toast_md:"Markdown已下载。",
     err_invalid:"请输入有效分数。", err_target_below:"目标分数必须高于当前分数。"
   }
 };
@@ -974,7 +974,7 @@ function renderROIResults(r) {
     </div>`;
 }
 
-/* ─── AP2 EXPORT ─────────────────────────────────────────────── */
+/* ─── Policy Mandate EXPORT ─────────────────────────────────────────────── */
 const AP2Schema = {
   required: [
     'chaingraph_version','ap2_version','mandate_id','issued_at','issued_by',
@@ -1084,7 +1084,13 @@ async function buildAP2Mandate(r) {
   mandate.output_payload = _cgDomain;
   mandate.compliance_flags = [];
   mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
+  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  mandate.chaingraph_version = "0.4.0";
+  mandate['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  mandate.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  mandate.compute_mode = 'browser';
+  if (typeof mandate.tool_version === 'undefined') mandate.tool_version = '1.0.0';
+
   return mandate;
 }
 
@@ -1104,7 +1110,7 @@ async function exportAP2() {
   const mandate = await buildAP2Mandate(lastROIResult);
   const result = AP2Schema.validate(mandate);
   if (!result.valid) {
-    showToast('AP2 validation failed: ' + result.errors.join('; '), 'error');
+    showToast('Policy Mandate validation failed: ' + result.errors.join('; '), 'error');
     return;
   }
   downloadJSON(mandate, 'AL30_test_prep_roi.ap2.json');
@@ -1265,7 +1271,7 @@ function showToast(msg, type='') {
 })();
 
 // ════════════════════════════════════════════════════════════
-// AP2 INBOUND DISPATCH — CONTRACT §6.4 / Appendix G
+// Policy Mandate INBOUND DISPATCH — CONTRACT §6.4 / Appendix G
 // Accepts: mba_roi_evaluation  (from AL-29)
 // ════════════════════════════════════════════════════════════
 function parseAP2Inbound() {
@@ -1306,7 +1312,7 @@ function showImportBadge(src) {
   if (host) host.parentNode.insertBefore(b, host);
 }
 function openPasteModal() {
-  const json = prompt('Paste AP2 JSON mandate:');
+  const json = prompt('Paste Policy Mandate (JSON) mandate:');
   if (!json) return;
   try {
     const m = JSON.parse(json);
@@ -1315,7 +1321,7 @@ function openPasteModal() {
     if (!h) { alert('Unsupported mandate_type: ' + m.mandate_type); return; }
     h(m.payload || {}, m.al_id || 'Pasted');
     showImportBadge(m.al_id || 'Pasted');
-  } catch (e) { alert('Invalid AP2 JSON.'); }
+  } catch (e) { alert('Invalid Policy Mandate (JSON).'); }
 }
 document.addEventListener('DOMContentLoaded', parseAP2Inbound);
 

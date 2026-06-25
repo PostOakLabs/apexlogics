@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Federal vs. Private Sector Total Comp Comparator — ApexLogics AL-35</title>
-<meta name="description" content="Side-by-side federal GS vs. private sector total compensation analysis. Includes FERS pension NPV, TSP match, FEHB value, locality pay, leave value. Free, browser-only, zero PII. AP2-compliant.">
+<meta name="description" content="Side-by-side federal GS vs. private sector total compensation analysis. Includes FERS pension NPV, TSP match, FEHB value, locality pay, leave value. Free, browser-only, zero PII. Policy-Mandate-compliant.">
 <link rel="canonical" href="https://apexlogics.org/tools/30-federal-vs-private-comp-comparator/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -530,7 +530,7 @@ table.comp-table {
     <!-- Export -->
     <div class="export-row">
       <button class="export-btn" onclick="exportMarkdown()"><span class="export-icon">⬇</span> Download Markdown</button>
-      <button class="export-btn" onclick="exportAP2()"><span class="export-icon">⬇</span> Download AP2 JSON</button>
+      <button class="export-btn" onclick="exportAP2()"><span class="export-icon">⬇</span> Download Policy Mandate (JSON)</button>
     </div>
 
   </section>
@@ -834,7 +834,7 @@ function exportMarkdown() {
 }
 
 /* ════════════════════════════════════════════════════════════
-   EXPORT — AP2 JSON
+   EXPORT — Policy Mandate (JSON)
    ════════════════════════════════════════════════════════════ */
 async function exportAP2() {
   if (!lastResult) { alert('Run the comparison first.'); return; }
@@ -914,15 +914,21 @@ async function exportAP2() {
       license: "CC BY 4.0"
     }
   };
+  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  ap2.chaingraph_version = "0.4.0";
+  ap2['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  ap2.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  ap2.compute_mode = 'browser';
+  if (typeof ap2.tool_version === 'undefined') ap2.tool_version = '1.0.0';
 
-  // ── Validation (OpenChainGraph L1 + AP2 v2.0 compat, CONTRACT §3.3 / Appendix F2) ──
+  // ── Validation (OpenChainGraph L1 + Policy Mandate v2.0 compat, CONTRACT §3.3 / Appendix F2) ──
   const _ap2errs = [];
   ['chaingraph_version','ap2_mandate_type','generated_at','inputs'].forEach(k => { if (ap2[k] == null) _ap2errs.push('missing ' + k); });
   if (ap2.ap2_mandate_type && ![
     'ai_skills_premium_record','federal_comp_record','military_civilian_record',
     'noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record'
   ].includes(ap2.ap2_mandate_type)) _ap2errs.push('unknown ap2_mandate_type: ' + ap2.ap2_mandate_type);
-  if (_ap2errs.length) { alert('AP2 validation failed: ' + _ap2errs.join('; ')); return; }
+  if (_ap2errs.length) { alert('Policy Mandate validation failed: ' + _ap2errs.join('; ')); return; }
   download('federal-vs-private-comp.ap2.json', JSON.stringify(ap2, null, 2), 'application/json');
 }
 

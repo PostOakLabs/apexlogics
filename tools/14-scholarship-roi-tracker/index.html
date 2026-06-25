@@ -417,21 +417,21 @@ select option{background:var(--bg-3);}
 
     <hr class="section-divider">
 
-    <!-- EXPORT ROW (CONTRACT §4 — Markdown first, AP2 second, CSV third) -->
+    <!-- EXPORT ROW (CONTRACT §4 — Markdown first, Policy Mandate second, CSV third) -->
     <div class="results-export-row">
       <button class="btn" id="markdownExportBtn" disabled onclick="exportMarkdown()" aria-label="Export Markdown summary">
         <span data-i18n="export_md">Export Markdown</span>
         <span class="btn-subtitle" data-i18n="export_md_sub">Human-readable summary</span>
       </button>
-      <button class="btn" id="ap2ExportBtn" disabled onclick="exportAP2()" aria-label="Export AP2 mandate JSON">
-        <span data-i18n="export_ap2">Export AP2 JSON</span>
+      <button class="btn" id="ap2ExportBtn" disabled onclick="exportAP2()" aria-label="Export Policy Mandate JSON">
+        <span data-i18n="export_ap2">Export Policy Mandate (JSON)</span>
         <span class="btn-subtitle" data-i18n="export_ap2_sub">Agent integration · audit trail</span>
       </button>
       <button class="btn" id="csvExportBtn" disabled onclick="exportCSV()" aria-label="Export CSV pipeline">
         <span data-i18n="export_csv">Export CSV</span>
         <span class="btn-subtitle" data-i18n="export_csv_sub">Full pipeline table</span>
       </button>
-      <button class="btn btn-help" onclick="showAP2Help()" aria-label="What is AP2?" title="What is AP2?">?</button>
+      <button class="btn btn-help" onclick="showAP2Help()" aria-label="What is Policy Mandate?" title="What is Policy Mandate?">?</button>
     </div>
 
   </div><!-- /results-panel -->
@@ -500,7 +500,7 @@ const SCHOL_STATUSES = [
 ];
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   §2  AP2 SCHEMA VALIDATOR (CONTRACT Appendix F)
+   §2  Policy Mandate SCHEMA VALIDATOR (CONTRACT Appendix F)
    ═══════════════════════════════════════════════════════════════════════════ */
 const AP2Schema = {
   required: ['chaingraph_version','ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata'],
@@ -576,7 +576,7 @@ const TRANSLATIONS = {
     th_annual:'Annual ($)', th_years:'Yrs', th_total:'Total Value ($)',
     th_renewal:'Renewal', th_deadline:'Deadline',
     export_md:'Export Markdown', export_md_sub:'Human-readable summary',
-    export_ap2:'Export AP2 JSON', export_ap2_sub:'Agent integration · audit trail',
+    export_ap2:'Export Policy Mandate (JSON)', export_ap2_sub:'Agent integration · audit trail',
     export_csv:'Export CSV', export_csv_sub:'Full pipeline table',
     mcp_label:'MCP Discovery · manifest.json',
     mcp_desc:'Machine-readable tool manifest for AI agent discovery via Model Context Protocol.'
@@ -1028,7 +1028,7 @@ function exportMarkdown() {
   showToast('Markdown exported', 'success');
 }
 
-// § AP2 export (CONTRACT §3.3)
+// § Policy Mandate export (CONTRACT §3.3)
 async function buildAP2Mandate() {
   if (!_lastResults) return null;
   const r = _lastResults;
@@ -1123,7 +1123,13 @@ async function buildAP2Mandate() {
   mandate.output_payload = _cgDomain;
   mandate.compliance_flags = [];
   mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
+  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  mandate.chaingraph_version = "0.4.0";
+  mandate['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  mandate.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  mandate.compute_mode = 'browser';
+  if (typeof mandate.tool_version === 'undefined') mandate.tool_version = '1.0.0';
+
   return mandate;
 }
 
@@ -1143,7 +1149,7 @@ async function exportAP2() {
   if (!mandate) { showToast('Run analysis first', 'error'); return; }
   const result = AP2Schema.validate(mandate);
   if (!result.valid) {
-    showToast('AP2 validation failed: ' + result.errors.join('; '), 'error');
+    showToast('Policy Mandate validation failed: ' + result.errors.join('; '), 'error');
     return;
   }
   const blob = new Blob([JSON.stringify(mandate, null, 2)], { type:'application/json' });
@@ -1152,7 +1158,7 @@ async function exportAP2() {
   a.download = `AL-12_scholarship-roi-tracker_${tsCompact()}.ap2.json`;
   a.click();
   URL.revokeObjectURL(a.href);
-  showToast('AP2 mandate exported', 'success');
+  showToast('Policy Mandate exported', 'success');
 }
 
 // § CSV export (Tier 2 — full pipeline table)
@@ -1196,7 +1202,7 @@ function exportCSV() {
 }
 
 function showAP2Help() {
-  showToast('AP2 (Agent Purchase Protocol) is Google\'s agent authorization standard. This file carries your scholarship scenario to other tools. Learn more: ap2-protocol.org', 'info');
+  showToast('Policy Mandate (Agent Purchase Protocol) is Google\'s agent authorization standard. This file carries your scholarship scenario to other tools. Learn more: ap2-protocol.org', 'info');
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
