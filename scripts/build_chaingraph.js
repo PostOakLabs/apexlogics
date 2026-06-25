@@ -86,13 +86,53 @@ function getPrimaryMandateType(m) {
   return null;
 }
 
-/** Normalize tool URL — prefer manifest.tool_url, fall back to computed. */
+/** Normalize tool URL — schema node.url requires ^https:// (full absolute URL). */
 function getUrl(m) {
-  if (m.tool_url && m.tool_url.startsWith('https://')) {
-    // Return path-only form for portability
-    return m.tool_url.replace('https://apexlogics.org', '');
+  if (m.tool_url && m.tool_url.startsWith('https://')) return m.tool_url;
+  return `https://apexlogics.org/tools/${m.tool_id}/`;
+}
+
+/** Map manifest status to the OCG node enum: live | planned | deprecated. */
+function mapStatus(s) {
+  const x = (s || '').toLowerCase();
+  if (x.startsWith('absorbed') || ['retired', 'deprecated', 'cut'].includes(x)) return 'deprecated';
+  if (['planned', 'spec', 'draft', 'speced'].includes(x)) return 'planned';
+  return 'live'; // shipped / live / active / unknown -> live
+}
+
+/** Node description (required, minLength 1). */
+function getDescription(m) {
+  const d = m.description
+    || (m.mcp_tool_definition && m.mcp_tool_definition.description)
+    || m.title || m.tool_id || '';
+  return String(d).slice(0, 500);
+}
+
+/** mcp_name fallback that satisfies ^[a-z][a-z0-9_]*$ when no manifest name exists. */
+function safeMcpName(m) {
+  const n = getMcpName(m);
+  if (n && /^[a-z][a-z0-9_]*$/.test(n)) return n;
+  return 'tool_' + String(m.tool_id).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/_+$/g, '');
+}
+
+/** Build chains[] from the catalog's journeys[] (themes -> sub_journeys -> AL-ID node lists). */
+function buildChains(graph, alToTool) {
+  const chains = [];
+  for (const j of (graph.journeys || [])) {
+    const subs = [];
+    for (const th of (j.themes || [])) for (const sj of (th.sub_journeys || [])) subs.push(sj);
+    for (const sj of (j.sub_journeys || [])) subs.push(sj);
+    for (const sj of subs) {
+      if (!sj.id || !Array.isArray(sj.nodes)) continue;
+      chains.push({
+        name: sj.id,
+        title: sj.label || sj.id,
+        persona: j.persona || j.id,
+        steps: sj.nodes.map(al => ({ tool_id: alToTool[al] || al })),
+      });
+    }
   }
-  return `/tools/${m.tool_id}/`;
+  return chains;
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────────
@@ -115,6 +155,7 @@ function main() {
   for (const dir of toolDirs) {
     const m = readManifest(dir);
     if (!m) { console.log(`  skip (no manifest): ${dir}`); continue; }
+    if (!m.tool_id) m.tool_id = dir; // dir name == slug == tool_id by convention
     if (RETIRED_AL_IDS.has(m.al_id)) {
       console.log(`  skip (retired): ${dir} → ${m.al_id}`);
       continue;
@@ -168,20 +209,29 @@ function main() {
       : null;
 
     const node = {
+      // --- OCG v0.5 strict node required fields ---
       tool_id:      m.tool_id,
-      al_id:        alId,
+      tool_version: m.version || '1.0.0',
       display_name: m.title || m.name || m.tool_id,
-      mcp_name:     getMcpName(m),
-      mandate_type: getPrimaryMandateType(m),
-      all_mandate_types: Array.isArray(m.ap2_mandate_types) ? m.ap2_mandate_types : [],
-      category:     m.category || null,
-      persona:      personaRaw,
+      mcp_name:     safeMcpName(m),
+      mandate_type: getPrimaryMandateType(m) || 'apexlogics_tool_record',
+      wave:         m.category || 'apexlogics',
+      gpu:          false,
       url:          getUrl(m),
+      description:  getDescription(m),
+      input_schema_ref: `tools/${m.tool_id}/manifest.json#input_schema`,
       consumes,
       feeds,
-      data_vintage: m.data_vintage || null,
-      status:       m.status || 'unknown',
+      status:       mapStatus(m.status),
+      compute_capability: 'client',
+      // --- ApexLogics-specific optional fields (shared-schema ainumbers#43) ---
+      al_id:        alId,
+      all_mandate_types: Array.isArray(m.ap2_mandate_types) ? m.ap2_mandate_types : [],
     };
+    // omit null optionals rather than emit nulls (schema: persona/category are strings)
+    if (personaRaw)      node.persona = personaRaw;
+    if (m.category)      node.category = m.category;
+    if (m.data_vintage)  node.data_vintage = m.data_vintage;
 
     nodes.push(node);
   }
@@ -213,13 +263,19 @@ function main() {
     }
   }
 
-  // 9. Update graph JSON.
-  graph.version        = '1.0.0';
-  graph.status         = 'generated';
-  graph.generated_at   = new Date().toISOString().slice(0, 10);
-  graph.generated_from = 'scripts/build_chaingraph.js';
-  graph.node_count     = nodes.length;
-  graph.nodes          = nodes;
+  // 9. Update graph JSON (OCG v0.5 strict catalog: spec_version + nodes + chains).
+  const alToTool = {};
+  for (const n of nodes) alToTool[n.al_id] = n.tool_id;
+  graph.spec_version        = '0.5.0';
+  graph['ocg:spec_version'] = '0.5.0';
+  graph.chains              = buildChains(graph, alToTool);
+  graph.version             = '5.0.0';
+  graph.status              = 'generated';
+  graph.generated_at        = new Date().toISOString().slice(0, 10);
+  graph.generated_from      = 'scripts/build_chaingraph.js';
+  graph.node_count          = nodes.length;
+  graph.chain_count         = graph.chains.length;
+  graph.nodes               = nodes;
   // Remove provisional sample (kept metadata note)
   delete graph.nodes_sample;
 

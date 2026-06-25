@@ -280,8 +280,8 @@
     <!-- EXPORT ROW -->
     <div class="results-export-row">
       <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
-      <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download AP2 JSON</button>
-      <span class="ap2-hint">AP2 v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+      <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
     </div>
 
   </div><!-- /results-section -->
@@ -625,7 +625,7 @@ function exportMarkdown() {
   dlFile('workforce-pell-credential-ranker.md', lines.join('\n'), 'text/markdown');
 }
 
-// ── EXPORT: AP2 ───────────────────────────────────────────────────────────────
+// ── EXPORT: Policy Mandate ───────────────────────────────────────────────────────────────
 async function exportAP2() {
   if (!_results) return;
   const r = _results;
@@ -674,14 +674,20 @@ async function exportAP2() {
   payload.output_payload = _cgDomain;
   payload.compliance_flags = [];
   payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  payload.chaingraph_version = "0.4.0";
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
   const errs = [];
   ['ap2_version','chaingraph_version','mandate_type','generated_at','inputs'].forEach(k=>{if(!payload[k])errs.push('missing '+k);});
   const valid = ['ai_skills_premium_record','federal_comp_record','military_civilian_record',
     'noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record',
     'workforce_pell_record','workforce_pell_credential_rank'];
   if (!valid.includes(payload.ap2_mandate_type)) errs.push('unknown mandate_type');
-  if (errs.length) { alert('AP2 validation failed: ' + errs.join('; ')); return; }
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
   const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
   dlFile(`AL-42_workforce-pell-credential-ranker_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
 }
@@ -716,7 +722,7 @@ function toggleMCP() {
   "al_id": "AL-42",
   "version": "1.0.0",
   "title": "Workforce Pell Credential Value Ranker",
-  "description": "Ranks 21 Workforce Pell-eligible short-term credentials by ROI, wage gain, demand, and Pell coverage — personalized to the user's base Pell eligibility. Embeds BLS OEWS May 2023 wage data and BLS OOH 2024-34 demand projections for 21 credentials across healthcare, IT/cyber, skilled trades, manufacturing, transportation, and financial services. AP2 v2.0 mandate type: workforce_pell_credential_rank.",
+  "description": "Ranks 21 Workforce Pell-eligible short-term credentials by ROI, wage gain, demand, and Pell coverage — personalized to the user's base Pell eligibility. Embeds BLS OEWS May 2023 wage data and BLS OOH 2024-34 demand projections for 21 credentials across healthcare, IT/cyber, skilled trades, manufacturing, transportation, and financial services. Policy Mandate v2.0 mandate type: workforce_pell_credential_rank.",
   "category": "workforce_development",
   "journeys": ["education_path", "career_navigation"],
   "personas": ["student", "career_changer", "working_professional", "counselor"],
@@ -804,7 +810,7 @@ const MANIFEST = {
   "al_id": "AL-42",
   "version": "1.0.0",
   "title": "Workforce Pell Credential Value Ranker",
-  "description": "Ranks 21 Workforce Pell-eligible short-term credentials by ROI, wage gain, demand, and Pell coverage — personalized to the user's base Pell eligibility. Embeds BLS OEWS May 2023 wages and BLS OOH 2024-34 projections for healthcare, IT/cyber, skilled trades, manufacturing, transportation, and financial services. AP2 v2.0 mandate type: workforce_pell_credential_rank.",
+  "description": "Ranks 21 Workforce Pell-eligible short-term credentials by ROI, wage gain, demand, and Pell coverage — personalized to the user's base Pell eligibility. Embeds BLS OEWS May 2023 wages and BLS OOH 2024-34 projections for healthcare, IT/cyber, skilled trades, manufacturing, transportation, and financial services. Policy Mandate v2.0 mandate type: workforce_pell_credential_rank.",
   "category": "workforce_development",
   "journeys": [
     "education_path",

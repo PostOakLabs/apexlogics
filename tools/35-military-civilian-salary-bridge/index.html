@@ -726,7 +726,7 @@
       <div class="card-title">Export Results</div>
       <div class="results-export-row">
         <button class="export-btn md" onclick="exportMarkdown()">⬇ Download Markdown</button>
-        <button class="export-btn ap2" onclick="exportAP2()">⬇ Download AP2 JSON</button>
+        <button class="export-btn ap2" onclick="exportAP2()">⬇ Download Policy Mandate (JSON)</button>
       </div>
     </div>
 
@@ -1132,15 +1132,21 @@ async function exportAP2() {
   ap2.compliance_flags = [];
   ap2.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
   ap2.execution_hash = await apexHash(ap2.policy_parameters, ap2.output_payload);
+  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  ap2.chaingraph_version = "0.4.0";
+  ap2['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  ap2.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  ap2.compute_mode = 'browser';
+  if (typeof ap2.tool_version === 'undefined') ap2.tool_version = '1.0.0';
 
-  // ── AP2 v2.0 validation — validate before emit (CONTRACT §3.3 / Appendix F2) ──
+  // ── Policy Mandate v2.0 validation — validate before emit (CONTRACT §3.3 / Appendix F2) ──
   const _ap2errs = [];
   ['ap2_version','ap2_mandate_type','generated_at','inputs'].forEach(k => { if (payload[k] == null) _ap2errs.push('missing ' + k); });
   if (payload.mandate_type && ![
     'ai_skills_premium_record','federal_comp_record','military_civilian_record',
     'noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record'
   ].includes(payload.mandate_type)) _ap2errs.push('unknown mandate_type: ' + payload.mandate_type);
-  if (_ap2errs.length) { alert('AP2 validation failed: ' + _ap2errs.join('; ')); return; }
+  if (_ap2errs.length) { alert('Policy Mandate validation failed: ' + _ap2errs.join('; ')); return; }
   downloadFile('military-civilian-bridge-ap2.json', JSON.stringify(payload, null, 2), 'application/json');
 }
 

@@ -155,7 +155,7 @@
     </div>
     <div class="results-export-row">
       <button class="export-btn" onclick="exportMD2()">⬇ Markdown</button>
-      <button class="export-btn ap2" onclick="exportAP2_2()">⬇ AP2 JSON</button>
+      <button class="export-btn ap2" onclick="exportAP2_2()">⬇ Policy Mandate (JSON)</button>
     </div>
   </div>
 
@@ -177,7 +177,7 @@
     </div>
     <div class="results-export-row">
       <button class="export-btn" onclick="exportMD2()">⬇ Markdown</button>
-      <button class="export-btn ap2" onclick="exportAP2_2()">⬇ AP2 JSON</button>
+      <button class="export-btn ap2" onclick="exportAP2_2()">⬇ Policy Mandate (JSON)</button>
     </div>
   </div>
 
@@ -188,7 +188,7 @@
     <button class="toggle-btn" style="margin-top:8px;" onclick="resetQuiz()">Reset Quiz</button>
     <div class="results-export-row">
       <button class="export-btn" onclick="exportMD2()">⬇ Markdown</button>
-      <button class="export-btn ap2" onclick="exportAP2_2()">⬇ AP2 JSON</button>
+      <button class="export-btn ap2" onclick="exportAP2_2()">⬇ Policy Mandate (JSON)</button>
     </div>
   </div>
 </div>
@@ -523,9 +523,15 @@ async function exportAP2_2() {
   d.compliance_flags = [];
   d.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
   d.execution_hash = await apexHash(d.policy_parameters, d.output_payload);
+  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  d.chaingraph_version = "0.4.0";
+  d['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  d.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  d.compute_mode = 'browser';
+  if (typeof d.tool_version === 'undefined') d.tool_version = '1.0.0';
 
   const res = AP2Schema.validate(d);
-  if (!res.valid) { showToast('AP2 validation error: ' + res.error); return; }
+  if (!res.valid) { showToast('Policy Mandate validation error: ' + res.error); return; }
   const blob = new Blob([JSON.stringify(d, null, 2)], {type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'phillips-curve-ap2.json'; a.click();
 }

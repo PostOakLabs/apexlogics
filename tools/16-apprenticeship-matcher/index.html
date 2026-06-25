@@ -501,7 +501,7 @@ optgroup { color:var(--teal); font-style:normal; font-weight:600; }
        ════════════════════════════════════════════════════════════ -->
   <div class="results-panel" id="resultsPanel" role="region" aria-label="Apprenticeship Match Results" aria-live="polite">
 
-    <!-- 1. EXPORT ROW — CONTRACT §3.3: Markdown first, AP2 second, ? help -->
+    <!-- 1. EXPORT ROW — CONTRACT §3.3: Markdown first, Policy Mandate second, ? help -->
     <div class="results-export-row" aria-label="Export options">
       <span class="export-label" data-i18n="export_label">Export</span>
       <button class="btn" id="markdownExportBtn" disabled onclick="exportMarkdown()" title="Export human-readable Markdown summary">
@@ -509,10 +509,10 @@ optgroup { color:var(--teal); font-style:normal; font-weight:600; }
         <span class="btn-subtitle">Human-readable summary</span>
       </button>
       <button class="btn" id="ap2ExportBtn" disabled onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">
-        Export AP2 JSON
+        Export Policy Mandate (JSON)
         <span class="btn-subtitle">Agent integration · audit trail</span>
       </button>
-      <button class="btn-help" onclick="showAP2Help()" aria-label="What is AP2?">?</button>
+      <button class="btn-help" onclick="showAP2Help()" aria-label="What is Policy Mandate?">?</button>
     </div>
 
     <!-- 2. PROGRAM OVERVIEW -->
@@ -554,11 +554,11 @@ optgroup { color:var(--teal); font-style:normal; font-weight:600; }
 <!-- ════ TOAST ════ -->
 <div class="toast" id="toastEl" role="alert" aria-live="assertive"></div>
 
-<!-- ════ AP2 HELP POPOVER ════ -->
-<div class="popover-overlay" id="ap2PopoverOverlay" role="dialog" aria-modal="true" aria-label="About AP2" onclick="closePopover(event)">
+<!-- ════ Policy Mandate HELP POPOVER ════ -->
+<div class="popover-overlay" id="ap2PopoverOverlay" role="dialog" aria-modal="true" aria-label="About Policy Mandate" onclick="closePopover(event)">
   <div class="popover-box">
-    <h4>About AP2 (Agent Purchase Protocol)</h4>
-    <p>AP2 is Google's open agent authorization standard (announced September 2025). Exporting your results as an AP2 JSON file lets an AI agent carry your apprenticeship scenario — occupation, wages, ROI — directly into a downstream tool like the Credential ROI Suite (AL-02) or Workforce Board ROI Report (AL-07) without re-entering data.</p>
+    <h4>About Policy Mandate (Agent Purchase Protocol)</h4>
+    <p>Policy Mandate is Google's open agent authorization standard (announced September 2025). Exporting your results as a Policy Mandate (JSON) file lets an AI agent carry your apprenticeship scenario — occupation, wages, ROI — directly into a downstream tool like the Credential ROI Suite (AL-02) or Workforce Board ROI Report (AL-07) without re-entering data.</p>
     <p style="margin-top:8px; font-size:.74rem; color:var(--muted);">Learn more: <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">ap2-protocol.org</a></p>
     <button class="popover-close" onclick="document.getElementById('ap2PopoverOverlay').classList.remove('show')">Close</button>
   </div>
@@ -1183,7 +1183,7 @@ function renderApply(r) {
           ${occ.sponsor === 'joint labor-management'
             ? `reach out to the relevant union local or Joint Apprenticeship Training Committee (JATC). Find contacts through your state's AFL-CIO or the relevant international union (e.g. IBEW for electricians, UA for plumbers).`
             : `apply directly through the employer sponsor's HR or training department. Look for "Registered Apprenticeship" or "Earn-and-Learn" listings on company career pages and at workforce training centers.`}
-          Export your AP2 JSON record above to carry program details into follow-up tools like the
+          Export your Policy Mandate (JSON) record above to carry program details into follow-up tools like the
           <a href="../credential-roi-suite/">Credential ROI Suite (AL-02)</a> or
           <a href="../workforce-board-roi-report/">Workforce Board ROI Report (AL-07)</a>.
         </div>
@@ -1272,8 +1272,8 @@ function exportMarkdown() {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   AP2 SCHEMA VALIDATOR — inline per CONTRACT §8 Appendix F
-   Must be called before every AP2 download per CONTRACT §3.3
+   Policy Mandate SCHEMA VALIDATOR — inline per CONTRACT §8 Appendix F
+   Must be called before every Policy Mandate download per CONTRACT §3.3
    ───────────────────────────────────────────────────────────────── */
 const AP2Schema = {
   required: [
@@ -1321,7 +1321,7 @@ const AP2Schema = {
    Produces a UUID-shaped string from a hash of the key inputs.
    Does NOT use Math.random() — deterministic per CONTRACT §0.
    Same occupation + state + income in the same minute → same ID,
-   enabling idempotent AP2 records in agent pipelines.
+   enabling idempotent Policy Mandate records in agent pipelines.
    ───────────────────────────────────────────────────────────────── */
 function deterministicUUID(occ, state, income) {
   // Round timestamp to current minute for determinism within a session
@@ -1348,7 +1348,7 @@ function deterministicUUID(occ, state, income) {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   AP2 MANDATE BUILDER — CONTRACT §3.1
+   Policy Mandate MANDATE BUILDER — CONTRACT §3.1
    mandate_type: 'apprenticeship_match_record' (AL-11)
    downstream_handoff_candidates: AL-02, AL-07 per CONTRACT §6.3
    ───────────────────────────────────────────────────────────────── */
@@ -1442,7 +1442,13 @@ async function buildAP2Mandate() {
   mandate.output_payload = _cgDomain;
   mandate.compliance_flags = [];
   mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
+  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  mandate.chaingraph_version = "0.4.0";
+  mandate['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  mandate.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  mandate.compute_mode = 'browser';
+  if (typeof mandate.tool_version === 'undefined') mandate.tool_version = '1.0.0';
+
   return mandate;
 }
 
@@ -1458,19 +1464,19 @@ async function apexHash(policy_parameters, output_payload) {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   AP2 EXPORT — validates before download (CONTRACT §3.3 hard rule)
+   Policy Mandate EXPORT — validates before download (CONTRACT §3.3 hard rule)
    ───────────────────────────────────────────────────────────────── */
 async function exportAP2() {
   if (!lastResult) { showToast('Run the analysis first.', 'error'); return; }
   const mandate = await buildAP2Mandate();
   const result  = AP2Schema.validate(mandate);
   if (!result.valid) {
-    showToast('AP2 validation failed: ' + result.errors.join('; '), 'error');
+    showToast('Policy Mandate validation failed: ' + result.errors.join('; '), 'error');
     return;
   }
   const json = JSON.stringify(mandate, null, 2);
   download(json, `AL-11_apprenticeship-matcher_${tsCompact()}.ap2.json`, 'application/json');
-  showToast('AP2 mandate exported.', 'success');
+  showToast('Policy Mandate exported.', 'success');
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -1530,7 +1536,7 @@ function toggleMCP() {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   AP2 HELP POPOVER — CONTRACT Appendix C
+   Policy Mandate HELP POPOVER — CONTRACT Appendix C
    ───────────────────────────────────────────────────────────────── */
 function showAP2Help() {
   document.getElementById('ap2PopoverOverlay').classList.add('show');
@@ -1719,7 +1725,7 @@ const MANIFEST = {
   "mcp_tool_definition": {
     "name": "match_apprenticeship_program",
     "tool_number": "AL-11",
-    "description": "Given an occupation and optionally a state and current income, returns DOL RAPIDS registered apprenticeship program data including wage progression model, cumulative earnings during program, opportunity cost analysis, and AP2 mandate for downstream handoff to AL-02 or AL-07.",
+    "description": "Given an occupation and optionally a state and current income, returns DOL RAPIDS registered apprenticeship program data including wage progression model, cumulative earnings during program, opportunity cost analysis, and Policy Mandate for downstream handoff to AL-02 or AL-07.",
     "inputSchema": {
       "type": "object",
       "properties": {

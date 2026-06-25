@@ -255,7 +255,7 @@ tr:last-child td{border-bottom:none}
 
     <div class="results-export-row">
       <button class="btn-sec" onclick="exportMarkdown()">⬇ Download Markdown</button>
-      <button class="btn-sec" onclick="exportAP2()">⬇ Download AP2 JSON</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ Download Policy Mandate (JSON)</button>
     </div>
 
   </div>
@@ -415,7 +415,7 @@ const AP2Schema = {
   VALID_MANDATE_TYPES: ['gi_bill_benefit_record'],
   validate(obj) {
     const required = ['ap2_version','mandate_type','generated_at','al_id','tool_id','inputs','outputs','downstream_handoff_candidates','metadata','chaingraph_version'];
-    for (const f of required) { if (!(f in obj)) throw new Error(`AP2 missing: ${f}`); }
+    for (const f of required) { if (!(f in obj)) throw new Error(`Policy Mandate missing: ${f}`); }
     if (!this.VALID_MANDATE_TYPES.includes(obj.ap2_mandate_type)) throw new Error(`Unknown mandate_type: ${obj.ap2_mandate_type}`);
     if (obj.ap2_version !== '2.0') throw new Error('ap2_version must be "2.0"');
     return true;
@@ -463,8 +463,14 @@ async function exportAP2() {
   payload.output_payload = _cgDomain;
   payload.compliance_flags = [];
   payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
-  try { AP2Schema.validate(payload); } catch(e) { alert('AP2 validation error: ' + e.message); return; }
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  payload.chaingraph_version = "0.4.0";
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  try { AP2Schema.validate(payload); } catch(e) { alert('Policy Mandate validation error: ' + e.message); return; }
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = 'AL-132-gi-bill-benefit-maximizer.ap2.json'; a.click();

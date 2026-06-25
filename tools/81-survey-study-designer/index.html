@@ -501,7 +501,7 @@
 
     <div class="results-export-row">
       <button class="export-btn" onclick="exportMarkdown()">📄 Export Research Memo (Markdown)</button>
-      <button class="export-btn ap2" onclick="exportAP2()">⬡ Export AP2 Record</button>
+      <button class="export-btn ap2" onclick="exportAP2()">⬡ Export Policy Mandate Record</button>
     </div>
   </div>
 
@@ -828,9 +828,15 @@ ${state.instrumentSections.map((s,i) => `${i+1}. **${s.name || 'Unnamed construc
     record.compliance_flags = [];
     record.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
     record.execution_hash = await apexHash(record.policy_parameters, record.output_payload);
+    // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+    record.chaingraph_version = "0.4.0";
+    record['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+    record.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+    record.compute_mode = 'browser';
+    if (typeof record.tool_version === 'undefined') record.tool_version = '1.0.0';
 
     const result = AP2Schema.validate(record);
-    if (!result.valid) { alert('AP2 validation error: ' + result.error); return; }
+    if (!result.valid) { alert('Policy Mandate validation error: ' + result.error); return; }
     const blob = new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Credential ROI Suite — ApexLogics</title>
-<meta name="description" content="Compare ROI across bootcamps, traditional degrees, and professional certifications. BLS OEWS salary benchmarks. AP2 handoff to Graduate School ROI Comparator. Zero PII."/>
+<meta name="description" content="Compare ROI across bootcamps, traditional degrees, and professional certifications. BLS OEWS salary benchmarks. Policy Mandate handoff to Graduate School ROI Comparator. Zero PII."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
@@ -234,7 +234,7 @@ input:focus,select:focus{outline:none;border-color:var(--amber);}
     AL · 02 · Education Path &amp; ROI
   </div>
   <h1 class="tool-h1" data-i18n="tool_h1">Credential ROI Suite</h1>
-  <p class="tool-sub" data-i18n="tool_sub">Compare return on investment across bootcamps, traditional degrees, and professional certifications — using BLS OEWS May 2023 salary benchmarks. Results feed directly into the Graduate School ROI Comparator via AP2.</p>
+  <p class="tool-sub" data-i18n="tool_sub">Compare return on investment across bootcamps, traditional degrees, and professional certifications — using BLS OEWS May 2023 salary benchmarks. Results feed directly into the Graduate School ROI Comparator via Policy Mandate.</p>
   <div class="data-badge">📊 BLS OEWS May 2023 · CIRR/SwitchUp Bootcamp Data 2023 · Exam Fee Schedules Q4 2024</div>
 </header>
 
@@ -502,7 +502,7 @@ input:focus,select:focus{outline:none;border-color:var(--amber);}
     <div class="results-export-row">
       <span class="export-label">Export credential ROI record:</span>
       <button class="btn btn-secondary btn-sm" onclick="exportMarkdown()">↓ Markdown</button>
-      <button class="btn btn-secondary btn-sm" onclick="exportAP2()">↓ AP2 JSON</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportAP2()">↓ Policy Mandate (JSON)</button>
       <button class="btn btn-ghost btn-sm" onclick="showHelp()">?</button>
     </div>
   </div>
@@ -950,7 +950,7 @@ function renderResults(inp, roi) {
   document.getElementById('salary-context').innerHTML = scHtml;
 }
 
-/* ── AP2 SCHEMA ────────────────────────────────────────────── */
+/* ── Policy Mandate SCHEMA ────────────────────────────────────────────── */
 const AP2Schema = {
   validMandateTypes: [
     'offer_negotiation_record','career_transition_record','scholarship_pipeline_plan',
@@ -1038,9 +1038,15 @@ async function buildAP2Mandate() {
   mandate.compliance_flags = [];
   mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
   mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
+  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  mandate.chaingraph_version = "0.4.0";
+  mandate['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  mandate.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  mandate.compute_mode = 'browser';
+  if (typeof mandate.tool_version === 'undefined') mandate.tool_version = '1.0.0';
 
   const errs = AP2Schema.validate(mandate);
-  if (errs.length) { console.error('AP2 validation:', errs); return null; }
+  if (errs.length) { console.error('Policy Mandate validation:', errs); return null; }
   return mandate;
 }
 
@@ -1074,11 +1080,11 @@ async function sendToAL26() {
   window.open(al26url, '_blank');
 }
 
-/* ── EXPORT: AP2 JSON ──────────────────────────────────────── */
+/* ── EXPORT: Policy Mandate (JSON) ──────────────────────────────────────── */
 async function exportAP2() {
   if (!window._lastResult) { alert('Run the analysis first.'); return; }
   const mandate = await buildAP2Mandate();
-  if (!mandate) { alert('AP2 validation failed — check console.'); return; }
+  if (!mandate) { alert('Policy Mandate validation failed — check console.'); return; }
   downloadFile('AL02_credential_roi_evaluation_' + dateStamp() + '.ap2.json',
     JSON.stringify(mandate, null, 2), 'application/json');
 }
@@ -1143,7 +1149,7 @@ function showHelp() {
   alert(
     'Export formats:\n\n' +
     '• Markdown — Human-readable ROI analysis.\n' +
-    '• AP2 JSON — Structured mandate for AI agent workflows (Google AP v1.0).\n\n' +
+    '• Policy Mandate (JSON) — Structured mandate for AI agent workflows (Google AP v1.0).\n\n' +
     '"Send to AL-26" opens the Graduate School ROI Comparator with your credential data pre-loaded as Program 1, enabling direct bootcamp/cert vs. graduate program comparison.'
   );
 }
@@ -1187,7 +1193,7 @@ function toggleMCP() {
   "al_id": "AL-02",
   "version": "1.0.0",
   "title": "Credential ROI Suite",
-  "description": "Compare bootcamp, degree, and certification ROI using BLS earnings data. Models NPV, payback period, opportunity cost, and salary premium with an AP2 handoff to the Graduate School ROI Comparator.",
+  "description": "Compare bootcamp, degree, and certification ROI using BLS earnings data. Models NPV, payback period, opportunity cost, and salary premium with a Policy Mandate handoff to the Graduate School ROI Comparator.",
   "category": "education_path_roi",
   "journeys": [
     "education_path"
@@ -1222,7 +1228,7 @@ function toggleMCP() {
   },
   "mcp_tool_definition": {
     "name": "credential_roi_suite",
-    "description": "Model ROI, NPV, and payback period for bootcamp, degree, or certification credentials using BLS earnings benchmarks. Exports AP2 credential_roi_evaluation for downstream use by AL-26 Graduate School ROI Comparator.",
+    "description": "Model ROI, NPV, and payback period for bootcamp, degree, or certification credentials using BLS earnings benchmarks. Exports Policy Mandate credential_roi_evaluation for downstream use by AL-26 Graduate School ROI Comparator.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1285,7 +1291,7 @@ const MANIFEST = {
   "al_id": "AL-02",
   "version": "1.0.0",
   "title": "Credential ROI Suite",
-  "description": "Compare bootcamp, degree, and certification ROI using BLS earnings data. Models NPV, payback period, opportunity cost, and salary premium with an AP2 handoff to the Graduate School ROI Comparator.",
+  "description": "Compare bootcamp, degree, and certification ROI using BLS earnings data. Models NPV, payback period, opportunity cost, and salary premium with a Policy Mandate handoff to the Graduate School ROI Comparator.",
   "category": "education_path_roi",
   "journeys": [
     "education_path"
@@ -1340,7 +1346,7 @@ const MANIFEST = {
   },
   "mcp_tool_definition": {
     "name": "credential_roi_suite",
-    "description": "Model ROI, NPV, and payback period for bootcamp, degree, or certification credentials using BLS earnings benchmarks. Exports AP2 credential_roi_evaluation for downstream use by AL-26 Graduate School ROI Comparator.",
+    "description": "Model ROI, NPV, and payback period for bootcamp, degree, or certification credentials using BLS earnings benchmarks. Exports Policy Mandate credential_roi_evaluation for downstream use by AL-26 Graduate School ROI Comparator.",
     "inputSchema": {
       "type": "object",
       "properties": {

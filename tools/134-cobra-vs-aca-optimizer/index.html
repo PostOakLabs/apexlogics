@@ -105,7 +105,7 @@ footer.tool-footer a:hover{color:var(--amber)}
 
 <div class="main">
 
-<!-- AP2 Import -->
+<!-- Policy Mandate Import -->
 <div id="ap2ImportBanner" class="info-box" style="display:none;margin-bottom:16px">
   ✅ <strong id="ap2ImportSource">Imported from AL-24 Severance Engine</strong> — inputs pre-filled from your separation scenario.
 </div>
@@ -259,7 +259,7 @@ footer.tool-footer a:hover{color:var(--amber)}
     </div>
     <div class="results-export-row" style="margin-top:16px">
       <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
-      <button class="btn-sec" onclick="exportAP2()">⬇ AP2 Record</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ Policy Mandate Record</button>
     </div>
   </div>
 
@@ -450,7 +450,7 @@ function renderResults(r) {
   document.getElementById('results').classList.remove('result-hidden');
 }
 
-// ── AP2 Inbound Dispatch ─────────────────────────────────────────────────────
+// ── Policy Mandate Inbound Dispatch ─────────────────────────────────────────────────────
 function parseAP2Inbound() {
   try {
     const param = new URLSearchParams(window.location.search).get('ap2');
@@ -462,7 +462,7 @@ function parseAP2Inbound() {
         if (payload.cobraMonthly) document.getElementById('cobraMonthly').value = payload.cobraMonthly;
         if (payload.agi)          document.getElementById('agi').value = payload.agi;
         if (payload.householdSize) document.getElementById('householdSize').value = payload.householdSize;
-        const src = alId ? 'AL-' + alId.replace('AL-','') : 'AP2';
+        const src = alId ? 'AL-' + alId.replace('AL-','') : 'Policy Mandate';
         document.getElementById('ap2ImportSource').textContent = 'Imported from ' + src + ' Severance Engine';
         document.getElementById('ap2ImportBanner').style.display = 'block';
       }
@@ -553,7 +553,13 @@ async function exportAP2() {
   payload.output_payload = _cgDomain;
   payload.compliance_flags = [];
   payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  payload.chaingraph_version = "0.4.0";
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
   const AP2Schema = {
     validMandateTypes: ['coverage_transition_record'],
     validate: function(p) {
@@ -567,7 +573,7 @@ async function exportAP2() {
     }
   };
   const result = AP2Schema.validate(payload);
-  if (!result.valid) { alert('AP2 validation failed: ' + result.errors.join('; ')); return; }
+  if (!result.valid) { alert('Policy Mandate validation failed: ' + result.errors.join('; ')); return; }
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = 'AL141_134-cobra-vs-aca_' + tsCompact() + '.ap2.json'; a.click();

@@ -281,7 +281,7 @@ nav{display:block;background:rgba(7,11,20,.92);backdrop-filter:blur(12px);border
         Export Markdown<span class="btn-sub">Summary report</span>
       </button>
       <button class="btn" id="exp-ap2-btn" disabled onclick="exportAP2('exposure')">
-        Export AP2 JSON<span class="btn-sub">automation_exposure_score</span>
+        Export Policy Mandate (JSON)<span class="btn-sub">automation_exposure_score</span>
       </button>
       <button class="btn btn-help" onclick="showAP2Help()">?</button>
     </div>
@@ -380,7 +380,7 @@ nav{display:block;background:rgba(7,11,20,.92);backdrop-filter:blur(12px);border
         Export Markdown<span class="btn-sub">Resilience report</span>
       </button>
       <button class="btn" id="vel-ap2-btn" disabled onclick="exportAP2('velocity')">
-        Export AP2 JSON<span class="btn-sub">career_resilience_score</span>
+        Export Policy Mandate (JSON)<span class="btn-sub">career_resilience_score</span>
       </button>
       <button class="btn btn-help" onclick="showAP2Help()">?</button>
     </div>
@@ -817,7 +817,7 @@ function runVelocity(){
   document.getElementById('vel-results').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
-/* ══ AP2 SCHEMA (CONTRACT Appendix F) ══ */
+/* ══ Policy Mandate SCHEMA (CONTRACT Appendix F) ══ */
 const AP2Schema={
   required:['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata','chaingraph_version'],
   validMandateTypes:['credential_roi_evaluation','human_capital_assessment','automation_exposure_score','career_resilience_score','workforce_program_roi','career_pivot_assessment','career_transition_record','scholarship_pipeline_plan','fafsa_sai_estimate','exam_pathway_plan','benefits_election_record','severance_decision_record','offer_negotiation_record','graduate_school_roi_record','apprenticeship_match_record','cpd_credit_record','job_search_roi_record','career_break_record',
@@ -887,9 +887,15 @@ async function buildExposureMandate(){
   m.output_payload = _cgDomain;
   m.compliance_flags = [];
   m.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  m.execution_hash = await apexHash(m.policy_parameters, m.output_payload);
+  m.execution_hash = await apexHash(m.policy_parameters, m.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  m.chaingraph_version = "0.4.0";
+  m['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  m.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  m.compute_mode = 'browser';
+  if (typeof m.tool_version === 'undefined') m.tool_version = '1.0.0';
+
   const v=AP2Schema.validate(m);
-  if(!v.valid){console.error('AP2 validate:',v.errors);showToast('AP2 validation failed: '+v.errors.join('; '),'error');return null;}
+  if(!v.valid){console.error('Policy Mandate validate:',v.errors);showToast('Policy Mandate validation failed: '+v.errors.join('; '),'error');return null;}
   return m;
 }
 
@@ -927,9 +933,15 @@ async function buildResilienceMandate(){
   m.output_payload = _cgDomain;
   m.compliance_flags = [];
   m.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  m.execution_hash = await apexHash(m.policy_parameters, m.output_payload);
+  m.execution_hash = await apexHash(m.policy_parameters, m.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  m.chaingraph_version = "0.4.0";
+  m['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  m.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  m.compute_mode = 'browser';
+  if (typeof m.tool_version === 'undefined') m.tool_version = '1.0.0';
+
   const v=AP2Schema.validate(m);
-  if(!v.valid){console.error('AP2 validate:',v.errors);showToast('AP2 validation failed: '+v.errors.join('; '),'error');return null;}
+  if(!v.valid){console.error('Policy Mandate validate:',v.errors);showToast('Policy Mandate validation failed: '+v.errors.join('; '),'error');return null;}
   return m;
 }
 
@@ -943,7 +955,7 @@ async function exportAP2(tab){
   a.href=URL.createObjectURL(blob);
   a.download='AL-06+16_career_'+type+'_'+tsCompact()+'.ap2.json';
   a.click();URL.revokeObjectURL(a.href);
-  showToast('AP2 mandate downloaded ✓','success');
+  showToast('Policy Mandate downloaded ✓','success');
 }
 
 function exportMarkdown(tab){
@@ -1018,7 +1030,7 @@ function showToast(msg,type='success'){
   clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>{t.style.display='none';},3500);
 }
-function showAP2Help(){showToast('AP2 (Agent Purchase Protocol) — structured mandate for AI agent workflows. Learn more: ap2-protocol.org','success');}
+function showAP2Help(){showToast('Policy Mandate (Agent Purchase Protocol) — structured mandate for AI agent workflows. Learn more: ap2-protocol.org','success');}
 
 /* ── Init ── */
 initOccupationSelect();
@@ -1057,7 +1069,7 @@ function toggleMCP() {
   "license": "CC-BY-4.0",
   "mcp_tool_definition": {
     "name": "assess_career_resilience",
-    "description": "Score a worker's automation exposure risk (Frey-Osborne 2013) and compute a career resilience score from LinkedIn 2025 growing skills vs. WEF 2025 declining skills. Returns two AP2-compliant mandates: automation_exposure_score and career_resilience_score.",
+    "description": "Score a worker's automation exposure risk (Frey-Osborne 2013) and compute a career resilience score from LinkedIn 2025 growing skills vs. WEF 2025 declining skills. Returns two Policy-Mandate-compliant mandates: automation_exposure_score and career_resilience_score.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -1150,7 +1162,7 @@ const MANIFEST = {
   ],
   "mcp_tool_definition": {
     "name": "assess_career_resilience",
-    "description": "Score a worker's automation exposure risk (Frey-Osborne 2013) and compute a career resilience score from LinkedIn 2025 growing skills vs. WEF 2025 declining skills. Returns two AP2-compliant mandates: automation_exposure_score and career_resilience_score.",
+    "description": "Score a worker's automation exposure risk (Frey-Osborne 2013) and compute a career resilience score from LinkedIn 2025 growing skills vs. WEF 2025 declining skills. Returns two Policy-Mandate-compliant mandates: automation_exposure_score and career_resilience_score.",
     "parameters": {
       "type": "object",
       "properties": {

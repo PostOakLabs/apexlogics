@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Nurse &amp; Healthcare Journey — ApexLogics OpenChainGraph</title>
-<meta name="description" content="AP2-verified 4-step chain: healthcare offer comparison → travel vs. staff analysis → shift differential optimizer → total comp build-up. Each step output feeds the next.">
+<meta name="description" content="Policy-Mandate-verified 4-step chain: healthcare offer comparison → travel vs. staff analysis → shift differential optimizer → total comp build-up. Each step output feeds the next.">
 <link rel="canonical" href="https://apexlogics.org/chaingraph/nurse-healthcare.html">
 <link rel="icon" type="image/svg+xml" href="../assets/logo-favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -74,7 +74,7 @@ pre.mfst-code{font-family:var(--mono);font-size:10px;color:var(--muted);white-sp
 <div class="hero">
   <div class="tag">OpenChainGraph · CG-27 · Nurse / Healthcare</div>
   <h1>Nurse &amp; Healthcare Comp Journey</h1>
-  <p>AP2-verified 4-step chain: compare job offers → model travel vs. staff premium → optimize shift differentials → build total compensation picture. Each step's execution hash chains into the next.</p>
+  <p>Policy-Mandate-verified 4-step chain: compare job offers → model travel vs. staff premium → optimize shift differentials → build total compensation picture. Each step's execution hash chains into the next.</p>
 </div>
 <div class="wrap">
   <div class="chain-panel">
@@ -177,7 +177,7 @@ pre.mfst-code{font-family:var(--mono);font-size:10px;color:var(--muted);white-sp
 
   <div class="export-row">
     <button class="btn-exp" onclick="exportMd()">⬇ Markdown</button>
-    <button class="btn-exp" onclick="exportAP2()">⬇ AP2 Chain JSON</button>
+    <button class="btn-exp" onclick="exportAP2()">⬇ Policy Mandate Chain (JSON)</button>
     <button class="btn-adv" style="padding:9px 14px" onclick="advFull()">🤝 Full Chain Advisor Prompt</button>
   </div>
   <div class="mfst-wrap">
@@ -185,16 +185,17 @@ pre.mfst-code{font-family:var(--mono);font-size:10px;color:var(--muted);white-sp
     <div class="mfst-body" id="mfstBody"><pre class="mfst-code" id="mfstCode"></pre></div>
   </div>
 </div>
-<footer class="tool-footer"><a href="../about.html">About</a> · CC BY 4.0 · CG-27 · Data: AP2 v2.1.0 (2026-06-13)</footer>
+<footer class="tool-footer"><a href="../about.html">About</a> · CC BY 4.0 · CG-27 · Data: OpenChainGraph v0.5.0 (2026-06-13)</footer>
 <script>
+const TOOLIDS=["90-counter-offer-decision-engine","132-travel-nurse-vs-staff-comp","133-shift-differential-overtime-optimizer","25-total-compensation-suite"];
 const PERSONA='nurse_healthcare',JOURNEY='nurse-shift-travel-comp';
 const S=[null,null,null,null];
 const SM=[{al:'AL-97',mt:'nursing_career_record'},{al:'AL-139',mt:'travel_nurse_comp_record'},{al:'AL-140',mt:'shift_differential_optimizer_record'},{al:'AL-28',mt:'total_comp_record'}];
-async function apexHash(pol,out){const obj={policy_parameters:pol,output_payload:out};const can=JSON.stringify(obj,Object.keys(obj).sort());const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(can));return 'sha256:'+[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');}
+const OCG_CTX=['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];const OCG_BUILDTYPE='https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';function cgCanon(v){return Array.isArray(v)?v.map(cgCanon):(v&&typeof v==='object')?Object.keys(v).sort().reduce((o,k)=>(o[k]=cgCanon(v[k]),o),{}):v;}async function apexHash(pol,out){const can=JSON.stringify(cgCanon({policy_parameters:pol,output_payload:out}));const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(can));return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');}
 function $d(id,v){document.getElementById(id).textContent=v;}
 function fm$(n){return '$'+Math.round(n).toLocaleString();}
-function par(i){return S[i-1]?{h:[S[i-1].execution_hash],ids:[S[i-1].al_id]}:{h:[],ids:[]};}
-async function rec(i,pol,out){const p=par(i);const hash=await apexHash(pol,out);S[i]={step_id:'step_'+(i+1),al_id:SM[i].al,mandate_type:SM[i].mt,execution_hash:hash,chain:{parent_hashes:p.h,parent_tool_ids:p.ids,chain_depth:i},policy_parameters:pol,output_payload:out};const el=document.getElementById('h'+i);el.textContent='hash: '+hash;el.classList.add('on');document.getElementById('b'+i).classList.add('done');}
+function par(i){return S[i-1]?{h:[S[i-1].execution_hash],ids:[S[i-1].tool_id]}:{h:[],ids:[]};}
+async function rec(i,pol,out){const p=par(i);const hash=await apexHash(pol,out);S[i]={'@context':OCG_CTX,chaingraph_version:'0.4.0',buildType:OCG_BUILDTYPE,compute_mode:'browser',tool_id:TOOLIDS[i],tool_version:'1.0.0',mandate_type:SM[i].mt,generated_at:new Date().toISOString(),execution_hash:hash,chain:{parent_hashes:p.h,parent_tool_ids:p.ids,chain_depth:i},policy_parameters:pol,output_payload:out,audit_signature:{payloadType:'application/vnd.openchain.graph+json;version=0.4',payload:'',signatures:[]}};const el=document.getElementById('h'+i);el.textContent='hash: '+hash;el.classList.add('on');document.getElementById('b'+i).classList.add('done');}
 
 async function step0(){
   const a=+document.getElementById('s0a').value||82000,b=+document.getElementById('s0b').value||5000,c=+document.getElementById('s0c').value||14000;
@@ -227,8 +228,8 @@ async function step3(){
   const out={total_annual_comp:Math.round(total),effective_hourly:+effective.toFixed(2),non_wage_pct:+((b+c)/total*100).toFixed(1)};
   await rec(3,pol,out);$d('v3',fm$(total)+'/yr');$d('r3','Effective: $'+effective.toFixed(2)+'/hr · Non-wage benefits: '+out.non_wage_pct+'% of total');
 }
-function buildArt(){return{'@context':'https://openchain.graph/spec/v0.2/context.jsonld',chaingraph_version:'0.2.0',buildType:'https://openchain.graph/spec/v0.2#WebCryptoSHA256',ap2_version:'2.1.0',al_id:'CG-27',persona:PERSONA,journey:JOURNEY,mandate_type:'chaingraph_record',chain_depth:S.filter(Boolean).length,steps:S.filter(Boolean),generated:new Date().toISOString(),audit_signature:{payloadType:'application/vnd.openchain.graph+json;version=0.2',payload:'',signatures:[]}};}
-function exportMd(){const done=S.filter(Boolean);if(!done.length){alert('Run at least one step first.');return;}let md='# Nurse & Healthcare Chain Report\n\n**Journey:** '+JOURNEY+'\n**Generated:** '+new Date().toLocaleString()+'\n\n';done.forEach((s,i)=>{md+='## Step '+(i+1)+' · '+s.al_id+'\n**Hash:** `'+s.execution_hash+'`\n\n### Inputs\n```json\n'+JSON.stringify(s.policy_parameters,null,2)+'\n```\n\n### Outputs\n```json\n'+JSON.stringify(s.output_payload,null,2)+'\n```\n\n';});const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([md],{type:'text/markdown'}));a.download='nurse-chain-'+Date.now()+'.md';a.click();}
+function buildArt(){const steps=S.filter(Boolean);return{bundle_version:'1.0',ocg_spec_version:'0.5.0',bundle_type:'chaingraph_journey_bundle',persona:PERSONA,journey:JOURNEY,generated_at:new Date().toISOString(),chain_depth:steps.length,steps:steps};}
+function exportMd(){const done=S.filter(Boolean);if(!done.length){alert('Run at least one step first.');return;}let md='# Nurse & Healthcare Chain Report\n\n**Journey:** '+JOURNEY+'\n**Generated:** '+new Date().toLocaleString()+'\n\n';done.forEach((s,i)=>{md+='## Step '+(i+1)+' · '+s.tool_id+'\n**Hash:** `'+s.execution_hash+'`\n\n### Inputs\n```json\n'+JSON.stringify(s.policy_parameters,null,2)+'\n```\n\n### Outputs\n```json\n'+JSON.stringify(s.output_payload,null,2)+'\n```\n\n';});const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([md],{type:'text/markdown'}));a.download='nurse-chain-'+Date.now()+'.md';a.click();}
 function exportAP2(){const done=S.filter(Boolean);if(!done.length){alert('Run at least one step first.');return;}const art=buildArt();window._ap2LastMandate=JSON.stringify(art);const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(art,null,2)],{type:'application/json'}));a.download='nurse-ap2-'+Date.now()+'.json';a.click();}
 function adv(i){if(!S[i]){alert('Run this step first.');return;}sessionStorage.setItem('_ap2LastMandate',JSON.stringify(S[i]));window._ap2LastMandate=JSON.stringify(S[i]);window.open('../tools/ap2-advisor-prompt-composer/','_blank');}
 function advFull(){const art=buildArt();if(!art.steps.length){alert('Run at least one step first.');return;}sessionStorage.setItem('_ap2LastMandate',JSON.stringify(art));window._ap2LastMandate=JSON.stringify(art);window.open('../tools/ap2-advisor-prompt-composer/','_blank');}

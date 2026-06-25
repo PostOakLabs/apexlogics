@@ -433,7 +433,7 @@ input[readonly]{color:var(--muted);cursor:default;}
     <div class="results-export-row">
       <span class="export-label" data-i18n="export_label">Export your benefits election record:</span>
       <button class="btn btn-secondary btn-sm" onclick="exportMarkdown()" data-i18n="btn_md">↓ Markdown</button>
-      <button class="btn btn-secondary btn-sm" onclick="exportAP2()" data-i18n="btn_ap2">↓ AP2 JSON</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportAP2()" data-i18n="btn_ap2">↓ Policy Mandate (JSON)</button>
       <button class="btn btn-ghost btn-sm" onclick="showHelp()" data-i18n="btn_help">?</button>
     </div>
   </div>
@@ -485,7 +485,7 @@ const I18N = {
     btn_collapse: 'Collapse ↑',
     export_label: 'Export your benefits election record:',
     btn_md: '↓ Markdown',
-    btn_ap2: '↓ AP2 JSON',
+    btn_ap2: '↓ Policy Mandate (JSON)',
     btn_help: '?'
   },
   es: { tool_h1: 'Optimizador de Inscripción Abierta de Beneficios', btn_run: 'Analizar Beneficios →' },
@@ -950,7 +950,7 @@ function renderMatchBlock(mr, salary, contribPct) {
   document.getElementById('match-result-block').innerHTML = html;
 }
 
-/* ── AP2 SCHEMA ────────────────────────────────────────────── */
+/* ── Policy Mandate SCHEMA ────────────────────────────────────────────── */
 const AP2Schema = {
   version: '1.0',
   validMandateTypes: [
@@ -979,7 +979,7 @@ const AP2Schema = {
   }
 };
 
-/* ── EXPORT: AP2 JSON ──────────────────────────────────────── */
+/* ── EXPORT: Policy Mandate (JSON) ──────────────────────────────────────── */
 async function buildAP2Mandate() {
   const r = window._lastResult;
   if (!r) return null;
@@ -1058,10 +1058,16 @@ async function buildAP2Mandate() {
   mandate.compliance_flags = [];
   mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
   mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
+  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  mandate.chaingraph_version = "0.4.0";
+  mandate['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  mandate.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  mandate.compute_mode = 'browser';
+  if (typeof mandate.tool_version === 'undefined') mandate.tool_version = '1.0.0';
 
   const errors = AP2Schema.validate(mandate);
   if (errors.length > 0) {
-    console.error('AP2 validation errors:', errors);
+    console.error('Policy Mandate validation errors:', errors);
     return null;
   }
   return mandate;
@@ -1086,7 +1092,7 @@ function buildSummaryText(r) {
 async function exportAP2() {
   if (!window._lastResult) { alert('Run the analysis first.'); return; }
   const mandate = await buildAP2Mandate();
-  if (!mandate) { alert('AP2 validation failed — check console for details.'); return; }
+  if (!mandate) { alert('Policy Mandate validation failed — check console for details.'); return; }
   downloadFile(
     'AL23_benefits_election_record_' + dateStamp() + '.ap2.json',
     JSON.stringify(mandate, null, 2),
@@ -1191,8 +1197,8 @@ function showHelp() {
   alert(
     'Export formats:\n\n' +
     '• Markdown — Human-readable analysis for notes, email, or documentation.\n' +
-    '• AP2 JSON — Structured machine-readable record for AI agent workflows (Google Agent Purchase Protocol v1.0).\n\n' +
-    'AP2 records can be imported into other ApexLogics tools via the AP2 button or ?ap2= URL parameter.'
+    '• Policy Mandate (JSON) — Structured machine-readable record for AI agent workflows (Google Agent Purchase Protocol v1.0).\n\n' +
+    'Policy Mandate records can be imported into other ApexLogics tools via the Policy Mandate button or ?ap2= URL parameter.'
   );
 }
 
@@ -1286,7 +1292,7 @@ function toggleMCP() {
   },
   "mcp_tool_definition": {
     "name": "optimize_benefits_enrollment",
-    "description": "Compare up to 3 employer health plans on expected annual net cost, model HSA/FSA tax savings (including FICA exemption for HSA payroll deductions), and calculate 401(k) match capture rate. Returns a benefits_election_record AP2 mandate.",
+    "description": "Compare up to 3 employer health plans on expected annual net cost, model HSA/FSA tax savings (including FICA exemption for HSA payroll deductions), and calculate 401(k) match capture rate. Returns a benefits_election_record Policy Mandate.",
     "inputSchema": {
       "type": "object",
       "required": [
@@ -1572,7 +1578,7 @@ const MANIFEST = {
   },
   "mcp_tool_definition": {
     "name": "optimize_benefits_enrollment",
-    "description": "Compare up to 3 employer health plans on expected annual net cost, model HSA/FSA tax savings (including FICA exemption for HSA payroll deductions), and calculate 401(k) match capture rate. Returns a benefits_election_record AP2 mandate.",
+    "description": "Compare up to 3 employer health plans on expected annual net cost, model HSA/FSA tax savings (including FICA exemption for HSA payroll deductions), and calculate 401(k) match capture rate. Returns a benefits_election_record Policy Mandate.",
     "inputSchema": {
       "type": "object",
       "required": [

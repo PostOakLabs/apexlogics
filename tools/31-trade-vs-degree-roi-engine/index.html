@@ -883,10 +883,10 @@ body {
         </button>
         <button class="btn-export" onclick="exportAP2()">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M4 5h6M4 7h4M4 9h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-          Export AP2 JSON (.json)
+          Export Policy Mandate (JSON) (.json)
         </button>
       </div>
-      <div class="export-note">Markdown exports first per AL contract. AP2 JSON includes mandate_type "education_path_record" and downstream handoff candidates.</div>
+      <div class="export-note">Markdown exports first per AL contract. Policy Mandate (JSON) includes mandate_type "education_path_record" and downstream handoff candidates.</div>
     </div>
 
   </div><!-- /results-section -->
@@ -1399,7 +1399,7 @@ NPV Advantage: **${fmt$(advantage)}**
 `;
 }
 
-// buildAP2 returns { _inputs, _outputs, envelope } — envelope lacks execution_hash (async; added in exportAP2)
+// buildPolicy Mandate returns { _inputs, _outputs, envelope } — envelope lacks execution_hash (async; added in exportAP2)
 function buildAP2(r) {
   const { tradeKey, degreeKey, pathA, pathB, trade, degree,
     tradeStart, tradePeak, degStart, degPeak,
@@ -1531,15 +1531,21 @@ function exportMarkdown() {
 async function exportAP2() {
   if (!_lastResults) { alert('Run a calculation first.'); return; }
   const { _policy, _outputs, envelope } = buildAP2(_lastResults);
-  envelope.execution_hash = await apexHash(_policy, _outputs);
-  // ── Validation (OpenChainGraph L1 + AP2 v2.0 compat, CONTRACT §3.3 / Appendix F2) ──
+  envelope.execution_hash = await apexHash(_policy, _outputs);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  envelope.chaingraph_version = "0.4.0";
+  envelope['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  envelope.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  envelope.compute_mode = 'browser';
+  if (typeof envelope.tool_version === 'undefined') envelope.tool_version = '1.0.0';
+
+  // ── Validation (OpenChainGraph L1 + Policy Mandate v2.0 compat, CONTRACT §3.3 / Appendix F2) ──
   const _ap2errs = [];
   ['chaingraph_version','ap2_mandate_type','generated_at','inputs'].forEach(k => { if (envelope[k] == null) _ap2errs.push('missing ' + k); });
   if (envelope.ap2_mandate_type && ![
     'ai_skills_premium_record','federal_comp_record','military_civilian_record',
     'noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record'
   ].includes(envelope.ap2_mandate_type)) _ap2errs.push('unknown ap2_mandate_type: ' + envelope.ap2_mandate_type);
-  if (_ap2errs.length) { alert('AP2 validation failed: ' + _ap2errs.join('; ')); return; }
+  if (_ap2errs.length) { alert('Policy Mandate validation failed: ' + _ap2errs.join('; ')); return; }
   const json = JSON.stringify(envelope, null, 2);
   const slug = (_lastResults.tradeKey + '-vs-' + _lastResults.degreeKey)
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');

@@ -169,7 +169,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent)}
 
 /* MCP TOGGLE */
 
-/* AP2 INBOUND */
+/* Policy Mandate INBOUND */
 .ap2-inbound-section{background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-top:.75rem}
 .ap2-inbound-btn{background:none;border:none;width:100%;padding:.7rem 1.25rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;color:var(--body);font-size:.78rem;font-family:'JetBrains Mono',monospace}
 .ap2-inbound-btn:hover{color:var(--bright)}
@@ -456,10 +456,10 @@ input:focus,select:focus{outline:none;border-color:var(--accent)}
           <span class="btn-subtitle" data-i18n="sub_md">Human-readable summary</span>
         </button>
         <button class="btn btn-ghost btn-sm" id="ap2ExportBtn1" disabled onclick="exportAP2()">
-          <span data-i18n="btn_ap2">Export AP2 JSON</span>
+          <span data-i18n="btn_ap2">Export Policy Mandate (JSON)</span>
           <span class="btn-subtitle" data-i18n="sub_ap2">Agent integration · audit trail</span>
         </button>
-        <button class="btn btn-ghost btn-sm btn-help" onclick="showAP2Help()" aria-label="What is AP2?">?</button>
+        <button class="btn btn-ghost btn-sm btn-help" onclick="showAP2Help()" aria-label="What is Policy Mandate?">?</button>
       </div>
     </div>
 
@@ -560,24 +560,24 @@ input:focus,select:focus{outline:none;border-color:var(--accent)}
           <span class="btn-subtitle" data-i18n="sub_md">Human-readable summary</span>
         </button>
         <button class="btn btn-ghost btn-sm" id="ap2ExportBtn2" disabled onclick="exportAP2Tab2()">
-          <span data-i18n="btn_ap2">Export AP2 JSON</span>
+          <span data-i18n="btn_ap2">Export Policy Mandate (JSON)</span>
           <span class="btn-subtitle" data-i18n="sub_ap2">Agent integration · audit trail</span>
         </button>
-        <button class="btn btn-ghost btn-sm btn-help" onclick="showAP2Help()" aria-label="What is AP2?">?</button>
+        <button class="btn btn-ghost btn-sm btn-help" onclick="showAP2Help()" aria-label="What is Policy Mandate?">?</button>
       </div>
     </div>
 
   </div><!-- /tab2 -->
 
-  <!-- AP2 INBOUND TOGGLE -->
+  <!-- Policy Mandate INBOUND TOGGLE -->
   <div class="ap2-inbound-section">
     <button class="ap2-inbound-btn" onclick="toggleAP2Inbound()" id="ap2InboundToggleBtn">
-      <span>↙ AP2 Inbound — import from AL-25, AL-33, AL-04</span>
+      <span>↙ Policy Mandate Inbound — import from AL-25, AL-33, AL-04</span>
       <span class="arrow" id="ap2InboundArrow">▼</span>
     </button>
     <div class="ap2-inbound-panel" id="ap2InboundPanel">
-      <p style="font-size:.78rem;color:var(--body);margin-bottom:.75rem">Accepts AP2 mandates from: <strong style="color:var(--text)">AL-25 Offer Negotiation Suite</strong>, <strong style="color:var(--text)">AL-33 Equity Compensation Analyzer</strong>, <strong style="color:var(--text)">AL-04 Geo-Fiscal Arbitrage Simulator</strong>.</p>
-      <button class="paste-ap2-btn" onclick="openPasteModal()">Paste AP2 JSON mandate</button>
+      <p style="font-size:.78rem;color:var(--body);margin-bottom:.75rem">Accepts Policy Mandates from: <strong style="color:var(--text)">AL-25 Offer Negotiation Suite</strong>, <strong style="color:var(--text)">AL-33 Equity Compensation Analyzer</strong>, <strong style="color:var(--text)">AL-04 Geo-Fiscal Arbitrage Simulator</strong>.</p>
+      <button class="paste-ap2-btn" onclick="openPasteModal()">Paste Policy Mandate (JSON) mandate</button>
     </div>
   </div>
 
@@ -632,7 +632,7 @@ const TRANSLATIONS = {
     r_title:'Compensation Analysis',
     btn_md:'Export Markdown',
     sub_md:'Human-readable summary',
-    btn_ap2:'Export AP2 JSON',
+    btn_ap2:'Export Policy Mandate (JSON)',
     sub_ap2:'Agent integration · audit trail',
     p_rsu_label:'RSU Vesting Analysis',
     l_rsu_grant:'Total RSU Grant ($)',
@@ -1165,7 +1165,7 @@ function runTab2() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// AP2 SCHEMA VALIDATION
+// Policy Mandate SCHEMA VALIDATION
 // ═══════════════════════════════════════════════════════════
 const AP2Schema = {
   required: ['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata','chaingraph_version'],
@@ -1197,7 +1197,7 @@ function tsCompact() { return new Date().toISOString().replace(/[-:T]/g,'').slic
 function uuidv4() { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&0x3|0x8)).toString(16)}); }
 
 // ═══════════════════════════════════════════════════════════
-// AP2 EXPORT — TAB 1
+// Policy Mandate EXPORT — TAB 1
 // ═══════════════════════════════════════════════════════════
 /* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
 async function apexHash(policy_parameters, output_payload) {
@@ -1284,7 +1284,13 @@ async function buildAP2Mandate() {
   mandate.output_payload = _cgDomain;
   mandate.compliance_flags = [];
   mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
+  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  mandate.chaingraph_version = "0.4.0";
+  mandate['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  mandate.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  mandate.compute_mode = 'browser';
+  if (typeof mandate.tool_version === 'undefined') mandate.tool_version = '1.0.0';
+
   return mandate;
 }
 
@@ -1292,17 +1298,17 @@ async function exportAP2() {
   const mandate = await buildAP2Mandate();
   if (!mandate) { showToast('Run analysis first', 'error'); return; }
   const result = AP2Schema.validate(mandate);
-  if (!result.valid) { showToast('AP2 validation failed: ' + result.errors.join('; '), 'error'); return; }
+  if (!result.valid) { showToast('Policy Mandate validation failed: ' + result.errors.join('; '), 'error'); return; }
   const blob = new Blob([JSON.stringify(mandate, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `AL-01_total-compensation-suite_${tsCompact()}.ap2.json`;
   a.click(); URL.revokeObjectURL(a.href);
-  showToast('AP2 mandate downloaded', 'success');
+  showToast('Policy Mandate downloaded', 'success');
 }
 
 // ═══════════════════════════════════════════════════════════
-// AP2 EXPORT — TAB 2
+// Policy Mandate EXPORT — TAB 2
 // ═══════════════════════════════════════════════════════════
 async function buildAP2MandateTab2() {
   if (!tab2Result) return null;
@@ -1355,7 +1361,13 @@ async function buildAP2MandateTab2() {
   mandate.output_payload = _cgDomain;
   mandate.compliance_flags = [];
   mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
+  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  mandate.chaingraph_version = "0.4.0";
+  mandate['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  mandate.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  mandate.compute_mode = 'browser';
+  if (typeof mandate.tool_version === 'undefined') mandate.tool_version = '1.0.0';
+
   return mandate;
 }
 
@@ -1363,13 +1375,13 @@ async function exportAP2Tab2() {
   const mandate = await buildAP2MandateTab2();
   if (!mandate) { showToast('Run equity analysis first', 'error'); return; }
   const result = AP2Schema.validate(mandate);
-  if (!result.valid) { showToast('AP2 validation failed: ' + result.errors.join('; '), 'error'); return; }
+  if (!result.valid) { showToast('Policy Mandate validation failed: ' + result.errors.join('; '), 'error'); return; }
   const blob = new Blob([JSON.stringify(mandate, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `AL-01_total-compensation-suite-equity_${tsCompact()}.ap2.json`;
   a.click(); URL.revokeObjectURL(a.href);
-  showToast('AP2 mandate downloaded', 'success');
+  showToast('Policy Mandate downloaded', 'success');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1512,7 +1524,7 @@ function toggleAP2Inbound() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// AP2 INBOUND DISPATCH
+// Policy Mandate INBOUND DISPATCH
 // ═══════════════════════════════════════════════════════════
 function parseAP2Inbound() {
   try {
@@ -1568,7 +1580,7 @@ function showImportBadge(sourceToolId) {
 }
 
 function openPasteModal() {
-  const json = prompt('Paste AP2 JSON mandate:');
+  const json = prompt('Paste Policy Mandate (JSON) mandate:');
   if (!json) return;
   try {
     const mandate = JSON.parse(json);
@@ -1581,12 +1593,12 @@ function openPasteModal() {
     if (handler) {
       handler(mandate.payload, mandate.al_id);
       showImportBadge(mandate.al_id || 'Pasted');
-      showToast('AP2 mandate imported', 'success');
+      showToast('Policy Mandate imported', 'success');
     } else {
       showToast('Unrecognized mandate_type for this tool', 'error');
     }
   } catch (e) {
-    showToast('Invalid AP2 JSON — check format', 'error');
+    showToast('Invalid Policy Mandate (JSON) — check format', 'error');
   }
 }
 
@@ -1601,10 +1613,10 @@ function switchTab(n) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// AP2 HELP
+// Policy Mandate HELP
 // ═══════════════════════════════════════════════════════════
 function showAP2Help() {
-  showToast("AP2 (Agent Purchase Protocol) is Google's agent authorization standard. This file carries your scenario state to the next tool. Learn more: ap2-protocol.org", 'info');
+  showToast("Policy Mandate (Agent Purchase Protocol) is Google's agent authorization standard. This file carries your scenario state to the next tool. Learn more: ap2-protocol.org", 'info');
 }
 
 // ═══════════════════════════════════════════════════════════

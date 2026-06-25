@@ -229,7 +229,7 @@ input:focus, select:focus { outline:none; border-color:var(--border-focus); }
 
     <div class="results-export-row">
       <button class="export-btn" onclick="exportMarkdown()">⬇ Markdown</button>
-      <button class="export-btn ap2" onclick="exportAP2()">⬇ AP2 JSON</button>
+      <button class="export-btn ap2" onclick="exportAP2()">⬇ Policy Mandate (JSON)</button>
     </div>
 
     </div>
@@ -542,9 +542,15 @@ async function exportAP2() {
   payload.output_payload = _cgDomain;
   payload.compliance_flags = [];
   payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  payload.chaingraph_version = "0.4.0";
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
   const v = AP2Schema.validate(payload);
-  if (!v.valid) return showToast('AP2 validation failed: ' + v.error);
+  if (!v.valid) return showToast('Policy Mandate validation failed: ' + v.error);
   download('adult-learner-roi-ap2.json', JSON.stringify(payload, null, 2), 'application/json');
 }
 

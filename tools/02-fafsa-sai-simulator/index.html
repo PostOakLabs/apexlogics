@@ -598,10 +598,10 @@ input[type="number"]::placeholder { color:var(--muted); }
         <span class="btn-subtitle">Human-readable summary</span>
       </button>
       <button class="btn" id="ap2ExportBtn" disabled onclick="exportAP2()">
-        <span>Export AP2 JSON</span>
+        <span>Export Policy Mandate (JSON)</span>
         <span class="btn-subtitle">Agent integration · audit trail</span>
       </button>
-      <button class="btn btn-help" onclick="showAP2Help()" aria-label="What is AP2?" title="What is AP2?">?</button>
+      <button class="btn btn-help" onclick="showAP2Help()" aria-label="What is Policy Mandate?" title="What is Policy Mandate?">?</button>
     </div>
 
     <div class="disclaimer">
@@ -1122,7 +1122,7 @@ function buildMarkdown(r) {
 }
 
 // ════════════════════════════════════════════════════════════
-// EXPORT — AP2 JSON
+// EXPORT — Policy Mandate (JSON)
 // ════════════════════════════════════════════════════════════
 async function buildAP2Mandate(r) {
   const now = new Date();
@@ -1183,7 +1183,13 @@ async function buildAP2Mandate(r) {
   mandate.output_payload = _cgDomain;
   mandate.compliance_flags = [];
   mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);
+  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  mandate.chaingraph_version = "0.4.0";
+  mandate['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  mandate.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  mandate.compute_mode = 'browser';
+  if (typeof mandate.tool_version === 'undefined') mandate.tool_version = '1.0.0';
+
   return mandate;
 }
 
@@ -1203,16 +1209,16 @@ async function exportAP2() {
   const mandate = await buildAP2Mandate(lastResult);
   const validation = AP2Schema.validate(mandate);
   if (!validation.valid) {
-    showToast('AP2 validation failed: ' + validation.errors.join('; '), 'error');
+    showToast('Policy Mandate validation failed: ' + validation.errors.join('; '), 'error');
     return;
   }
   const blob = new Blob([JSON.stringify(mandate, null, 2)], { type: 'application/json' });
   triggerDownload(blob, `AL-17_fafsa-sai-simulator_${tsCompact()}.ap2.json`);
-  showToast('AP2 mandate downloaded and validated.', 'success');
+  showToast('Policy Mandate downloaded and validated.', 'success');
 }
 
 function showAP2Help() {
-  showToast('AP2 (Agent Purchase Protocol) is Google\'s agent authorization standard. The exported file lets an AI agent carry your FAFSA scenario into other ApexLogics tools (e.g., AL-02 Credential ROI). See ap2-protocol.org.', 'info', 6000);
+  showToast('Policy Mandate (Agent Purchase Protocol) is Google\'s agent authorization standard. The exported file lets an AI agent carry your FAFSA scenario into other ApexLogics tools (e.g., AL-02 Credential ROI). See ap2-protocol.org.', 'info', 6000);
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1316,7 +1322,7 @@ function showToast(msg, kind, ms) {
 }
 
 // ════════════════════════════════════════════════════════════
-// I18N — chrome translations only (UI labels). Logic, output, AP2 keys stay English.
+// I18N — chrome translations only (UI labels). Logic, output, Policy Mandate keys stay English.
 // ════════════════════════════════════════════════════════════
 const TRANSLATIONS = {
   en: {
