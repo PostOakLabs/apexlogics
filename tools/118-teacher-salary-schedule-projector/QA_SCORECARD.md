@@ -16,10 +16,10 @@
 | 8 | Nav: single `← All Tools` pill, `../../index.html` | ✅ PASS | Correct |
 | 9 | No ApexAdvisory/AINumbers nav pills | ✅ PASS | None |
 | 10 | Footer: `About · CC BY 4.0 · AL-125 · Data: ...` | ✅ PASS | `Data: BLS OEWS 2025 (illustrative presets only; district grids user-supplied)` |
-| 11 | Export order: Markdown FIRST, AP2 SECOND | ✅ PASS | Correct order |
-| 12 | AP2 validate before download | ✅ PASS | Validated before `createObjectURL` |
-| 13 | AP2 mandate type is `teacher_salary_schedule_record` | ✅ PASS | Correct |
-| 14 | AP2 v2.0 flat schema | ✅ PASS | Correct |
+| 11 | Export order: Markdown FIRST, Policy Mandate SECOND | ✅ PASS | Correct order |
+| 12 | Policy Mandate validate before download | ✅ PASS | Validated before `createObjectURL` |
+| 13 | Policy Mandate type is `teacher_salary_schedule_record` | ✅ PASS | Correct |
+| 14 | Policy Mandate v2.0 flat schema | ✅ PASS | Correct |
 | 15 | Logo accent: amber #E8A838 | ✅ PASS | Via CSS token |
 | 16 | `manifest.json` with `al_id`, `sister_suite`, `consulting_site` | ✅ PASS | All present |
 | 17 | Internal links use relative paths | ✅ PASS | `../` paths for routing cards |

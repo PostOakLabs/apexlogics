@@ -12,7 +12,7 @@
 | 8 | Logo: amber #E8A838 | ✅ |
 | 9 | Footer: `About · CC BY 4.0 · AL-149 · Data: ...` | ✅ |
 | 10 | No partner links in footer | ✅ |
-| 11 | Export order: Markdown FIRST, AP2 SECOND | ✅ |
+| 11 | Export order: Markdown FIRST, Policy Mandate SECOND | ✅ |
 | 12 | AP2Schema.validate() before createObjectURL | ✅ |
 | 13 | `mandate_type: "qsbs_exclusion_record"` | ✅ |
 | 14 | `ap2_version: "2.0"` flat schema | ✅ |

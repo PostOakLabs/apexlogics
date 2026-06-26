@@ -17,7 +17,7 @@
 | 5 | sessionStorage only for `apex_intro_dismissed` | ✅ PASS |
 | 6 | No multilanguage toggle / lang-bar / apex_lang | ✅ PASS |
 | 7 | PII banner exact text present | ✅ PASS |
-| 8 | Export order: Markdown FIRST, AP2 SECOND | ✅ PASS |
+| 8 | Export order: Markdown FIRST, Policy Mandate SECOND | ✅ PASS |
 | 9 | AP2Schema.validate() called before URL.createObjectURL() | ✅ PASS |
 | 10 | `_lastResult = null` guard on export buttons | ✅ PASS |
 | 11 | Nav: single `← All Tools` pill → `../../index.html` | ✅ PASS |
@@ -27,8 +27,8 @@
 | 15 | Logo amber #E8A838 on "Apex" wordmark | ✅ PASS |
 | 16 | Internal links relative (../../index.html) | ✅ PASS |
 | 17 | manifest.json: al_id, sister_suite, consulting_site present | ✅ PASS |
-| 18 | AP2 mandate type: `buyout_decision_record` | ✅ PASS |
-| 19 | AP2 v2.0 flat schema (ap2_version:"2.0", all required fields) | ✅ PASS |
+| 18 | Policy Mandate type: `buyout_decision_record` | ✅ PASS |
+| 19 | Policy Mandate v2.0 flat schema (ap2_version:"2.0", all required fields) | ✅ PASS |
 | 20 | Category: `workforce_exit` | ✅ PASS |
 
 ## Calculation Verification

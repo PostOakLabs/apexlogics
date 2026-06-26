@@ -16,10 +16,10 @@
 | 8 | Nav: single `← All Tools` pill, `../../index.html` | ✅ PASS | One pill, correct relative path |
 | 9 | No ApexAdvisory/AINumbers nav pills | ✅ PASS | None present |
 | 10 | Footer: `About · CC BY 4.0 · AL-135 · Data: ...` | ✅ PASS | `<a href="../../about.html">About</a> · CC BY 4.0 · AL-135 · Data: 2026 (pure formula, no embedded tables)` |
-| 11 | Export order: Markdown FIRST, AP2 SECOND | ✅ PASS | `⬇ Markdown` before `⬇ AP2 Record` in `.results-export-row` |
-| 12 | AP2 validate before download | ✅ PASS | `AP2Schema.validate(payload)` called before `URL.createObjectURL` |
-| 13 | AP2 mandate type is `raise_ask_record` | ✅ PASS | `mandate_type: "raise_ask_record"` |
-| 14 | AP2 v2.0 flat schema (not nested) | ✅ PASS | `ap2_version: "2.0"`, flat `inputs`/`outputs` |
+| 11 | Export order: Markdown FIRST, Policy Mandate SECOND | ✅ PASS | `⬇ Markdown` before `⬇ Policy Mandate Record` in `.results-export-row` |
+| 12 | Policy Mandate validate before download | ✅ PASS | `AP2Schema.validate(payload)` called before `URL.createObjectURL` |
+| 13 | Policy Mandate type is `raise_ask_record` | ✅ PASS | `mandate_type: "raise_ask_record"` |
+| 14 | Policy Mandate v2.0 flat schema (not nested) | ✅ PASS | `ap2_version: "2.0"`, flat `inputs`/`outputs` |
 | 15 | Logo accent: amber #E8A838 | ✅ PASS | `.logo span { color: var(--amber) }` → `#E8A838` |
 | 16 | `manifest.json` present with `al_id`, `sister_suite`, `consulting_site` | ✅ PASS | All three fields present |
 | 17 | Internal links use relative paths | ✅ PASS | All routing cards use relative `../` paths |
