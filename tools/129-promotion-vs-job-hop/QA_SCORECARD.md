@@ -16,10 +16,10 @@
 | 8 | Nav: single `← All Tools` pill, `../../index.html` | ✅ PASS | Correct |
 | 9 | No ApexAdvisory/AINumbers nav pills | ✅ PASS | None |
 | 10 | Footer: `About · CC BY 4.0 · AL-136 · Data: ...` | ✅ PASS | `Data: 2026 (BLS OEWS 2025 labeled heuristic; user-input figures govern)` |
-| 11 | Export order: Markdown FIRST, AP2 SECOND | ✅ PASS | Correct order |
-| 12 | AP2 validate before download | ✅ PASS | Validated before `createObjectURL` |
-| 13 | AP2 mandate type is `mobility_decision_record` | ✅ PASS | Correct |
-| 14 | AP2 v2.0 flat schema | ✅ PASS | `ap2_version: "2.0"`, flat structure |
+| 11 | Export order: Markdown FIRST, Policy Mandate SECOND | ✅ PASS | Correct order |
+| 12 | Policy Mandate validate before download | ✅ PASS | Validated before `createObjectURL` |
+| 13 | Policy Mandate type is `mobility_decision_record` | ✅ PASS | Correct |
+| 14 | Policy Mandate v2.0 flat schema | ✅ PASS | `ap2_version: "2.0"`, flat structure |
 | 15 | Logo accent: amber #E8A838 | ✅ PASS | Via CSS `--amber` |
 | 16 | `manifest.json` with `al_id`, `sister_suite`, `consulting_site` | ✅ PASS | All present |
 | 17 | Internal links use relative paths | ✅ PASS | All `../` paths |

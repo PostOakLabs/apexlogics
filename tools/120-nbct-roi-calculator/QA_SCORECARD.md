@@ -16,10 +16,10 @@
 | 8 | Nav: single `← All Tools` pill, `../../index.html` | ✅ PASS | Correct |
 | 9 | No ApexAdvisory/AINumbers nav pills | ✅ PASS | None |
 | 10 | Footer: `About · CC BY 4.0 · AL-127 · Data: ...` | ✅ PASS | `Data: 2026 (NBCT fee default ~$1,900 — nbpts.org, labeled and user-overridable)` |
-| 11 | Export order: Markdown FIRST, AP2 SECOND | ✅ PASS | Correct |
-| 12 | AP2 validate before download | ✅ PASS | Validated |
-| 13 | AP2 mandate type is `nbct_roi_record` | ✅ PASS | Correct |
-| 14 | AP2 v2.0 flat schema | ✅ PASS | Correct |
+| 11 | Export order: Markdown FIRST, Policy Mandate SECOND | ✅ PASS | Correct |
+| 12 | Policy Mandate validate before download | ✅ PASS | Validated |
+| 13 | Policy Mandate type is `nbct_roi_record` | ✅ PASS | Correct |
+| 14 | Policy Mandate v2.0 flat schema | ✅ PASS | Correct |
 | 15 | Logo accent: amber #E8A838 | ✅ PASS | Via CSS token |
 | 16 | `manifest.json` with `al_id`, `sister_suite`, `consulting_site` | ✅ PASS | All present |
 | 17 | Internal links use relative paths | ✅ PASS | Correct |

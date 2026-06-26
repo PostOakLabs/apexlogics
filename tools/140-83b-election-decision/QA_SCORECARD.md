@@ -13,7 +13,7 @@
 | 9 | Logo: "Apex" in amber #E8A838, "Logics" in --text | ✅ |
 | 10 | Footer: `About · CC BY 4.0 · AL-147 · Data: ...` | ✅ |
 | 11 | No partner links in footer | ✅ |
-| 12 | Export order: Markdown FIRST, AP2 SECOND | ✅ |
+| 12 | Export order: Markdown FIRST, Policy Mandate SECOND | ✅ |
 | 13 | AP2Schema.validate() called before createObjectURL | ✅ |
 | 14 | `mandate_type: "eighty_three_b_record"` | ✅ |
 | 15 | `ap2_version: "2.0"` flat schema | ✅ |
