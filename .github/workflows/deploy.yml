@@ -19,6 +19,29 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: 🟢 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # ── ChainGraph OCG v0.8 gate suite (blocking — B1) ──────────────────────
+      # Zero-dependency node gates; no npm install needed. Each is proven to go
+      # red on a broken fixture by gate-selftest.mjs (run last).
+      - name: 🔗 CG gate — vendor freshness (_hash.mjs body + v0.4 schema vs SSOT pin)
+        run: node scripts/check-vendor-fresh.mjs
+
+      - name: 🔗 CG gate — schema validation (catalog + golden artifact fixtures)
+        run: node chaingraph/standard/schema-validate.mjs
+
+      - name: 🔗 CG gate — hash canon lint (forbidden preimage/hash idioms)
+        run: node scripts/hash-lint.mjs
+
+      - name: 🔗 CG gate — selftest (each gate must go red on a broken fixture)
+        run: node scripts/gate-selftest.mjs
+
+      - name: 🧪 JS syntax gate (CONTRACT §7.2 / CG-25 — blocking)
+        run: node scripts/check_tools.js
+
       - name: 🔍 Index sync — verify all tools are on the homepage
         # Fails the build if any tool subdir in tools/ has no card in index.html
         # To suppress a false positive: add the slug to INTENTIONAL_OMISSIONS
