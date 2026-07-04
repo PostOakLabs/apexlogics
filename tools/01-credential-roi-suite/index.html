@@ -965,7 +965,7 @@ const AP2Schema = {
     'international_student_cost_record','parent_college_roi_record',
     'equity_compensation_record'
   ],
-  required: ['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version',
+  required: ['mandate_id','issued_at','issued_by','tool_id','tool_version',
              'al_id','mandate_type','payload','summary','audit_metadata','chaingraph_version'],
   validate(m) {
     const errors = [];
@@ -984,7 +984,6 @@ async function buildAP2Mandate() {
 
   // AL-26-compatible payload fields (matches AL-26's ingestAP2Mandate handler)
   const mandate = {
-    ap2_version: '1.0',
     mandate_id: genUUID(),
     issued_at: new Date().toISOString(),
     issued_by: 'apex-logics-al-02',
@@ -1032,7 +1031,7 @@ async function buildAP2Mandate() {
   if (!mandate.al_id) mandate.al_id = mandate.tool_id || "AL-02";
   mandate.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
   try { const _cgIn = new URLSearchParams(location.search).get("ap2"); if (_cgIn) { const _cgP = JSON.parse(_cgIn); if (_cgP && _cgP.execution_hash) { mandate.chain = { parent_hashes:[_cgP.execution_hash], parent_tool_ids:[_cgP.tool_id||_cgP.al_id||null], chain_depth:((_cgP.chain&&_cgP.chain.chain_depth)||0)+1 }; } } } catch(_e){}
-  const _cgDomain = {}; for (const _k in mandate) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","audit_metadata","ap2_version","schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = mandate[_k]; }
+  const _cgDomain = {}; for (const _k in mandate) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","audit_metadata","schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = mandate[_k]; }
   mandate.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
   mandate.output_payload = _cgDomain;
   mandate.compliance_flags = [];

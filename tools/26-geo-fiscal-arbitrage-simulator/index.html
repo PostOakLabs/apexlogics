@@ -752,13 +752,13 @@ function renderTab2Results() {
 // Policy Mandate SCHEMA
 // ═══════════════════════════════════════════════════════════
 const AP2Schema = {
-  required:['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata','chaingraph_version'],
+  required:['mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata','chaingraph_version'],
   validMandateTypes:['credential_roi_evaluation','human_capital_assessment','automation_exposure_score','career_resilience_score','workforce_program_roi','career_pivot_assessment','career_transition_record','scholarship_pipeline_plan','fafsa_sai_estimate','exam_pathway_plan','benefits_election_record','severance_decision_record','offer_negotiation_record','graduate_school_roi_record','apprenticeship_match_record','cpd_credit_record','job_search_roi_record','career_break_record','loan_repayment_record','freelance_total_cost_record','education_savings_record','total_comp_record','geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_evaluation','test_prep_roi_record','international_student_cost_record','parent_college_roi_record','equity_compensation_record'],
   validate(m){
     const e=[];
     if(!m||typeof m!=='object') return{valid:false,errors:['not an object']};
     this.required.forEach(k=>{if(m[k]===undefined||m[k]===null)e.push('missing: '+k);});
-    if(m.ap2_version!=='1.0') e.push('ap2_version must be 1.0');
+    
     if(m.ap2_mandate_type&&!this.validMandateTypes.includes(m.ap2_mandate_type)) e.push('unknown ap2_mandate_type: '+m.ap2_mandate_type);
     if(m.al_id&&!/^AL-\d{1,2}(\+\d{1,2})?$/.test(m.al_id)) e.push('al_id format invalid');
     if(m.audit_metadata){
@@ -777,7 +777,7 @@ async function buildAP2(tab){
   if (!r) return null;
   const isTab1 = tab===1;
   const m = {
-    ap2_version:'1.0', mandate_id:uuidv4(),
+    mandate_id:uuidv4(),
     issued_at:new Date().toISOString(), issued_by:'apexlogics.org',
     tool_id:'geo-fiscal-arbitrage-simulator', tool_version:'1.0.0',
     al_id:'AL-04', mandate_type:'geo_arbitrage_record',
@@ -819,7 +819,7 @@ async function buildAP2(tab){
   if (!m.al_id) m.al_id = m.tool_id || "AL-04";
   m.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
   try { const _cgIn = new URLSearchParams(location.search).get("ap2"); if (_cgIn) { const _cgP = JSON.parse(_cgIn); if (_cgP && _cgP.execution_hash) { m.chain = { parent_hashes:[_cgP.execution_hash], parent_tool_ids:[_cgP.tool_id||_cgP.al_id||null], chain_depth:((_cgP.chain&&_cgP.chain.chain_depth)||0)+1 }; } } } catch(_e){}
-  const _cgDomain = {}; for (const _k in m) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","valid_from","valid_until","last_reviewed","ap2_version","schema_version","ap2_schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = m[_k]; }
+  const _cgDomain = {}; for (const _k in m) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","valid_from","valid_until","last_reviewed","schema_version","ap2_schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = m[_k]; }
   m.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
   m.output_payload = _cgDomain;
   m.compliance_flags = [];

@@ -241,7 +241,7 @@ select option{background:var(--bg-3);}
   <div class="modal-box">
     <div class="modal-title" id="ap2ModalTitle" data-i18n="modal_title">Load Policy Mandate</div>
     <div class="modal-sub" data-i18n="modal_sub">Paste a Policy Mandate exported from the Credential ROI Suite (AL-02) or FAFSA SAI Simulator (AL-17). Relevant fields will be pre-populated into Program 1.</div>
-    <textarea class="modal-textarea" id="ap2PasteArea" placeholder='{ "ap2_version": "1.0", "mandate_type": "credential_roi_evaluation", ... }' aria-label="Paste Policy Mandate JSON"></textarea>
+    <textarea class="modal-textarea" id="ap2PasteArea" placeholder='{ "mandate_type": "credential_roi_evaluation", ... }' aria-label="Paste Policy Mandate JSON"></textarea>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeAP2Modal()" data-i18n="cancel">Cancel</button>
       <button class="btn-primary" onclick="loadAP2FromModal()" data-i18n="load_mandate">Load Mandate</button>
@@ -503,7 +503,7 @@ const MBA_BENCHMARKS = {
    §2  Policy Mandate SCHEMA VALIDATOR (CONTRACT Appendix F — exact reference impl)
    ═══════════════════════════════════════════════════════════════════════════ */
 const AP2Schema = {
-  required: ['ap2_version','mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata','chaingraph_version'],
+  required: ['mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata','chaingraph_version'],
   validMandateTypes: [
     'credential_roi_evaluation','human_capital_assessment','automation_exposure_score',
     'career_resilience_score','workforce_program_roi','career_pivot_assessment',
@@ -520,7 +520,7 @@ const AP2Schema = {
     const errors = [];
     if (!mandate || typeof mandate !== 'object') return { valid:false, errors:['mandate is not an object'] };
     this.required.forEach(k => { if (mandate[k] == null) errors.push(`missing required field: ${k}`); });
-    if (mandate.ap2_version !== '1.0') errors.push('ap2_version must be "1.0"');
+    
     if (mandate.ap2_mandate_type && !this.validMandateTypes.includes(mandate.ap2_mandate_type))
       errors.push(`mandate_type "${mandate.ap2_mandate_type}" is not a recognized ApexLogics value`);
     if (mandate.al_id && !/^AL-\d{1,2}(\+\d{1,2})?$/.test(mandate.al_id))
@@ -1096,7 +1096,6 @@ async function buildAP2Mandate() {
   const winner = validResults.reduce((best, r) => r.roi.npv > best.roi.npv ? r : best, validResults[0]);
 
   const mandate = {
-    ap2_version: '1.0',
     mandate_id: crypto.randomUUID(),
     issued_at: ts,
     issued_by: 'apexlogics.org',
@@ -1182,7 +1181,7 @@ async function buildAP2Mandate() {
   if (!mandate.al_id) mandate.al_id = mandate.tool_id || "AL-26";
   mandate.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
   try { const _cgIn = new URLSearchParams(location.search).get("ap2"); if (_cgIn) { const _cgP = JSON.parse(_cgIn); if (_cgP && _cgP.execution_hash) { mandate.chain = { parent_hashes:[_cgP.execution_hash], parent_tool_ids:[_cgP.tool_id||_cgP.al_id||null], chain_depth:((_cgP.chain&&_cgP.chain.chain_depth)||0)+1 }; } } } catch(_e){}
-  const _cgDomain = {}; for (const _k in mandate) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","valid_from","valid_until","last_reviewed","audit_metadata","ap2_version","schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = mandate[_k]; }
+  const _cgDomain = {}; for (const _k in mandate) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","valid_from","valid_until","last_reviewed","audit_metadata","schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = mandate[_k]; }
   mandate.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
   mandate.output_payload = _cgDomain;
   mandate.compliance_flags = [];
@@ -1315,8 +1314,8 @@ function loadAP2FromModal() {
   try { mandate = JSON.parse(raw); }
   catch (e) { showToast('Invalid JSON — check pasted text', 'error'); return; }
 
-  if (!mandate.ap2_version || !mandate.mandate_type) {
-    showToast('Not a valid Policy Mandate (missing ap2_version or mandate_type)', 'error');
+  if (!mandate.mandate_type) {
+    showToast('Not a valid Policy Mandate (missing mandate_type)', 'error');
     return;
   }
 
@@ -1334,7 +1333,7 @@ function parseAP2URLParam() {
     const raw = params.get('ap2');
     if (!raw) return;
     const mandate = JSON.parse(decodeURIComponent(raw));
-    if (mandate.ap2_version && mandate.mandate_type) {
+    if (mandate.mandate_type) {
       ingestAP2Mandate(mandate);
     }
   } catch (e) {

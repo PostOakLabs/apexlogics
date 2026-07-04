@@ -414,17 +414,16 @@ function exportMarkdown() {
 const AP2Schema = {
   VALID_MANDATE_TYPES: ['gi_bill_benefit_record'],
   validate(obj) {
-    const required = ['ap2_version','mandate_type','generated_at','al_id','tool_id','inputs','outputs','downstream_handoff_candidates','metadata','chaingraph_version'];
+    const required = ['mandate_type','generated_at','al_id','tool_id','inputs','outputs','downstream_handoff_candidates','metadata','chaingraph_version'];
     for (const f of required) { if (!(f in obj)) throw new Error(`Policy Mandate missing: ${f}`); }
     if (!this.VALID_MANDATE_TYPES.includes(obj.ap2_mandate_type)) throw new Error(`Unknown mandate_type: ${obj.ap2_mandate_type}`);
-    if (obj.ap2_version !== '2.0') throw new Error('ap2_version must be "2.0"');
+    
     return true;
   }
 };
 
 function buildAP2(r) {
   return {
-    ap2_version: '2.0',
     mandate_type: 'gi_bill_benefit_record',
     generated_at: new Date().toISOString(),
     al_id: 'AL-132',
@@ -458,7 +457,7 @@ async function exportAP2() {
     if (_cgIn) { const _cgP = JSON.parse(_cgIn);
       if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
   } catch (_e) {}
-  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","ap2_version","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
   payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
   payload.output_payload = _cgDomain;
   payload.compliance_flags = [];

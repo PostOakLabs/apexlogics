@@ -610,7 +610,7 @@ const SCHOOL_TIERS = {
 
 const AP2Schema = {
   required: [
-    'ap2_version','mandate_id','issued_at','issued_by',
+    'mandate_id','issued_at','issued_by',
     'tool_id','tool_version','al_id','mandate_type',
     'payload','summary','audit_metadata','chaingraph_version'
   ],
@@ -633,7 +633,7 @@ const AP2Schema = {
     const errors = [];
     if (!m || typeof m !== 'object') return { valid:false, errors:['mandate is not an object'] };
     this.required.forEach(k => { if (m[k] === undefined || m[k] === null) errors.push(`missing required field: ${k}`); });
-    if (m.ap2_version !== '1.0') errors.push('ap2_version must be "1.0"');
+    
     if (m.ap2_mandate_type && !this.validMandateTypes.includes(m.ap2_mandate_type)) errors.push(`ap2_mandate_type "${m.ap2_mandate_type}" not in enum`);
     if (m.al_id && !/^AL-\d{1,2}(\+\d{1,2})?$/.test(m.al_id)) errors.push(`al_id "${m.al_id}" malformed`);
     if (m.audit_metadata) {
@@ -1163,7 +1163,6 @@ async function exportAP2() {
   const r = lastResults;
   const now = new Date();
   const mandate = {
-    ap2_version: '1.0',
     mandate_id: uuidv4(),
     issued_at: now.toISOString(),
     issued_by: 'apexlogics.org',
@@ -1240,7 +1239,7 @@ async function exportAP2() {
   if (!mandate.al_id) mandate.al_id = mandate.tool_id || "AL-32";
   mandate.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
   try { const _cgIn = new URLSearchParams(location.search).get("ap2"); if (_cgIn) { const _cgP = JSON.parse(_cgIn); if (_cgP && _cgP.execution_hash) { mandate.chain = { parent_hashes:[_cgP.execution_hash], parent_tool_ids:[_cgP.tool_id||_cgP.al_id||null], chain_depth:((_cgP.chain&&_cgP.chain.chain_depth)||0)+1 }; } } } catch(_e){}
-  const _cgDomain = {}; for (const _k in mandate) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","valid_from","valid_until","last_reviewed","ap2_version","schema_version","ap2_schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = mandate[_k]; }
+  const _cgDomain = {}; for (const _k in mandate) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","valid_from","valid_until","last_reviewed","schema_version","ap2_schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = mandate[_k]; }
   mandate.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
   mandate.output_payload = _cgDomain;
   mandate.compliance_flags = [];
