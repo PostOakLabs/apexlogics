@@ -77,6 +77,19 @@ const tmp = mkdtempSync(join(tmpdir(), 'apex-gate-selftest-'));
   assertRed('hash-lint (planted array-replacer + sha256: prefix)', wentRed(join(work, 'scripts', 'hash-lint.mjs')));
 }
 
+// ── 4. hash-freeze: tamper a golden's execution_hash ────────────────────────
+{
+  const work = join(tmp, 'freeze');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'chaingraph', 'kernels', 'fixtures'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'hash-freeze.mjs'), join(work, 'scripts', 'hash-freeze.mjs'));
+  cpSync(join(REPO, 'chaingraph', 'kernels', '_hash.mjs'), join(work, 'chaingraph', 'kernels', '_hash.mjs'));
+  const g = JSON.parse(readFileSync(join(REPO, 'chaingraph', 'kernels', 'fixtures', '40-gig-income-optimizer.golden.json'), 'utf8'));
+  g.execution_hash = 'f'.repeat(64); // valid shape, wrong digest
+  writeFileSync(join(work, 'chaingraph', 'kernels', 'fixtures', 'broken.golden.json'), JSON.stringify(g, null, 2));
+  assertRed('hash-freeze (tampered golden execution_hash)', wentRed(join(work, 'scripts', 'hash-freeze.mjs')));
+}
+
 rmSync(tmp, { recursive: true, force: true });
 
 console.log(fails ? `\n✗ gate-selftest: ${fails} gate(s) have no teeth.` : '\n✓ gate-selftest: every gate goes red on a broken fixture.');
