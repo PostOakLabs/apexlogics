@@ -838,13 +838,28 @@ async function exportAP2() {
 
 /* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
 async function apexHash(policy_parameters, output_payload) {
+  // OCG Standard §4 canonical execution hash. RFC 8785 JCS-equivalent
+  // (recursive key sort + JSON.stringify) over {policy_parameters,
+  // output_payload}, SHA-256, BARE lowercase hex (no "sha256:" prefix — matches
+  // AINumbers/OCS for cross-vendor verify). I-JSON guard rejects non-finite /
+  // unsafe-integer values so a non-canonical value can never silently produce an
+  // unstable hash. Mirrors vendored chaingraph/kernels/_hash.mjs. Cutover 2026-07-04.
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
   const canon = (v) => Array.isArray(v) ? v.map(canon)
     : (v && typeof v === 'object')
-      ? Object.keys(v).sort().reduce((o,k) => (o[k]=canon(v[k]),o), {})
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
       : v;
-  const preimage = JSON.stringify(canon({ policy_parameters, output_payload }));
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
-  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 function dlFile(name, content, type) {
