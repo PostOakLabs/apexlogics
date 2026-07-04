@@ -623,53 +623,103 @@ function exportMarkdown() {
 }
 
 // ── EXPORT: Policy Mandate ───────────────────────────────────────────────────────────────
-function exportAP2() {
+async function exportAP2() {
   if (!_lastInputs || !_lastResults) return;
   const i = _lastInputs, r = _lastResults;
-  const payload = {
-    ap2_version: "2.0",
-    mandate_type: "gig_income_record",
-    generated_at: new Date().toISOString(),
-    tool_id: "40-gig-income-optimizer",
-    tool_name: "Part-Time / Gig Income Optimizer",
-    inputs: {
-      w2_salary: i.w2, filing_status: i.status, state_rate_pct: i.stRate*100,
-      gross_gig_income: i.gigGross, business_expenses: i.gigExp,
-      billing_rate_hr: i.hrRate, prior_year_federal_tax: i.priorTax
-    },
-    results: {
-      net_gig_income: Math.round(r.netGig),
-      self_employment_tax: Math.round(r.seTax),
-      se_deduction: Math.round(r.seDeduction),
-      federal_tax_on_gig: Math.round(r.fedTaxOnGig),
-      state_tax_on_gig: Math.round(r.stateTaxOnGig),
-      total_gig_tax: Math.round(r.totalGigTax),
-      effective_marginal_rate_pct: parseFloat((r.effectiveMarginal*100).toFixed(2)),
-      net_after_tax_gig: Math.round(r.netAfterTax),
-      quarterly_payment_required: r.qtrRequired,
-      quarterly_payment_amount: Math.round(r.usePayment)
-    },
-    downstream_handoff_candidates: ["AL-23", "AL-32"],
+  const _inputs = {
+    w2_salary: i.w2, filing_status: i.status, state_rate_pct: i.stRate*100,
+    gross_gig_income: i.gigGross, business_expenses: i.gigExp,
+    billing_rate_hr: i.hrRate, prior_year_federal_tax: i.priorTax
+  };
+  const _outputs = {
+    net_gig_income: Math.round(r.netGig),
+    self_employment_tax: Math.round(r.seTax),
+    se_deduction: Math.round(r.seDeduction),
+    federal_tax_on_gig: Math.round(r.fedTaxOnGig),
+    state_tax_on_gig: Math.round(r.stateTaxOnGig),
+    total_gig_tax: Math.round(r.totalGigTax),
+    effective_marginal_rate_pct: parseFloat((r.effectiveMarginal*100).toFixed(2)),
+    net_after_tax_gig: Math.round(r.netAfterTax),
+    quarterly_payment_required: r.qtrRequired,
+    quarterly_payment_amount: Math.round(r.usePayment),
     data_sources: [
       "IRS 2026 tax brackets (projected from Rev. Proc. 2025-32)",
       "IRC §1401 — Self-employment tax rate 15.3%",
       "IRC §164(f) — 50% SE tax above-the-line deduction",
       "SS wage base $184,500 (2026)"
-    ],
-    license: "CC-BY-4.0"
+    ]
   };
+
+  // ── Policy Mandate v2.0 validation — validate before emit (CONTRACT §3.3 / Appendix F2) ──
+  const _ap2Check = { ap2_version: "2.0", mandate_type: "gig_income_record", generated_at: new Date().toISOString(), inputs: _inputs };
   const errs = [];
-  ['ap2_version','mandate_type','generated_at','inputs'].forEach(k=>{if(!payload[k])errs.push('missing '+k);});
+  ['ap2_version','mandate_type','generated_at','inputs'].forEach(k=>{if(!_ap2Check[k])errs.push('missing '+k);});
   const valid = [
     'ai_skills_premium_record','federal_comp_record','military_civilian_record',
     'noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record',
     'workforce_pell_record','workforce_pell_credential_rank','net_worth_trajectory_record',
     'signing_bonus_record','gig_income_record'
   ];
-  if (!valid.includes(payload.mandate_type)) errs.push('unknown mandate_type');
+  if (!valid.includes(_ap2Check.mandate_type)) errs.push('unknown mandate_type');
   if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _inputs };
+  const output_payload = _outputs;
+  const execution_hash = await apexHash(policy_parameters, output_payload);
+
+  // ── L2 inbound parent capture (this tool is a declared chain CONSUMER — ap2_inbound_mandate_types) ──
+  let chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) {
+      const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) {
+        chain = {
+          parent_hashes: [_cgP.execution_hash],
+          parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null],
+          chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1
+        };
+      }
+    }
+  } catch (_e) {}
+
+  const artifact = {
+    "@context": ["https://ainumbers.co/chaingraph/context/v0.3/context.jsonld"],
+    chaingraph_version: "0.4.0",
+    buildType: "https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256",
+    compute_mode: "browser",
+    mandate_type: "org.apexlogics/compensation_assessment",
+    tool_id: "40-gig-income-optimizer",
+    tool_version: "1.0.0",
+    generated_at: new Date().toISOString(),
+    execution_hash, chain, policy_parameters, output_payload,
+    compliance_flags: [],
+    audit_signature: { client_side_executed: true, zero_pii_verified: true, deterministic_run: true,
+      apex_meta: { ap2_version: "2.0", ap2_mandate_type: "gig_income_record", al_id: "AL-45", tool_name: "Part-Time / Gig Income Optimizer", downstream_handoff_candidates: ["AL-23", "AL-32"] } }
+  };
+
   const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
-  dlFile(`AL-45_gig-income-optimizer_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+  dlFile(`AL-45_gig-income-optimizer_${ts}.ap2.json`, JSON.stringify(artifact,null,2), 'application/json');
+}
+
+/* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 function dlFile(name, content, type) {

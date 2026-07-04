@@ -667,6 +667,16 @@ async function generatePrompt() {
   _lastComposerSession.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
   _lastComposerSession.compute_mode = 'browser';
   if (typeof _lastComposerSession.tool_version === 'undefined') _lastComposerSession.tool_version = '1.0.0';
+  // ── OCG v0.4 strict: normalize chain to exact member set + relocate legacy fields into hash-excluded apex_meta ──
+  _lastComposerSession.chain = { parent_hashes: _lastComposerSession.chain.parent_hashes, parent_tool_ids: _lastComposerSession.chain.parent_tool_ids, chain_depth: _lastComposerSession.chain.chain_depth };
+  _lastComposerSession.audit_signature = _lastComposerSession.audit_signature || {};
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (_lastComposerSession.audit_signature.apex_meta = _lastComposerSession.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(_lastComposerSession)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = _lastComposerSession[_k]; delete _lastComposerSession[_k]; }
+    }
+  }
 
   // ── Render ──────────────────────────────────────────────────────────────────
   document.getElementById('promptOutput').textContent = promptText;
@@ -737,9 +747,9 @@ function exportMarkdown() {
     '## Provenance',
     '',
     `- Execution hash: \`${_lastComposerSession.execution_hash}\``,
-    `- Chain depth: ${_lastComposerSession.chain?.depth || 1}`,
-    `- Parent mandate types: ${(_lastComposerSession.chain?.parent_mandate_types || []).join(', ') || '(none)'}`,
-    `- Data vintage: ${_lastComposerSession.data_vintage}`,
+    `- Chain depth: ${_lastComposerSession.chain?.chain_depth || 1}`,
+    `- Parent mandate types: ${(_lastComposerSession.audit_signature?.apex_meta?.parent_mandate_types || []).join(', ') || '(none)'}`,
+    `- Data vintage: ${_lastComposerSession.audit_signature?.apex_meta?.data_vintage}`,
     `- Task frame: ${_lastComposerSession.policy_parameters?.task_frame}`,
     `- Audience: ${_lastComposerSession.policy_parameters?.audience}`
   ].join('\n');

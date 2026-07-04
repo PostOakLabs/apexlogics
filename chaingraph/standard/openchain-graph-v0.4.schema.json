@@ -3,11 +3,80 @@
   "$id": "https://ainumbers.co/chaingraph/standard/openchain-graph-v0.4.schema.json",
   "title": "OpenChainGraph v0.4 — artifact envelope + catalog node object",
   "description": "NORMATIVE machine schema for OpenChainGraph v0.4. Source of truth pairs with standard/SPEC.md. spec_version of record lives in chaingraph.json.spec_version. Strict (additionalProperties:false) on BOTH the artifact envelope and the catalog node object: chaingraph.json is a single-producer internal catalog in this repo, so the forward-compat case for permissive request bodies does not apply — strictness catches our own typo/drift fields. Adding a new node field = a one-line schema update in the same PR.",
-  "spec_version": "0.5.0",
+  "spec_version": "0.8.0",
   "$defs": {
+    "anchorBinding": {
+      "description": "OCG Standard §20 Anchor Binding — portable, offline-verifiable evidence that execution_hash was included in a transparency log or timestamp service by a point in time. Optional; lives at the top-level anchor_bindings array. Attached AFTER hashing, EXCLUDED from execution_hash scope (like §16 audit_signature). anchored_hash MUST equal the artifact's execution_hash (enforced by anchor-binding.test.mjs; this schema validates shape). rfc3161-tst carries four additional REQUIRED members; the DER in proof is stored verbatim, never re-encoded.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "anchored_hash", "log_origin", "proof", "policy_oid", "serial", "gen_time", "signer_cert_chain_b64"],
+          "properties": {
+            "type": { "const": "rfc3161-tst" },
+            "anchored_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+            "log_origin": { "type": "string", "minLength": 1 },
+            "proof": { "type": "string", "minLength": 1, "description": "Base64 verbatim RFC 3161 TimeStampToken DER." },
+            "policy_oid": { "type": "string", "minLength": 1 },
+            "serial": { "type": "string", "minLength": 1 },
+            "gen_time": { "type": "string", "minLength": 1 },
+            "signer_cert_chain_b64": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "merkle_inclusion": { "$ref": "#/$defs/merkleInclusion" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "anchored_hash", "log_origin", "proof"],
+          "properties": {
+            "type": { "const": "opentimestamps" },
+            "anchored_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+            "log_origin": { "type": "string", "minLength": 1 },
+            "proof": { "type": "string", "minLength": 1, "description": "Base64 OTS proof." },
+            "merkle_inclusion": { "$ref": "#/$defs/merkleInclusion" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "anchored_hash", "log_origin", "proof"],
+          "properties": {
+            "type": { "enum": ["c2sp-tlog-proof-v1", "scitt-receipt-rfc9942"] },
+            "anchored_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+            "log_origin": { "type": "string", "minLength": 1 },
+            "proof": { "type": "string", "minLength": 1, "description": "tlog-proof@v1 text | base64 COSE receipt (carries its own inclusion proof)." }
+          }
+        }
+      ]
+    },
+    "buildIdentity": {
+      "type": "object",
+      "description": "OCG Standard §17 Kernel Identity Binding — content digest of the kernel that produced the artifact. Optional; lives at audit_signature.build_identity. Hash-excluded; does not alter execution_hash or chaingraph_version. An advisory published claim of which kernel SOURCE ran (not a proof of execution — that is §18).",
+      "additionalProperties": false,
+      "required": ["kernel_digest", "buildType"],
+      "properties": {
+        "kernel_digest": { "$ref": "#/$defs/sha256ref" },
+        "buildType": { "type": "string", "description": "Algorithm URI that produced the digest." },
+        "source_ref": { "type": "string", "description": "Optional dereferenceable URL/commit pinning the source." }
+      }
+    },
+    "computeProof": {
+      "type": "object",
+      "description": "OCG Standard §18 Compute-Integrity Proof — a zkVM receipt proving the named guest program produced output_payload. Optional; lives at audit_signature.compute_proof. Hash-excluded; does not alter execution_hash or chaingraph_version. System-agnostic; groth16-bn254 is the RECOMMENDED interop receipt form. Cryptographic seal-verification is DELEGATED to the named zkVM's vetted verifier (§18.1); this schema validates the binding shape only.",
+      "additionalProperties": false,
+      "required": ["type", "system", "receiptFormat", "imageId", "seal", "journal"],
+      "properties": {
+        "type": { "const": "ZkVmReceipt" },
+        "system": { "type": "string", "minLength": 1, "description": "zkVM identifier: risc0 | sp1 | jolt | …" },
+        "receiptFormat": { "type": "string", "enum": ["groth16-bn254", "stark"] },
+        "imageId": { "$ref": "#/$defs/sha256ref" },
+        "seal": { "type": "string", "minLength": 1, "description": "Standard-base64 proof bytes." },
+        "journal": { "type": "object", "description": "Public outputs committed by the guest; MUST bind output_payload (§18.0)." }
+      }
+    },
     "dataIntegrityProof": {
       "type": "object",
-      "description": "OCG Standard §16 Proof Binding — a W3C Data Integrity proof (cryptosuite eddsa-jcs-2022) over the whole artifact (minus this proof). Optional; lives at audit_signature.proof. Hash-excluded; does not alter execution_hash or chaingraph_version.",
+      "description": "OCG Standard §16 Proof Binding — a W3C Data Integrity proof (cryptosuite eddsa-jcs-2022) over the whole artifact (minus this proof). Optional; lives at audit_signature.proof. Hash-excluded; does not alter execution_hash or chaingraph_version. §16.5 (v0.7): optional id (referenceable by an endorsement) and previousProof (proof-chain endorsement — id(s) of the proof(s) this one countersigns).",
       "additionalProperties": false,
       "required": ["type", "cryptosuite", "verificationMethod", "proofPurpose", "created", "proofValue"],
       "properties": {
@@ -16,13 +85,64 @@
         "verificationMethod": { "type": "string", "pattern": "^did:key:z6Mk" },
         "proofPurpose": { "const": "assertionMethod" },
         "created": { "type": "string", "format": "date-time" },
-        "proofValue": { "type": "string", "pattern": "^z" }
+        "proofValue": { "type": "string", "pattern": "^z" },
+        "id": { "type": "string", "minLength": 1 },
+        "previousProof": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+          ]
+        }
       }
+    },
+    "proofSetOrChain": {
+      "description": "§16.5 (v0.7) — audit_signature.proof MAY be a single proof or an array (parallel proof set and/or previousProof endorsement chain).",
+      "oneOf": [
+        { "$ref": "#/$defs/dataIntegrityProof" },
+        { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/dataIntegrityProof" } }
+      ]
     },
     "sha256ref": {
       "type": "string",
       "description": "Either a bare 64-char hex digest or a sha256:-prefixed digest.",
       "pattern": "^(sha256:)?[0-9a-f]{64}$"
+    },
+    "merkleInclusion": {
+      "type": "object",
+      "description": "OCG Standard §20 (v0.8) — OPTIONAL member on rfc3161-tst / opentimestamps anchor bindings. Batch anchoring: the artifact execution_hash is a LEAF of an RFC 6962 tree whose ROOT is the anchored value, so one timestamp covers many artifacts. When present a verifier MUST reconstruct the root from leaf+path and require root == anchored_hash AND leaf == artifact execution_hash (anchor-binding.test.mjs).",
+      "additionalProperties": false,
+      "required": ["leaf", "index", "path", "tree_size", "algorithm"],
+      "properties": {
+        "leaf": { "$ref": "#/$defs/sha256ref", "description": "The artifact execution_hash (a tree leaf entry)." },
+        "index": { "type": "integer", "minimum": 0 },
+        "path": { "type": "array", "items": { "$ref": "#/$defs/sha256ref" }, "description": "RFC 6962 inclusion-proof node hashes." },
+        "tree_size": { "type": "integer", "minimum": 1 },
+        "algorithm": { "const": "rfc6962" }
+      }
+    },
+    "decisionGate": {
+      "type": "object",
+      "description": "OCG Standard §21.4 (v0.8) — OPTIONAL decision gate on a chain step. Evaluated against THIS step's output_payload; routes control FORWARD (a later step id or \"end\"). First-match; default REQUIRED (total function). Closed op enum; strict typing, no coercion. Static-validated by validate-chains (forward-only, targets resolve, no unreachable step); evaluated by the shared kernels/_gateval.mjs on every surface.",
+      "additionalProperties": false,
+      "required": ["input", "rules", "default"],
+      "properties": {
+        "input": { "type": "string", "description": "RFC 6901 JSON Pointer into this step's output_payload." },
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["op", "next"],
+            "properties": {
+              "op": { "enum": ["eq", "neq", "gt", "gte", "lt", "lte", "in", "present", "absent"] },
+              "value": { "description": "Comparison operand (required for value ops; absent for present/absent). For gt/gte/lt/lte a finite number; for in a literal array." },
+              "next": { "type": "string", "minLength": 1, "description": "Target step id or the literal \"end\". MUST be forward-only." }
+            }
+          }
+        },
+        "default": { "type": "string", "minLength": 1, "description": "Target step id or \"end\" when no rule matches. REQUIRED and forward-only." }
+      }
     },
     "artifact": {
       "type": "object",
@@ -93,16 +213,29 @@
           }
         },
         "output_payload": { "type": "object", "description": "Half of the hash preimage." },
+        "supersedes": {
+          "type": "array",
+          "description": "OCG Standard §1, new in v0.7 — OPTIONAL execution_hashes of artifacts this artifact corrects or replaces. Declared at creation; no reverse link, no status registry.",
+          "items": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+        },
+        "anchor_bindings": {
+          "type": "array",
+          "description": "OCG Standard §20, new in v0.7 — OPTIONAL anchor-binding evidence entries. Attached after hashing; excluded from execution_hash scope.",
+          "items": { "$ref": "#/$defs/anchorBinding" }
+        },
         "compliance_flags": { "type": "array", "items": { "type": "string" } },
         "audit_signature": {
           "type": "object",
-          "required": ["client_side_executed", "zero_pii_verified", "deterministic_run"],
           "properties": {
             "client_side_executed": { "type": "boolean" },
             "zero_pii_verified": { "type": "boolean" },
             "deterministic_run": { "type": "boolean" },
+            "payloadType": { "type": "string" },
+            "payload": { "type": "string" },
             "signatures": { "type": "array" },
-            "proof": { "$ref": "#/$defs/dataIntegrityProof" }
+            "proof": { "$ref": "#/$defs/proofSetOrChain" },
+            "build_identity": { "$ref": "#/$defs/buildIdentity" },
+            "compute_proof": { "$ref": "#/$defs/computeProof" }
           }
         }
       }
@@ -144,9 +277,41 @@
         "compute_capability": { "type": "string", "enum": ["server", "browser", "client"] },
         "export_capability": {
           "type": "array",
-          "items": { "type": "string", "pattern": "^(pdf|xlsx|csv|xbrl(:[a-z0-9:-]+)?)$" }
+          "items": { "type": "string", "pattern": "^(json|pdf|xlsx|csv|vc|xbrl(:[a-z0-9:-]+)?)$" }
         },
         "conformance_fixtures": { "type": "boolean" },
+        "compute_images": {
+          "type": "array",
+          "description": "§17/§18 — published kernel/program identities for this node. system 'sha256-source' = §17 kernel-source digest; 'risc0'/'sp1'/… = §18 zkVM ImageID/vkey.",
+          "items": {
+            "type": "object",
+            "required": ["system", "image_id"],
+            "properties": {
+              "system": { "type": "string", "minLength": 1 },
+              "image_id": { "$ref": "#/$defs/sha256ref" },
+              "valid_from": { "type": "string" }
+            }
+          }
+        },
+        "compute_proof": {
+          "type": "object",
+          "description": "§18 — a real, offline-produced zkVM compute-integrity receipt for this node's canonical/proven input. The worker attaches it to a live artifact only when the produced output_payload JCS-equals journal.output. Hash-excluded; never alters execution_hash or chaingraph_version.",
+          "required": ["type", "system", "receiptFormat", "imageId", "seal", "journal"],
+          "properties": {
+            "type": { "type": "string", "enum": ["ZkVmReceipt"] },
+            "system": { "type": "string", "minLength": 1 },
+            "receiptFormat": { "type": "string", "enum": ["groth16-bn254", "stark"] },
+            "imageId": { "$ref": "#/$defs/sha256ref" },
+            "seal": { "type": "string", "minLength": 1 },
+            "journal": { "type": "object" }
+          }
+        },
+        "compute_proof_ready": {
+          "type": "string",
+          "enum": ["ready", "deferred"],
+          "description": "§18 tiered-rollout annotation (optional). 'deferred' = this gpu:false node has no §18 compute_proof yet and the reason is recorded in deferred_reason. Absence means no explicit annotation (a node with a compute_proof is implicitly ready). Advisory; hash-excluded."
+        },
+        "deferred_reason": { "type": "string", "description": "Why compute_proof_ready is 'deferred' (e.g. guest-capability gap or awaiting a runtime decision)." },
         "deadline": { "type": ["string", "null"], "description": "ISO date, or null when N/A. Catalog convention: present-as-null rather than omitted." },
         "deadline_note": { "type": "string" },
         "semantic_profile": { "type": "string", "description": "ISO 20022 alignment label (e.g. iso20022:pacs.008-subset) (§8)." },
@@ -163,7 +328,7 @@
         "al_id": { "type": "string", "description": "ApexLogics sister-suite tool id (e.g. AL-97, AL-06+16). Optional; sister-suite catalogs only." },
         "persona": { "type": "string", "description": "ApexLogics persona label (display metadata)." },
         "category": { "type": "string", "description": "ApexLogics hub category (display metadata)." },
-        "all_mandate_types": { "type": "array", "items": { "type": "string" }, "description": "All Policy Mandate types a node emits (ApexLogics multi-mandate tools)." },
+        "all_mandate_types": { "type": "array", "items": { "type": "string" }, "description": "All AP2 mandate types a node emits (ApexLogics multi-mandate tools)." },
         "data_vintage": { "type": ["string", "null"], "description": "Data vintage label, or null when N/A. Present-as-null convention." }
       }
     },
@@ -185,7 +350,9 @@
             "required": ["tool_id"],
             "properties": {
               "tool_id": { "type": "string", "minLength": 1 },
-              "handoff": { "type": "string" }
+              "handoff": { "type": "string" },
+              "id": { "type": "string", "minLength": 1, "description": "OCG §21.4 (v0.8) OPTIONAL step id (defaults to tool_id; MUST be unique within a GATED chain). Gate targets reference step ids." },
+              "gate": { "$ref": "#/$defs/decisionGate" }
             }
           }
         }
@@ -199,7 +366,7 @@
       "description": "A chaingraph.json catalog document.",
       "required": ["spec_version", "nodes", "chains"],
       "properties": {
-        "spec_version": { "type": "string", "pattern": "^0\\.[45]\\.[0-9]+$" },
+        "spec_version": { "type": "string", "pattern": "^0\\.[45678]\\.[0-9]+$" },
         "version": { "type": "string" },
         "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
         "chains": { "type": "array", "items": { "$ref": "#/$defs/chain" } }
