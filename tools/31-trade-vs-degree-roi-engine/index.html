@@ -1465,7 +1465,7 @@ function buildAP2(r) {
     winner: pathA.npvNet >= pathB.npvNet ? "path_a" : "path_b",
     npv_advantage: parseFloat(Math.abs(pathA.npvNet - pathB.npvNet).toFixed(0)),
   };
-  const _policy = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp,irr:2dp,break_even:1dp", inputs: _inputs };
+  const _policy = { execution_backend: "js", hash_precision: "monetary_usd:2dp,irr:2dp,break_even:1dp", inputs: _inputs };
   const envelope = {
     chaingraph_version: "0.1.0",
     ap2_version: "2.0",
@@ -1552,6 +1552,16 @@ async function exportAP2() {
   envelope.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
   envelope.compute_mode = 'browser';
   if (typeof envelope.tool_version === 'undefined') envelope.tool_version = '1.0.0';
+  // ── OCG v0.4 strict envelope: relocate legacy fields into hash-excluded apex_meta ──
+  envelope.tool_id = "31-trade-vs-degree-roi-engine";
+  envelope.audit_signature = envelope.audit_signature || {};
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (envelope.audit_signature.apex_meta = envelope.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(envelope)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = envelope[_k]; delete envelope[_k]; }
+    }
+  }
 
   // ── Validation (OpenChainGraph L1 + Policy Mandate v2.0 compat, CONTRACT §3.3 / Appendix F2) ──
   const _ap2errs = [];

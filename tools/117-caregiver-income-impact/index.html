@@ -398,7 +398,7 @@ async function exportAP2() {
       if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
   } catch (_e) {}
   const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","ap2_version","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
-  payload.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
   payload.output_payload = _cgDomain;
   payload.compliance_flags = [];
   payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
@@ -408,6 +408,16 @@ async function exportAP2() {
   payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
   payload.compute_mode = 'browser';
   if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+  // ── OCG v0.4 strict envelope: relocate legacy fields into hash-excluded apex_meta ──
+  payload.tool_id = "117-caregiver-income-impact";
+  payload.audit_signature = payload.audit_signature || {};
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
 
   const AP2Schema = { validate: p => p.chaingraph_version && p.ap2_version && p.ap2_mandate_type && p.al_id && p.inputs && p.summary };
   if (!AP2Schema.validate(payload)) { alert('Policy Mandate validation failed.'); return; }

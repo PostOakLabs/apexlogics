@@ -813,7 +813,7 @@ async function buildAP2(tab){
   m.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
   try { const _cgIn = new URLSearchParams(location.search).get("ap2"); if (_cgIn) { const _cgP = JSON.parse(_cgIn); if (_cgP && _cgP.execution_hash) { m.chain = { parent_hashes:[_cgP.execution_hash], parent_tool_ids:[_cgP.tool_id||_cgP.al_id||null], chain_depth:((_cgP.chain&&_cgP.chain.chain_depth)||0)+1 }; } } } catch(_e){}
   const _cgDomain = {}; for (const _k in m) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","valid_from","valid_until","last_reviewed","ap2_version","schema_version","ap2_schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = m[_k]; }
-  m.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  m.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
   m.output_payload = _cgDomain;
   m.compliance_flags = [];
   m.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
@@ -823,6 +823,16 @@ async function buildAP2(tab){
   m.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
   m.compute_mode = 'browser';
   if (typeof m.tool_version === 'undefined') m.tool_version = '1.0.0';
+  // ── OCG v0.4 strict envelope: relocate legacy fields into hash-excluded apex_meta ──
+  m.tool_id = "27-visa-strategy-navigator";
+  m.audit_signature = m.audit_signature || {};
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (m.audit_signature.apex_meta = m.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(m)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = m[_k]; delete m[_k]; }
+    }
+  }
 
   return m;
 }

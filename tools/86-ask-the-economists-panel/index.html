@@ -518,7 +518,7 @@ async function exportAP2_2() {
       if (_cgP && _cgP.execution_hash) { d.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
   } catch (_e) {}
   const _cgDomain = {}; for (const _k in d) { if (["chaingraph_version","ap2_mandate_type","mandate_type","schema_version","generated","tool","tool_id","tool_version","al_id","generated_at","tool_name","ap2_version","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = d[_k]; }
-  d.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  d.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
   d.output_payload = _cgDomain;
   d.compliance_flags = [];
   d.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
@@ -529,6 +529,16 @@ async function exportAP2_2() {
   d.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
   d.compute_mode = 'browser';
   if (typeof d.tool_version === 'undefined') d.tool_version = '1.0.0';
+  // ── OCG v0.4 strict envelope: relocate legacy fields into hash-excluded apex_meta ──
+  d.tool_id = "86-ask-the-economists-panel";
+  d.audit_signature = d.audit_signature || {};
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (d.audit_signature.apex_meta = d.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(d)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = d[_k]; delete d[_k]; }
+    }
+  }
 
   const res = AP2Schema.validate(d);
   if (!res.valid) { showToast('Policy Mandate validation error: ' + res.error); return; }

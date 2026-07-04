@@ -1123,7 +1123,7 @@ async function exportAP2() {
   ap2.mandate_type = "org.apexlogics/career_mobility";
   if (!ap2.al_id) ap2.al_id = ap2.tool_id || "AL-38";
   ap2.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
-  ap2.policy_parameters = { execution_backend: "client-js", hash_precision: "monetary_usd:2dp", inputs: ap2.inputs };
+  ap2.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: ap2.inputs };
   ap2.output_payload = ap2.results || ap2.outputs || {};
   ap2.compliance_flags = [];
   ap2.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
@@ -1134,6 +1134,16 @@ async function exportAP2() {
   ap2.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
   ap2.compute_mode = 'browser';
   if (typeof ap2.tool_version === 'undefined') ap2.tool_version = '1.0.0';
+  // ── OCG v0.4 strict envelope: relocate legacy fields into hash-excluded apex_meta ──
+  ap2.tool_id = "33-noncompete-risk-screener";
+  ap2.audit_signature = ap2.audit_signature || {};
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (ap2.audit_signature.apex_meta = ap2.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(ap2)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = ap2[_k]; delete ap2[_k]; }
+    }
+  }
 
   // ── Policy Mandate v2.0 validation — validate before emit (CONTRACT §3.3 / Appendix F2) ──
   const _ap2errs = [];
