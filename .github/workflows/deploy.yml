@@ -101,20 +101,31 @@ jobs:
           echo "Key size   : $(wc -c < ~/.ssh/deploy_key) bytes"
 
       - name: 🔌 Test SSH connection to DreamHost
-        # Hard-fail early if the key is wrong — prevents rsync from running
-        # with --delete against an unreachable or misidentified target.
+        # Retries 3× with 15s delay — DreamHost shared SSH is occasionally
+        # briefly unreachable (connection timeout). Hard-fails only if all
+        # attempts exhaust, preventing rsync --delete against a bad target.
         run: |
-          ssh -i ~/.ssh/deploy_key \
-            -o IdentitiesOnly=yes \
-            -o StrictHostKeyChecking=no \
-            -o BatchMode=yes \
-            -o ConnectTimeout=10 \
-            ${{ secrets.DH_SSH_USER }}@${{ secrets.DH_SSH_HOST }} "echo '✅ SSH connection confirmed'"
+          for attempt in 1 2 3; do
+            if ssh -i ~/.ssh/deploy_key \
+                -o IdentitiesOnly=yes \
+                -o StrictHostKeyChecking=no \
+                -o BatchMode=yes \
+                -o ConnectTimeout=15 \
+                ${{ secrets.DH_SSH_USER }}@${{ secrets.DH_SSH_HOST }} "echo '✅ SSH connection confirmed'"; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::SSH connection failed after 3 attempts"
+              exit 1
+            fi
+            echo "SSH attempt $attempt failed — retrying in 15s..."
+            sleep 15
+          done
 
       - name: 🔍 Dry-run rsync (shows what will change — no writes)
         run: |
           rsync -avz --delete --dry-run --omit-dir-times \
-            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=no" \
+            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o ConnectTimeout=15" \
             --exclude='.git/' \
             --exclude='.github/' \
             --exclude='.gitattributes' \
@@ -130,7 +141,7 @@ jobs:
       - name: 🚀 Sync to DreamHost via rsync
         run: |
           rsync -avz --delete --omit-dir-times \
-            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=no" \
+            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o ConnectTimeout=15" \
             --exclude='.git/' \
             --exclude='.github/' \
             --exclude='.gitattributes' \
