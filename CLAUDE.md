@@ -30,22 +30,23 @@ Do not commit parent-folder internal files to this repo.
 
 ---
 
-## Deploy (GitHub → DreamHost)
+## Deploy (CI-owned — GitHub → DreamHost/CF)
 
-Push to `main` triggers GitHub Actions rsync to DreamHost. Full deploy details in memory (`project_apexlogics_deploy`). Key facts:
+**Deploy is automated. Tim never runs `wrangler` or merges PRs manually.** Flow: branch → PR → guardrails CI auto-merge → GitHub Actions rsync to DreamHost (+ CF worker auto-deploy). Full deploy details in memory (`apex-deploy-flow`, `project_apexlogics_deploy`). Key facts:
 
 - **DreamHost user:** `apexlogics` | **Host:** `pdx1-shared-a1-41.dreamhost.com`
 - **Web root:** `/home/apexlogics/apexlogics.org`
 - **SSH key:** `C:\Users\Disco\.ssh\apexlogics_deploy`
-- **Pre-flight:** `scripts/check_index_sync.py` — verifies tool subdirs match hub cards; `node scripts/check_tools.js` JS syntax gate (must exit 0)
+- **Pre-flight (blocking gate):** `node scripts/check_tools.js` must exit 0; `scripts/check_index_sync.py` verifies tool subdirs match hub cards.
+- **Worker:** `apexlogics-mcp-worker/` has its own CI `deploy.yml` (gates + `generate.mjs` + wrangler dry-run, then auto-deploy). `generate.mjs` fetches the **live** `apexlogics.org/suite-registry.json` — so land the registry change first, then the worker push; CI regenerates `tools.json` and rebuilds the `find_tool` BM25 index. Do **not** run `npx wrangler deploy` by hand.
 
-Standard push:
-```powershell
-cd "C:\dev\Claude\Projects\Apex Logics\repo"
+Claude runs git natively — commit + push directly after the gate passes (no paste-block for Tim). Prefer a branch+PR over direct push to `main` so CI carries it:
+```bash
 node scripts/check_tools.js   # must print 0 — blocking gate
-git add -A
+git checkout -b <branch>
+git add <specific files>
 git commit -m "description"
-git push
+git push -u origin <branch>    # then open PR; CI auto-merges + deploys
 ```
 
 ---
