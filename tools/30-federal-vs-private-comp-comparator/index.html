@@ -922,6 +922,7 @@ async function exportAP2() {
   // ── OCG v0.4 strict envelope: relocate legacy fields into hash-excluded apex_meta ──
   ap2.tool_id = "30-federal-vs-private-comp-comparator";
   ap2.audit_signature = ap2.audit_signature || {};
+  const _cgPreval = Object.assign({}, ap2);
   {
     const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
     const _meta = (ap2.audit_signature.apex_meta = ap2.audit_signature.apex_meta || {});
@@ -932,11 +933,11 @@ async function exportAP2() {
 
   // ── Validation (OpenChainGraph L1 + Policy Mandate v2.0 compat, CONTRACT §3.3 / Appendix F2) ──
   const _ap2errs = [];
-  ['chaingraph_version','ap2_mandate_type','generated_at','inputs'].forEach(k => { if (ap2[k] == null) _ap2errs.push('missing ' + k); });
-  if (ap2.ap2_mandate_type && ![
+  ['chaingraph_version','ap2_mandate_type','generated_at','inputs'].forEach(k => { if (_cgPreval[k] == null) _ap2errs.push('missing ' + k); });
+  if (_cgPreval.ap2_mandate_type && ![
     'ai_skills_premium_record','federal_comp_record','military_civilian_record',
     'noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record'
-  ].includes(ap2.ap2_mandate_type)) _ap2errs.push('unknown ap2_mandate_type: ' + ap2.ap2_mandate_type);
+  ].includes(_cgPreval.ap2_mandate_type)) _ap2errs.push('unknown ap2_mandate_type: ' + _cgPreval.ap2_mandate_type);
   if (_ap2errs.length) { alert('Policy Mandate validation failed: ' + _ap2errs.join('; ')); return; }
   download('federal-vs-private-comp.ap2.json', JSON.stringify(ap2, null, 2), 'application/json');
 }
