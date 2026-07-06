@@ -894,8 +894,8 @@ function exportCSV() {
 }
 
 async function exportAP2(kind) {
-  const mandate = (kind === 'script') ? await buildAP2Script(scriptResult) : await buildAP2Matrix(matrixResult);
-  const validation = AP2Schema.validate(mandate);
+  const [mandate, _cgPreval] = (kind === 'script') ? await buildAP2Script(scriptResult) : await buildAP2Matrix(matrixResult);
+  const validation = AP2Schema.validate(_cgPreval);
   if (!validation.valid) {
     showToast('Policy Mandate validation failed: ' + validation.errors.join('; '), 'error');
     return;
@@ -969,6 +969,7 @@ async function buildAP2Script(r) {
   // ── OCG v0.4 strict envelope: relocate legacy fields into hash-excluded apex_meta ──
   mandate.tool_id = "05-offer-negotiation-suite";
   mandate.audit_signature = mandate.audit_signature || {};
+  const _cgPreval = Object.assign({}, mandate);
   {
     const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
     const _meta = (mandate.audit_signature.apex_meta = mandate.audit_signature.apex_meta || {});
@@ -977,7 +978,7 @@ async function buildAP2Script(r) {
     }
   }
 
-  return mandate;
+  return [mandate, _cgPreval];
 }
 
 /* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
@@ -1066,6 +1067,7 @@ async function buildAP2Matrix(m) {
   // ── OCG v0.4 strict envelope: relocate legacy fields into hash-excluded apex_meta ──
   mandate.tool_id = "05-offer-negotiation-suite";
   mandate.audit_signature = mandate.audit_signature || {};
+  const _cgPreval = Object.assign({}, mandate);
   {
     const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
     const _meta = (mandate.audit_signature.apex_meta = mandate.audit_signature.apex_meta || {});
@@ -1074,7 +1076,7 @@ async function buildAP2Matrix(m) {
     }
   }
 
-  return mandate;
+  return [mandate, _cgPreval];
 }
 
 function showAP2Help() {
