@@ -1559,7 +1559,14 @@
       ],
       "persona": "student",
       "category": "workforce_development",
-      "data_vintage": "ED Pell Grant 2026-27 (Dear Colleague Letter Jan 2026); OBBBA P.L. 119-21 (July 4, 2025); Workforce Pell Final Rule (March 9, 2026)"
+      "data_vintage": "ED Pell Grant 2026-27 (Dear Colleague Letter Jan 2026); OBBBA P.L. 119-21 (July 4, 2025); Workforce Pell Final Rule (March 9, 2026)",
+      "compute_images": [
+        {
+          "system": "sha256-source",
+          "image_id": "6133036d46f873ccd54faeed75a9030b3a3c86c2f59a41d5224ae08b3fa4a168",
+          "valid_from": "2026-07-05T00:00:00.000Z"
+        }
+      ]
     },
     {
       "tool_id": "37-workforce-pell-credential-ranker",
@@ -3313,7 +3320,14 @@
         "grad_loan_gap_record"
       ],
       "category": "student_finance_debt",
-      "data_vintage": "OBBBA 2025 / COA estimates 2025–26"
+      "data_vintage": "OBBBA 2025 / COA estimates 2025–26",
+      "compute_images": [
+        {
+          "system": "sha256-source",
+          "image_id": "28005cc6b2235cdf14ec86954dcea280987c0df1e4b5923e34df8ec11aece989",
+          "valid_from": "2026-07-05T00:00:00.000Z"
+        }
+      ]
     },
     {
       "tool_id": "103-529-lifelong-learning-maximizer",
@@ -6046,10 +6060,74 @@
           "tool_id": "10-career-break-reentry-engine"
         }
       ]
+    },
+    {
+      "name": "workforce-pell-eligibility-path",
+      "title": "Workforce Pell eligibility path",
+      "persona": "student",
+      "description": "Gated two-step path: screen Workforce Pell Grant eligibility for a short-term credential program (OCG 4a gate: exit when ineligible), then rank credential ROI for an eligible program. First Apex OCG 21.4 gated chain.",
+      "composer_url": "https://apexlogics.org/chaingraph/chains/workforce-pell-eligibility-path.html",
+      "regulatory_refs": [
+        "OBBBA P.L. 119-21 (signed July 4, 2025), Workforce Pell provisions effective July 1, 2026",
+        "Federal Register 2026-04520 (March 9, 2026), Workforce Pell Final Rule",
+        "ED Dear Colleague Letter (Jan 2026), 2026-27 Pell max $7,395 / min $740"
+      ],
+      "steps": [
+        {
+          "tool_id": "36-workforce-pell-eligibility-screener",
+          "handoff": "eligibility_status routes the path; ineligible stops the chain, eligible or review continues to credential ROI",
+          "gate": {
+            "input": "/results/eligibility_status",
+            "rules": [
+              {
+                "op": "eq",
+                "value": "ineligible",
+                "next": "end"
+              }
+            ],
+            "default": "01-credential-roi-suite"
+          }
+        },
+        {
+          "tool_id": "01-credential-roi-suite",
+          "handoff": "credential ROI for the Pell-eligible program -- final stage"
+        }
+      ]
+    },
+    {
+      "name": "grad-loan-gap-funding-path",
+      "title": "Grad loan gap funding path",
+      "persona": "grad-applicant",
+      "description": "Gated two-step path: quantify the OBBBA 2025 federal loan cap funding gap for a graduate or professional program (OCG 4a gate: exit when fully funded), then compare graduate-school ROI when a gap remains.",
+      "composer_url": "https://apexlogics.org/chaingraph/chains/grad-loan-gap-funding-path.html",
+      "regulatory_refs": [
+        "OBBBA 2025 P.L. 119-21 federal Direct Unsubsidized / Grad PLUS caps, effective July 1, 2026: $20,500/yr ($100k lifetime) grad; $50,000/yr ($200k lifetime) professional; $257,500 overall aggregate"
+      ],
+      "steps": [
+        {
+          "tool_id": "102-grad-loan-cap-gap-planner",
+          "handoff": "funding_gap routes the path; no remaining gap stops the chain, a positive gap continues to grad-school ROI comparison",
+          "gate": {
+            "input": "/summary/funding_gap",
+            "rules": [
+              {
+                "op": "lte",
+                "value": 0,
+                "next": "end"
+              }
+            ],
+            "default": "03-graduate-school-roi-comparator"
+          }
+        },
+        {
+          "tool_id": "03-graduate-school-roi-comparator",
+          "handoff": "compare program ROI given the residual funding gap -- final stage"
+        }
+      ]
     }
   ],
   "generated_at": "2026-06-25",
   "generated_from": "scripts/build_chaingraph.js",
   "node_count": 146,
-  "chain_count": 38
+  "chain_count": 40
 }

@@ -823,6 +823,9 @@ async function exportAP2() {
   // ── OCG v0.4 strict envelope: relocate legacy fields into hash-excluded apex_meta ──
   payload.tool_id = "36-workforce-pell-eligibility-screener";
   payload.audit_signature = payload.audit_signature || {};
+  // Snapshot BEFORE the strict-envelope relocation so validation sees the legacy
+  // fields (ap2_mandate_type, inputs) that get moved into apex_meta below.
+  const _cgPreval = Object.assign({}, payload);
   {
     const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
     const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
@@ -831,15 +834,16 @@ async function exportAP2() {
     }
   }
 
-  // Policy Mandate v2.0 + OpenChainGraph validation (CONTRACT §3.2.1)
+  // Policy Mandate v2.0 + OpenChainGraph validation (CONTRACT §3.2.1) — validate the
+  // pre-relocation snapshot, not the stripped envelope.
   const errs = [];
-  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (payload[k] == null) errs.push('missing ' + k); });
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (_cgPreval[k] == null) errs.push('missing ' + k); });
   const validTypes = [
     'ai_skills_premium_record','federal_comp_record','military_civilian_record',
     'noncompete_risk_record','remote_tax_record','education_path_record',
     'professional_degree_record','workforce_pell_record'
   ];
-  if (!validTypes.includes(payload.ap2_mandate_type)) errs.push('unknown mandate_type: ' + payload.ap2_mandate_type);
+  if (!validTypes.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type: ' + _cgPreval.ap2_mandate_type);
   if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
   const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
   dlFile(`AL-41_workforce-pell-screener_${ts}.ap2.json`, JSON.stringify(payload, null, 2), 'application/json');
