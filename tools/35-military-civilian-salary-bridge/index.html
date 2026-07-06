@@ -1121,36 +1121,37 @@ async function exportAP2() {
     }
   };
   // ── OpenChainGraph L1 (migrate_chaingraph_l1.py) ──
-  ap2.chaingraph_version = "0.1.0";
-  ap2.ap2_mandate_type = ap2.mandate_type;
-  ap2.mandate_type = "org.apexlogics/career_mobility";
-  if (!ap2.al_id) ap2.al_id = ap2.tool_id || "AL-40";
-  ap2.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
-  ap2.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: ap2.inputs };
-  ap2.output_payload = ap2.results || ap2.outputs || {};
-  ap2.compliance_flags = [];
-  ap2.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  ap2.execution_hash = await apexHash(ap2.policy_parameters, ap2.output_payload);
+  payload.chaingraph_version = "0.1.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/career_mobility";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-40";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: payload.inputs };
+  payload.output_payload = payload.results || payload.outputs || {};
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
   // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
-  ap2.chaingraph_version = "0.4.0";
-  ap2['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
-  ap2.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
-  ap2.compute_mode = 'browser';
-  if (typeof ap2.tool_version === 'undefined') ap2.tool_version = '1.0.0';
+  payload.chaingraph_version = "0.4.0";
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
   // ── OCG v0.4 strict envelope: relocate legacy fields into hash-excluded apex_meta ──
-  ap2.tool_id = "35-military-civilian-salary-bridge";
-  ap2.audit_signature = ap2.audit_signature || {};
+  payload.tool_id = "35-military-civilian-salary-bridge";
+  payload.audit_signature = payload.audit_signature || {};
+  const _cgPreval = Object.assign({}, payload);
   {
     const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
-    const _meta = (ap2.audit_signature.apex_meta = ap2.audit_signature.apex_meta || {});
-    for (const _k of Object.keys(ap2)) {
-      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = ap2[_k]; delete ap2[_k]; }
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
     }
   }
 
   // ── Policy Mandate v2.0 validation — validate before emit (CONTRACT §3.3 / Appendix F2) ──
   const _ap2errs = [];
-  ['ap2_mandate_type','generated_at','inputs'].forEach(k => { if (payload[k] == null) _ap2errs.push('missing ' + k); });
+  ['ap2_mandate_type','generated_at','inputs'].forEach(k => { if (_cgPreval[k] == null) _ap2errs.push('missing ' + k); });
   if (payload.mandate_type && ![
     'ai_skills_premium_record','federal_comp_record','military_civilian_record',
     'noncompete_risk_record','remote_tax_record','education_path_record','professional_degree_record'

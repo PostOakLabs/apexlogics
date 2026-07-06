@@ -456,38 +456,39 @@
     };
 
   // ── OpenChainGraph L1 (migrate_chaingraph_l1.py) ──
-  ap2.chaingraph_version = "0.1.0";
-  ap2.ap2_mandate_type = ap2.mandate_type;
-  ap2.mandate_type = "org.apexlogics/research_estimate";
-  if (!ap2.al_id) ap2.al_id = ap2.tool_id || "AL-86";
-  ap2.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
-  ap2.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: ap2.inputs };
-  ap2.output_payload = ap2.results || ap2.outputs || {};
-  ap2.compliance_flags = [];
-  ap2.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  ap2.execution_hash = await apexHash(ap2.policy_parameters, ap2.output_payload);
+  payload.chaingraph_version = "0.1.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/research_estimate";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-86";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: payload.inputs };
+  payload.output_payload = payload.results || payload.outputs || {};
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
   // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
-  ap2.chaingraph_version = "0.4.0";
-  ap2['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
-  ap2.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
-  ap2.compute_mode = 'browser';
-  if (typeof ap2.tool_version === 'undefined') ap2.tool_version = '1.0.0';
+  payload.chaingraph_version = "0.4.0";
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
   // ── OCG v0.4 strict envelope: relocate legacy fields into hash-excluded apex_meta ──
-  ap2.tool_id = "79-counterfactual-stress-tester";
-  ap2.audit_signature = ap2.audit_signature || {};
+  payload.tool_id = "79-counterfactual-stress-tester";
+  payload.audit_signature = payload.audit_signature || {};
+  const _cgPreval = Object.assign({}, payload);
   {
     const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
-    const _meta = (ap2.audit_signature.apex_meta = ap2.audit_signature.apex_meta || {});
-    for (const _k of Object.keys(ap2)) {
-      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = ap2[_k]; delete ap2[_k]; }
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
     }
   }
 
     const AP2Schema = {
       validMandateTypes: ['job_transition_record','compensation_package_record','credential_roi_record','education_cost_record','loan_repayment_record','career_break_record','exam_cost_record','scholarship_record','workforce_board_record','human_capital_record','freelance_tax_record','equity_compensation_record','geo_arbitrage_record','visa_strategy_record','license_reciprocity_record','mba_roi_record','test_prep_record','international_student_record','parent_college_record','cpd_tracking_record','job_search_record','offer_negotiation_record','separation_package_record','benefits_enrollment_record','education_savings_record','apprenticeship_record','ai_skills_record','federal_private_comp_record','trade_degree_record','remote_tax_record','noncompete_record','military_civilian_record','professional_degree_record','workforce_pell_record','workforce_pell_credential_rank','net_worth_trajectory_record','signing_bonus_record','gig_income_record','cert_renewal_forecast_record','isa_loan_record','dual_enrollment_record','deferred_comp_457b_record','tutor_roi_record','test_retake_record','mba_portfolio_record','tuition_reimbursement_record','phd_pivot_record','law_school_roi_record','test_choice_record','exec_mba_record','stem_opt_record','english_test_choice_record','lsat_tier_record','mba_scholarship_record','consulting_roi_record','mba_yield_record','dual_degree_record','online_mba_record','mba_waitlist_record','deferred_mba_record','mba_reapplicant_record','mba_format_geo_record','law_ed_record','mim_mba_timing_record','lesson_design_record','assessment_item_record','classroom_scenario_record','gt_differentiation_record','instructor_toolkit_record','cefr_leveling_record','l1_interference_record','error_correction_record','tkt_lesson_record','primary_source_record','historiography_record','anachronism_record','counterfactual_record','franchise_governance_record','survey_design_record','payroll_efficiency_record','umpire_accuracy_record','micro_theory_record','economic_systems_record','economists_panel_record','economic_history_record','econ_principles_record'],
-      validate(p) { return this.validMandateTypes.includes(p.mandate_type); }
+      validate(p) { return this.validMandateTypes.includes(p.ap2_mandate_type); }
     };
-    if (!AP2Schema.validate(payload)) { showToast('Policy Mandate validation failed'); return; }
+    if (!AP2Schema.validate(_cgPreval)) { showToast('Policy Mandate validation failed'); return; }
     download(JSON.stringify(payload, null, 2), 'counterfactual-ap2.json', 'application/json');
   }
 
