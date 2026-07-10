@@ -1,6 +1,10 @@
-# Apex Logics — Career & Education Finance Suite
+# Apex Logics - Deterministic Decision Engines for People, Creators, and Agents
 
-> A growing suite of deterministic, browser-based calculators for career ROI, education finance, compensation analysis, licensing, immigration, and workforce development.  
+[![License: CC BY 4.0](https://img.shields.io/badge/license-CC%20BY%204.0-lightgrey.svg)](LICENSE)
+[![Live site](https://img.shields.io/badge/live-apexlogics.org-2ea44f)](https://apexlogics.org)
+[![MCP endpoint](https://img.shields.io/badge/MCP-mcp.apexlogics.org-blueviolet)](https://mcp.apexlogics.org)
+
+> Deterministic, rule-based, browser-only engines for career ROI, education finance, compensation analysis, licensing, immigration, and workforce development. Sister suite: [AINumbers.co](https://ainumbers.co) (markets & institutions).  
 > Built by [Post Oak Labs](https://postoaklabs.com) · [Apex Advisory](https://apexadvisory.site) · Live at [apexlogics.org](https://apexlogics.org)
 
 🔒 **Zero PII** · 📡 **Zero APIs** · 💻 **Client-Side Only** · 📜 **CC BY 4.0**
@@ -49,6 +53,26 @@ apexlogics/
 
 ---
 
+## MCP Agent Access
+
+Every tool is also exposed to AI agents via a live MCP server:
+
+```
+https://mcp.apexlogics.org
+```
+
+```json
+{
+  "mcpServers": {
+    "apexlogics": { "url": "https://mcp.apexlogics.org" }
+  }
+}
+```
+
+Server source: [`apexlogics-mcp-worker`](https://github.com/PostOakLabs/apexlogics-mcp-worker) (Cloudflare Worker, deterministic calculator kernels). Use `find_tool` to search the live index rather than hardcoding tool names - counts drift as the suite grows.
+
+---
+
 ## Architecture
 
 - **Single-file tools:** Each lives in `tools/{slug}/index.html` with fully inline CSS/JS. No build step, no dependencies, no CDN calls after page load.
@@ -63,7 +87,7 @@ apexlogics/
 | Item | Detail |
 |------|--------|
 | Build contract | `CLAUDE.md` in parent folder (internal) |
-| Storage | Minimal `sessionStorage` only — no `localStorage`, cookies, or IndexedDB |
+| Storage | Minimal `sessionStorage` only - no `localStorage`, cookies, or IndexedDB |
 | Network | Zero `fetch`, CDN, WebWorker, or external API calls after page load |
 | PII banner | All tools display: *"🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab."* |
 | Export format | AP2 v2.0 mandate JSON + Markdown (Tier 1 mandatory); CSV/PDF/SVG optional by tool type |
@@ -75,9 +99,9 @@ apexlogics/
 
 Every push to `main` runs:
 
-1. **Pre-flight** — index sync check (every tool subdir has a hub card), JS syntax gate, CRLF guard
-2. **Deploy** — rsync to DreamHost via SSH (excludes `.git/`, `scripts/`, `*.md`, etc.)
-3. **Smoke test** — HTTP 200 check against live domain
+1. **Pre-flight** - index sync check (every tool subdir has a hub card), JS syntax gate, CRLF guard
+2. **Deploy** - rsync to DreamHost via SSH (excludes `.git/`, `scripts/`, `*.md`, etc.)
+3. **Smoke test** - HTTP 200 check against live domain
 
 Required GitHub Secrets: `DH_SSH_KEY`, `DH_SSH_USER`, `DH_SSH_HOST`, `DH_WEB_ROOT`, `DH_SITE_URL`
 
@@ -89,8 +113,8 @@ Required GitHub Secrets: `DH_SSH_KEY`, `DH_SSH_USER`, `DH_SSH_HOST`, `DH_WEB_ROO
 2. Create `tools/{kebab-slug}/manifest.json` with required fields (`al_id`, `sister_suite`, `consulting_site`)
 3. Add a card to `index.html`
 4. Update `suite-registry.json`, `llms.txt`, `sitemap.xml`, `sitemap.html`
-5. Run `node scripts/check_tools.js` — must exit 0
-6. Push — CI validates and deploys automatically
+5. Run `node scripts/check_tools.js` - must exit 0
+6. Push - CI validates and deploys automatically
 
 ---
 
