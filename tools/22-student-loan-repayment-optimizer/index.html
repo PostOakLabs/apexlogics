@@ -1319,6 +1319,7 @@ async function buildAP2(type) {
   // ── OCG v0.4 strict envelope: relocate legacy fields into hash-excluded apex_meta ──
   mandate.tool_id = "22-student-loan-repayment-optimizer";
   mandate.audit_signature = mandate.audit_signature || {};
+  const _cgPreval = Object.assign({}, mandate);
   {
     const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
     const _meta = (mandate.audit_signature.apex_meta = mandate.audit_signature.apex_meta || {});
@@ -1327,17 +1328,14 @@ async function buildAP2(type) {
     }
   }
 
+  const _preflight = AP2Schema.validate(_cgPreval);
+  if (!_preflight.valid) { console.error('Policy Mandate validation:', _preflight.errors); return null; }
   return mandate;
 }
 
 async function exportAP2() {
   const ap2 = await buildAP2();
-  if (!ap2) return;
-  const result = AP2Schema.validate(ap2);
-  if (!result.valid) {
-    showToast('Policy Mandate validation failed: ' + result.errors.join('; '), 'error');
-    return;
-  }
+  if (!ap2) { showToast('Policy Mandate validation failed — check console.', 'error'); return; }
   download('loan_repayment_record.ap2.json', JSON.stringify(ap2, null, 2));
 }
 

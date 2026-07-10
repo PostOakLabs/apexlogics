@@ -1228,6 +1228,8 @@ async function buildAP2Mandate(tab){
       }
     }
 
+    const _preflight1 = AP2Schema.validate(_cgPreval);
+    if (!_preflight1.valid) { console.error('Policy Mandate validation:', _preflight1.errors); return null; }
     return mandate;
   }
   if(tab===2&&lastTab2Results){
@@ -1268,7 +1270,7 @@ async function buildAP2Mandate(tab){
     };
     // ── OpenChainGraph L1 + L2 ──
     mandate.chaingraph_version = "0.1.0";
-    if (_cgPreval.ap2_mandate_type == null) _cgPreval.ap2_mandate_type = mandate.mandate_type || mandate.record_type || mandate.type || null;
+    if (mandate.ap2_mandate_type == null) mandate.ap2_mandate_type = mandate.mandate_type || mandate.record_type || mandate.type || null;
     mandate.mandate_type = "org.apexlogics/student_finance";
     if (!mandate.al_id) mandate.al_id = mandate.tool_id || "AL-05";
     mandate.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
@@ -1287,6 +1289,7 @@ async function buildAP2Mandate(tab){
     // ── OCG v0.4 strict envelope: relocate legacy fields into hash-excluded apex_meta ──
     mandate.tool_id = "24-education-savings-projector";
     mandate.audit_signature = mandate.audit_signature || {};
+    const _cgPreval2 = Object.assign({}, mandate);
     {
       const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
       const _meta = (mandate.audit_signature.apex_meta = mandate.audit_signature.apex_meta || {});
@@ -1295,6 +1298,8 @@ async function buildAP2Mandate(tab){
       }
     }
 
+    const _preflight2 = AP2Schema.validate(_cgPreval2);
+    if (!_preflight2.valid) { console.error('Policy Mandate validation:', _preflight2.errors); return null; }
     return mandate;
   }
   return null;
@@ -1362,9 +1367,7 @@ function exportMarkdown2(){
 
 async function exportAP2Tab1(){
   const mandate=await buildAP2Mandate(1);
-  if(!mandate){return;}
-  const result=AP2Schema.validate(mandate);
-  if(!result.valid){showToast(t('toast_ap2_err')+': '+result.errors.join('; '),'error');return;}
+  if(!mandate){showToast(t('toast_ap2_err'),'error');return;}
   downloadText(JSON.stringify(mandate,null,2),`AL-05_education-savings-projector_${tsCompact()}.ap2.json`,'application/json');
   showToast(t('toast_ap2'),'success');
   // Update manifest panel preview
@@ -1372,9 +1375,7 @@ async function exportAP2Tab1(){
 
 async function exportAP2Tab2(){
   const mandate=await buildAP2Mandate(2);
-  if(!mandate){return;}
-  const result=AP2Schema.validate(mandate);
-  if(!result.valid){showToast(t('toast_ap2_err')+': '+result.errors.join('; '),'error');return;}
+  if(!mandate){showToast(t('toast_ap2_err'),'error');return;}
   downloadText(JSON.stringify(mandate,null,2),`AL-05_education-savings-projector_${tsCompact()}.ap2.json`,'application/json');
   showToast(t('toast_ap2'),'success');
 }
@@ -1385,8 +1386,6 @@ async function handoffTo(target){
   if(target==='al32'&&lastTab1Results) mandate=await buildAP2Mandate(1);
   if(target==='al17') { showToast('Run AL-17 FAFSA SAI Simulator to model aid impact of your 529 balance.',''); return; }
   if(!mandate){showToast('Run the projector first to generate a handoff payload.','error');return;}
-  const result=AP2Schema.validate(mandate);
-  if(!result.valid){showToast('Policy Mandate validation failed','error');return;}
   const slugMap={al32:'../parent-college-roi-planner/index.html'};
   const encoded=encodeURIComponent(JSON.stringify(mandate));
   window.location.href=`${slugMap[target]}?ap2=${encoded}`;
