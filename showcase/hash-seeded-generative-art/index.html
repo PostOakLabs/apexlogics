@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hash-Seeded Generative Art | Apex Logics Showcase</title>
+<meta name="description" content="Showcase exemplar: a seed deterministically drives generative SVG art, and the same seed recomputes the same verifiable execution hash. OpenChainGraph decision-gate demo, client-side, zero PII.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a2f45;
+  --amber:#E8A838;--lavender:#A78BFA;--lavender-dim:rgba(167,139,250,.10);
+  --text:#e8eaf0;--muted:#8891a8;--success:#4caf7d;--danger:#e85555;--warn:#FBBF24;
+  --radius:10px;--font-sans:'Sora',sans-serif;--font-serif:'DM Serif Display',serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--lavender);text-decoration:none}a:hover{text-decoration:underline}
+.nav-bar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--muted);transition:color .2s,border-color .2s}
+.nav-pill:hover{color:var(--lavender);border-color:var(--lavender);text-decoration:none}
+.logo{margin-left:auto;font-family:var(--font-serif);font-size:20px;color:var(--text)}
+.logo span{color:var(--amber)}
+.hero{padding:40px 24px 24px;max-width:960px;margin:0 auto}
+.tagline{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--amber);margin-bottom:10px}
+.hero h1{font-family:var(--font-serif);font-size:clamp(24px,4vw,36px);line-height:1.2;margin-bottom:10px}
+.hero p{color:var(--muted);max-width:680px}
+.pii-banner{max-width:960px;margin:0 auto;background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.25);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:#c9a850;display:flex;gap:8px;align-items:flex-start}
+.main{max-width:960px;margin:0 auto;padding:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card h2{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:680px){.grid-3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-family:var(--font-sans);font-size:14px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none;border-color:var(--lavender)}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:8px;font-family:var(--font-sans);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s;margin-top:8px}
+.btn-primary{background:var(--lavender);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-sec{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;padding:10px 20px;border-radius:8px;font-size:14px;font-family:var(--font-sans)}
+.btn-sec:hover{border-color:var(--lavender);color:var(--lavender)}
+.result-hidden{display:none}
+.art-wrap{display:flex;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px}
+.art-wrap svg{max-width:100%;height:auto;border-radius:8px}
+.stat-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}
+.stat{flex:1;min-width:120px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px}
+.stat .k{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.stat .v{font-family:var(--font-mono);font-size:18px;color:var(--text);margin-top:4px}
+.hash-line{font-family:var(--font-mono);font-size:12px;color:var(--success);word-break:break-all;margin-top:14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px}
+.gate-note{font-size:13px;color:var(--muted);margin-top:14px;border-left:3px solid var(--amber);padding-left:12px}
+.results-export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+footer.tool-footer{text-align:center;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+footer.tool-footer a{color:var(--muted)}
+footer.tool-footer a:hover{color:var(--amber)}
+.mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+.mfst-btn:hover{border-color:var(--amber)}
+.mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2);border:1px solid var(--border);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+.mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted);line-height:1.6;white-space:pre-wrap;word-break:break-word}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="../../index.html" class="nav-pill">← All Tools</a>
+  <a href="../index.html" class="nav-pill">← Showcase Gallery</a>
+  <div class="logo"><span>Apex</span> Logics</div>
+</nav>
+
+<div class="hero">
+  <div class="tagline">OCG-Industries Showcase · Cluster ① Generative Art &amp; Visuals</div>
+  <h1>Hash-Seeded Generative Art</h1>
+  <p>One seed, one artwork, one hash. The seed and a complexity setting deterministically draw the SVG below through a 32-bit generator; the same seed always regenerates the identical image and recomputes the identical <span style="color:var(--success)">execution hash</span>. Change the seed, change the art and the hash. This is the purest demonstration that an OpenChainGraph artifact is reproducible from its inputs alone.</p>
+</div>
+
+<div class="pii-banner">
+  <span>🔒</span>
+  <span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+</div>
+
+<div class="main">
+  <div class="card">
+    <h2>Seed the Artwork</h2>
+    <div class="grid-3">
+      <div class="field">
+        <label for="seed">Seed</label>
+        <input type="number" id="seed" value="20260710" step="1">
+        <div class="hint">Any integer. The whole image derives from it.</div>
+      </div>
+      <div class="field">
+        <label for="complexity">Complexity</label>
+        <select id="complexity">
+          <option value="2">2 (minimal)</option>
+          <option value="4">4 (balanced)</option>
+          <option value="7" selected>7 (rich)</option>
+          <option value="10">10 (dense)</option>
+        </select>
+        <div class="hint">Below 4, the chain's gate stops before render.</div>
+      </div>
+      <div class="field">
+        <label for="palette">Palette</label>
+        <select id="palette">
+          <option value="sunset" selected>Sunset</option>
+          <option value="ocean">Ocean</option>
+          <option value="forest">Forest</option>
+          <option value="mono">Mono</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="calculate()">Generate</button>
+  </div>
+
+  <div class="card result-hidden" id="results">
+    <h2>Seeded Result</h2>
+    <div class="art-wrap" id="render"><div id="artHost"></div></div>
+    <div class="stat-row" id="stats"></div>
+    <div class="hash-line" id="hashLine">Execution hash pending…</div>
+    <div class="gate-note" id="gateNote"></div>
+
+    <div class="results-export-row">
+      <button class="btn-sec" onclick="exportMarkdown()">⬇ Markdown</button>
+      <button class="btn-sec" onclick="exportAP2()">⬇ Policy Mandate Record</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Chain: <span style="color:var(--text)">showcase-hash-seeded-art</span> · Node sc1-hash-seeded-generative-art → gate(/outputs/complexity) → sc1-art-render</p>
+  </div>
+</div>
+
+<button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+<div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+<footer class="tool-footer">
+  <a href="../../about.html">About</a> · CC BY 4.0 · SC-01 · Data: 2026 (deterministic, no external data)
+</footer>
+
+<script>
+var _lastResult = null;
+var PALETTES = ['sunset','ocean','forest','mono'];
+var PALETTE_COLORS = {
+  sunset:['#E8A838','#e8555f','#A78BFA','#FBBF24'],
+  ocean:['#4cc4d0','#5b8def','#A78BFA','#2dd4bf'],
+  forest:['#4caf7d','#8bc34a','#E8A838','#2dd4bf'],
+  mono:['#e8eaf0','#8891a8','#5a6178','#c9cfe0']
+};
+function num(v){ var x = +v; return isFinite(x) ? x : 0; }
+
+// LCG matched byte-for-byte to sc1-hash-seeded-generative-art.kernel.mjs.
+function lcg(seed){ var s = seed >>> 0; return function(){ s = (Math.imul(s,1103515245) + 12345) & 0x7fffffff; return s; }; }
+
+// SINGLE compute path — mirrors the server kernel's compute() exactly so the
+// browser artifact and the kernel artifact share one canonical preimage.
+function computeArt(){
+  var seed = Math.trunc(num(document.getElementById('seed').value));
+  var complexity = Math.trunc(num(document.getElementById('complexity').value));
+  var paletteRaw = document.getElementById('palette').value;
+  var palette = PALETTES.indexOf(paletteRaw) !== -1 ? paletteRaw : 'sunset';
+
+  var rnd = lcg((seed + complexity * 2654435761) >>> 0);
+  var n1 = rnd(), n2 = rnd(), n3 = rnd(), n4 = rnd();
+
+  var hue = n1 % 360;
+  var rotation = n2 % 360;
+  var shapeCount = complexity * 3 + (n3 % 6);
+  var strokeSeed = n4 % 100;
+  var complexity_tier = complexity < 4 ? 'minimal' : 'rich';
+
+  var _cgDomain = {
+    inputs: { seed: seed, complexity: complexity, palette: palette },
+    outputs: {
+      complexity: complexity,
+      complexity_tier: complexity_tier,
+      palette: palette,
+      hue: hue,
+      rotation: rotation,
+      shapeCount: shapeCount,
+      strokeSeed: strokeSeed
+    },
+    downstream_handoff_candidates: ['sc1-art-render'],
+    metadata: { license: 'CC-BY-4.0', data_vintage: '2026', cluster: 'generative-art-visuals' }
+  };
+  return _cgDomain;
+}
+
+function renderSVG(d){
+  var o = d.outputs;
+  var colors = PALETTE_COLORS[o.palette] || PALETTE_COLORS.sunset;
+  var rnd = lcg((d.inputs.seed + d.inputs.complexity * 2654435761 + 7) >>> 0);
+  var W = 480, H = 480, parts = [];
+  parts.push('<rect width="'+W+'" height="'+H+'" fill="#12151f"/>');
+  parts.push('<g transform="rotate('+o.rotation+' '+(W/2)+' '+(H/2)+')">');
+  for (var i = 0; i < o.shapeCount; i++){
+    var a = rnd(), b = rnd(), c = rnd();
+    var cx = a % W, cy = b % H;
+    var r = 20 + (c % 90);
+    var col = colors[i % colors.length];
+    var op = 0.18 + ((a % 50) / 100);
+    if (i % 3 === 0){
+      parts.push('<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+col+'" fill-opacity="'+op.toFixed(2)+'"/>');
+    } else if (i % 3 === 1){
+      parts.push('<rect x="'+cx+'" y="'+cy+'" width="'+r+'" height="'+r+'" fill="none" stroke="'+col+'" stroke-opacity="'+op.toFixed(2)+'" stroke-width="2"/>');
+    } else {
+      parts.push('<line x1="'+cx+'" y1="'+cy+'" x2="'+((cx+r)%W)+'" y2="'+((cy+r)%H)+'" stroke="'+col+'" stroke-opacity="'+op.toFixed(2)+'" stroke-width="3"/>');
+    }
+  }
+  parts.push('</g>');
+  var hueCol = 'hsl('+o.hue+',60%,60%)';
+  parts.push('<circle cx="'+(W/2)+'" cy="'+(H/2)+'" r="'+(30 + o.strokeSeed)+'" fill="none" stroke="'+hueCol+'" stroke-width="2" stroke-opacity="0.5"/>');
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" xmlns="http://www.w3.org/2000/svg">'+parts.join('')+'</svg>';
+}
+
+async function calculate(){
+  var d = computeArt();
+  _lastResult = d;
+  try { document.getElementById('artHost').innerHTML = renderSVG(d); } catch(_e){}
+  var o = d.outputs;
+  var statHtml =
+    '<div class="stat"><div class="k">Complexity tier</div><div class="v">'+o.complexity_tier+'</div></div>'+
+    '<div class="stat"><div class="k">Shapes</div><div class="v">'+o.shapeCount+'</div></div>'+
+    '<div class="stat"><div class="k">Hue</div><div class="v">'+o.hue+'°</div></div>'+
+    '<div class="stat"><div class="k">Rotation</div><div class="v">'+o.rotation+'°</div></div>';
+  try { document.getElementById('stats').innerHTML = statHtml; } catch(_e){}
+  try { document.getElementById('results').classList.remove('result-hidden'); } catch(_e){}
+  try {
+    var pp = { execution_backend:'js', hash_precision:'integer_seed', inputs: d };
+    var h = await apexHash(pp, d);
+    document.getElementById('hashLine').textContent = 'execution_hash: ' + h;
+    var routed = o.complexity < 4
+      ? 'complexity ' + o.complexity + ' < 4 → the chain gate routes to end (minimal seed, render skipped in the composed chain).'
+      : 'complexity ' + o.complexity + ' ≥ 4 → the chain gate routes forward to sc1-art-render.';
+    document.getElementById('gateNote').textContent = 'Gate /outputs/complexity: ' + routed;
+  } catch(_e){}
+}
+
+function exportMarkdown(){
+  var d = _lastResult || computeArt();
+  var o = d.outputs;
+  var md = '# Hash-Seeded Generative Art (SC-01)\n\n'+
+    '**Seed:** '+d.inputs.seed+' | **Complexity:** '+d.inputs.complexity+' | **Palette:** '+d.inputs.palette+'\n\n'+
+    '## Derived render parameters\n'+
+    '| Field | Value |\n|---|---|\n'+
+    '| complexity_tier | '+o.complexity_tier+' |\n'+
+    '| shapeCount | '+o.shapeCount+' |\n'+
+    '| hue | '+o.hue+' |\n'+
+    '| rotation | '+o.rotation+' |\n'+
+    '| strokeSeed | '+o.strokeSeed+' |\n\n'+
+    '*Deterministic: the same seed regenerates this exact artwork and execution hash. ApexLogics Showcase · apexlogics.org*\n';
+  var blob = new Blob([md], { type:'text/markdown' });
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'hash-seeded-generative-art-SC01.md'; a.click();
+}
+
+async function exportAP2(){
+  var d = computeArt();
+  _lastResult = d;
+  var policy_parameters = { execution_backend:'js', hash_precision:'integer_seed', inputs: d };
+  var output_payload = d;
+  var execution_hash = await apexHash(policy_parameters, output_payload);
+  var payload = {
+    '@context': ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'],
+    chaingraph_version: '0.4.0',
+    buildType: 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256',
+    compute_mode: 'browser',
+    mandate_type: 'org.apexlogics/generative_art_seed',
+    tool_id: 'sc1-hash-seeded-generative-art',
+    tool_version: '1.0.0',
+    generated_at: new Date().toISOString(),
+    execution_hash: execution_hash,
+    chain: { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 },
+    policy_parameters: policy_parameters,
+    output_payload: output_payload,
+    compliance_flags: [],
+    audit_signature: {
+      client_side_executed: true, zero_pii_verified: true, deterministic_run: true,
+      apex_meta: { ap2_mandate_type: 'generative_art_record', al_id: 'SC-01', tool_name: 'Hash-Seeded Generative Art', downstream_handoff_candidates: ['sc1-art-render'] }
+    }
+  };
+  var blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'hash-seeded-generative-art-SC01.ap2.json'; a.click();
+}
+
+async function apexHash(policy_parameters, output_payload){
+  // OCG Standard §4 canonical execution hash — mirrors vendored chaingraph/kernels/_hash.mjs.
+  var assertIJson = function(v){
+    if (typeof v === 'number'){
+      if (!isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)){ v.forEach(assertIJson); }
+    else if (v && typeof v === 'object'){ for (var k in v) if (Object.prototype.hasOwnProperty.call(v,k)) assertIJson(v[k]); }
+  };
+  var canon = function(v){
+    return Array.isArray(v) ? v.map(canon)
+      : (v && typeof v === 'object')
+        ? Object.keys(v).sort().reduce(function(o,k){ o[k]=canon(v[k]); return o; }, {})
+        : v;
+  };
+  var obj = { policy_parameters: policy_parameters, output_payload: output_payload };
+  assertIJson(obj);
+  var preimage = JSON.stringify(canon(obj));
+  var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [].slice.call(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+}
+
+function getManifest(){
+  return {
+    al_id: 'SC-01',
+    tool_id: 'sc1-hash-seeded-generative-art',
+    mcp_name: 'hash_seeded_generative_art',
+    mandate_type: 'org.apexlogics/generative_art_seed',
+    ap2_mandate_type: 'generative_art_record',
+    chain: 'showcase-hash-seeded-art',
+    cluster: 'generative-art-visuals',
+    input_schema: { seed:'integer', complexity:'integer 1-10', palette:'sunset|ocean|forest|mono' },
+    sister_suite: 'ainumbers.co',
+    consulting_site: 'apexadvisory.site',
+    source_card: 'https://ainumbers.co/chaingraph/ocg-industries.html#c1-1',
+    license: 'CC-BY-4.0'
+  };
+}
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(getManifest(),null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>
