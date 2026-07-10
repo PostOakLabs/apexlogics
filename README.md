@@ -3,11 +3,12 @@
 [![License: CC BY 4.0](https://img.shields.io/badge/license-CC%20BY%204.0-lightgrey.svg)](LICENSE)
 [![Live site](https://img.shields.io/badge/live-apexlogics.org-2ea44f)](https://apexlogics.org)
 [![MCP endpoint](https://img.shields.io/badge/MCP-mcp.apexlogics.org-blueviolet)](https://mcp.apexlogics.org)
+[![Zero PII](https://img.shields.io/badge/PII-zero-blue.svg)](#technical-specifications)
+[![Zero APIs](https://img.shields.io/badge/network%20calls-zero-blue.svg)](#technical-specifications)
+[![Client-side only](https://img.shields.io/badge/execution-client--side%20only-blue.svg)](#architecture)
 
 > Deterministic, rule-based, browser-only engines for career ROI, education finance, compensation analysis, licensing, immigration, and workforce development. Sister suite: [AINumbers.co](https://ainumbers.co) (markets & institutions).  
 > Built by [Post Oak Labs](https://postoaklabs.com) · [Apex Advisory](https://apexadvisory.site) · Live at [apexlogics.org](https://apexlogics.org)
-
-🔒 **Zero PII** · 📡 **Zero APIs** · 💻 **Client-Side Only** · 📜 **CC BY 4.0**
 
 ---
 
