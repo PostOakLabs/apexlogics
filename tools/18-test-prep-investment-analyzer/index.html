@@ -1101,6 +1101,8 @@ async function buildAP2Mandate(r) {
     }
   }
 
+  const _preflight = AP2Schema.validate(_cgPreval);
+  if (!_preflight.valid) { console.error('Policy Mandate validation:', _preflight.errors); return null; }
   return mandate;
 }
 
@@ -1133,11 +1135,7 @@ async function apexHash(policy_parameters, output_payload) {
 async function exportAP2() {
   if (!lastROIResult) return;
   const mandate = await buildAP2Mandate(lastROIResult);
-  const result = AP2Schema.validate(_cgPreval);
-  if (!result.valid) {
-    showToast('Policy Mandate validation failed: ' + result.errors.join('; '), 'error');
-    return;
-  }
+  if (!mandate) { showToast('Policy Mandate validation failed — check console.', 'error'); return; }
   downloadJSON(mandate, 'AL30_test_prep_roi.ap2.json');
   showToast(t('toast_ap2'), 'success');
 }

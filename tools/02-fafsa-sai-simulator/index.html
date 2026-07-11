@@ -1200,6 +1200,8 @@ async function buildAP2Mandate(r) {
     }
   }
 
+  const _preflight = AP2Schema.validate(_cgPreval);
+  if (!_preflight.valid) { console.error('Policy Mandate validation:', _preflight.errors); return null; }
   return mandate;
 }
 
@@ -1232,11 +1234,7 @@ async function apexHash(policy_parameters, output_payload) {
 async function exportAP2() {
   if (!lastResult) return;
   const mandate = await buildAP2Mandate(lastResult);
-  const validation = AP2Schema.validate(_cgPreval);
-  if (!validation.valid) {
-    showToast('Policy Mandate validation failed: ' + validation.errors.join('; '), 'error');
-    return;
-  }
+  if (!mandate) { showToast('Policy Mandate validation failed — check console.', 'error'); return; }
   const blob = new Blob([JSON.stringify(mandate, null, 2)], { type: 'application/json' });
   triggerDownload(blob, `AL-17_fafsa-sai-simulator_${tsCompact()}.ap2.json`);
   showToast('Policy Mandate downloaded and validated.', 'success');
