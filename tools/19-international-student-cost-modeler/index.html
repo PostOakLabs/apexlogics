@@ -1068,6 +1068,8 @@ async function buildAP2Mandate(r) {
     }
   }
 
+  const _preflight = AP2Schema.validate(_cgPreval);
+  if (!_preflight.valid) { console.error('Policy Mandate validation:', _preflight.errors); return null; }
   return mandate;
 }
 
@@ -1100,11 +1102,7 @@ async function apexHash(policy_parameters, output_payload) {
 async function exportAP2() {
   if (!lastUSResult) { showToast(t('err_fill'),'error'); return; }
   const mandate = await buildAP2Mandate(lastUSResult);
-  const result = AP2Schema.validate(_cgPreval);
-  if (!result.valid) {
-    showToast('Policy Mandate validation failed: ' + result.errors.join('; '), 'error');
-    return;
-  }
+  if (!mandate) { showToast('Policy Mandate validation failed — check console.', 'error'); return; }
   downloadJSON(mandate,'AL31_intl_student_cost.ap2.json');
   showToast(t('toast_ap2'),'success');
 }

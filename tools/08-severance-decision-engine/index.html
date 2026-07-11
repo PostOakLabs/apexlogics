@@ -1883,6 +1883,8 @@ async function buildAP2Mandate() {
     }
   }
 
+  const _preflight = AP2Schema.validate(_cgPreval);
+  if (!_preflight.valid) { console.error('Policy Mandate validation:', _preflight.errors); return null; }
   return mandate;
 }
 
@@ -1916,11 +1918,7 @@ async function apexHash(policy_parameters, output_payload) {
 async function exportAP2() {
   if (!lastResult) { showToast('Run the calculator first.', 'warn'); return; }
   const mandate = await buildAP2Mandate();
-  const result = AP2Schema.validate(_cgPreval);
-  if (!result.valid) {
-    showToast('Policy Mandate validation failed: ' + result.errors.join('; '), 'error');
-    return;
-  }
+  if (!mandate) { showToast('Policy Mandate validation failed — check console.', 'error'); return; }
   const json = JSON.stringify(mandate, null, 2);
   downloadFile('al24-severance.ap2.json', json, 'application/json');
   showToast('Policy Mandate (JSON) downloaded.', 'success');
