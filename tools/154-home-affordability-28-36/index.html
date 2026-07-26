@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home Affordability (28/36) · ApexLogics #154</title>
+  <meta name="description" content="Run the front-end and back-end ratios lenders use to size a mortgage, take the smaller answer, and work backward to the purchase price it supports. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/tools/154-home-affordability-28-36/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], input[type="text"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+
+    /* Tool-specific: notes (additive, not template chrome) */
+    .info-note { margin-top: 14px; padding: 12px 14px; background: rgba(167,139,250,.06); border: 1px solid var(--border); border-radius: 8px; font-size: .78rem; color: var(--text-muted); }
+    .warn-note { margin-top: 14px; padding: 12px 14px; background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.3); border-radius: 8px; font-size: .78rem; color: var(--text-muted); }
+    .network-note { margin-top: 8px; padding: 10px 12px; background: rgba(96,165,250,.08); border: 1px solid rgba(96,165,250,.3); border-radius: 8px; font-size: .74rem; color: var(--text-muted); }
+    .field-error { color: var(--red); font-size: .7rem; font-family: 'JetBrains Mono', monospace; margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">Real Estate · Affordability</p>
+  <h1 class="tool-title">Home Affordability<br>(28/36)</h1>
+  <p class="tool-desc">Lenders size a mortgage against two ratios. The front-end ratio caps your housing payment at a share of gross monthly income, and the back-end ratio caps housing plus every other debt payment. This calculator runs both, takes the smaller answer, and works backwards from that payment to the loan and purchase price it supports. The interest rate is yours to enter, since nothing here connects to the network.</p>
+  <p class="tool-vintage">Data: 2026, ratios are lender convention, not statute; interest rate is user-supplied</p>
+
+  <div class="card">
+    <div class="card-title">Income &amp; Debt <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="annualIncome">Gross annual household income ($)</label>
+        <input type="number" id="annualIncome" value="120000" min="0" step="1000" />
+        <span class="field-hint">Before tax, all borrowers combined</span>
+      </div>
+      <div class="field">
+        <label for="loanPayments">Monthly car, student, and personal loan payments ($)</label>
+        <input type="number" id="loanPayments" value="450" min="0" step="10" />
+        <span class="field-hint">Minimum required payments only</span>
+      </div>
+      <div class="field">
+        <label for="cardMinimums">Monthly credit card minimum payments ($)</label>
+        <input type="number" id="cardMinimums" value="150" min="0" step="10" />
+      </div>
+      <div class="field">
+        <label for="supportPayments">Monthly child support or alimony paid ($)</label>
+        <input type="number" id="supportPayments" value="0" min="0" step="10" />
+        <span class="field-hint">Lenders count this as debt</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Cash &amp; Loan Terms <span class="badge">STEP 2</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="cashAvailable">Cash available for down payment and closing ($)</label>
+        <input type="number" id="cashAvailable" value="90000" min="0" step="1000" />
+      </div>
+      <div class="field">
+        <label for="closingPct">Closing costs (% of price)</label>
+        <input type="number" id="closingPct" value="2.5" min="0" step="0.01" />
+        <span class="field-hint">Comes out of the same cash</span>
+      </div>
+      <div class="field">
+        <label for="rate">Mortgage interest rate (% APR)</label>
+        <input type="number" id="rate" value="6.5" min="0" max="25" step="0.001" />
+        <span class="field-hint"><strong>Not fetched. Enter your quoted rate.</strong></span>
+      </div>
+      <div class="field">
+        <label for="termYears">Loan term (years)</label>
+        <input type="number" id="termYears" value="30" min="1" max="40" step="1" />
+      </div>
+    </div>
+    <div class="network-note">This rate is not fetched from anywhere. It is a starting figure you should replace with the rate you were actually quoted. Nothing on this page touches the network.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Housing Costs &amp; Ratios <span class="badge">STEP 3</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="propertyTaxRate">Property tax rate (% of price per year)</label>
+        <input type="number" id="propertyTaxRate" value="1.1" min="0" step="0.001" />
+      </div>
+      <div class="field">
+        <label for="insuranceAnnual">Annual homeowners insurance ($)</label>
+        <input type="number" id="insuranceAnnual" value="1800" min="0" step="50" />
+      </div>
+      <div class="field">
+        <label for="hoaMonthly">Monthly HOA dues ($)</label>
+        <input type="number" id="hoaMonthly" value="0" min="0" step="10" />
+      </div>
+      <div class="field">
+        <label for="miRate">Mortgage insurance rate (% of loan per year)</label>
+        <input type="number" id="miRate" value="0.55" min="0" step="0.01" />
+        <span class="field-hint">Applies when the down payment is under 20%</span>
+      </div>
+      <div class="field">
+        <label for="frontRatio">Front-end ratio limit (%)</label>
+        <input type="number" id="frontRatio" value="28" min="0" step="0.1" />
+        <span class="field-hint">The classic 28. Conventional underwriting often allows more.</span>
+      </div>
+      <div class="field">
+        <label for="backRatio">Back-end ratio limit (%)</label>
+        <input type="number" id="backRatio" value="36" min="0" step="0.1" />
+        <span class="field-hint">The classic 36. Many programs allow 43 or higher.</span>
+      </div>
+    </div>
+    <div class="field-error" id="termError"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Constants Panel <span class="badge">EDITABLE</span></div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="cFhaFront">FHA front-end guideline (%)</label>
+        <input type="number" id="cFhaFront" value="31" step="0.1" />
+        <span class="field-hint">HUD guideline, low confidence, verify current</span>
+      </div>
+      <div class="field">
+        <label for="cFhaBack">FHA back-end guideline (%)</label>
+        <input type="number" id="cFhaBack" value="43" step="0.1" />
+        <span class="field-hint">HUD guideline, low confidence, verify current</span>
+      </div>
+      <div class="field">
+        <label for="cMiDropLTV">LTV above which mortgage insurance applies (%)</label>
+        <input type="number" id="cMiDropLTV" value="80" step="1" />
+        <span class="field-hint">Homeowners Protection Act</span>
+      </div>
+    </div>
+    <div class="field-hint" style="margin-top:10px;">Bisection iterations are fixed at 60 for reproducibility and are not user-editable, per the Apex implementation constant.</div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Calculate My Affordability →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Maximum Purchase Price</div>
+        <div class="metric-val green" id="rHeadline">--</div>
+        <div class="metric-note" id="rHeadlineNote">Binding ratio: --</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Total Monthly Housing Payment</div>
+        <div class="metric-val amber" id="rPiti">--</div>
+        <div class="metric-note">Principal, interest, tax, insurance, HOA, MI</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Price At Rate +1 / +2 Points</div>
+        <div class="metric-val accent" id="rStress">--</div>
+        <div class="metric-note">The input you control least</div>
+      </div>
+    </div>
+
+    <div class="warn-note" id="debtExceedsNote" style="display:none;">Your existing debt payments already use the full back-end allowance. There is no room left for a housing payment at this back-end ratio.</div>
+    <div class="warn-note" id="fullCashNote" style="display:none;">Cash available is $0. No lender will originate a conventional loan at 100% loan-to-value; mortgage insurance applies throughout and the price shown is driven purely by the income ratios.</div>
+    <div class="info-note" id="cashClampNote" style="display:none;">The maximum price was adjusted downward slightly to keep the required cash at close within what you have available.</div>
+
+    <div class="card">
+      <div class="card-title">Ratios</div>
+      <div class="row"><span class="row-label">Gross monthly income</span><span class="row-val" id="dGrossMonthly">--</span></div>
+      <div class="row"><span class="row-label">Total other monthly debt</span><span class="row-val" id="dOtherDebt">--</span></div>
+      <div class="row"><span class="row-label">Front-end allowance</span><span class="row-val" id="dFrontAllowance">--</span></div>
+      <div class="row"><span class="row-label">Back-end allowance</span><span class="row-val" id="dBackAllowance">--</span></div>
+      <div class="row"><span class="row-label">Binding ratio</span><span class="row-val" id="dBindingRatio">--</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">The Purchase It Supports</div>
+      <div class="row"><span class="row-label"><strong>Maximum purchase price</strong></span><span class="row-val" id="dMaxPrice">--</span></div>
+      <div class="row"><span class="row-label">Loan amount at that price</span><span class="row-val" id="dLoanAmount">--</span></div>
+      <div class="row"><span class="row-label">Down payment</span><span class="row-val" id="dDownPayment">--</span></div>
+      <div class="row"><span class="row-label">Down payment percentage</span><span class="row-val" id="dDownPct">--</span></div>
+      <div class="row"><span class="row-label">Monthly principal and interest</span><span class="row-val" id="dPandI">--</span></div>
+      <div class="row"><span class="row-label">Monthly property tax</span><span class="row-val" id="dTaxMonthly">--</span></div>
+      <div class="row"><span class="row-label">Monthly insurance</span><span class="row-val" id="dInsuranceMonthly">--</span></div>
+      <div class="row"><span class="row-label">Monthly HOA</span><span class="row-val" id="dHoaMonthly">--</span></div>
+      <div class="row"><span class="row-label">Monthly mortgage insurance</span><span class="row-val" id="dMiMonthly">--</span></div>
+      <div class="row"><span class="row-label"><strong>Total monthly housing payment</strong></span><span class="row-val" id="dTotalPiti">--</span></div>
+      <div class="row"><span class="row-label">Front-end ratio achieved</span><span class="row-val" id="dFrontActual">--</span></div>
+      <div class="row"><span class="row-label">Back-end ratio achieved</span><span class="row-val" id="dBackActual">--</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Cash &amp; Rate Sensitivity</div>
+      <div class="row"><span class="row-label">Cash required at close</span><span class="row-val" id="dRequiredCash">--</span></div>
+      <div class="row"><span class="row-label">Cash surplus or shortfall</span><span class="row-val" id="dCashSurplus">--</span></div>
+      <div class="row"><span class="row-label">Maximum price at rate + 1 point</span><span class="row-val" id="dMaxPricePlus1">--</span></div>
+      <div class="row"><span class="row-label">Reduction at + 1 point</span><span class="row-val" id="dReduction1">--</span></div>
+      <div class="row"><span class="row-label">Maximum price at rate + 2 points</span><span class="row-val" id="dMaxPricePlus2">--</span></div>
+      <div class="row"><span class="row-label">Reduction at + 2 points</span><span class="row-val" id="dReduction2">--</span></div>
+      <div class="row"><span class="row-label"><strong>Binding constraint</strong></span><span class="row-val" id="dBindingConstraint">--</span></div>
+
+      <div class="info-note">A lender's underwriting will differ from this estimate. Debt-to-income ratios, credit history, reserves, and program guidelines all factor into a real approval.</div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-168 · Data: 2026, lender convention ratios, user-supplied rate · Homeowners Protection Act
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+const $   = id => document.getElementById(id);
+const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
+const money = n => Math.round(n * 100) / 100;
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+const BISECTION_ITERATIONS = 60; // fixed, not user-editable, per spec
+const BISECTION_UPPER_BOUND = 5000000;
+
+/* pitiFor(price): the monthly housing payment at a given price (spec step 7) */
+function pitiFor(price, ctx) {
+  let downPayment = Math.min(ctx.cashAvailable - price * ctx.closingPct / 100, price);
+  if (downPayment < 0) downPayment = 0;
+  const loanAmount = Math.max(0, price - downPayment);
+  const i = ctx.rate / 100 / 12;
+  const n = Math.min(ctx.termYears * 12, 480);
+  let f = 1;
+  for (let k = 0; k < n; k++) f = f * (1 + i);
+  const pAndI = (i === 0) ? (loanAmount / n) : (loanAmount * i * f / (f - 1));
+  const taxMonthly = price * ctx.propertyTaxRate / 100 / 12;
+  const insuranceMonthly = ctx.insuranceAnnual / 12;
+  const miMonthly = (price > 0 && loanAmount / price > ctx.miDropLTV) ? (loanAmount * ctx.miRate / 100 / 12) : 0;
+  return { total: pAndI + taxMonthly + insuranceMonthly + ctx.hoaMonthly + miMonthly, pAndI, taxMonthly, insuranceMonthly, miMonthly, downPayment, loanAmount };
+}
+
+/* Bisection to find the max price supporting maxHousingPayment, fixed 60 iterations (spec step 6) */
+function solveMaxPrice(maxHousingPayment, ctx) {
+  let lo = 0, hi = BISECTION_UPPER_BOUND;
+  for (let iter = 0; iter < BISECTION_ITERATIONS; iter++) {
+    const price = (lo + hi) / 2;
+    const payment = pitiFor(price, ctx).total;
+    if (payment > maxHousingPayment) hi = price; else lo = price;
+  }
+  return Math.round(lo);
+}
+
+/* ── CORE MATH (spec steps 1-13) ──────────────────────────────────────────── */
+function calculate() {
+  $('termError').textContent = '';
+
+  let annualIncome = parseFloat($('annualIncome').value); if (!Number.isFinite(annualIncome) || annualIncome < 0) annualIncome = 0;
+  let loanPayments = parseFloat($('loanPayments').value); if (!Number.isFinite(loanPayments) || loanPayments < 0) loanPayments = 0;
+  let cardMinimums = parseFloat($('cardMinimums').value); if (!Number.isFinite(cardMinimums) || cardMinimums < 0) cardMinimums = 0;
+  let supportPayments = parseFloat($('supportPayments').value); if (!Number.isFinite(supportPayments) || supportPayments < 0) supportPayments = 0;
+  let cashAvailable = parseFloat($('cashAvailable').value); if (!Number.isFinite(cashAvailable) || cashAvailable < 0) cashAvailable = 0;
+  let closingPct = parseFloat($('closingPct').value); if (!Number.isFinite(closingPct) || closingPct < 0) closingPct = 0;
+  let rate = parseFloat($('rate').value); if (!Number.isFinite(rate)) rate = 6.5;
+  rate = clamp(rate, 0, 25);
+  let termYears = parseInt($('termYears').value, 10); if (!Number.isFinite(termYears)) termYears = 0;
+  if (termYears <= 0) {
+    $('termError').textContent = 'Loan term must be at least 1 year.';
+    return;
+  }
+  let propertyTaxRate = parseFloat($('propertyTaxRate').value); if (!Number.isFinite(propertyTaxRate) || propertyTaxRate < 0) propertyTaxRate = 0;
+  let insuranceAnnual = parseFloat($('insuranceAnnual').value); if (!Number.isFinite(insuranceAnnual) || insuranceAnnual < 0) insuranceAnnual = 0;
+  let hoaMonthly = parseFloat($('hoaMonthly').value); if (!Number.isFinite(hoaMonthly) || hoaMonthly < 0) hoaMonthly = 0;
+  let miRate = parseFloat($('miRate').value); if (!Number.isFinite(miRate) || miRate < 0) miRate = 0;
+  let frontRatio = parseFloat($('frontRatio').value); if (!Number.isFinite(frontRatio) || frontRatio < 0) frontRatio = 28;
+  let backRatio = parseFloat($('backRatio').value); if (!Number.isFinite(backRatio) || backRatio < 0) backRatio = 36;
+
+  const cMiDropLTVPct = parseFloat($('cMiDropLTV').value); const miDropLTV = Number.isFinite(cMiDropLTVPct) ? cMiDropLTVPct / 100 : 0.80;
+
+  // Step 1-2: income and other debt
+  const grossMonthly = money(annualIncome / 12);
+  const grossMonthlyGuarded = Math.max(grossMonthly, 0.01);
+  const otherDebt = money(loanPayments + cardMinimums + supportPayments);
+
+  // Step 3-5: allowances and binding ratio
+  const frontAllowance = money(grossMonthly * frontRatio / 100);
+  const backAllowance = money(grossMonthly * backRatio / 100 - otherDebt);
+  const maxHousingPayment = Math.max(0, Math.min(frontAllowance, backAllowance));
+  const bindingRatio = frontAllowance <= backAllowance ? 'front' : 'back';
+  const debtExceedsAllowance = backAllowance < 0;
+
+  const ctx = { cashAvailable, closingPct, rate, termYears, propertyTaxRate, insuranceAnnual, hoaMonthly, miRate, miDropLTV };
+
+  // Step 6: bisection for max price
+  let maxPrice = solveMaxPrice(maxHousingPayment, ctx);
+
+  // Step 8: recompute final breakdown at maxPrice
+  let final = pitiFor(maxPrice, ctx);
+  let finalDownPayment = money(final.downPayment);
+  let loanAmount = money(final.loanAmount);
+  let pAndI = money(final.pAndI);
+  let taxMonthly = money(final.taxMonthly);
+  let insuranceMonthly = money(final.insuranceMonthly);
+  let miMonthly = money(final.miMonthly);
+  let finalPITI = money(pAndI + taxMonthly + insuranceMonthly + hoaMonthly + miMonthly);
+
+  // Step 9: actual ratios achieved
+  let frontRatioActual = Math.round(finalPITI / grossMonthlyGuarded * 10000);
+  let backRatioActual = Math.round((finalPITI + otherDebt) / grossMonthlyGuarded * 10000);
+
+  // Step 10: cash check
+  let requiredCash = money(finalDownPayment + maxPrice * closingPct / 100);
+  let cashSurplus = money(cashAvailable - requiredCash);
+  let cashClamped = false;
+  if (cashSurplus < -1) {
+    // Clamp maxPrice downward until requiredCash fits within cashAvailable
+    cashClamped = true;
+    for (let guard = 0; guard < 60 && cashSurplus < -1; guard++) {
+      maxPrice = Math.max(0, maxPrice - Math.ceil(-cashSurplus));
+      final = pitiFor(maxPrice, ctx);
+      finalDownPayment = money(final.downPayment);
+      loanAmount = money(final.loanAmount);
+      pAndI = money(final.pAndI);
+      taxMonthly = money(final.taxMonthly);
+      insuranceMonthly = money(final.insuranceMonthly);
+      miMonthly = money(final.miMonthly);
+      finalPITI = money(pAndI + taxMonthly + insuranceMonthly + hoaMonthly + miMonthly);
+      requiredCash = money(finalDownPayment + maxPrice * closingPct / 100);
+      cashSurplus = money(cashAvailable - requiredCash);
+    }
+    frontRatioActual = Math.round(finalPITI / grossMonthlyGuarded * 10000);
+    backRatioActual = Math.round((finalPITI + otherDebt) / grossMonthlyGuarded * 10000);
+  }
+
+  // Step 11: down payment percentage
+  const downPct = Math.round(finalDownPayment / Math.max(maxPrice, 1) * 10000);
+
+  // Step 12: stress test at +1 and +2 points
+  const ctxPlus1 = Object.assign({}, ctx, { rate: rate + 1 });
+  const maxPriceAtPlus1 = solveMaxPrice(maxHousingPayment, ctxPlus1);
+  const reduction1 = maxPrice - maxPriceAtPlus1;
+
+  const ctxPlus2 = Object.assign({}, ctx, { rate: rate + 2 });
+  const maxPriceAtPlus2 = solveMaxPrice(maxHousingPayment, ctxPlus2);
+  const reduction2 = maxPrice - maxPriceAtPlus2;
+
+  // Step 13: cash-constrained ceiling
+  const cashCeiling = Math.round(cashAvailable / (0.20 + closingPct / 100));
+  const bindingConstraint = (cashCeiling < maxPrice) ? 'cash' : bindingRatio;
+
+  _lastInputs = {
+    annualIncome, loanPayments, cardMinimums, supportPayments, cashAvailable, closingPct,
+    rate, termYears, propertyTaxRate, insuranceAnnual, hoaMonthly, miRate, frontRatio, backRatio
+  };
+  _lastResults = {
+    grossMonthly, otherDebt, frontAllowance, backAllowance, maxHousingPayment, bindingRatio, debtExceedsAllowance,
+    maxPrice, loanAmount, finalDownPayment, downPct,
+    pAndI, taxMonthly, insuranceMonthly, hoaMonthly, miMonthly, finalPITI,
+    frontRatioActual, backRatioActual,
+    requiredCash, cashSurplus, cashClamped,
+    maxPriceAtPlus1, reduction1, maxPriceAtPlus2, reduction2,
+    cashCeiling, bindingConstraint
+  };
+
+  render();
+}
+
+function render() {
+  const r = _lastResults;
+
+  $('rHeadline').textContent = fmt(r.maxPrice);
+  $('rHeadlineNote').textContent = 'Binding ratio: ' + r.bindingRatio;
+  $('rPiti').textContent = fmt(r.finalPITI) + '/mo';
+  $('rStress').textContent = fmt(r.maxPriceAtPlus1) + ' / ' + fmt(r.maxPriceAtPlus2);
+
+  $('debtExceedsNote').style.display = r.debtExceedsAllowance ? 'block' : 'none';
+  $('fullCashNote').style.display = (_lastInputs.cashAvailable <= 0) ? 'block' : 'none';
+  $('cashClampNote').style.display = r.cashClamped ? 'block' : 'none';
+
+  $('dGrossMonthly').textContent = fmt(r.grossMonthly);
+  $('dOtherDebt').textContent = fmt(r.otherDebt);
+  $('dFrontAllowance').textContent = fmt(r.frontAllowance);
+  $('dBackAllowance').textContent = (r.backAllowance < 0 ? '-' : '') + fmt(r.backAllowance);
+  $('dBindingRatio').textContent = r.bindingRatio;
+
+  $('dMaxPrice').textContent = fmt(r.maxPrice);
+  $('dLoanAmount').textContent = fmt(r.loanAmount);
+  $('dDownPayment').textContent = fmt(r.finalDownPayment);
+  $('dDownPct').textContent = (r.downPct / 100).toFixed(2) + '%';
+  $('dPandI').textContent = fmt(r.pAndI) + '/mo';
+  $('dTaxMonthly').textContent = fmt(r.taxMonthly) + '/mo';
+  $('dInsuranceMonthly').textContent = fmt(r.insuranceMonthly) + '/mo';
+  $('dHoaMonthly').textContent = fmt(r.hoaMonthly) + '/mo';
+  $('dMiMonthly').textContent = fmt(r.miMonthly) + '/mo';
+  $('dTotalPiti').textContent = fmt(r.finalPITI) + '/mo';
+  $('dFrontActual').textContent = (r.frontRatioActual / 100).toFixed(2) + '%';
+  $('dBackActual').textContent = (r.backRatioActual / 100).toFixed(2) + '%';
+
+  $('dRequiredCash').textContent = fmt(r.requiredCash);
+  $('dCashSurplus').textContent = (r.cashSurplus < 0 ? '-' : '') + fmt(r.cashSurplus);
+  $('dMaxPricePlus1').textContent = fmt(r.maxPriceAtPlus1);
+  $('dReduction1').textContent = fmt(r.reduction1);
+  $('dMaxPricePlus2').textContent = fmt(r.maxPriceAtPlus2);
+  $('dReduction2').textContent = fmt(r.reduction2);
+  $('dBindingConstraint').textContent = r.bindingConstraint;
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Home Affordability (28/36) Results',
+    `\n_Generated ${d} · AL-168 · apexlogics.org_\n`,
+    '## Inputs',
+    '| Field | Value |', '|---|---|',
+    `| Gross annual income | ${fmt(i.annualIncome)} |`,
+    `| Cash available | ${fmt(i.cashAvailable)} |`,
+    `| Mortgage rate | ${i.rate}% |`,
+    `| Front / back ratio limits | ${i.frontRatio}% / ${i.backRatio}% |`,
+    '\n## Results',
+    `- **Gross monthly income:** ${fmt(r.grossMonthly)}`,
+    `- **Total other monthly debt:** ${fmt(r.otherDebt)}`,
+    `- **Front-end allowance:** ${fmt(r.frontAllowance)}`,
+    `- **Back-end allowance:** ${fmt(r.backAllowance)}`,
+    `- **Binding ratio:** ${r.bindingRatio}`,
+    `- **Maximum purchase price:** ${fmt(r.maxPrice)}`,
+    `- **Loan amount at that price:** ${fmt(r.loanAmount)}`,
+    `- **Down payment:** ${fmt(r.finalDownPayment)} (${(r.downPct/100).toFixed(2)}%)`,
+    `- **Monthly principal and interest:** ${fmt(r.pAndI)}`,
+    `- **Monthly property tax:** ${fmt(r.taxMonthly)}`,
+    `- **Monthly insurance:** ${fmt(r.insuranceMonthly)}`,
+    `- **Monthly HOA:** ${fmt(r.hoaMonthly)}`,
+    `- **Monthly mortgage insurance:** ${fmt(r.miMonthly)}`,
+    `- **Total monthly housing payment:** ${fmt(r.finalPITI)}`,
+    `- **Front-end ratio achieved:** ${(r.frontRatioActual/100).toFixed(2)}%`,
+    `- **Back-end ratio achieved:** ${(r.backRatioActual/100).toFixed(2)}%`,
+    `- **Cash required at close:** ${fmt(r.requiredCash)}`,
+    `- **Cash surplus or shortfall:** ${fmt(r.cashSurplus)}`,
+    `- **Maximum price at rate + 1 point:** ${fmt(r.maxPriceAtPlus1)} (reduction of ${fmt(r.reduction1)})`,
+    `- **Maximum price at rate + 2 points:** ${fmt(r.maxPriceAtPlus2)} (reduction of ${fmt(r.reduction2)})`,
+    `- **Binding constraint:** ${r.bindingConstraint}`,
+    '\n---',
+    "_This rate is not fetched from anywhere; it is a starting figure you should replace with your quoted rate. A lender's underwriting will differ from this estimate._"
+  ];
+  dlFile('home-affordability-28-36.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  const payload = {
+    mandate_type: "home_affordability_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-168",
+    tool_id: "154-home-affordability-28-36",
+    tool_name: "Home Affordability (28/36)",
+    inputs: {
+      annual_income: i.annualIncome,
+      loan_payments: i.loanPayments,
+      card_minimums: i.cardMinimums,
+      support_payments: i.supportPayments,
+      cash_available: i.cashAvailable,
+      closing_pct: i.closingPct,
+      rate: i.rate,
+      term_years: i.termYears,
+      property_tax_rate: i.propertyTaxRate,
+      insurance_annual: i.insuranceAnnual,
+      hoa_monthly: i.hoaMonthly,
+      mi_rate: i.miRate,
+      front_ratio: i.frontRatio,
+      back_ratio: i.backRatio,
+      data_version: "2026"
+    },
+    outputs: {
+      gross_monthly: r.grossMonthly,
+      other_debt: r.otherDebt,
+      front_allowance: r.frontAllowance,
+      back_allowance: r.backAllowance,
+      binding_ratio: r.bindingRatio,
+      max_price: r.maxPrice,
+      loan_amount: r.loanAmount,
+      down_payment: r.finalDownPayment,
+      down_pct_bps: r.downPct,
+      p_and_i: r.pAndI,
+      tax_monthly: r.taxMonthly,
+      insurance_monthly: r.insuranceMonthly,
+      hoa_monthly: r.hoaMonthly,
+      mi_monthly: r.miMonthly,
+      total_piti: r.finalPITI,
+      front_ratio_actual_bps: r.frontRatioActual,
+      back_ratio_actual_bps: r.backRatioActual,
+      required_cash: r.requiredCash,
+      cash_surplus: r.cashSurplus,
+      max_price_at_plus1: r.maxPriceAtPlus1,
+      reduction_at_plus1: r.reduction1,
+      max_price_at_plus2: r.maxPriceAtPlus2,
+      reduction_at_plus2: r.reduction2,
+      binding_constraint: r.bindingConstraint
+    },
+    downstream_handoff_candidates: ["153-total-cost-of-homeownership"],
+    data_sources: [
+      "Conventional underwriting convention (28/36), not statute",
+      "Homeowners Protection Act (MI drop LTV)",
+      "User-supplied mortgage rate"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/real_estate_projection";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-168";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* STEP 6, SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['home_affordability_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-168_home-affordability-28-36_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, CHAINGRAPH §6 EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* REPLACE: MANIFEST */
+const MANIFEST = {
+  "tool_id": "154-home-affordability-28-36",
+  "al_id": "AL-168",
+  "version": "1.0.0",
+  "title": "Home Affordability (28/36)",
+  "description": "Given household income, other debt, cash available, and loan terms, runs the front-end and back-end debt-to-income ratios, takes the binding one, and solves by fixed 60-iteration bisection for the maximum purchase price it supports, including a rate-sensitivity stress test at plus one and plus two points. Deterministic, zero external data, zero network. Policy Mandate: home_affordability_record.",
+  "category": "real_estate",
+  "journeys": ["before you talk to a lender","house hunting budget"],
+  "personas": ["first-time buyer","pre-approval shopper","renter","loan officer"],
+  "tags": ["affordability","28/36 rule","debt-to-income","mortgage qualification","front-end ratio","back-end ratio"],
+  "status": "active",
+  "maintenance": "low (ratios are convention; only the FHA/QM reference constants may need periodic verification)",
+  "data_vintage": "2026 (ratios are lender convention, not statute; interest rate is user-supplied)",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["home_affordability_record"],
+  "downstream_handoff_candidates": ["153-total-cost-of-homeownership"],
+  "regulatory_citations": [
+    "Homeowners Protection Act", "HUD FHA guideline (reference only, low confidence)", "CFPB ATR/QM historical reference (low confidence)"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "annual_income": { "type": "number" },
+      "cash_available": { "type": "number" },
+      "rate": { "type": "number" },
+      "term_years": { "type": "number" },
+      "front_ratio": { "type": "number" },
+      "back_ratio": { "type": "number" }
+    },
+    "required": ["annual_income","cash_available","rate","term_years"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "max_price": { "type": "number" },
+      "binding_ratio": { "type": "string" },
+      "binding_constraint": { "type": "string" },
+      "max_price_at_plus1": { "type": "number" },
+      "max_price_at_plus2": { "type": "number" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "home_affordability_28_36",
+    "description": "Given household income, other debt, cash available, and loan terms, returns the maximum purchase price supportable under the binding front-end or back-end ratio, plus a rate-sensitivity stress test at plus one and plus two points. Deterministic, zero external data, zero network.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "annual_income": { "type": "number" },
+        "cash_available": { "type": "number" },
+        "rate": { "type": "number" },
+        "term_years": { "type": "number" }
+      },
+      "required": ["annual_income","cash_available","rate","term_years"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+/* KEEP VERBATIM: MCP / MANIFEST TOGGLE */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

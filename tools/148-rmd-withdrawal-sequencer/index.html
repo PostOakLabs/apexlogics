@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RMD & Withdrawal Sequencer · ApexLogics #148</title>
+  <meta name="description" content="Compute your required minimum distribution across all tax-deferred accounts and sequence the rest of your spending need across taxable, tax-deferred, and Roth money. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/tools/148-rmd-withdrawal-sequencer/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], input[type="text"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+      .accounts-table { font-size: .78rem; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+
+    /* Tool-specific: account table + disclaimer + notes (additive, not template chrome) */
+    .accounts-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+    .accounts-table th { text-align: left; font-family: 'JetBrains Mono', monospace; font-size: .68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .06em; padding: 6px 6px; border-bottom: 1px solid var(--border); }
+    .accounts-table td { padding: 6px 6px; vertical-align: middle; }
+    .accounts-table input, .accounts-table select { font-size: .82rem; padding: 7px 8px; }
+    .acct-remove { background: var(--surface); border: 1px solid var(--border); color: var(--red); border-radius: 6px; padding: 6px 10px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: .75rem; }
+    .acct-remove:hover { border-color: var(--red); }
+    .acct-remove:disabled { opacity: .35; cursor: not-allowed; }
+    .accounts-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+    .add-acct-btn { background: var(--surface); border: 1px solid var(--accent); color: var(--accent); border-radius: 6px; padding: 8px 16px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: .78rem; }
+    .add-acct-btn:hover { background: var(--accent-low); }
+    .add-acct-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .accounts-cap-note { font-size: .7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .disclaimer { margin-top: 16px; padding: 12px 14px; background: rgba(248,113,113,.06); border: 1px solid rgba(248,113,113,.25); border-radius: 8px; font-size: .78rem; color: var(--text-muted); }
+    .info-note { margin-top: 14px; padding: 12px 14px; background: rgba(167,139,250,.06); border: 1px solid var(--border); border-radius: 8px; font-size: .78rem; color: var(--text-muted); }
+    .warn-note { margin-top: 14px; padding: 12px 14px; background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.3); border-radius: 8px; font-size: .78rem; color: var(--text-muted); }
+    .field-error { color: var(--red); font-size: .7rem; font-family: 'JetBrains Mono', monospace; margin-top: 6px; }
+    .checkbox-field { display: flex; align-items: center; gap: 8px; flex-direction: row; }
+    .checkbox-field input { width: auto; }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">Retirement · RMD Compliance</p>
+  <h1 class="tool-title">RMD &amp; Withdrawal<br>Sequencer</h1>
+  <p class="tool-desc">Once you reach your required beginning age, the IRS sets a floor on what you have to pull out of each tax-deferred account every year, and the penalty for missing it is steep. This tool computes the required minimum for each account from the Uniform Lifetime Table, tells you which accounts can be aggregated and which cannot, and then sequences the rest of your spending need across taxable, tax-deferred, and Roth money so you can see the tax bill either way.</p>
+  <p class="tool-vintage">Data: 2026 vintage · Uniform Lifetime Table per T.D. 9930 · SECURE 2.0 start ages · Rev. Proc. 2025-32 brackets</p>
+
+  <div class="card">
+    <div class="card-title">Your Accounts <span class="badge">STEP 1</span></div>
+    <table class="accounts-table">
+      <thead>
+        <tr>
+          <th style="width:22%">Account label</th>
+          <th style="width:26%">Account type</th>
+          <th style="width:22%">Balance, 31 Dec prior year ($)</th>
+          <th style="width:22%">Still working, not 5% owner</th>
+          <th style="width:8%"></th>
+        </tr>
+      </thead>
+      <tbody id="acctBody"></tbody>
+    </table>
+    <div class="accounts-actions">
+      <button class="add-acct-btn" id="addAcctBtn" onclick="addAcctRow()">+ Add account</button>
+      <span class="accounts-cap-note" id="acctCapNote">1 of 12 accounts</span>
+    </div>
+    <div class="field-error" id="acctError"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Holder &amp; Plan Context <span class="badge">STEP 2</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="birthYear">Birth year</label>
+        <input type="number" id="birthYear" value="1953" min="1900" max="2020" step="1" />
+        <span class="field-hint">Sets the required beginning age under SECURE 2.0</span>
+      </div>
+      <div class="field">
+        <label for="ageAttained">Age attained during this distribution year</label>
+        <input type="number" id="ageAttained" value="73" min="0" max="130" step="1" />
+        <span class="field-hint">The age you will be on 31 December of this year</span>
+      </div>
+      <div class="field">
+        <label for="manualDivisor">Manual divisor override</label>
+        <input type="number" id="manualDivisor" value="" min="0" step="0.1" placeholder="blank to use the table" />
+        <span class="field-hint">Leave blank to use the Uniform Lifetime Table</span>
+      </div>
+      <div class="field">
+        <label for="spendingNeed">Total annual spending need from portfolio ($)</label>
+        <input type="number" id="spendingNeed" value="90000" min="0" step="1000" />
+        <span class="field-hint">Before tax</span>
+      </div>
+      <div class="field">
+        <label for="otherIncome">Other taxable income ($)</label>
+        <input type="number" id="otherIncome" value="30000" min="0" step="1000" />
+        <span class="field-hint">Taxable Social Security portion, pension, interest</span>
+      </div>
+      <div class="field">
+        <label for="filingStatus">Filing status</label>
+        <select id="filingStatus" onchange="syncDeduction()">
+          <option value="Single">Single</option>
+          <option value="MFJ" selected>Married Filing Jointly</option>
+          <option value="HoH">Head of Household</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="deduction">Standard or itemized deduction ($)</label>
+        <input type="number" id="deduction" value="32200" min="0" step="100" />
+        <span class="field-hint">Pre-filled from the 2026 standard deduction for the selected status</span>
+      </div>
+      <div class="field">
+        <label for="withdrawalOrder">Withdrawal order</label>
+        <select id="withdrawalOrder">
+          <option value="taxable_first">Taxable then deferred then Roth</option>
+          <option value="deferred_first">Deferred then taxable then Roth</option>
+          <option value="proportional">Proportional</option>
+        </select>
+        <span class="field-hint">RMDs are always taken first regardless of order</span>
+      </div>
+      <div class="field">
+        <label for="alreadyDistributed">Amount already distributed this year ($)</label>
+        <input type="number" id="alreadyDistributed" value="0" min="0" step="100" />
+        <span class="field-hint">Counts toward the RMD</span>
+      </div>
+    </div>
+    <div class="field" style="margin-top:14px;">
+      <div class="checkbox-field">
+        <input type="checkbox" id="spouseYoungerJoint" onchange="toggleSpouseNote()" />
+        <label for="spouseYoungerJoint" style="font-size:.85rem;">Sole beneficiary is a spouse more than 10 years younger</label>
+      </div>
+      <span class="field-hint">If checked, the Joint Life table applies. This tool does not include it; enter a manual divisor above.</span>
+    </div>
+    <div class="warn-note" id="spouseNote" style="display:none;">A manual divisor is required when the sole beneficiary is a spouse more than 10 years younger. The Joint Life and Last Survivor Table is out of scope for this tool.</div>
+    <div class="field" style="margin-top:14px;">
+      <div class="checkbox-field">
+        <input type="checkbox" id="correctedInWindow" />
+        <label for="correctedInWindow" style="font-size:.85rem;">Missed RMD corrected within the correction window</label>
+      </div>
+      <span class="field-hint">Reduces the excise tax rate from 25% to 10%</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Constants Panel <span class="badge">EDITABLE</span></div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="cRbAgePre1951">Required beginning age, born 1950 or earlier</label>
+        <input type="number" id="cRbAgePre1951" value="72" step="1" />
+        <span class="field-hint">SECURE Act 1.0</span>
+      </div>
+      <div class="field">
+        <label for="cRbAge1951to1959">Required beginning age, born 1951 to 1959</label>
+        <input type="number" id="cRbAge1951to1959" value="73" step="1" />
+        <span class="field-hint">SECURE 2.0 sec. 107</span>
+      </div>
+      <div class="field">
+        <label for="cRbAge1960plus">Required beginning age, born 1960 or later</label>
+        <input type="number" id="cRbAge1960plus" value="75" step="1" />
+        <span class="field-hint">SECURE 2.0 sec. 107</span>
+      </div>
+      <div class="field">
+        <label for="cExciseStandard">Excise tax on a missed RMD (%)</label>
+        <input type="number" id="cExciseStandard" value="25" step="1" />
+        <span class="field-hint">IRC 4974(a), SECURE 2.0</span>
+      </div>
+      <div class="field">
+        <label for="cExciseCorrected">Reduced excise tax if corrected in window (%)</label>
+        <input type="number" id="cExciseCorrected" value="10" step="1" />
+        <span class="field-hint">IRC 4974(e)</span>
+      </div>
+    </div>
+    <div class="field-hint" style="margin-top:12px;">The full Uniform Lifetime Table (ages 72 to 120, T.D. 9930) is applied internally as a labeled snapshot constant. Ages 101 to 120 are low confidence and not independently verified; use the manual divisor override above to substitute a different value for any age.</div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Calculate RMD &amp; Sequence →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Total RMD This Year</div>
+        <div class="metric-val amber" id="rHeadline">--</div>
+        <div class="metric-note" id="rHeadlineNote">Across all applicable accounts</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Federal Income Tax</div>
+        <div class="metric-val red" id="rFederalTax">--</div>
+        <div class="metric-note">On total taxable income this year</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Net Spendable</div>
+        <div class="metric-val green" id="rNetSpendable">--</div>
+        <div class="metric-note">After federal tax on this year's draws</div>
+      </div>
+    </div>
+
+    <div class="info-note" id="noRmdNote" style="display:none;"></div>
+    <div class="warn-note" id="blockedNote" style="display:none;">A manual divisor is required when the sole beneficiary is a spouse more than 10 years younger. Enter a positive divisor above and recalculate.</div>
+
+    <div class="card" id="rmdCard">
+      <div class="card-title">Required Minimum Distribution</div>
+      <div class="row"><span class="row-label">Required beginning age</span><span class="row-val" id="dRbAge">--</span></div>
+      <div class="row"><span class="row-label">Divisor applied</span><span class="row-val" id="dDivisor">--</span></div>
+      <div class="row"><span class="row-label">IRA aggregation group total</span><span class="row-val" id="dIraGroup">--</span></div>
+      <div class="row"><span class="row-label">Employer plan RMDs (per plan, not aggregable)</span><span class="row-val" id="dEmployerPlans">--</span></div>
+      <div class="row"><span class="row-label"><strong>Total RMD this year</strong></span><span class="row-val" id="dTotalRMD">--</span></div>
+      <div class="row"><span class="row-label">Already distributed</span><span class="row-val" id="dAlreadyDist">--</span></div>
+      <div class="row"><span class="row-label">Still required</span><span class="row-val" id="dRemaining">--</span></div>
+      <div class="row"><span class="row-label">Excise tax exposure if unmet</span><span class="row-val" id="dExcise">--</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Withdrawal Sequence</div>
+      <div class="row"><span class="row-label">Draw from taxable</span><span class="row-val" id="dDrawTaxable">--</span></div>
+      <div class="row"><span class="row-label">Draw from tax-deferred beyond the RMD</span><span class="row-val" id="dDrawDeferred">--</span></div>
+      <div class="row"><span class="row-label">Draw from Roth</span><span class="row-val" id="dDrawRoth">--</span></div>
+      <div class="row"><span class="row-label">Unmet spending need</span><span class="row-val" id="dUnmetNeed">--</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Tax Impact</div>
+      <div class="row"><span class="row-label">Taxable income</span><span class="row-val" id="dTaxableIncome">--</span></div>
+      <div class="row"><span class="row-label">Federal income tax</span><span class="row-val" id="dFederalTax2">--</span></div>
+      <div class="row"><span class="row-label">Marginal bracket</span><span class="row-val" id="dMarginalBracket">--</span></div>
+      <div class="row"><span class="row-label">Effective rate</span><span class="row-val" id="dEffRate">--</span></div>
+      <div class="row"><span class="row-label">Net spendable after federal tax</span><span class="row-val" id="dNetSpendable2">--</span></div>
+      <div class="row"><span class="row-label">Headroom to top of current bracket</span><span class="row-val" id="dHeadroom">--</span></div>
+
+      <div class="disclaimer">This is an illustrative estimate, not tax advice. Treatment depends on your full facts and on current IRS guidance, which can change. Consult a CPA or tax attorney.</div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-162 · Data: T.D. 9930 (Uniform Lifetime Table) · SECURE 2.0 sec. 107 · IRC 4974 · Rev. Proc. 2025-32
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+let _acctCounter = 0;
+const MAX_ACCTS = 12;
+
+const $   = id => document.getElementById(id);
+const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
+const money = n => Math.round(n * 100) / 100;
+const bps = n => Math.round(n * 10000);
+
+const ACCT_TYPES = ['Traditional IRA','SEP or SIMPLE IRA','401(k) or 403(b)','457(b)','Roth IRA','Roth 401(k)','Taxable brokerage'];
+const STD_DEDUCTION = { Single: 16100, MFJ: 32200, HoH: 24150 };
+
+/* Uniform Lifetime Table, T.D. 9930. Ages 101-120 are low confidence (flagged). */
+const UNIFORM_LIFETIME = {
+  72:27.4,73:26.5,74:25.5,75:24.6,76:23.7,77:22.9,78:22.0,79:21.1,
+  80:20.2,81:19.4,82:18.5,83:17.7,84:16.8,85:16.0,86:15.2,87:14.4,
+  88:13.7,89:12.9,90:12.2,91:11.5,92:10.8,93:10.1,94:9.5,95:8.9,
+  96:8.4,97:7.8,98:7.3,99:6.8,100:6.4,101:6.0,102:5.6,103:5.2,
+  104:4.9,105:4.6,106:4.3,107:4.1,108:3.9,109:3.7,110:3.5,111:3.4,
+  112:3.3,113:3.1,114:3.0,115:2.9,116:2.8,117:2.7,118:2.5,119:2.3,
+  120:2.0
+};
+
+function syncDeduction() {
+  const status = $('filingStatus').value;
+  $('deduction').value = STD_DEDUCTION[status];
+}
+function toggleSpouseNote() {
+  $('spouseNote').style.display = $('spouseYoungerJoint').checked ? 'block' : 'none';
+}
+
+/* ── ACCOUNT TABLE MANAGEMENT (tool-specific) ─────────────────────────────── */
+function addAcctRow(seed) {
+  const tbody = $('acctBody');
+  if (tbody.children.length >= MAX_ACCTS) return;
+  const id = 'acct' + (_acctCounter++);
+  const s = seed || { label: '', type: 'Traditional IRA', balance: '', stillWorking: false };
+  const tr = document.createElement('tr');
+  tr.id = id;
+  let opts = '';
+  ACCT_TYPES.forEach(t => { opts += '<option value="' + t + '"' + (s.type===t?' selected':'') + '>' + t + '</option>'; });
+  tr.innerHTML =
+    '<td><input type="text" class="acct-label" value="' + s.label + '" placeholder="Traditional IRA" /></td>' +
+    '<td><select class="acct-type">' + opts + '</select></td>' +
+    '<td><input type="number" class="acct-balance" value="' + s.balance + '" step="100" min="0" /></td>' +
+    '<td style="text-align:center"><input type="checkbox" class="acct-stillworking"' + (s.stillWorking?' checked':'') + ' /></td>' +
+    '<td><button class="acct-remove" onclick="removeAcctRow(\'' + id + '\')">✕</button></td>';
+  tbody.appendChild(tr);
+  updateAcctControls();
+}
+
+function removeAcctRow(id) {
+  const tbody = $('acctBody');
+  if (tbody.children.length <= 1) return;
+  const el = $(id);
+  if (el) el.remove();
+  updateAcctControls();
+}
+
+function updateAcctControls() {
+  const tbody = $('acctBody');
+  const n = tbody.children.length;
+  $('addAcctBtn').disabled = n >= MAX_ACCTS;
+  $('acctCapNote').textContent = n + ' of ' + MAX_ACCTS + ' accounts';
+  const removeButtons = tbody.querySelectorAll('.acct-remove');
+  removeButtons.forEach(b => b.disabled = (n <= 1));
+}
+
+function readAccounts() {
+  const rows = Array.from($('acctBody').children);
+  return rows.map(tr => {
+    let balance = parseFloat(tr.querySelector('.acct-balance').value);
+    if (!Number.isFinite(balance)) balance = 0;
+    const type = tr.querySelector('.acct-type').value;
+    const stillWorking = tr.querySelector('.acct-stillworking').checked;
+    const label = String(tr.querySelector('.acct-label').value || '').trim();
+    return { label, type, balance: money(Math.max(0, balance)), stillWorking };
+  });
+}
+
+/* SR-1 brackets (Single, MFJ, HoH only for this tool; no MFS input option) */
+const BRACKETS_SINGLE = [[0,0.10],[12400,0.12],[50400,0.22],[105700,0.24],[201775,0.32],[256225,0.35],[640600,0.37]];
+const BRACKETS_MFJ     = [[0,0.10],[24800,0.12],[100800,0.22],[211400,0.24],[403550,0.32],[512450,0.35],[768700,0.37]];
+const BRACKETS_HOH     = [[0,0.10],[17700,0.12],[67450,0.22],[105700,0.24],[201775,0.32],[256225,0.35],[640600,0.37]];
+function bracketsFor(status) {
+  if (status === 'MFJ') return BRACKETS_MFJ;
+  if (status === 'HoH') return BRACKETS_HOH;
+  return BRACKETS_SINGLE;
+}
+function taxOn(taxableUSD, brackets) {
+  let t = 0;
+  for (let i = 0; i < brackets.length; i++) {
+    const lo = brackets[i][0];
+    const hi = (i + 1 < brackets.length) ? brackets[i + 1][0] : Infinity;
+    if (taxableUSD > lo) t += (Math.min(taxableUSD, hi) - lo) * brackets[i][1];
+  }
+  return Math.round(t * 100) / 100;
+}
+function marginalRateFor(income, brackets) {
+  let rate = brackets[0][1];
+  for (let i = 0; i < brackets.length; i++) { if (income >= brackets[i][0]) rate = brackets[i][1]; }
+  return rate;
+}
+/* Returns the upper bound of the bracket containing income, or null if the
+   top bracket (Infinity never enters the payload, per cross-cutting rule). */
+function bracketTopFor(income, brackets) {
+  for (let i = 0; i < brackets.length; i++) {
+    const lo = brackets[i][0];
+    const hi = (i + 1 < brackets.length) ? brackets[i + 1][0] : null;
+    if (income >= lo && (hi === null || income < hi)) return hi;
+  }
+  return null;
+}
+
+/* ── CORE MATH (spec steps 1-12) ──────────────────────────────────────────── */
+function calculate() {
+  $('acctError').textContent = '';
+  $('blockedNote').style.display = 'none';
+  const accounts = readAccounts();
+
+  let birthYear = parseInt($('birthYear').value, 10); if (!Number.isFinite(birthYear)) birthYear = 1953;
+  let ageAttained = parseInt($('ageAttained').value, 10); if (!Number.isFinite(ageAttained)) ageAttained = 73;
+  let manualDivisorRaw = $('manualDivisor').value;
+  let manualDivisor = manualDivisorRaw === '' ? null : parseFloat(manualDivisorRaw);
+  if (manualDivisor !== null && (!Number.isFinite(manualDivisor) || manualDivisor <= 0)) {
+    $('acctError').textContent = 'Manual divisor must be a positive number, or leave it blank.';
+    return;
+  }
+  const spouseYoungerJoint = $('spouseYoungerJoint').checked;
+  if (spouseYoungerJoint && (manualDivisor === null)) {
+    $('blockedNote').style.display = 'block';
+    return;
+  }
+
+  let spendingNeed = parseFloat($('spendingNeed').value); if (!Number.isFinite(spendingNeed) || spendingNeed < 0) spendingNeed = 0;
+  let otherIncome = parseFloat($('otherIncome').value); if (!Number.isFinite(otherIncome) || otherIncome < 0) otherIncome = 0;
+  const filingStatus = $('filingStatus').value;
+  let deduction = parseFloat($('deduction').value); if (!Number.isFinite(deduction) || deduction < 0) deduction = STD_DEDUCTION[filingStatus];
+  const withdrawalOrder = $('withdrawalOrder').value;
+  let alreadyDistributed = parseFloat($('alreadyDistributed').value); if (!Number.isFinite(alreadyDistributed) || alreadyDistributed < 0) alreadyDistributed = 0;
+  const correctedInWindow = $('correctedInWindow').checked;
+
+  const cRbAgePre1951 = parseInt($('cRbAgePre1951').value, 10) || 72;
+  const cRbAge1951to1959 = parseInt($('cRbAge1951to1959').value, 10) || 73;
+  const cRbAge1960plus = parseInt($('cRbAge1960plus').value, 10) || 75;
+  const cExciseStandardPct = parseFloat($('cExciseStandard').value); const exciseRateStandard = Number.isFinite(cExciseStandardPct) ? cExciseStandardPct/100 : 0.25;
+  const cExciseCorrectedPct = parseFloat($('cExciseCorrected').value); const exciseRateCorrected = Number.isFinite(cExciseCorrectedPct) ? cExciseCorrectedPct/100 : 0.10;
+
+  // Step 1: required beginning age
+  let rbAge;
+  if (birthYear <= 1950) rbAge = cRbAgePre1951;
+  else if (birthYear <= 1959) rbAge = cRbAge1951to1959;
+  else rbAge = cRbAge1960plus;
+
+  // Step 2: RMD applicability
+  const rmdRequired = ageAttained >= rbAge;
+  const firstRequiredYear = birthYear + rbAge;
+
+  // Step 3: divisor
+  let divisor;
+  if (manualDivisor !== null) divisor = manualDivisor;
+  else {
+    const clampedAge = Math.min(120, Math.max(72, ageAttained));
+    divisor = UNIFORM_LIFETIME[clampedAge];
+  }
+
+  // Step 4: per-account RMD
+  const perAccountRMD = [];
+  for (const a of accounts) {
+    let rmd = 0;
+    let note = '';
+    const isEmployerPlan = (a.type === '401(k) or 403(b)' || a.type === '457(b)');
+    if (a.type === 'Roth IRA' || a.type === 'Roth 401(k)' || a.type === 'Taxable brokerage') {
+      rmd = 0;
+    } else if (isEmployerPlan && a.stillWorking) {
+      rmd = 0;
+      note = 'deferred under the still-working exception';
+    } else if (rmdRequired) {
+      rmd = money(a.balance / divisor);
+    } else {
+      rmd = 0;
+    }
+    perAccountRMD.push({ label: a.label, type: a.type, balance: a.balance, rmd, note });
+  }
+
+  // Step 5: aggregation groups
+  let iraGroup = 0, employerPlansTotal = 0;
+  const employerPlanRows = [];
+  for (let idx = 0; idx < accounts.length; idx++) {
+    const a = accounts[idx], r = perAccountRMD[idx];
+    if (a.type === 'Traditional IRA' || a.type === 'SEP or SIMPLE IRA') iraGroup = money(iraGroup + r.rmd);
+    if (a.type === '401(k) or 403(b)' || a.type === '457(b)') {
+      employerPlansTotal = money(employerPlansTotal + r.rmd);
+      employerPlanRows.push(r);
+    }
+  }
+
+  // Step 6: total
+  const totalRMD = rmdRequired ? money(perAccountRMD.reduce((s, r) => s + r.rmd, 0)) : 0;
+
+  // Step 7: shortfall and excise
+  const remainingRMD = money(Math.max(0, totalRMD - alreadyDistributed));
+  const exciseRate = correctedInWindow ? exciseRateCorrected : exciseRateStandard;
+  const excisePotential = money(remainingRMD * exciseRate);
+
+  // Step 8: sequencer
+  const spendNeed = Math.max(0, spendingNeed);
+  const fromDeferredRMD = totalRMD;
+  let residual = Math.max(0, spendNeed - totalRMD);
+
+  const taxableBal = accounts.filter(a => a.type === 'Taxable brokerage').reduce((s, a) => s + a.balance, 0);
+  const deferredTypesTotal = accounts.filter(a => ['Traditional IRA','SEP or SIMPLE IRA','401(k) or 403(b)','457(b)'].includes(a.type)).reduce((s, a) => s + a.balance, 0);
+  const deferredBal = Math.max(0, money(deferredTypesTotal - totalRMD));
+  const rothBal = accounts.filter(a => a.type === 'Roth IRA' || a.type === 'Roth 401(k)').reduce((s, a) => s + a.balance, 0);
+
+  let dTaxable = 0, dDeferred = 0, dRoth = 0;
+  if (withdrawalOrder === 'taxable_first') {
+    dTaxable = Math.min(residual, taxableBal); residual = money(residual - dTaxable);
+    dDeferred = Math.min(residual, deferredBal); residual = money(residual - dDeferred);
+    dRoth = Math.min(residual, rothBal); residual = money(residual - dRoth);
+  } else if (withdrawalOrder === 'deferred_first') {
+    dDeferred = Math.min(residual, deferredBal); residual = money(residual - dDeferred);
+    dTaxable = Math.min(residual, taxableBal); residual = money(residual - dTaxable);
+    dRoth = Math.min(residual, rothBal); residual = money(residual - dRoth);
+  } else {
+    const totalBal = taxableBal + deferredBal + rothBal;
+    if (totalBal > 0 && residual > 0) {
+      dTaxable = money(residual * taxableBal / totalBal);
+      dDeferred = money(residual * deferredBal / totalBal);
+      dRoth = money(residual - dTaxable - dDeferred); // absorbs rounding remainder
+      residual = 0;
+    } else {
+      dTaxable = 0; dDeferred = 0; dRoth = 0;
+    }
+  }
+  const unmetNeed = money(residual);
+
+  // Step 9: taxable income
+  const ordinaryFromPortfolio = money(totalRMD + dDeferred);
+  const grossIncome = money(ordinaryFromPortfolio + otherIncome);
+  const taxableIncome = Math.max(0, money(grossIncome - deduction));
+
+  // Step 10: federal tax
+  const brackets = bracketsFor(filingStatus);
+  const federalTax = taxOn(taxableIncome, brackets);
+  const marginalRate = marginalRateFor(taxableIncome, brackets);
+  const marginalBracketBps = bps(marginalRate);
+  const effectiveBps = bps(federalTax / Math.max(grossIncome, 0.01));
+
+  // Step 11: net spendable
+  const netSpendable = money(dTaxable + ordinaryFromPortfolio + dRoth - federalTax);
+
+  // Step 12: headroom to top of bracket
+  const bracketTop = bracketTopFor(taxableIncome, brackets); // null if top bracket
+  const bracketHeadroom = bracketTop === null ? null : money(Math.max(0, bracketTop - taxableIncome));
+
+  _lastInputs = {
+    accounts, birthYear, ageAttained, manualDivisor, spouseYoungerJoint,
+    spendingNeed, otherIncome, filingStatus, deduction, withdrawalOrder,
+    alreadyDistributed, correctedInWindow
+  };
+  _lastResults = {
+    rbAge, rmdRequired, firstRequiredYear, divisor,
+    perAccountRMD, iraGroup, employerPlansTotal, employerPlanRows,
+    totalRMD, remainingRMD, excisePotential,
+    dTaxable, dDeferred, dRoth, unmetNeed,
+    taxableIncome, federalTax, marginalBracketBps, effectiveBps, netSpendable,
+    bracketTop, bracketHeadroom
+  };
+
+  render();
+}
+
+function render() {
+  const r = _lastResults;
+
+  $('rHeadline').textContent = fmt(r.totalRMD);
+  $('rHeadlineNote').textContent = r.rmdRequired ? 'Across all applicable accounts' : 'No RMD required this year';
+  $('rFederalTax').textContent = fmt(r.federalTax);
+  $('rNetSpendable').textContent = fmt(r.netSpendable);
+
+  if (!r.rmdRequired) {
+    $('noRmdNote').style.display = 'block';
+    $('noRmdNote').textContent = 'No RMD required this year. Your first required distribution year is ' + r.firstRequiredYear + '.';
+  } else {
+    $('noRmdNote').style.display = 'none';
+  }
+
+  $('dRbAge').textContent = r.rbAge;
+  $('dDivisor').textContent = r.divisor.toFixed(1);
+  $('dIraGroup').textContent = fmt(r.iraGroup) + ' (may be satisfied from any one IRA)';
+  $('dEmployerPlans').textContent = fmt(r.employerPlansTotal) + ' (each plan taken separately)';
+  $('dTotalRMD').textContent = fmt(r.totalRMD);
+  $('dAlreadyDist').textContent = fmt(_lastInputs.alreadyDistributed);
+  $('dRemaining').textContent = fmt(r.remainingRMD);
+  $('dExcise').textContent = fmt(r.excisePotential) + ' (exposure if unmet, not a certainty)';
+
+  $('dDrawTaxable').textContent = fmt(r.dTaxable);
+  $('dDrawDeferred').textContent = fmt(r.dDeferred);
+  $('dDrawRoth').textContent = fmt(r.dRoth);
+  $('dUnmetNeed').textContent = fmt(r.unmetNeed);
+
+  $('dTaxableIncome').textContent = fmt(r.taxableIncome);
+  $('dFederalTax2').textContent = fmt(r.federalTax);
+  $('dMarginalBracket').textContent = (r.marginalBracketBps / 100).toFixed(0) + '%';
+  $('dEffRate').textContent = (r.effectiveBps / 100).toFixed(2) + '%';
+  $('dNetSpendable2').textContent = fmt(r.netSpendable);
+  $('dHeadroom').textContent = r.bracketHeadroom === null ? 'Top bracket, no ceiling' : fmt(r.bracketHeadroom);
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# RMD & Withdrawal Sequencer Results',
+    `\n_Generated ${d} · AL-162 · apexlogics.org_\n`,
+    '## Context',
+    '| Field | Value |', '|---|---|',
+    `| Birth year | ${i.birthYear} |`,
+    `| Age attained | ${i.ageAttained} |`,
+    `| Filing status | ${i.filingStatus} |`,
+    `| Spending need | ${fmt(i.spendingNeed)} |`,
+    '\n## Results',
+    `- **Required beginning age:** ${r.rbAge}`,
+    r.rmdRequired ? '' : `- **No RMD required this year.** First required year: ${r.firstRequiredYear}`,
+    `- **Divisor applied:** ${r.divisor.toFixed(1)}`,
+    `- **IRA aggregation group total:** ${fmt(r.iraGroup)}`,
+    `- **Employer plan RMDs (not aggregable):** ${fmt(r.employerPlansTotal)}`,
+    `- **Total RMD this year:** ${fmt(r.totalRMD)}`,
+    `- **Already distributed:** ${fmt(i.alreadyDistributed)}`,
+    `- **Still required:** ${fmt(r.remainingRMD)}`,
+    `- **Excise tax exposure if unmet:** ${fmt(r.excisePotential)}`,
+    `- **Draw from taxable:** ${fmt(r.dTaxable)}`,
+    `- **Draw from tax-deferred beyond the RMD:** ${fmt(r.dDeferred)}`,
+    `- **Draw from Roth:** ${fmt(r.dRoth)}`,
+    `- **Unmet spending need:** ${fmt(r.unmetNeed)}`,
+    `- **Taxable income:** ${fmt(r.taxableIncome)}`,
+    `- **Federal income tax:** ${fmt(r.federalTax)}`,
+    `- **Marginal bracket:** ${(r.marginalBracketBps/100).toFixed(0)}%`,
+    `- **Effective rate:** ${(r.effectiveBps/100).toFixed(2)}%`,
+    `- **Net spendable after federal tax:** ${fmt(r.netSpendable)}`,
+    `- **Headroom to top of current bracket:** ${r.bracketHeadroom === null ? 'Top bracket, no ceiling' : fmt(r.bracketHeadroom)}`,
+    '\n---',
+    '_Source: T.D. 9930 (Uniform Lifetime Table); SECURE 2.0 sec. 107; IRC 4974; Rev. Proc. 2025-32. Illustrative estimate, not tax advice._'
+  ].filter(l => l !== '');
+  dlFile('rmd-withdrawal-sequencer.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  const payload = {
+    mandate_type: "rmd_withdrawal_sequence_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-162",
+    tool_id: "148-rmd-withdrawal-sequencer",
+    tool_name: "RMD & Withdrawal Sequencer",
+    inputs: {
+      account_count: i.accounts.length,
+      birth_year: i.birthYear,
+      age_attained: i.ageAttained,
+      manual_divisor: i.manualDivisor === null ? "none" : i.manualDivisor,
+      spouse_younger_joint: i.spouseYoungerJoint,
+      spending_need: i.spendingNeed,
+      other_income: i.otherIncome,
+      filing_status: i.filingStatus,
+      deduction: i.deduction,
+      withdrawal_order: i.withdrawalOrder,
+      already_distributed: i.alreadyDistributed,
+      corrected_in_window: i.correctedInWindow,
+      data_version: "2026"
+    },
+    outputs: {
+      required_beginning_age: r.rbAge,
+      rmd_required: r.rmdRequired,
+      first_required_year: r.rmdRequired ? null : r.firstRequiredYear,
+      divisor_applied: r.divisor,
+      ira_aggregation_group_total: r.iraGroup,
+      employer_plan_rmds_total: r.employerPlansTotal,
+      total_rmd: r.totalRMD,
+      already_distributed: i.alreadyDistributed,
+      still_required: r.remainingRMD,
+      excise_tax_exposure: r.excisePotential,
+      draw_from_taxable: r.dTaxable,
+      draw_from_deferred_beyond_rmd: r.dDeferred,
+      draw_from_roth: r.dRoth,
+      unmet_spending_need: r.unmetNeed,
+      taxable_income: r.taxableIncome,
+      federal_income_tax: r.federalTax,
+      marginal_bracket_bps: r.marginalBracketBps,
+      effective_rate_bps: r.effectiveBps,
+      net_spendable: r.netSpendable,
+      bracket_headroom: r.bracketHeadroom
+    },
+    downstream_handoff_candidates: ["149-roth-conversion-window", "150-irmaa-bracket-calculator"],
+    data_sources: [
+      "T.D. 9930 (Uniform Lifetime Table)",
+      "SECURE 2.0 sec. 107",
+      "IRC 4974",
+      "Rev. Proc. 2025-32"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/retirement_projection";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-162";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* STEP 6, SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['rmd_withdrawal_sequence_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-162_rmd-withdrawal-sequencer_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, CHAINGRAPH §6 EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* REPLACE: MANIFEST */
+const MANIFEST = {
+  "tool_id": "148-rmd-withdrawal-sequencer",
+  "al_id": "AL-162",
+  "version": "1.0.0",
+  "title": "RMD & Withdrawal Sequencer",
+  "description": "Given a set of retirement accounts, birth year, age attained, and a spending need, computes the required minimum distribution per account and in aggregate from the Uniform Lifetime Table, then sequences the remaining spending need across taxable, tax-deferred, and Roth money and computes the resulting federal tax and net spendable amount. Deterministic, zero external data. Policy Mandate: rmd_withdrawal_sequence_record.",
+  "category": "retirement",
+  "journeys": ["annual RMD compliance","retirement income planning"],
+  "personas": ["retiree","pre-retiree age 70+","financial planner","adult child managing a parent's accounts"],
+  "tags": ["RMD","required minimum distribution","SECURE 2.0","uniform lifetime table","withdrawal sequencing","tax-deferred"],
+  "status": "active",
+  "maintenance": "annual (bracket, deduction, and table refresh)",
+  "data_vintage": "2026 (Uniform Lifetime Table per T.D. 9930; SECURE 2.0 start ages; Rev. Proc. 2025-32 brackets)",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["rmd_withdrawal_sequence_record"],
+  "downstream_handoff_candidates": ["149-roth-conversion-window", "150-irmaa-bracket-calculator"],
+  "regulatory_citations": [
+    "T.D. 9930", "SECURE 2.0 sec. 107", "IRC 4974", "Rev. Proc. 2025-32"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "accounts": { "type": "array" },
+      "birth_year": { "type": "integer" },
+      "age_attained": { "type": "integer" },
+      "spending_need": { "type": "number" },
+      "filing_status": { "type": "string" }
+    },
+    "required": ["accounts","birth_year","age_attained","filing_status"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "total_rmd": { "type": "number" },
+      "federal_income_tax": { "type": "number" },
+      "net_spendable": { "type": "number" },
+      "bracket_headroom": { "type": ["number","null"] }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "rmd_withdrawal_sequencer",
+    "description": "Given retirement accounts, birth year, age attained, and a spending need, computes the required minimum distribution and sequences the remaining need across taxable, tax-deferred, and Roth money, returning the resulting federal tax and net spendable amount. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "accounts": { "type": "array" },
+        "birth_year": { "type": "integer" },
+        "age_attained": { "type": "integer" },
+        "filing_status": { "type": "string" }
+      },
+      "required": ["accounts","birth_year","age_attained","filing_status"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+/* KEEP VERBATIM: MCP / MANIFEST TOGGLE */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+
+/* Seed the initial account row with the spec's stated defaults */
+addAcctRow({ label: 'Traditional IRA', type: 'Traditional IRA', balance: 500000, stillWorking: false });
+</script>
+</body>
+</html>

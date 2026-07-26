@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Owner Salary Normalization · ApexLogics</title>
+  <meta name="description" content="Separates what a replacement manager would cost from what a small business owner actually takes, producing comparable seller discretionary earnings and normalized EBITDA. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/tools/158-owner-salary-normalization/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .subgroup { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin: 18px 0 10px; }
+    .subgroup:first-of-type { margin-top: 0; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+
+    .caveat-note { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; padding: .8rem 1rem; font-size: .8rem; color: var(--text-muted); margin-bottom: 16px; }
+
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">Small Business · Exit Planning</p>
+  <h1 class="tool-title">Owner Salary<br>Normalization</h1>
+  <p class="tool-desc">Owner pay in a small business is rarely a market wage. It is a mix of salary, distributions, and personal expenses run through the company. This tool separates what a replacement manager would actually cost from what the owner takes, so both seller discretionary earnings and normalized EBITDA come out on a comparable basis.</p>
+  <p class="tool-vintage">Data: 2026 (SS wage base $184,500; market wage is user-supplied)</p>
+
+  <div class="card">
+    <div class="card-title">Inputs <span class="badge">STEP 1</span></div>
+
+    <div class="subgroup">Reported earnings</div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="netIncome">Reported pre-tax net income ($)</label>
+        <input type="number" id="netIncome" value="180000" min="-100000000" max="1000000000" step="1000" />
+        <span class="field-hint">From the P&amp;L, before any add-backs.</span>
+      </div>
+      <div class="field">
+        <label for="oneTimeExpenses">One-time or non-recurring expenses ($)</label>
+        <input type="number" id="oneTimeExpenses" value="15000" min="0" max="10000000" step="500" />
+        <span class="field-hint">Not expected to repeat under a buyer.</span>
+      </div>
+      <div class="field">
+        <label for="ownerCount">Number of owners taking compensation</label>
+        <input type="number" id="ownerCount" value="1" min="1" max="50" step="1" />
+        <span class="field-hint">Each additional owner's package is normalized the same way.</span>
+      </div>
+    </div>
+
+    <div class="subgroup">Owner compensation and add-backs</div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="ownerW2">Owner W-2 salary ($)</label>
+        <input type="number" id="ownerW2" value="95000" min="0" max="10000000" step="1000" />
+        <span class="field-hint">Wages actually run through payroll.</span>
+      </div>
+      <div class="field">
+        <label for="distributions">Owner distributions or draws ($)</label>
+        <input type="number" id="distributions" value="60000" min="0" max="10000000" step="1000" />
+        <span class="field-hint">Non-payroll cash taken out.</span>
+      </div>
+      <div class="field">
+        <label for="employerPayrollTaxes">Employer payroll taxes on owner wages ($)</label>
+        <input type="number" id="employerPayrollTaxes" value="0" min="0" max="10000000" step="100" />
+        <span class="field-hint">Leave at 0 to have the tool compute it.</span>
+      </div>
+      <div class="field">
+        <label for="ownerHealth">Owner health insurance paid by company ($)</label>
+        <input type="number" id="ownerHealth" value="14400" min="0" max="10000000" step="100" />
+        <span class="field-hint">Premiums the company pays for the owner.</span>
+      </div>
+      <div class="field">
+        <label for="ownerRetirement">Owner retirement contribution by company ($)</label>
+        <input type="number" id="ownerRetirement" value="12000" min="0" max="10000000" step="100" />
+        <span class="field-hint">Employer side only.</span>
+      </div>
+      <div class="field">
+        <label for="personalVehicle">Personal vehicle and travel run through company ($)</label>
+        <input type="number" id="personalVehicle" value="9600" min="0" max="10000000" step="100" />
+        <span class="field-hint">Non-business portion.</span>
+      </div>
+      <div class="field">
+        <label for="otherPersonal">Other personal or discretionary expenses ($)</label>
+        <input type="number" id="otherPersonal" value="6000" min="0" max="10000000" step="100" />
+        <span class="field-hint">Meals, memberships, family payroll above market.</span>
+      </div>
+    </div>
+
+    <div class="subgroup">Replacement manager benchmark</div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="marketWage">Market wage for a replacement manager ($)</label>
+        <input type="number" id="marketWage" value="85000" min="0" max="10000000" step="1000" />
+        <span class="field-hint">What it would cost to hire someone to do the owner's job.</span>
+      </div>
+      <div class="field">
+        <label for="benefitLoadPct">Replacement manager benefits load (%)</label>
+        <input type="number" id="benefitLoadPct" value="22" min="0" max="200" step="1" />
+        <span class="field-hint">Payroll taxes, insurance, retirement, as a percent of wage.</span>
+      </div>
+      <div class="field">
+        <label for="hoursPerWeek">Hours the owner works per week</label>
+        <input type="number" id="hoursPerWeek" value="55" min="0" max="168" step="1" />
+        <span class="field-hint">Used to flag under-market or over-market staffing.</span>
+      </div>
+    </div>
+
+    <div class="subgroup">Payroll tax rates and valuation multiple</div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="ssWageBase">Social Security wage base ($)</label>
+        <input type="number" id="ssWageBase" value="184500" min="0" max="10000000" step="500" />
+        <span class="field-hint">2026 SSA contribution and benefit base. Overridable.</span>
+      </div>
+      <div class="field">
+        <label for="ssRatePct">Employer Social Security rate (%)</label>
+        <input type="number" id="ssRatePct" value="6.20" min="0" max="20" step="0.05" />
+      </div>
+      <div class="field">
+        <label for="medicareRatePct">Employer Medicare rate (%)</label>
+        <input type="number" id="medicareRatePct" value="1.45" min="0" max="20" step="0.05" />
+      </div>
+      <div class="field">
+        <label for="sdeMultiple">SDE multiple, for the valuation-impact line</label>
+        <input type="number" id="sdeMultiple" value="2.80" min="0" max="20" step="0.05" />
+        <span class="field-hint">Shows how normalization moves an SDE-based valuation.</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Normalize Owner Compensation →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="caveat-note">This is an illustrative estimate, not tax advice. Reasonable compensation for an S corporation owner depends on your full facts and on current IRS guidance, which can change. Consult a CPA or tax attorney.</div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Normalized EBITDA</div>
+        <div class="metric-val accent" id="rNormEBITDA">--</div>
+        <div class="metric-note">Net income plus owner package plus one-times, minus replacement cost</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Seller Discretionary Earnings</div>
+        <div class="metric-val green" id="rSDE">--</div>
+        <div class="metric-note">Net income plus owner package plus one-times</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Normalization Adjustment</div>
+        <div class="metric-val amber" id="rAdj">--</div>
+        <div class="metric-note" id="rAdjNote">Owner package minus replacement cost</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">Total owner package</span><span class="row-val" id="dPackage">--</span></div>
+      <div class="row"><span class="row-label">Computed employer payroll taxes</span><span class="row-val" id="dPayrollTax">--</span></div>
+      <div class="row"><span class="row-label">Replacement manager cost, fully loaded</span><span class="row-val" id="dReplacement">--</span></div>
+      <div class="row"><span class="row-label">Owner package as percent of replacement cost</span><span class="row-val" id="dPctOfReplacement">--</span></div>
+      <div class="row"><span class="row-label">Owner effective hourly rate</span><span class="row-val" id="dHourly">--</span></div>
+      <div class="row"><span class="row-label">Valuation impact at chosen multiple</span><span class="row-val" id="dValImpact">--</span></div>
+      <div class="row"><span class="row-label">Reasonable compensation pattern</span><span class="row-val" id="dRCFlag">--</span></div>
+      <div class="row" id="rowPerOwner" style="display:none"><span class="row-label">Per-owner average package</span><span class="row-val" id="dPerOwner">--</span></div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-172 · Data: SSA Contribution and Benefit Base 2026; IRC §3111(a)-(b); market wage and benefit load are user-supplied
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+/* KEEP VERBATIM: helpers */
+const $   = id => document.getElementById(id);
+const fmt = n => (n < 0 ? '-' : '') + '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
+const fmtBp = bp => (bp / 100).toLocaleString('en-US', { maximumFractionDigits: 2 }) + '%';
+const money = n => Math.round(n * 100) / 100;
+
+function numOr(raw, def) {
+  const n = parseFloat(raw);
+  return Number.isFinite(n) ? n : def;
+}
+function dollars(raw, def) {
+  return Math.round(numOr(raw, def));
+}
+
+/* ── CORE MATH ─────────────────────────────────────────────────────────────── */
+function calculate() {
+  const netIncome        = dollars($('netIncome').value, 180000);
+  const oneTimeExpenses  = dollars($('oneTimeExpenses').value, 15000);
+  const ownerCount       = Math.max(1, Math.round(numOr($('ownerCount').value, 1)));
+  const ownerW2          = dollars($('ownerW2').value, 95000);
+  const distributions    = dollars($('distributions').value, 60000);
+  let employerPayrollTaxesInput = dollars($('employerPayrollTaxes').value, 0);
+  const ownerHealth      = dollars($('ownerHealth').value, 14400);
+  const ownerRetirement  = dollars($('ownerRetirement').value, 12000);
+  const personalVehicle  = dollars($('personalVehicle').value, 9600);
+  const otherPersonal    = dollars($('otherPersonal').value, 6000);
+  const marketWage       = dollars($('marketWage').value, 85000);
+  const benefitLoadPct   = Math.max(0, numOr($('benefitLoadPct').value, 22));
+  const hoursPerWeek     = Math.max(0, numOr($('hoursPerWeek').value, 55));
+  const ssWageBase       = dollars($('ssWageBase').value, 184500);
+  const ssRatePct        = Math.max(0, numOr($('ssRatePct').value, 6.20));
+  const medicareRatePct  = Math.max(0, numOr($('medicareRatePct').value, 1.45));
+  const sdeMultiple      = Math.max(0, numOr($('sdeMultiple').value, 2.80));
+
+  const benefitLoadBp = Math.round(benefitLoadPct * 100);
+  const ssRateBp = Math.round(ssRatePct * 100);
+  const medicareRateBp = Math.round(medicareRatePct * 100);
+
+  /* step 1, compute payroll taxes if left at 0 */
+  let employerPayrollTaxes;
+  if (employerPayrollTaxesInput === 0) {
+    const ssWages = Math.min(ownerW2, ssWageBase);
+    const employerSS = Math.round(ssWages * ssRateBp / 10000);
+    const employerMedicare = Math.round(ownerW2 * medicareRateBp / 10000);
+    employerPayrollTaxes = employerSS + employerMedicare;
+  } else {
+    employerPayrollTaxes = employerPayrollTaxesInput;
+  }
+
+  /* step 2 */
+  const totalOwnerPackage = ownerW2 + distributions + employerPayrollTaxes + ownerHealth + ownerRetirement + personalVehicle + otherPersonal;
+
+  /* step 3, single-manager replacement cost, scaled to owner count for the aggregate */
+  const replacementCostSingle = Math.round(marketWage * (10000 + benefitLoadBp) / 10000);
+  const replacementCost = replacementCostSingle * ownerCount;
+
+  /* step 4 */
+  const normalizationAdjustment = totalOwnerPackage - replacementCost;
+
+  /* step 5-6 */
+  const sde = netIncome + totalOwnerPackage + oneTimeExpenses;
+  const normalizedEBITDA = netIncome + totalOwnerPackage + oneTimeExpenses - replacementCost;
+
+  /* step 7, hourly rate suppressed on zero hours */
+  const ownerEffectiveHourly = hoursPerWeek > 0
+    ? Math.round(totalOwnerPackage / Math.max(1, hoursPerWeek * 52))
+    : 0;
+  const hourlySuppressed = hoursPerWeek === 0;
+
+  /* step 8, suppressed when replacement cost is zero */
+  const replacementIsZero = replacementCost === 0;
+  const packageVsMarketBp = replacementIsZero
+    ? 0
+    : Math.round(totalOwnerPackage / Math.max(1, replacementCost) * 10000);
+
+  /* step 9, neutral observation, not an accusation */
+  const reasonableCompFlag = (ownerW2 < replacementCostSingle * 0.6) && (distributions > ownerW2);
+
+  /* step 10 */
+  const valueImpactAtMultiple = Math.round(normalizationAdjustment * sdeMultiple);
+
+  /* step 11, per-owner average when more than one owner */
+  const perOwnerPackage = Math.round(totalOwnerPackage / ownerCount);
+
+  _lastInputs = {
+    netIncome, oneTimeExpenses, ownerCount, ownerW2, distributions,
+    employerPayrollTaxesInput, ownerHealth, ownerRetirement, personalVehicle, otherPersonal,
+    marketWage, benefitLoadPct, hoursPerWeek, ssWageBase, ssRatePct, medicareRatePct, sdeMultiple
+  };
+  _lastResults = {
+    employerPayrollTaxes, totalOwnerPackage, replacementCostSingle, replacementCost,
+    normalizationAdjustment, sde, normalizedEBITDA, ownerEffectiveHourly, hourlySuppressed,
+    packageVsMarketBp, replacementIsZero, reasonableCompFlag, valueImpactAtMultiple, perOwnerPackage
+  };
+
+  render();
+}
+
+function render() {
+  const i = _lastInputs, r = _lastResults;
+
+  $('rNormEBITDA').textContent = fmt(r.normalizedEBITDA);
+  $('rNormEBITDA').className = 'metric-val ' + (r.normalizedEBITDA >= 0 ? 'accent' : 'red');
+  $('rSDE').textContent = fmt(r.sde);
+  $('rAdj').textContent = fmt(r.normalizationAdjustment);
+  $('rAdj').className = 'metric-val ' + (r.normalizationAdjustment >= 0 ? 'amber' : 'red');
+  $('rAdjNote').textContent = r.normalizationAdjustment >= 0
+    ? 'Owner is taking above replacement cost, which lifts normalized earnings'
+    : 'Owner is taking below replacement cost, which lowers normalized earnings';
+
+  $('dPackage').textContent = fmt(r.totalOwnerPackage);
+  $('dPayrollTax').textContent = fmt(r.employerPayrollTaxes);
+  $('dReplacement').textContent = fmt(r.replacementCost) + (i.ownerCount > 1 ? ' (aggregate)' : '');
+  $('dPctOfReplacement').textContent = r.replacementIsZero
+    ? 'Suppressed, replacement cost is zero (a fully absentee owner needs no replacement)'
+    : fmtBp(r.packageVsMarketBp);
+  $('dHourly').textContent = r.hourlySuppressed ? 'Suppressed, zero hours entered' : fmt(r.ownerEffectiveHourly) + ' / hr';
+  $('dValImpact').textContent = fmt(r.valueImpactAtMultiple);
+  $('dRCFlag').textContent = r.reasonableCompFlag
+    ? 'Pattern present: low W-2 relative to replacement cost alongside distributions above W-2'
+    : 'Pattern not present at these inputs';
+
+  if (i.ownerCount > 1) {
+    $('rowPerOwner').style.display = 'flex';
+    $('dPerOwner').textContent = fmt(r.perOwnerPackage) + ' per owner';
+  } else {
+    $('rowPerOwner').style.display = 'none';
+  }
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Owner Salary Normalization Results',
+    `\n_Generated ${d} · AL-172 · apexlogics.org_\n`,
+    '## Inputs',
+    '| Field | Value |', '|---|---|',
+    `| Reported pre-tax net income | ${fmt(i.netIncome)} |`,
+    `| Owner W-2 salary | ${fmt(i.ownerW2)} |`,
+    `| Owner distributions or draws | ${fmt(i.distributions)} |`,
+    `| Employer payroll taxes on owner wages (entered) | ${fmt(i.employerPayrollTaxesInput)} |`,
+    `| Owner health insurance paid by company | ${fmt(i.ownerHealth)} |`,
+    `| Owner retirement contribution by company | ${fmt(i.ownerRetirement)} |`,
+    `| Personal vehicle and travel run through company | ${fmt(i.personalVehicle)} |`,
+    `| Other personal or discretionary expenses | ${fmt(i.otherPersonal)} |`,
+    `| One-time or non-recurring expenses | ${fmt(i.oneTimeExpenses)} |`,
+    `| Market wage for a replacement manager | ${fmt(i.marketWage)} |`,
+    `| Replacement manager benefits load | ${i.benefitLoadPct}% |`,
+    `| Hours the owner works per week | ${i.hoursPerWeek} |`,
+    `| Number of owners taking compensation | ${i.ownerCount} |`,
+    `| Social Security wage base | ${fmt(i.ssWageBase)} |`,
+    `| Employer Social Security rate | ${i.ssRatePct}% |`,
+    `| Employer Medicare rate | ${i.medicareRatePct}% |`,
+    `| SDE multiple, for the valuation-impact line | ${i.sdeMultiple.toFixed(2)}x |`,
+    '\n## Results',
+    `- **Normalized EBITDA:** ${fmt(r.normalizedEBITDA)}`,
+    `- **Seller discretionary earnings:** ${fmt(r.sde)}`,
+    `- **Total owner package:** ${fmt(r.totalOwnerPackage)}`,
+    `- **Computed employer payroll taxes:** ${fmt(r.employerPayrollTaxes)}`,
+    `- **Replacement manager cost, fully loaded:** ${fmt(r.replacementCost)}${i.ownerCount > 1 ? ' (aggregate across owners)' : ''}`,
+    `- **Normalization adjustment:** ${fmt(r.normalizationAdjustment)}`,
+    `- **Owner package as percent of replacement cost:** ${r.replacementIsZero ? 'suppressed, replacement cost is zero' : fmtBp(r.packageVsMarketBp)}`,
+    `- **Owner effective hourly rate:** ${r.hourlySuppressed ? 'suppressed, zero hours entered' : fmt(r.ownerEffectiveHourly) + ' / hr'}`,
+    `- **Valuation impact at chosen multiple:** ${fmt(r.valueImpactAtMultiple)}`,
+    `- **Reasonable compensation pattern:** ${r.reasonableCompFlag ? 'present' : 'not present'} at these inputs`,
+    '\n---',
+    '_Source: SSA Contribution and Benefit Base 2026; IRC §3111(a)-(b); market wage and benefit load are user-supplied. This is an illustrative estimate, not tax advice._'
+  ];
+  dlFile('owner-salary-normalization.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  const payload = {
+    mandate_type: "owner_salary_normalization_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-172",
+    tool_id: "158-owner-salary-normalization",
+    tool_name: "Owner Salary Normalization",
+    inputs: {
+      reported_net_income: i.netIncome,
+      one_time_expenses: i.oneTimeExpenses,
+      owner_count: i.ownerCount,
+      owner_w2_salary: i.ownerW2,
+      owner_distributions: i.distributions,
+      employer_payroll_taxes_entered: i.employerPayrollTaxesInput,
+      owner_health_insurance: i.ownerHealth,
+      owner_retirement_contribution: i.ownerRetirement,
+      personal_vehicle_and_travel: i.personalVehicle,
+      other_personal_expenses: i.otherPersonal,
+      market_wage_replacement_manager: i.marketWage,
+      benefit_load_pct: i.benefitLoadPct,
+      hours_per_week: i.hoursPerWeek,
+      ss_wage_base: i.ssWageBase,
+      ss_rate_pct: i.ssRatePct,
+      medicare_rate_pct: i.medicareRatePct,
+      sde_multiple: i.sdeMultiple
+    },
+    outputs: {
+      normalized_ebitda: r.normalizedEBITDA,
+      sde: r.sde,
+      total_owner_package: r.totalOwnerPackage,
+      computed_employer_payroll_taxes: r.employerPayrollTaxes,
+      replacement_manager_cost: r.replacementCost,
+      normalization_adjustment: r.normalizationAdjustment,
+      owner_package_pct_of_replacement_bp: r.packageVsMarketBp,
+      owner_package_pct_suppressed: r.replacementIsZero,
+      owner_effective_hourly_rate: r.ownerEffectiveHourly,
+      owner_hourly_suppressed: r.hourlySuppressed,
+      valuation_impact_at_multiple: r.valueImpactAtMultiple,
+      reasonable_comp_pattern_flag: r.reasonableCompFlag,
+      per_owner_average_package: r.perOwnerPackage
+    },
+    downstream_handoff_candidates: ["157-business-valuation-estimator"],
+    data_sources: [
+      "SSA Contribution and Benefit Base 2026; IRC §3111(a)-(b); market wage and benefit load are user-supplied"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/business_valuation";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-172";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['owner_salary_normalization_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-172_owner-salary-normalization_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+const MANIFEST = {
+  "tool_id": "158-owner-salary-normalization",
+  "al_id": "AL-172",
+  "version": "1.0.0",
+  "title": "Owner Salary Normalization",
+  "description": "Separates what a replacement manager would cost from an owner's total compensation package, producing comparable seller discretionary earnings and normalized EBITDA, plus a neutral reasonable-compensation pattern flag. Deterministic, zero external data. Policy Mandate: owner_salary_normalization_record.",
+  "category": "small_business",
+  "journeys": [],
+  "personas": ["owner preparing for sale", "S-corp owner setting reasonable compensation", "buyer adjusting a seller's P&L"],
+  "tags": ["owner-compensation","add-backs","normalized-earnings","reasonable-compensation","sde"],
+  "status": "active",
+  "maintenance": "T1",
+  "data_vintage": "2026 (SS wage base $184,500; market wage is user-supplied)",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["owner_salary_normalization_record"],
+  "downstream_handoff_candidates": ["157-business-valuation-estimator"],
+  "regulatory_citations": [
+    "SSA Contribution and Benefit Base 2026",
+    "IRC §3111(a) employer Social Security rate",
+    "IRC §3111(b) employer Medicare rate"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "reported_net_income": { "type": "number" },
+      "owner_w2_salary": { "type": "number" },
+      "owner_distributions": { "type": "number" },
+      "employer_payroll_taxes_entered": { "type": "number" },
+      "owner_health_insurance": { "type": "number" },
+      "owner_retirement_contribution": { "type": "number" },
+      "personal_vehicle_and_travel": { "type": "number" },
+      "other_personal_expenses": { "type": "number" },
+      "one_time_expenses": { "type": "number" },
+      "market_wage_replacement_manager": { "type": "number" },
+      "benefit_load_pct": { "type": "number" },
+      "hours_per_week": { "type": "number" },
+      "owner_count": { "type": "integer" },
+      "ss_wage_base": { "type": "number" },
+      "ss_rate_pct": { "type": "number" },
+      "medicare_rate_pct": { "type": "number" },
+      "sde_multiple": { "type": "number" }
+    },
+    "required": ["reported_net_income","owner_w2_salary","distributions"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "normalized_ebitda": { "type": "number" },
+      "sde": { "type": "number" },
+      "total_owner_package": { "type": "number" },
+      "computed_employer_payroll_taxes": { "type": "number" },
+      "replacement_manager_cost": { "type": "number" },
+      "normalization_adjustment": { "type": "number" },
+      "owner_package_pct_of_replacement_bp": { "type": "integer" },
+      "owner_effective_hourly_rate": { "type": "number" },
+      "valuation_impact_at_multiple": { "type": "number" },
+      "reasonable_comp_pattern_flag": { "type": "boolean" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "owner_salary_normalization",
+    "description": "Separates what a replacement manager would cost from an owner's total compensation package, producing normalized EBITDA, seller discretionary earnings, and a neutral reasonable-compensation pattern flag. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "reported_net_income": { "type": "number" },
+        "owner_w2_salary": { "type": "number" },
+        "owner_distributions": { "type": "number" },
+        "market_wage_replacement_manager": { "type": "number" }
+      },
+      "required": ["reported_net_income","owner_w2_salary","owner_distributions"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Handoff Integrity · Apex Logics Showcase</title>
+  <meta name="description" content="Enter a run's agent handoffs as from-to pairs in order, and this tool checks that the chain connects, finds the first break, and folds the run into a reproducible key. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/showcase/handoff-integrity/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #34D399; --accent-dim: rgba(52,211,153,0.18); --accent-low: rgba(52,211,153,0.08);
+      --border: rgba(52,211,153,0.18); --border-focus: #34D399;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field.full { grid-column: 1 / -1; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="text"], input[type="number"], select, textarea { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    textarea { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; min-height: 120px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; font-weight: 500; word-break: break-all; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(52,211,153,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; word-break: break-all; text-align: right; }
+    .hash-line { font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; color: var(--text-dim); margin-top: 14px; word-break: break-all; }
+    .gate-note { font-size: 0.78rem; color: var(--text-muted); margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 12px; }
+    #handoffRows { margin-bottom: 6px; }
+    .handoff-break { color: var(--red); }
+
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<!-- ══ NAV ══ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+      <a href="../index.html" class="nav-pill">&#x2190; Showcase Gallery</a>
+    </div>
+  </div>
+</nav>
+<!-- ══ END NAV ══ -->
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">OCG-Industries Showcase · Cluster ④ AI Agents and Memory</p>
+  <h1 class="tool-title">Handoff Integrity</h1>
+  <p class="tool-desc">A multi-agent run fails and the log is a pile of messages with no spine. Enter the handoffs as a list of from and to pairs with a sequence number, and this page checks that the chain actually connects, finds the first break, and folds the whole run into a key. The same handoff list always gives the same key, so a post-mortem can be re-derived instead of reconstructed from memory.</p>
+  <p class="tool-vintage">Data: no external data</p>
+
+  <div class="card">
+    <div class="card-title">Inputs <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="runId">Run identifier</label>
+        <input type="text" id="runId" value="run-orchestra-058" />
+      </div>
+      <div class="field">
+        <label for="originAgent">Origin agent</label>
+        <input type="text" id="originAgent" value="planner" />
+        <span class="field-hint">The agent the run starts at.</span>
+      </div>
+      <div class="field full">
+        <label for="handoffs">Handoffs, one per line</label>
+        <textarea id="handoffs">planner>researcher
+researcher>writer
+writer>reviewer</textarea>
+        <span class="field-hint">One per line as from&gt;to, for example planner&gt;researcher. Order is the order you list them.</span>
+      </div>
+      <div class="field">
+        <label for="expectedTerminal">Expected final agent (optional)</label>
+        <input type="text" id="expectedTerminal" value="" />
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Check Handoff Chain →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Run Status</div>
+        <div class="metric-val" id="rStatus">--</div>
+        <div class="metric-note" id="rStatusNote">Reconstructable when the chain connects and any terminal check passes</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Run Key</div>
+        <div class="metric-val accent" id="rRunKey">--</div>
+        <div class="metric-note">Fingerprint folded over the run id, origin, and each handoff in order</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Terminal Agent</div>
+        <div class="metric-val accent" id="rTerminal">--</div>
+        <div class="metric-note">The agent the last handoff ends at</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Handoffs</div>
+      <div id="handoffRows"><div class="row"><span class="row-label">No handoffs entered</span><span class="row-val">--</span></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">Run identifier</span><span class="row-val" id="dRunId">--</span></div>
+      <div class="row"><span class="row-label">Origin agent</span><span class="row-val" id="dOriginAgent">--</span></div>
+      <div class="row"><span class="row-label">Handoff count</span><span class="row-val" id="dHandoffCount">--</span></div>
+      <div class="row"><span class="row-label">Malformed count</span><span class="row-val" id="dMalformedCount">--</span></div>
+      <div class="row"><span class="row-label">Chain connected</span><span class="row-val" id="dChainConnected">--</span></div>
+      <div class="row"><span class="row-label">First break index</span><span class="row-val" id="dFirstBreak">--</span></div>
+      <div class="row"><span class="row-label">Terminal agent</span><span class="row-val" id="dTerminalAgent">--</span></div>
+      <div class="row"><span class="row-label">Terminal match</span><span class="row-val" id="dTerminalMatch">--</span></div>
+      <div class="row"><span class="row-label">Distinct agents</span><span class="row-val" id="dDistinctAgents">--</span></div>
+      <div class="row"><span class="row-label">Run key</span><span class="row-val" id="dRunKey">--</span></div>
+
+      <div class="hash-line" id="hashLine">execution_hash: --</div>
+      <div class="gate-note" id="gateNote">This checks the shape of a handoff list, not the content of the messages, and it cannot tell you whether an agent reported its own handoff accurately. Try deleting a middle handoff above and watch the break index appear.</div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate Record v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · SC-20 · Data: no external data
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+/* KEEP VERBATIM: helpers */
+const $   = id => document.getElementById(id);
+
+/* KEEP VERBATIM: bundle-wide fingerprint helper */
+function fingerprint(str){ var h=5381,s=String(str).toUpperCase(); for(var i=0;i<s.length;i++) h=((Math.imul(h,33)+s.charCodeAt(i))&0x7fffffff); return h; }
+
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ── CORE LOGIC: pure, synchronous, deterministic ────────────────────────────── */
+function calculate() {
+  const t = raw => String(raw == null ? '' : raw).trim();
+
+  const run_id = t($('runId').value);
+  const origin_agent = t($('originAgent').value);
+  const expected_terminal = t($('expectedTerminal').value);
+
+  const lines = t($('handoffs').value).split('\n').map(s => s.trim()).filter(s => s.length > 0);
+
+  const pairs = lines.map(line => {
+    const idx = line.indexOf('>');
+    if (idx === -1) return { from: "", to: "" };
+    const from = line.slice(0, idx).trim().toUpperCase();
+    const to = line.slice(idx + 1).trim().toUpperCase();
+    return { from, to };
+  });
+
+  const handoff_count = pairs.length;
+  const malformed_count = pairs.filter(p => p.from === "" || p.to === "").length;
+
+  var cursor = origin_agent.toUpperCase();
+  var breakAt = -1;
+  for (var i = 0; i < pairs.length; i++) {
+    if (pairs[i].from !== cursor && breakAt === -1) breakAt = i;
+    cursor = pairs[i].to;
+  }
+  const first_break_index = breakAt;
+  const chain_connected = (handoff_count > 0 && breakAt === -1 && malformed_count === 0);
+
+  let terminal_agent = handoff_count ? pairs[handoff_count - 1].to : origin_agent.toUpperCase();
+  if (terminal_agent === "") terminal_agent = "none";
+
+  const terminal_match = (expected_terminal === "") ? "not_checked" : (terminal_agent === expected_terminal.toUpperCase() ? "match" : "mismatch");
+
+  const agentSet = {};
+  if (origin_agent.toUpperCase() !== "") agentSet[origin_agent.toUpperCase()] = true;
+  for (const p of pairs) {
+    if (p.from !== "") agentSet[p.from] = true;
+    if (p.to !== "") agentSet[p.to] = true;
+  }
+  const distinct_agents = Object.keys(agentSet).length;
+
+  var acc = fingerprint(run_id + "|" + origin_agent.toUpperCase());
+  for (var j = 0; j < pairs.length; j++) {
+    acc = fingerprint(acc + "|" + j + "|" + pairs[j].from + ">" + pairs[j].to);
+  }
+  const run_key = acc;
+
+  const run_status = (chain_connected && terminal_match !== "mismatch") ? "reconstructable" : "broken";
+
+  _lastInputs  = { run_id, origin_agent, expected_terminal, pairs };
+  _lastResults = { run_id, origin_agent, handoff_count, malformed_count, chain_connected, first_break_index, terminal_agent, terminal_match, distinct_agents, run_key, run_status };
+
+  render();
+}
+
+function render() {
+  const i = _lastInputs, r = _lastResults;
+
+  const ok = (r.run_status === "reconstructable");
+  $('rStatus').textContent = ok ? '✓ Handoff chain connects' : '✗ Handoff chain broken';
+  $('rStatus').className = 'metric-val ' + (ok ? 'green' : 'red');
+  if (ok) {
+    $('rStatusNote').textContent = 'Every handoff starts where the previous one ended, so the run can be walked end to end from this record.';
+  } else {
+    const reasons = [];
+    if (r.first_break_index !== -1) reasons.push('the chain breaks at handoff position ' + r.first_break_index);
+    if (r.malformed_count > 0) reasons.push(r.malformed_count + ' malformed line(s)');
+    if (r.terminal_match === 'mismatch') reasons.push('the terminal agent does not match what was expected');
+    if (r.handoff_count === 0) reasons.push('no handoffs were entered');
+    $('rStatusNote').textContent = reasons.join('; ');
+  }
+
+  $('rRunKey').textContent = String(r.run_key);
+  $('rTerminal').textContent = r.terminal_agent;
+
+  $('dRunId').textContent          = i.run_id === '' ? '(none)' : i.run_id;
+  $('dOriginAgent').textContent      = i.origin_agent === '' ? '(none)' : i.origin_agent;
+  $('dHandoffCount').textContent      = String(r.handoff_count);
+  $('dMalformedCount').textContent    = String(r.malformed_count);
+  $('dChainConnected').textContent    = r.chain_connected ? 'Yes' : 'No';
+  $('dFirstBreak').textContent        = String(r.first_break_index);
+  $('dTerminalAgent').textContent      = r.terminal_agent;
+  $('dTerminalMatch').textContent      = r.terminal_match;
+  $('dDistinctAgents').textContent     = String(r.distinct_agents);
+  $('dRunKey').textContent             = String(r.run_key);
+
+  const wrap = $('handoffRows');
+  if (i.pairs.length === 0) {
+    wrap.innerHTML = '<div class="row"><span class="row-label">No handoffs entered</span><span class="row-val">--</span></div>';
+  } else {
+    let html = '';
+    for (let n = 0; n < i.pairs.length; n++) {
+      const p = i.pairs[n];
+      const isBreak = (n === r.first_break_index);
+      const malformed = (p.from === '' || p.to === '');
+      const label = (n+1) + '. ' + (p.from === '' ? '(malformed)' : escHtml(p.from)) + ' &rarr; ' + (p.to === '' ? '(malformed)' : escHtml(p.to));
+      const cls = (isBreak || malformed) ? 'row-val handoff-break' : 'row-val';
+      const note = isBreak ? 'first break' : (malformed ? 'malformed' : 'ok');
+      html += '<div class="row"><span class="row-label">' + label + '</span><span class="' + cls + '">' + note + '</span></div>';
+    }
+    wrap.innerHTML = html;
+  }
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  updateHashLine(i, r);
+}
+
+/* Live hash preview shown on the page; the same preimage shape is re-derived
+   inside exportAP2() at export time via the canonical apexHash step order. */
+async function updateHashLine(i, r) {
+  try {
+    const pp = { execution_backend: 'js', hash_precision: 'integer_checksum', inputs: { run_id: i.run_id, origin_agent: i.origin_agent, handoff_count: r.handoff_count, expected_terminal: i.expected_terminal } };
+    const op = { run_id: r.run_id, origin_agent: r.origin_agent, handoff_count: r.handoff_count, malformed_count: r.malformed_count, chain_connected: r.chain_connected, first_break_index: r.first_break_index, terminal_agent: r.terminal_agent, terminal_match: r.terminal_match, distinct_agents: r.distinct_agents, run_key: r.run_key, run_status: r.run_status };
+    const h = await apexHash(pp, op);
+    $('hashLine').textContent = 'execution_hash: ' + h;
+  } catch (_e) {
+    $('hashLine').textContent = 'execution_hash: (unavailable)';
+  }
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const handoffLines = i.pairs.length === 0 ? ['(no handoffs entered)'] : i.pairs.map((p,n) => `${n+1}. ${p.from || '(malformed)'} -> ${p.to || '(malformed)'}${n === r.first_break_index ? ' [first break]' : ''}`);
+  const lines = [
+    '# Handoff Integrity Results',
+    `\n_Generated ${d} · SC-20 · apexlogics.org_\n`,
+    '## Inputs',
+    '| Field | Value |', '|---|---|',
+    `| Run identifier | ${i.run_id === '' ? '(none)' : i.run_id} |`,
+    `| Origin agent | ${i.origin_agent === '' ? '(none)' : i.origin_agent} |`,
+    `| Expected final agent | ${i.expected_terminal === '' ? '(not provided)' : i.expected_terminal} |`,
+    '\n## Handoffs (in entered order)',
+    ...handoffLines,
+    '\n## Results',
+    `- **Run status:** ${r.run_status === 'reconstructable' ? 'Handoff chain connects' : 'Handoff chain broken'}`,
+    `- **Run key:** ${r.run_key}`,
+    `- **Terminal agent:** ${r.terminal_agent}`,
+    `- **First break index:** ${r.first_break_index}`,
+    `- **Distinct agents:** ${r.distinct_agents}`,
+    '\n---',
+    '_Source: no external data. This checks the shape of a handoff list, not the content of the messages, and it cannot tell you whether an agent reported its own handoff accurately._'
+  ];
+  dlFile('handoff-integrity.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (Policy Mandate Record + OpenChainGraph) ─────────── */
+/* The ORDER of the steps below is non-negotiable. Edit field VALUES only.
+   Never emit ap2_version. */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  /* STEP 1: domain payload */
+  const payload = {
+    mandate_type: "handoff_integrity_record",
+    generated_at: new Date().toISOString(),
+    al_id: "SC-20",
+    tool_id: "sc20-handoff-integrity",
+    tool_name: "Handoff Integrity",
+    inputs: {
+      run_id: i.run_id,
+      origin_agent: i.origin_agent,
+      handoff_count: r.handoff_count,
+      expected_terminal: i.expected_terminal
+    },
+    outputs: {
+      run_id: r.run_id,
+      origin_agent: r.origin_agent,
+      handoff_count: r.handoff_count,
+      malformed_count: r.malformed_count,
+      chain_connected: r.chain_connected,
+      first_break_index: r.first_break_index,
+      terminal_agent: r.terminal_agent,
+      terminal_match: r.terminal_match,
+      distinct_agents: r.distinct_agents,
+      run_key: r.run_key,
+      run_status: r.run_status
+    },
+    downstream_handoff_candidates: ["sc20-handoff-integrity"],
+    data_sources: ["no external data"],
+    license: "CC-BY-4.0"
+  };
+
+  /* STEP 2, KEEP VERBATIM: OpenChainGraph L1 + L2 (parent capture via ?ap2=) */
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/handoff_integrity";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "SC-20";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  /* STEP 3, KEEP VERBATIM: build _cgDomain by excluding envelope keys */
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "integer_checksum", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  /* STEP 4, KEEP VERBATIM: canonical execution hash */
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  /* STEP 5, KEEP VERBATIM: OCG v0.4 envelope fields (hash-excluded, additive) */
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     STEP 6, SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE.
+     ══════════════════════════════════════════════════════════════════════════ */
+  const _cgPreval = Object.assign({}, payload);
+
+  /* STEP 7, KEEP VERBATIM: relocate non-allowed keys into hash-excluded apex_meta */
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  /* STEP 8, validate the SNAPSHOT, then and only then create the object URL. */
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['handoff_integrity_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`SC-20_handoff-integrity_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, OCG Standard §4 canonical execution hash ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* MANIFEST, mirrors manifest.json byte for byte in substance */
+const MANIFEST = {
+  "tool_id": "sc20-handoff-integrity",
+  "al_id": "SC-20",
+  "version": "1.0.0",
+  "title": "Handoff Integrity",
+  "description": "Given a run id, origin agent, a list of from>to handoff pairs in order, and an optional expected terminal agent, walks the chain for connectivity, finds the first break, and folds the run into a reproducible run key. Deterministic, zero external data. Policy Mandate type: handoff_integrity_record.",
+  "category": "showcase",
+  "journeys": [],
+  "personas": [],
+  "tags": ["showcase","ai-agents","multi-agent","provenance"],
+  "status": "showcase",
+  "maintenance": "zero",
+  "data_vintage": "no external data",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["handoff_integrity_record"],
+  "downstream_handoff_candidates": ["sc20-handoff-integrity"],
+  "regulatory_citations": [
+    "no external data"
+  ],
+  "scope_note": "This checks the shape of a handoff list, not the content of the messages, and it cannot tell you whether an agent reported its own handoff accurately.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "run_id":              { "type": "string" },
+      "origin_agent":        { "type": "string" },
+      "handoffs":            { "type": "string" },
+      "expected_terminal":   { "type": "string" }
+    },
+    "required": ["run_id","origin_agent"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "run_id":             { "type": "string" },
+      "origin_agent":       { "type": "string" },
+      "handoff_count":      { "type": "integer" },
+      "malformed_count":    { "type": "integer" },
+      "chain_connected":    { "type": "boolean" },
+      "first_break_index":  { "type": "integer" },
+      "terminal_agent":     { "type": "string" },
+      "terminal_match":     { "type": "string" },
+      "distinct_agents":    { "type": "integer" },
+      "run_key":            { "type": "integer" },
+      "run_status":         { "type": "string" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "handoff_integrity",
+    "description": "Given a run id, origin agent, and a list of from>to handoff pairs in order, walks the chain for connectivity, finds the first break, and folds the run into a reproducible run key. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "run_id":              { "type": "string" },
+        "origin_agent":        { "type": "string" },
+        "handoffs":            { "type": "string" },
+        "expected_terminal":   { "type": "string" }
+      },
+      "required": ["run_id","origin_agent"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0",
+  "source_card": "https://ainumbers.co/chaingraph/ocg-industries.html#c4-3",
+  "cluster": "ai-agents",
+  "chain": "showcase-handoff-integrity",
+  "mandate_type": "org.apexlogics/handoff_integrity"
+};
+
+/* KEEP VERBATIM: MCP / MANIFEST TOGGLE */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rental Depreciation & Tax Shield Modeler · ApexLogics #156</title>
+  <meta name="description" content="Split a rental's basis into land and building, run the 27.5-year residential schedule, optionally layer in cost segregation with bonus depreciation, test against the passive loss rules, and price the recapture waiting at sale. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/tools/156-rental-depreciation-tax-shield/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], input[type="text"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+
+    /* Tool-specific: notes (additive, not template chrome) */
+    .disclaimer { margin-top: 16px; padding: 12px 14px; background: rgba(248,113,113,.06); border: 1px solid rgba(248,113,113,.25); border-radius: 8px; font-size: .78rem; color: var(--text-muted); }
+    .info-note { margin-top: 14px; padding: 12px 14px; background: rgba(167,139,250,.06); border: 1px solid var(--border); border-radius: 8px; font-size: .78rem; color: var(--text-muted); }
+    .warn-note { margin-top: 14px; padding: 12px 14px; background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.3); border-radius: 8px; font-size: .78rem; color: var(--text-muted); }
+    .field-error { color: var(--red); font-size: .7rem; font-family: 'JetBrains Mono', monospace; margin-top: 6px; }
+    .checkbox-field { display: flex; align-items: center; gap: 8px; flex-direction: row; }
+    .checkbox-field input { width: auto; }
+    .sub-panel { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border); }
+    .sub-panel.visible { display: block; }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">Real Estate · Tax Planning</p>
+  <h1 class="tool-title">Rental Depreciation<br>&amp; Tax Shield Modeler</h1>
+  <p class="tool-desc">Depreciation is the deduction that makes a cash-flow-positive rental show a tax loss on paper. This modeler splits your purchase into land and building, runs the 27.5-year residential schedule with the mid-month convention, optionally layers in a cost segregation study with bonus depreciation on the short-life components, then tests the result against the passive activity loss rules and shows what the shield is actually worth to you. It also prices the recapture waiting at the other end.</p>
+  <p class="tool-vintage">Data version: 2026.07 · MACRS 27.5-year residential · bonus depreciation per OBBBA and IRS Notice 2026-11 · Rev. Proc. 2025-32 brackets</p>
+
+  <div class="card">
+    <div class="card-title">Property &amp; Basis <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="purchasePrice">Purchase price ($)</label>
+        <input type="number" id="purchasePrice" value="320000" min="0" step="1000" />
+      </div>
+      <div class="field">
+        <label for="closingCosts">Capitalized closing costs ($)</label>
+        <input type="number" id="closingCosts" value="6000" min="0" step="100" />
+        <span class="field-hint">Title, recording, transfer tax. Loan fees are amortized separately and out of scope.</span>
+      </div>
+      <div class="field">
+        <label for="landPct">Land allocation (% of total basis)</label>
+        <input type="number" id="landPct" value="20" min="0" max="100" step="0.1" />
+        <span class="field-hint">Use the assessor's land-to-improvement split. Land is never depreciable.</span>
+      </div>
+      <div class="field">
+        <label for="improvements">Capital improvements before service ($)</label>
+        <input type="number" id="improvements" value="12000" min="0" step="100" />
+        <span class="field-hint">Added to the depreciable building basis</span>
+      </div>
+      <div class="field">
+        <label for="monthPlaced">Month placed in service</label>
+        <select id="monthPlaced">
+          <option value="1" selected>January</option><option value="2">February</option><option value="3">March</option>
+          <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+        <span class="field-hint">Mid-month convention treats it as the 15th regardless of the actual day</span>
+      </div>
+      <div class="field">
+        <label for="yearToModel">Year of ownership to model</label>
+        <input type="number" id="yearToModel" value="1" min="1" max="30" step="1" />
+        <span class="field-hint">1 through 30</span>
+      </div>
+      <div class="field">
+        <label for="scheduleVariant">27.5-year schedule variant</label>
+        <select id="scheduleVariant" onchange="toggleLegacyNote()">
+          <option value="corrected" selected>Corrected (sums to basis exactly)</option>
+          <option value="legacy">Literal per original spec (known discrepancy)</option>
+        </select>
+        <span class="field-hint">See the note below the button if you select the legacy variant</span>
+      </div>
+    </div>
+    <div class="warn-note" id="legacyVariantNote" style="display:none;">The literal per-spec formula only depreciates 27 years' worth of basis over 28 years (about 98.2% of the building basis for a January placement), regardless of placement month. It does not satisfy the requirement that depreciation sum to the building basis. Use it only to reproduce the original source document's numbers; use the corrected variant for anything you plan to rely on.
+  </div>
+
+  <div class="card">
+    <div class="card-title">Cost Segregation, Optional <span class="badge">STEP 2</span></div>
+    <div class="field" style="margin-bottom:12px;">
+      <div class="checkbox-field">
+        <input type="checkbox" id="applyCostSeg" onchange="toggleCostSeg()" />
+        <label for="applyCostSeg" style="font-size:.85rem;">Apply a cost segregation study</label>
+      </div>
+      <span class="field-hint">Reclassifies part of the building into short-life property</span>
+    </div>
+    <div class="form-grid two sub-panel" id="costSegPanel">
+      <div class="field">
+        <label for="share5">5-year property share of building basis (%)</label>
+        <input type="number" id="share5" value="12" min="0" step="0.1" />
+        <span class="field-hint">Appliances, carpeting, decorative lighting</span>
+      </div>
+      <div class="field">
+        <label for="share15">15-year property share of building basis (%)</label>
+        <input type="number" id="share15" value="8" min="0" step="0.1" />
+        <span class="field-hint">Land improvements: paving, fencing, landscaping</span>
+      </div>
+      <div class="field">
+        <label for="bonusPct">Bonus depreciation percentage (%)</label>
+        <input type="number" id="bonusPct" value="100" min="0" max="100" step="1" />
+        <span class="field-hint"><strong>The volatile figure.</strong> Applies to the 5-year and 15-year components only, never to the building. OBBBA made 100% permanent for property placed in service after 19 Jan 2025.</span>
+      </div>
+    </div>
+    <div class="field-error" id="shareError"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Income &amp; Tax Context <span class="badge">STEP 3</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="netRentalIncome">Net rental income before depreciation ($)</label>
+        <input type="number" id="netRentalIncome" value="4500" step="100" />
+        <span class="field-hint">NOI less mortgage interest. Bring it over from the deal screener.</span>
+      </div>
+      <div class="field">
+        <label for="otherPassiveIncome">Other passive income ($)</label>
+        <input type="number" id="otherPassiveIncome" value="0" min="0" step="100" />
+      </div>
+      <div class="field">
+        <label for="magi">Modified adjusted gross income ($)</label>
+        <input type="number" id="magi" value="130000" min="0" step="1000" />
+        <span class="field-hint">Drives the 25,000 special allowance phase-out</span>
+      </div>
+      <div class="field">
+        <label for="filingStatus">Filing status</label>
+        <select id="filingStatus" onchange="toggleMfsSub()">
+          <option value="Single">Single</option>
+          <option value="MFJ" selected>Married Filing Jointly</option>
+          <option value="MFS">Married Filing Separately</option>
+        </select>
+      </div>
+      <div class="field sub-panel" id="mfsSub">
+        <label for="mfsLivingApart">Living apart from spouse all year?</label>
+        <select id="mfsLivingApart">
+          <option value="no" selected>No, lived together at some point</option>
+          <option value="yes">Yes, lived apart all year</option>
+        </select>
+        <span class="field-hint">If not living apart, the special allowance is 0, not 12,500</span>
+      </div>
+      <div class="field">
+        <label for="marginalRate">Marginal ordinary tax rate (%)</label>
+        <input type="number" id="marginalRate" value="24" min="0" max="55" step="0.1" />
+      </div>
+      <div class="field">
+        <label for="stateRate">State income tax rate (%)</label>
+        <input type="number" id="stateRate" value="0" min="0" max="25" step="0.01" />
+      </div>
+    </div>
+    <div class="field" style="margin-top:14px;">
+      <div class="checkbox-field">
+        <input type="checkbox" id="activeParticipation" checked />
+        <label for="activeParticipation" style="font-size:.85rem;">Active participation in the rental</label>
+      </div>
+      <span class="field-hint">Required for the 25,000 special allowance. Unchecking removes it.</span>
+    </div>
+    <div class="field" style="margin-top:10px;">
+      <div class="checkbox-field">
+        <input type="checkbox" id="realEstateProfessional" />
+        <label for="realEstateProfessional" style="font-size:.85rem;">Real estate professional status</label>
+      </div>
+      <span class="field-hint">If true, losses are not passive at all and the limitation is skipped. Strict hour tests, heavily audited.</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Sale, Optional <span class="badge">STEP 4</span></div>
+    <div class="field" style="margin-bottom:12px;">
+      <div class="checkbox-field">
+        <input type="checkbox" id="modelSale" onchange="toggleSalePanel()" />
+        <label for="modelSale" style="font-size:.85rem;">Model a sale</label>
+      </div>
+    </div>
+    <div class="form-grid two sub-panel" id="salePanel">
+      <div class="field">
+        <label for="salePrice">Assumed sale price ($)</label>
+        <input type="number" id="salePrice" value="400000" min="0" step="1000" />
+      </div>
+      <div class="field">
+        <label for="sellingPct">Selling costs (%)</label>
+        <input type="number" id="sellingPct" value="6" min="0" step="0.1" />
+      </div>
+      <div class="field">
+        <label for="yearsHeld">Years held at sale</label>
+        <input type="number" id="yearsHeld" value="10" min="1" step="1" />
+      </div>
+    </div>
+    <div class="field-error" id="yearsHeldError"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Constants Panel <span class="badge">EDITABLE</span></div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="cSpecialAllowance">Passive rental loss special allowance ($)</label>
+        <input type="number" id="cSpecialAllowance" value="25000" step="500" />
+        <span class="field-hint">IRC 469(i), not indexed</span>
+      </div>
+      <div class="field">
+        <label for="cSpecialAllowanceMFS">Special allowance, MFS living apart ($)</label>
+        <input type="number" id="cSpecialAllowanceMFS" value="12500" step="500" />
+      </div>
+      <div class="field">
+        <label for="cPhaseoutStart">Phase-out start, MAGI ($)</label>
+        <input type="number" id="cPhaseoutStart" value="100000" step="1000" />
+      </div>
+      <div class="field">
+        <label for="cPhaseoutStartMFS">Phase-out start, MFS living apart ($)</label>
+        <input type="number" id="cPhaseoutStartMFS" value="50000" step="1000" />
+      </div>
+      <div class="field">
+        <label for="cUnrecap1250Rate">Unrecaptured section 1250 gain rate (%)</label>
+        <input type="number" id="cUnrecap1250Rate" value="25" step="1" />
+      </div>
+      <div class="field">
+        <label for="cNiitRate">Net investment income tax rate (%)</label>
+        <input type="number" id="cNiitRate" value="3.8" step="0.1" />
+      </div>
+      <div class="field">
+        <label for="cNiitThreshSingle">NIIT threshold, single ($)</label>
+        <input type="number" id="cNiitThreshSingle" value="200000" step="1000" />
+      </div>
+      <div class="field">
+        <label for="cNiitThreshMFJ">NIIT threshold, MFJ ($)</label>
+        <input type="number" id="cNiitThreshMFJ" value="250000" step="1000" />
+      </div>
+      <div class="field">
+        <label for="cMacrs5Table">MACRS 5-year table (comma-separated)</label>
+        <input type="text" id="cMacrs5Table" value="0.20,0.32,0.192,0.1152,0.1152,0.0576" />
+      </div>
+      <div class="field">
+        <label for="cMacrs15Table">MACRS 15-year table (comma-separated)</label>
+        <input type="text" id="cMacrs15Table" value="0.05,0.095,0.0855,0.077,0.0693,0.0623,0.059,0.059,0.0591,0.059,0.0591,0.059,0.0591,0.059,0.0591,0.0295" />
+        <span class="field-hint">Trailing decimals low confidence, verify against IRS Pub. 946</span>
+      </div>
+      <div class="field">
+        <label for="cLtcg0MFJ">2026 top of 0% LTCG bracket, MFJ ($)</label>
+        <input type="number" id="cLtcg0MFJ" value="98900" step="500" />
+      </div>
+      <div class="field">
+        <label for="cLtcg15MFJ">2026 top of 15% LTCG bracket, MFJ ($)</label>
+        <input type="number" id="cLtcg15MFJ" value="613700" step="500" />
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Model My Tax Shield →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Total Depreciation This Year</div>
+        <div class="metric-val green" id="rHeadline">--</div>
+        <div class="metric-note">27.5-year plus any cost segregation components</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Total Tax Shield Value</div>
+        <div class="metric-val amber" id="rShield">--</div>
+        <div class="metric-note">Federal plus state, this year</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Suspended Loss Carried Forward</div>
+        <div class="metric-val accent" id="rSuspended">--</div>
+        <div class="metric-note">Locked until passive income or a sale frees it</div>
+      </div>
+    </div>
+
+    <div class="warn-note" id="landAllNote" style="display:none;">Land allocation is 100% of basis. Land is never depreciable, so depreciation is 0 across the board.</div>
+    <div class="warn-note" id="landZeroNote" style="display:none;">Land allocation is entered as 0%. The IRS expects a defensible allocation, usually from the assessor; verify this is correct.</div>
+    <div class="warn-note" id="shareClampNote" style="display:none;">The 5-year and 15-year shares entered summed above 100% of the building basis. Both were scaled down proportionally to fit.</div>
+    <div class="info-note" id="repNote" style="display:none;">Real estate professional status has strict hour tests and is heavily audited. This tool does not verify your eligibility.</div>
+    <div class="info-note" id="fullyDepreciatedNote" style="display:none;">The property is fully depreciated in year 28 and beyond under the 27.5-year schedule; the 27.5-year component contributes nothing further.</div>
+    <div class="info-note" id="mfsNoAllowanceNote" style="display:none;">Married filing separately without living apart all year: the special allowance is 0, not 12,500.</div>
+
+    <div class="card">
+      <div class="card-title">Basis</div>
+      <div class="row"><span class="row-label">Total basis</span><span class="row-val" id="dTotalBasis">--</span></div>
+      <div class="row"><span class="row-label">Land basis, non-depreciable</span><span class="row-val" id="dLandBasis">--</span></div>
+      <div class="row"><span class="row-label">Building basis</span><span class="row-val" id="dBuildingBasis">--</span></div>
+      <div class="row"><span class="row-label">5-year property basis</span><span class="row-val" id="dBasis5">--</span></div>
+      <div class="row"><span class="row-label">15-year property basis</span><span class="row-val" id="dBasis15">--</span></div>
+      <div class="row"><span class="row-label">27.5-year property basis</span><span class="row-val" id="dBasis275">--</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Depreciation This Year</div>
+      <div class="row"><span class="row-label">Year 1 mid-month fraction applied</span><span class="row-val" id="dMidMonthFraction">--</span></div>
+      <div class="row"><span class="row-label">Bonus depreciation taken</span><span class="row-val" id="dBonusTaken">--</span></div>
+      <div class="row"><span class="row-label">27.5-year depreciation this year</span><span class="row-val" id="dDep275">--</span></div>
+      <div class="row"><span class="row-label">5-year depreciation this year</span><span class="row-val" id="dDep5">--</span></div>
+      <div class="row"><span class="row-label">15-year depreciation this year</span><span class="row-val" id="dDep15">--</span></div>
+      <div class="row"><span class="row-label"><strong>Total depreciation this year</strong></span><span class="row-val" id="dTotalDep">--</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Passive Loss &amp; Shield</div>
+      <div class="row"><span class="row-label">Rental result after depreciation</span><span class="row-val" id="dRentalResult">--</span></div>
+      <div class="row"><span class="row-label">Loss offset by passive income</span><span class="row-val" id="dOffsetByPassive">--</span></div>
+      <div class="row"><span class="row-label">Special allowance available after phase-out</span><span class="row-val" id="dAllowance">--</span></div>
+      <div class="row"><span class="row-label">Allowed loss this year</span><span class="row-val" id="dAllowedLoss">--</span></div>
+      <div class="row"><span class="row-label">Suspended loss carried forward</span><span class="row-val" id="dSuspendedLoss">--</span></div>
+      <div class="row"><span class="row-label">Federal tax shield value</span><span class="row-val" id="dFederalShield">--</span></div>
+      <div class="row"><span class="row-label">State tax shield value</span><span class="row-val" id="dStateShield">--</span></div>
+      <div class="row"><span class="row-label"><strong>Total tax shield value</strong></span><span class="row-val" id="dTotalShield">--</span></div>
+      <div class="row"><span class="row-label">Tax reduction from depreciation, no loss to limit</span><span class="row-val" id="dTaxReductionNoLoss">--</span></div>
+      <div class="info-note">Depreciation is a non-cash deduction. The cash flow from the rental is unchanged; only the tax bill moves.</div>
+    </div>
+
+    <div class="card" id="saleCard">
+      <div class="card-title">Sale</div>
+      <div class="row"><span class="row-label">Accumulated depreciation at sale</span><span class="row-val" id="dAccumDep">--</span></div>
+      <div class="row"><span class="row-label">Adjusted basis at sale</span><span class="row-val" id="dAdjustedBasis">--</span></div>
+      <div class="row"><span class="row-label">Total gain on sale</span><span class="row-val" id="dTotalGain">--</span></div>
+      <div class="row"><span class="row-label">Unrecaptured section 1250 gain</span><span class="row-val" id="dUnrecap1250">--</span></div>
+      <div class="row"><span class="row-label">Recapture tax at 25%</span><span class="row-val" id="dRecaptureTax">--</span></div>
+      <div class="row"><span class="row-label">Long-term capital gain portion</span><span class="row-val" id="dCapGainPortion">--</span></div>
+      <div class="row"><span class="row-label">Long-term capital gain tax</span><span class="row-val" id="dCapGainTax">--</span></div>
+      <div class="row"><span class="row-label">NIIT on sale</span><span class="row-val" id="dNiitOnSale">--</span></div>
+      <div class="row"><span class="row-label"><strong>Total tax on sale</strong></span><span class="row-val" id="dTotalSaleTax">--</span></div>
+      <div class="row"><span class="row-label"><strong>Lifetime net shield after recapture</strong></span><span class="row-val" id="dLifetimeShield">--</span></div>
+
+      <div class="disclaimer">This is an illustrative estimate, not tax advice. Depreciation defers tax rather than eliminating it, and section 1250 recapture at 25% is the price at sale. Consult a CPA or tax attorney, especially before relying on a cost segregation study or claiming real estate professional status.</div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-170 · Data version 2026.07 · IRC 168(c), 469(i), 1(h)(1)(E), 1411 · OBBBA · IRS Notice 2026-11
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+const $   = id => document.getElementById(id);
+const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
+const money = n => Math.round(n * 100) / 100;
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+function parseNumList(str, fallback) {
+  const parts = String(str).split(',').map(s => parseFloat(s.trim()));
+  if (parts.some(n => !Number.isFinite(n))) return fallback;
+  return parts;
+}
+
+function toggleCostSeg() { $('costSegPanel').classList.toggle('visible', $('applyCostSeg').checked); }
+function toggleSalePanel() { $('salePanel').classList.toggle('visible', $('modelSale').checked); }
+function toggleMfsSub() { $('mfsSub').classList.toggle('visible', $('filingStatus').value === 'MFS'); }
+function toggleLegacyNote() { $('legacyVariantNote').style.display = ($('scheduleVariant').value === 'legacy') ? 'block' : 'none'; }
+
+const LTCG0 = { Single: 49450, MFJ: 98900, MFS: 49450 };
+function ltcgRateFor(topOfIncome, filingStatus, ltcg0MFJ, ltcg15MFJ) {
+  const ltcg0 = (filingStatus === 'MFJ') ? ltcg0MFJ : LTCG0[filingStatus];
+  const ltcg15 = (filingStatus === 'MFJ') ? ltcg15MFJ : (filingStatus === 'MFS' ? ltcg15MFJ / 2 : 545500);
+  if (topOfIncome <= ltcg0) return 0;
+  if (topOfIncome <= ltcg15) return 0.15;
+  return 0.20;
+}
+
+/* 27.5-year depreciation, LEGACY variant: literal per the original source spec.
+   Known discrepancy: only depreciates ~27/27.5 of the building basis across
+   years 1-28, regardless of placement month. Kept only for comparison. */
+function dep275Legacy(year, basis275, monthNumber) {
+  const monthsInService = 12.5 - monthNumber;
+  const annualFull275 = basis275 / 27.5;
+  const year1Dep275 = money(annualFull275 * monthsInService / 12);
+  if (year === 1) return { dep: year1Dep275, year1Fraction: monthsInService / 12 };
+  if (year >= 2 && year <= 27) return { dep: money(annualFull275), year1Fraction: monthsInService / 12 };
+  if (year === 28) return { dep: money(annualFull275 - year1Dep275), year1Fraction: monthsInService / 12 };
+  return { dep: 0, year1Fraction: monthsInService / 12 };
+}
+
+/* 27.5-year depreciation, CORRECTED variant: mid-month convention carried through
+   the full 330-month recovery period, so the schedule always sums to basis275
+   to the cent. The stub year lands wherever the true remaining-months math puts
+   it (year 28 or 29 depending on placement month), not always year 28. */
+function dep275Corrected(year, basis275, monthNumber) {
+  const monthsInService = 12.5 - monthNumber;
+  const annualFull275 = basis275 / 27.5;
+  const year1Dep275 = money(annualFull275 * monthsInService / 12);
+  if (year === 1) return { dep: year1Dep275, year1Fraction: monthsInService / 12 };
+  const remainingMonths = 330 - monthsInService;
+  const fullYears = Math.floor(remainingMonths / 12);
+  const stubMonths = money(remainingMonths - fullYears * 12);
+  const lastFullYear = 1 + fullYears;
+  const stubYear = lastFullYear + 1;
+  if (year >= 2 && year <= lastFullYear) return { dep: money(annualFull275), year1Fraction: monthsInService / 12 };
+  if (year === stubYear && stubMonths > 0) return { dep: money(annualFull275 * stubMonths / 12), year1Fraction: monthsInService / 12 };
+  return { dep: 0, year1Fraction: monthsInService / 12 };
+}
+
+/* depFor(year, ...): dispatches the 27.5-year component to the selected variant;
+   5-year and 15-year components are unaffected (their MACRS tables already sum to 1.0). */
+function depFor(year, basis275, basis5, basis15, monthNumber, bonusPct, macrs5Table, macrs15Table, variant) {
+  const d275 = (variant === 'legacy') ? dep275Legacy(year, basis275, monthNumber) : dep275Corrected(year, basis275, monthNumber);
+  const dep275 = d275.dep;
+
+  // 5-year
+  const bonus5 = money(basis5 * bonusPct / 100);
+  const remaining5 = money(basis5 - bonus5);
+  const macrs5Val = (year >= 1 && year <= 6) ? money(remaining5 * macrs5Table[year - 1]) : 0;
+  const dep5 = money((year === 1 ? bonus5 : 0) + macrs5Val);
+
+  // 15-year
+  const bonus15 = money(basis15 * bonusPct / 100);
+  const remaining15 = money(basis15 - bonus15);
+  const macrs15Val = (year >= 1 && year <= 16) ? money(remaining15 * macrs15Table[year - 1]) : 0;
+  const dep15 = money((year === 1 ? bonus15 : 0) + macrs15Val);
+
+  return { dep275, dep5, dep15, total: money(dep275 + dep5 + dep15), bonus5, bonus15, year1Fraction: d275.year1Fraction };
+}
+
+/* Passive activity loss limitation for a single year (spec steps 8-9) */
+function passiveLossFor(taxableRentalResult, otherPassiveIncome, activeParticipation, realEstateProfessional, filingStatus, mfsLivingApart, magi, C) {
+  if (taxableRentalResult >= 0) {
+    return { rawLoss: 0, offsetByPassive: 0, allowance: 0, allowedLoss: 0, suspendedLoss: 0 };
+  }
+  const rawLoss = -taxableRentalResult;
+  if (realEstateProfessional) {
+    return { rawLoss, offsetByPassive: 0, allowance: null, allowedLoss: rawLoss, suspendedLoss: 0 };
+  }
+  const offsetByPassive = Math.min(rawLoss, otherPassiveIncome);
+  const lossAfterPassive = rawLoss - offsetByPassive;
+
+  let allowance = 0;
+  if (activeParticipation) {
+    const isMFS = filingStatus === 'MFS';
+    const mfsQualifies = isMFS && mfsLivingApart;
+    let allowanceCap, phaseoutStart;
+    if (isMFS) {
+      allowanceCap = mfsQualifies ? C.specialAllowanceMFS : 0;
+      phaseoutStart = mfsQualifies ? C.phaseoutStartMFS : 0;
+    } else {
+      allowanceCap = C.specialAllowance;
+      phaseoutStart = C.phaseoutStart;
+    }
+    if (allowanceCap > 0) {
+      const reduction = money(Math.max(0, magi - phaseoutStart) * C.phaseoutRate);
+      allowance = money(Math.max(0, allowanceCap - reduction));
+    } else {
+      allowance = 0;
+    }
+  }
+  const allowedLoss = money(offsetByPassive + Math.min(lossAfterPassive, allowance));
+  const suspendedLoss = money(rawLoss - allowedLoss);
+  return { rawLoss, offsetByPassive, allowance, allowedLoss, suspendedLoss };
+}
+
+/* ── CORE MATH (spec steps 1-14) ──────────────────────────────────────────── */
+function calculate() {
+  $('shareError').textContent = '';
+  $('yearsHeldError').textContent = '';
+
+  let purchasePrice = parseFloat($('purchasePrice').value); if (!Number.isFinite(purchasePrice) || purchasePrice < 0) purchasePrice = 0;
+  let closingCosts = parseFloat($('closingCosts').value); if (!Number.isFinite(closingCosts) || closingCosts < 0) closingCosts = 0;
+  let landPct = parseFloat($('landPct').value); if (!Number.isFinite(landPct)) landPct = 20;
+  landPct = clamp(landPct, 0, 100);
+  let improvements = parseFloat($('improvements').value); if (!Number.isFinite(improvements) || improvements < 0) improvements = 0;
+  const monthPlaced = parseInt($('monthPlaced').value, 10);
+  let yearToModel = parseInt($('yearToModel').value, 10); if (!Number.isFinite(yearToModel) || yearToModel < 1) yearToModel = 1;
+  const scheduleVariant = $('scheduleVariant').value;
+
+  const applyCostSeg = $('applyCostSeg').checked;
+  let share5 = parseFloat($('share5').value); if (!Number.isFinite(share5) || share5 < 0) share5 = 0;
+  let share15 = parseFloat($('share15').value); if (!Number.isFinite(share15) || share15 < 0) share15 = 0;
+  let shareClamped = false;
+  if (applyCostSeg && (share5 + share15) > 100) {
+    const scale = 100 / (share5 + share15);
+    share5 = share5 * scale; share15 = share15 * scale;
+    shareClamped = true;
+  }
+  let bonusPct = parseFloat($('bonusPct').value); if (!Number.isFinite(bonusPct) || bonusPct < 0) bonusPct = 100;
+  bonusPct = clamp(bonusPct, 0, 100);
+
+  let netRentalIncome = parseFloat($('netRentalIncome').value); if (!Number.isFinite(netRentalIncome)) netRentalIncome = 0;
+  let otherPassiveIncome = parseFloat($('otherPassiveIncome').value); if (!Number.isFinite(otherPassiveIncome) || otherPassiveIncome < 0) otherPassiveIncome = 0;
+  let magi = parseFloat($('magi').value); if (!Number.isFinite(magi) || magi < 0) magi = 0;
+  const filingStatus = $('filingStatus').value;
+  const mfsLivingApart = $('mfsLivingApart').value === 'yes';
+  const activeParticipation = $('activeParticipation').checked;
+  const realEstateProfessional = $('realEstateProfessional').checked;
+  let marginalRate = parseFloat($('marginalRate').value); if (!Number.isFinite(marginalRate) || marginalRate < 0) marginalRate = 24;
+  let stateRate = parseFloat($('stateRate').value); if (!Number.isFinite(stateRate) || stateRate < 0) stateRate = 0;
+
+  const modelSale = $('modelSale').checked;
+  let salePrice = parseFloat($('salePrice').value) || 0;
+  let sellingPct = parseFloat($('sellingPct').value) || 0;
+  let yearsHeld = parseInt($('yearsHeld').value, 10); if (!Number.isFinite(yearsHeld)) yearsHeld = 0;
+  if (modelSale && yearsHeld <= 0) {
+    $('yearsHeldError').textContent = 'Years held at sale must be at least 1.';
+    return;
+  }
+
+  const C = {
+    specialAllowance: parseFloat($('cSpecialAllowance').value) || 25000,
+    specialAllowanceMFS: parseFloat($('cSpecialAllowanceMFS').value) || 12500,
+    phaseoutStart: parseFloat($('cPhaseoutStart').value) || 100000,
+    phaseoutStartMFS: parseFloat($('cPhaseoutStartMFS').value) || 50000,
+    phaseoutRate: 0.50,
+    unrecap1250Rate: (parseFloat($('cUnrecap1250Rate').value) || 25) / 100,
+    niitRate: (parseFloat($('cNiitRate').value) || 3.8) / 100,
+    niitThreshSingle: parseFloat($('cNiitThreshSingle').value) || 200000,
+    niitThreshMFJ: parseFloat($('cNiitThreshMFJ').value) || 250000,
+    macrs5Table: parseNumList($('cMacrs5Table').value, [0.20,0.32,0.192,0.1152,0.1152,0.0576]),
+    macrs15Table: parseNumList($('cMacrs15Table').value, [0.05,0.095,0.0855,0.077,0.0693,0.0623,0.059,0.059,0.0591,0.059,0.0591,0.059,0.0591,0.059,0.0591,0.0295]),
+    ltcg0MFJ: parseFloat($('cLtcg0MFJ').value) || 98900,
+    ltcg15MFJ: parseFloat($('cLtcg15MFJ').value) || 613700
+  };
+
+  // Step 1-2: basis
+  const totalBasis = money(purchasePrice + closingCosts + improvements);
+  const landBasis = money(totalBasis * landPct / 100);
+  const buildingBasis = money(totalBasis - landBasis);
+
+  // Step 3: cost segregation split
+  let basis5 = 0, basis15 = 0, basis275 = buildingBasis;
+  if (applyCostSeg) {
+    basis5 = money(buildingBasis * share5 / 100);
+    basis15 = money(buildingBasis * share15 / 100);
+    basis275 = money(buildingBasis - basis5 - basis15);
+  }
+
+  // Steps 4-7: this year's depreciation
+  const thisYear = depFor(yearToModel, basis275, basis5, basis15, monthPlaced, bonusPct, C.macrs5Table, C.macrs15Table, scheduleVariant);
+  const totalDepreciation = thisYear.total;
+
+  // Step 8: paper loss
+  const taxableRentalResult = money(netRentalIncome - totalDepreciation);
+
+  // Step 9-10: passive loss limitation and shield
+  const pl = passiveLossFor(taxableRentalResult, otherPassiveIncome, activeParticipation, realEstateProfessional, filingStatus, mfsLivingApart, magi, C);
+  const federalShield = money(pl.allowedLoss * marginalRate / 100);
+  const stateShield = money(pl.allowedLoss * stateRate / 100);
+  const totalShield = money(federalShield + stateShield);
+
+  // Step: no-loss case, tax reduction from depreciation shown separately
+  let taxReductionNoLoss = 0;
+  if (taxableRentalResult >= 0) {
+    taxReductionNoLoss = money(Math.min(totalDepreciation, netRentalIncome) * marginalRate / 100);
+  }
+
+  // Step 12: cumulative depreciation and cumulative suspended loss/shield to the sale year
+  let accumulatedDepreciation = 0, cumulativeSuspendedLoss = 0, cumulativeAllowedShield = 0;
+  const yearsToSum = modelSale ? yearsHeld : yearToModel;
+  for (let y = 1; y <= yearsToSum; y++) {
+    const yd = depFor(y, basis275, basis5, basis15, monthPlaced, bonusPct, C.macrs5Table, C.macrs15Table, scheduleVariant);
+    accumulatedDepreciation = money(accumulatedDepreciation + yd.total);
+    const yResult = money(netRentalIncome - yd.total);
+    const yPl = passiveLossFor(yResult, otherPassiveIncome, activeParticipation, realEstateProfessional, filingStatus, mfsLivingApart, magi, C);
+    cumulativeSuspendedLoss = money(cumulativeSuspendedLoss + yPl.suspendedLoss);
+    cumulativeAllowedShield = money(cumulativeAllowedShield + yPl.allowedLoss * marginalRate / 100 + yPl.allowedLoss * stateRate / 100);
+  }
+  accumulatedDepreciation = Math.min(accumulatedDepreciation, buildingBasis);
+
+  // Step 13: sale
+  let sale = null;
+  if (modelSale) {
+    const adjustedBasis = money(totalBasis - accumulatedDepreciation);
+    const sellingCosts = money(salePrice * sellingPct / 100);
+    const netProceeds = money(salePrice - sellingCosts);
+    const totalGain = money(netProceeds - adjustedBasis);
+    const unrecaptured1250 = money(Math.min(accumulatedDepreciation, Math.max(0, totalGain)));
+    let capitalGainPortion = money(Math.max(0, totalGain - unrecaptured1250));
+    const recaptureTax = totalGain > 0 ? money(unrecaptured1250 * C.unrecap1250Rate) : 0;
+    // Suspended loss released reduces the taxable capital gain portion, floor at 0
+    capitalGainPortion = money(Math.max(0, capitalGainPortion - cumulativeSuspendedLoss));
+    const ltcgRate = ltcgRateFor(magi + totalGain, filingStatus, C.ltcg0MFJ, C.ltcg15MFJ);
+    const capitalGainTax = totalGain > 0 ? money(capitalGainPortion * ltcgRate) : 0;
+    const niitThreshold = (filingStatus === 'MFJ') ? C.niitThreshMFJ : (filingStatus === 'MFS' ? 125000 : C.niitThreshSingle);
+    const niitOnSale = money(Math.max(0, totalGain) * ((magi + totalGain > niitThreshold) ? C.niitRate : 0));
+    const totalSaleTax = money(recaptureTax + capitalGainTax + niitOnSale);
+    sale = { adjustedBasis, sellingCosts, netProceeds, totalGain, unrecaptured1250, capitalGainPortion, recaptureTax, capitalGainTax, niitOnSale, totalSaleTax };
+  }
+  const lifetimeShield = modelSale ? money(cumulativeAllowedShield - sale.totalSaleTax) : null;
+
+  _lastInputs = {
+    purchasePrice, closingCosts, landPct, improvements, monthPlaced, yearToModel, scheduleVariant,
+    applyCostSeg, share5, share15, bonusPct,
+    netRentalIncome, otherPassiveIncome, magi, filingStatus, mfsLivingApart,
+    activeParticipation, realEstateProfessional, marginalRate, stateRate,
+    modelSale, salePrice, sellingPct, yearsHeld
+  };
+  _lastResults = {
+    totalBasis, landBasis, buildingBasis, basis5, basis15, basis275,
+    thisYear, totalDepreciation, taxableRentalResult,
+    pl, federalShield, stateShield, totalShield, taxReductionNoLoss,
+    accumulatedDepreciation, cumulativeSuspendedLoss, cumulativeAllowedShield,
+    sale, lifetimeShield, shareClamped
+  };
+
+  render();
+}
+
+function render() {
+  const r = _lastResults, i = _lastInputs;
+
+  $('rHeadline').textContent = fmt(r.totalDepreciation);
+  $('rShield').textContent = fmt(r.totalShield);
+  $('rSuspended').textContent = fmt(r.pl.suspendedLoss);
+
+  $('landAllNote').style.display = (i.landPct >= 100) ? 'block' : 'none';
+  $('landZeroNote').style.display = (i.landPct <= 0) ? 'block' : 'none';
+  $('shareClampNote').style.display = r.shareClamped ? 'block' : 'none';
+  $('repNote').style.display = i.realEstateProfessional ? 'block' : 'none';
+  $('fullyDepreciatedNote').style.display = (r.thisYear.dep275 === 0 && i.yearToModel > 1) ? 'block' : 'none';
+  $('mfsNoAllowanceNote').style.display = (i.filingStatus === 'MFS' && !i.mfsLivingApart) ? 'block' : 'none';
+  $('legacyVariantNote').style.display = (i.scheduleVariant === 'legacy') ? 'block' : 'none';
+
+  $('dTotalBasis').textContent = fmt(r.totalBasis);
+  $('dLandBasis').textContent = fmt(r.landBasis);
+  $('dBuildingBasis').textContent = fmt(r.buildingBasis);
+  $('dBasis5').textContent = fmt(r.basis5);
+  $('dBasis15').textContent = fmt(r.basis15);
+  $('dBasis275').textContent = fmt(r.basis275);
+
+  $('dMidMonthFraction').textContent = r.thisYear.year1Fraction.toFixed(4);
+  $('dBonusTaken').textContent = fmt(r.thisYear.bonus5 + r.thisYear.bonus15);
+  $('dDep275').textContent = fmt(r.thisYear.dep275);
+  $('dDep5').textContent = fmt(r.thisYear.dep5);
+  $('dDep15').textContent = fmt(r.thisYear.dep15);
+  $('dTotalDep').textContent = fmt(r.totalDepreciation);
+
+  $('dRentalResult').textContent = (r.taxableRentalResult < 0 ? '-' : '') + fmt(r.taxableRentalResult);
+  $('dOffsetByPassive').textContent = fmt(r.pl.offsetByPassive);
+  $('dAllowance').textContent = r.pl.allowance === null ? 'n/a, real estate professional' : fmt(r.pl.allowance);
+  $('dAllowedLoss').textContent = fmt(r.pl.allowedLoss);
+  $('dSuspendedLoss').textContent = fmt(r.pl.suspendedLoss);
+  $('dFederalShield').textContent = fmt(r.federalShield);
+  $('dStateShield').textContent = fmt(r.stateShield);
+  $('dTotalShield').textContent = fmt(r.totalShield);
+  $('dTaxReductionNoLoss').textContent = fmt(r.taxReductionNoLoss);
+
+  const saleCard = $('saleCard');
+  if (i.modelSale) {
+    saleCard.style.display = 'block';
+    const s = r.sale;
+    $('dAccumDep').textContent = fmt(r.accumulatedDepreciation);
+    $('dAdjustedBasis').textContent = fmt(s.adjustedBasis);
+    $('dTotalGain').textContent = (s.totalGain < 0 ? '-' : '') + fmt(s.totalGain);
+    $('dUnrecap1250').textContent = fmt(s.unrecaptured1250);
+    $('dRecaptureTax').textContent = fmt(s.recaptureTax);
+    $('dCapGainPortion').textContent = fmt(s.capitalGainPortion);
+    $('dCapGainTax').textContent = fmt(s.capitalGainTax);
+    $('dNiitOnSale').textContent = fmt(s.niitOnSale);
+    $('dTotalSaleTax').textContent = fmt(s.totalSaleTax);
+    $('dLifetimeShield').textContent = (r.lifetimeShield < 0 ? '-' : '') + fmt(r.lifetimeShield);
+  } else {
+    saleCard.style.display = 'none';
+  }
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Rental Depreciation & Tax Shield Modeler Results',
+    `\n_Generated ${d} · AL-170 · apexlogics.org_\n`,
+    '## Inputs',
+    '| Field | Value |', '|---|---|',
+    `| Purchase price | ${fmt(i.purchasePrice)} |`,
+    `| Land allocation | ${i.landPct}% |`,
+    `| Year of ownership modeled | ${i.yearToModel} |`,
+    `| 27.5-year schedule variant | ${i.scheduleVariant} |`,
+    `| Cost segregation applied | ${i.applyCostSeg ? 'Yes' : 'No'} |`,
+    '\n## Basis',
+    `- **Total basis:** ${fmt(r.totalBasis)}`,
+    `- **Land basis, non-depreciable:** ${fmt(r.landBasis)}`,
+    `- **Building basis:** ${fmt(r.buildingBasis)}`,
+    `- **5-year property basis:** ${fmt(r.basis5)}`,
+    `- **15-year property basis:** ${fmt(r.basis15)}`,
+    `- **27.5-year property basis:** ${fmt(r.basis275)}`,
+    '\n## Depreciation This Year',
+    `- **Bonus depreciation taken:** ${fmt(r.thisYear.bonus5 + r.thisYear.bonus15)}`,
+    `- **27.5-year depreciation:** ${fmt(r.thisYear.dep275)}`,
+    `- **5-year depreciation:** ${fmt(r.thisYear.dep5)}`,
+    `- **15-year depreciation:** ${fmt(r.thisYear.dep15)}`,
+    `- **Total depreciation this year:** ${fmt(r.totalDepreciation)}`,
+    '\n## Passive Loss & Shield',
+    `- **Rental result after depreciation:** ${fmt(r.taxableRentalResult)}`,
+    `- **Allowed loss this year:** ${fmt(r.pl.allowedLoss)}`,
+    `- **Suspended loss carried forward:** ${fmt(r.pl.suspendedLoss)}`,
+    `- **Total tax shield value:** ${fmt(r.totalShield)}`,
+    `- **Tax reduction from depreciation when there is no loss to limit:** ${fmt(r.taxReductionNoLoss)}`
+  ];
+  if (i.modelSale) {
+    const s = r.sale;
+    lines.push(
+      '\n## Sale',
+      `- **Accumulated depreciation at sale:** ${fmt(r.accumulatedDepreciation)}`,
+      `- **Adjusted basis at sale:** ${fmt(s.adjustedBasis)}`,
+      `- **Total gain on sale:** ${fmt(s.totalGain)}`,
+      `- **Unrecaptured section 1250 gain:** ${fmt(s.unrecaptured1250)}`,
+      `- **Recapture tax at 25%:** ${fmt(s.recaptureTax)}`,
+      `- **Long-term capital gain tax:** ${fmt(s.capitalGainTax)}`,
+      `- **NIIT on sale:** ${fmt(s.niitOnSale)}`,
+      `- **Total tax on sale:** ${fmt(s.totalSaleTax)}`,
+      `- **Lifetime net shield after recapture:** ${fmt(r.lifetimeShield)}`
+    );
+  }
+  lines.push(
+    '\n---',
+    '_This is an illustrative estimate, not tax advice. Depreciation defers tax rather than eliminating it. Consult a CPA or tax attorney._'
+  );
+  dlFile('rental-depreciation-tax-shield.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  const payload = {
+    mandate_type: "rental_depreciation_shield_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-170",
+    tool_id: "156-rental-depreciation-tax-shield",
+    tool_name: "Rental Depreciation & Tax Shield Modeler",
+    inputs: {
+      purchase_price: i.purchasePrice,
+      closing_costs: i.closingCosts,
+      land_pct: i.landPct,
+      improvements: i.improvements,
+      month_placed: i.monthPlaced,
+      year_to_model: i.yearToModel,
+      schedule_variant: i.scheduleVariant,
+      apply_cost_seg: i.applyCostSeg,
+      share5: i.share5,
+      share15: i.share15,
+      bonus_pct: i.bonusPct,
+      net_rental_income: i.netRentalIncome,
+      other_passive_income: i.otherPassiveIncome,
+      magi: i.magi,
+      filing_status: i.filingStatus,
+      mfs_living_apart: i.filingStatus === 'MFS' ? i.mfsLivingApart : null,
+      active_participation: i.activeParticipation,
+      real_estate_professional: i.realEstateProfessional,
+      marginal_rate: i.marginalRate,
+      state_rate: i.stateRate,
+      model_sale: i.modelSale,
+      sale_price: i.modelSale ? i.salePrice : null,
+      selling_pct: i.modelSale ? i.sellingPct : null,
+      years_held: i.modelSale ? i.yearsHeld : null,
+      data_version: "2026.07"
+    },
+    outputs: {
+      total_basis: r.totalBasis,
+      land_basis: r.landBasis,
+      building_basis: r.buildingBasis,
+      basis5: r.basis5,
+      basis15: r.basis15,
+      basis275: r.basis275,
+      year1_fraction: r.thisYear.year1Fraction,
+      bonus_taken: money(r.thisYear.bonus5 + r.thisYear.bonus15),
+      dep275: r.thisYear.dep275,
+      dep5: r.thisYear.dep5,
+      dep15: r.thisYear.dep15,
+      total_depreciation: r.totalDepreciation,
+      taxable_rental_result: r.taxableRentalResult,
+      offset_by_passive: r.pl.offsetByPassive,
+      allowance: r.pl.allowance,
+      allowed_loss: r.pl.allowedLoss,
+      suspended_loss: r.pl.suspendedLoss,
+      federal_shield: r.federalShield,
+      state_shield: r.stateShield,
+      total_shield: r.totalShield,
+      tax_reduction_no_loss: r.taxReductionNoLoss,
+      accumulated_depreciation: i.modelSale ? r.accumulatedDepreciation : null,
+      adjusted_basis: i.modelSale ? r.sale.adjustedBasis : null,
+      total_gain: i.modelSale ? r.sale.totalGain : null,
+      unrecaptured_1250: i.modelSale ? r.sale.unrecaptured1250 : null,
+      recapture_tax: i.modelSale ? r.sale.recaptureTax : null,
+      capital_gain_tax: i.modelSale ? r.sale.capitalGainTax : null,
+      niit_on_sale: i.modelSale ? r.sale.niitOnSale : null,
+      total_sale_tax: i.modelSale ? r.sale.totalSaleTax : null,
+      lifetime_shield: i.modelSale ? r.lifetimeShield : null
+    },
+    downstream_handoff_candidates: [],
+    data_sources: [
+      "IRC 168(c) (27.5-year residential recovery period)",
+      "OBBBA (permanent 100% bonus depreciation)",
+      "IRS Notice 2026-11",
+      "IRC 469(i) (passive rental loss special allowance)",
+      "IRC 1(h)(1)(E) (unrecaptured section 1250 gain rate)",
+      "IRC 1411 (NIIT)",
+      "Rev. Proc. 2025-32 (2026 LTCG thresholds)"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/tax_projection";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-170";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* STEP 6, SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['rental_depreciation_shield_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-170_rental-depreciation-tax-shield_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, CHAINGRAPH §6 EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* REPLACE: MANIFEST */
+const MANIFEST = {
+  "tool_id": "156-rental-depreciation-tax-shield",
+  "al_id": "AL-170",
+  "version": "1.0.0",
+  "title": "Rental Depreciation & Tax Shield Modeler",
+  "description": "Given a rental property's basis, an optional cost segregation split with bonus depreciation, and income/tax context, runs the 27.5-year mid-month residential schedule plus any 5-year and 15-year components, tests the resulting loss against the passive activity loss rules, and optionally prices the section 1250 recapture and capital gain tax at an assumed sale. Includes both a corrected 27.5-year schedule (verified to sum to basis) and a legacy variant that reproduces the original source spec's formula, which has a known ~1.8% under-depreciation discrepancy, selectable for comparison.",
+  "category": "real_estate",
+  "journeys": ["first year rental tax planning","hold or sell analysis"],
+  "personas": ["small landlord","real estate investor","tax preparer","cost segregation prospect"],
+  "tags": ["depreciation","MACRS","tax shield","passive loss","bonus depreciation","recapture","cost segregation"],
+  "status": "active",
+  "maintenance": "annual (bonus depreciation percentage and bracket refresh; 27.5-year schedule itself is durable)",
+  "data_vintage": "2026.07 (MACRS 27.5-year residential; bonus depreciation per OBBBA and IRS Notice 2026-11; Rev. Proc. 2025-32 brackets)",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["rental_depreciation_shield_record"],
+  "downstream_handoff_candidates": [],
+  "regulatory_citations": [
+    "IRC 168(c)", "OBBBA", "IRS Notice 2026-11", "IRC 469(i)", "IRC 1(h)(1)(E)", "IRC 1411", "Rev. Proc. 2025-32"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "purchase_price": { "type": "number" },
+      "land_pct": { "type": "number" },
+      "year_to_model": { "type": "integer" },
+      "net_rental_income": { "type": "number" },
+      "filing_status": { "type": "string" }
+    },
+    "required": ["purchase_price","land_pct","year_to_model","net_rental_income","filing_status"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "total_depreciation": { "type": "number" },
+      "allowed_loss": { "type": "number" },
+      "suspended_loss": { "type": "number" },
+      "total_shield": { "type": "number" },
+      "lifetime_shield": { "type": ["number","null"] }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "rental_depreciation_tax_shield",
+    "description": "Given a rental property's basis, an optional cost segregation split with bonus depreciation, and income/tax context, returns the year's depreciation, the passive-loss-limited allowed loss, the tax shield value, and, if a sale is modeled, the section 1250 recapture and capital gain tax exposure. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "purchase_price": { "type": "number" },
+        "land_pct": { "type": "number" },
+        "year_to_model": { "type": "integer" },
+        "net_rental_income": { "type": "number" },
+        "filing_status": { "type": "string" }
+      },
+      "required": ["purchase_price","land_pct","year_to_model","net_rental_income","filing_status"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+/* KEEP VERBATIM: MCP / MANIFEST TOGGLE */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

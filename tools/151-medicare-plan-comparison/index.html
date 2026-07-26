@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Medicare Plan Comparison · ApexLogics #151</title>
+  <meta name="description" content="Price Original Medicare plus Medigap plus Part D against Medicare Advantage across a full year, at a typical year and a bad year, so you can see the shape of the risk. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/tools/151-medicare-plan-comparison/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], input[type="text"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+
+    /* Tool-specific: notes (additive, not template chrome) */
+    .disclaimer { margin-top: 16px; padding: 12px 14px; background: rgba(248,113,113,.06); border: 1px solid rgba(248,113,113,.25); border-radius: 8px; font-size: .78rem; color: var(--text-muted); }
+    .info-note { margin-top: 14px; padding: 12px 14px; background: rgba(167,139,250,.06); border: 1px solid var(--border); border-radius: 8px; font-size: .78rem; color: var(--text-muted); }
+    .warn-note { margin-top: 14px; padding: 12px 14px; background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.3); border-radius: 8px; font-size: .78rem; color: var(--text-muted); }
+    .checkbox-field { display: flex; align-items: center; gap: 8px; flex-direction: row; }
+    .checkbox-field input { width: auto; }
+    .path-label { font-family: 'JetBrains Mono', monospace; font-size: .72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .08em; margin: 4px 0 4px; }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">Retirement · Medicare</p>
+  <h1 class="tool-title">Medicare Plan<br>Comparison</h1>
+  <p class="tool-desc">The choice between Original Medicare with a supplement and a Medicare Advantage plan is mostly a trade between a predictable premium and a variable out-of-pocket exposure. This tool prices both paths across a full year at a utilization level you set, applies the Part D out-of-pocket cap and the Advantage maximum out-of-pocket limit, and shows the cost at a typical year and at a bad year so you can see the shape of the risk, not just the average.</p>
+  <p class="tool-vintage">Data: 2026 CMS Parts A &amp; B and Part D standard benefit parameters</p>
+
+  <div class="card">
+    <div class="card-title">Shared Assumptions <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="irmaaTier">IRMAA tier</label>
+        <select id="irmaaTier">
+          <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+          <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+        </select>
+        <span class="field-hint">Both paths pay the same Part B premium and Part D surcharge. Run the IRMAA tool first if unsure.</span>
+      </div>
+      <div class="field">
+        <label for="admissions">Expected inpatient hospital admissions per year</label>
+        <input type="number" id="admissions" value="0" min="0" step="1" />
+      </div>
+      <div class="field">
+        <label for="primaryVisits">Expected primary care visits per year</label>
+        <input type="number" id="primaryVisits" value="4" min="0" step="1" />
+      </div>
+      <div class="field">
+        <label for="specialistVisits">Expected specialist visits per year</label>
+        <input type="number" id="specialistVisits" value="4" min="0" step="1" />
+      </div>
+      <div class="field">
+        <label for="los">Average inpatient length of stay (days)</label>
+        <input type="number" id="los" value="4" min="0" step="1" />
+      </div>
+      <div class="field">
+        <label for="outpatientCharges">Expected outpatient and diagnostic charges ($, Medicare-approved amount)</label>
+        <input type="number" id="outpatientCharges" value="4000" min="0" step="100" />
+        <span class="field-hint">Lab work, imaging, therapy, surgery center</span>
+      </div>
+      <div class="field">
+        <label for="annualDrugCost">Expected annual retail drug cost ($, plan-negotiated)</label>
+        <input type="number" id="annualDrugCost" value="2500" min="0" step="100" />
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Path A: Original Medicare + Medigap + Standalone Part D <span class="badge">STEP 2</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="medigapMonthly">Medigap monthly premium ($)</label>
+        <input type="number" id="medigapMonthly" value="165" min="0" step="1" />
+        <span class="field-hint">Quote from your county. Varies widely by plan letter, age, and state.</span>
+      </div>
+      <div class="field">
+        <label for="medigapPlanType">Medigap plan type</label>
+        <select id="medigapPlanType">
+          <option value="PlanG" selected>Plan G</option>
+          <option value="PlanN">Plan N</option>
+          <option value="HDG">High-deductible G</option>
+          <option value="None">None</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="partDPremiumMonthly">Standalone Part D monthly premium ($)</label>
+        <input type="number" id="partDPremiumMonthly" value="34.50" min="0" step="0.10" />
+        <span class="field-hint">Pre-filled with the 2026 national average</span>
+      </div>
+      <div class="field">
+        <label for="partDDeductibleA">Part D plan deductible ($)</label>
+        <input type="number" id="partDDeductibleA" value="615" min="0" step="1" />
+        <span class="field-hint">Cannot exceed the 2026 maximum</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Path B: Medicare Advantage <span class="badge">STEP 3</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="maPremiumMonthly">Advantage plan monthly premium ($)</label>
+        <input type="number" id="maPremiumMonthly" value="0" min="0" step="1" />
+      </div>
+      <div class="field">
+        <label for="giveback">Part B giveback ($ per month)</label>
+        <input type="number" id="giveback" value="0" min="0" step="1" />
+        <span class="field-hint">Some plans rebate part of the Part B premium</span>
+      </div>
+      <div class="field">
+        <label for="primaryCopay">Primary care copay ($ per visit)</label>
+        <input type="number" id="primaryCopay" value="10" min="0" step="1" />
+      </div>
+      <div class="field">
+        <label for="specialistCopay">Specialist copay ($ per visit)</label>
+        <input type="number" id="specialistCopay" value="45" min="0" step="1" />
+      </div>
+      <div class="field">
+        <label for="inpatientCopayPerDay">Inpatient copay per day ($)</label>
+        <input type="number" id="inpatientCopayPerDay" value="325" min="0" step="1" />
+      </div>
+      <div class="field">
+        <label for="inpatientCopayDays">Inpatient copay applies for first N days</label>
+        <input type="number" id="inpatientCopayDays" value="5" min="0" step="1" />
+      </div>
+      <div class="field">
+        <label for="outpatientCoinsurancePct">Outpatient coinsurance (%)</label>
+        <input type="number" id="outpatientCoinsurancePct" value="20" min="0" max="100" step="1" />
+      </div>
+      <div class="field">
+        <label for="maMOOP">Plan maximum out-of-pocket, in-network ($)</label>
+        <input type="number" id="maMOOP" value="5500" min="0" step="100" />
+        <span class="field-hint">The MA MOOP does not include drug costs</span>
+      </div>
+      <div class="field">
+        <label for="planDrugDeductibleB">Plan drug deductible ($)</label>
+        <input type="number" id="planDrugDeductibleB" value="615" min="0" step="1" />
+      </div>
+    </div>
+    <div class="field" style="margin-top:14px;">
+      <div class="checkbox-field">
+        <input type="checkbox" id="drugCoverageIncluded" checked />
+        <label for="drugCoverageIncluded" style="font-size:.85rem;">Drug coverage included</label>
+      </div>
+      <span class="field-hint">Most MA plans bundle Part D</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Constants Panel <span class="badge">EDITABLE</span></div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="cPartB">Monthly Part B premium by IRMAA tier ($, comma-separated, 6 tiers)</label>
+        <input type="text" id="cPartB" value="202.90,284.10,405.80,527.50,649.20,689.90" />
+      </div>
+      <div class="field">
+        <label for="cPartD">Monthly Part D IRMAA surcharge by tier ($, comma-separated, 6 tiers)</label>
+        <input type="text" id="cPartD" value="0,14.50,37.50,60.40,83.30,91.00" />
+      </div>
+      <div class="field">
+        <label for="cPartBDeductible">2026 Part B annual deductible ($)</label>
+        <input type="number" id="cPartBDeductible" value="283" step="1" />
+      </div>
+      <div class="field">
+        <label for="cPartADeductible">2026 Part A deductible per benefit period ($)</label>
+        <input type="number" id="cPartADeductible" value="1736" step="1" />
+      </div>
+      <div class="field">
+        <label for="cPartADays61to90">2026 Part A coinsurance, days 61-90 ($/day)</label>
+        <input type="number" id="cPartADays61to90" value="434" step="1" />
+      </div>
+      <div class="field">
+        <label for="cPartALifetimeReserve">2026 Part A lifetime reserve day coinsurance ($/day)</label>
+        <input type="number" id="cPartALifetimeReserve" value="868" step="1" />
+      </div>
+      <div class="field">
+        <label for="cPartDMaxDeductible">2026 maximum Part D deductible ($)</label>
+        <input type="number" id="cPartDMaxDeductible" value="615" step="1" />
+      </div>
+      <div class="field">
+        <label for="cPartDOOPCap">2026 Part D out-of-pocket cap ($)</label>
+        <input type="number" id="cPartDOOPCap" value="2100" step="1" />
+      </div>
+      <div class="field">
+        <label for="cPartDCoinsurance">Standard Part D coinsurance after deductible (%)</label>
+        <input type="number" id="cPartDCoinsurance" value="25" step="1" />
+      </div>
+      <div class="field">
+        <label for="cPlanNVisitCopay">Medigap Plan N office visit copay ceiling ($)</label>
+        <input type="number" id="cPlanNVisitCopay" value="20" step="1" />
+      </div>
+      <div class="field">
+        <label for="cHdgDeductible">High-deductible Plan G annual deductible ($)</label>
+        <input type="number" id="cHdgDeductible" value="2900" step="1" />
+        <span class="field-hint">Low confidence, verify</span>
+      </div>
+      <div class="field">
+        <label for="cBadYearAdmissions">Bad-year stress test admissions</label>
+        <input type="number" id="cBadYearAdmissions" value="2" step="1" />
+      </div>
+      <div class="field">
+        <label for="cBadYearLOS">Bad-year stress test length of stay (days)</label>
+        <input type="number" id="cBadYearLOS" value="7" step="1" />
+      </div>
+      <div class="field">
+        <label for="cBadYearMultiplier">Bad-year stress test multiplier</label>
+        <input type="number" id="cBadYearMultiplier" value="3" step="1" />
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Compare My Two Paths →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Annual Difference</div>
+        <div class="metric-val green" id="rHeadline">--</div>
+        <div class="metric-note" id="rHeadlineNote">Lower-cost path this year</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Bad-Year Difference</div>
+        <div class="metric-val amber" id="rBadYear">--</div>
+        <div class="metric-note">Stress test: more admissions, longer stay, 3x charges</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Path A Worst-Case Ceiling</div>
+        <div class="metric-val red" id="rCeiling">--</div>
+        <div class="metric-note" id="rCeilingNote">Path B is always capped by its MOOP</div>
+      </div>
+    </div>
+
+    <div class="warn-note" id="noMoopWarning" style="display:none;">Original Medicare with no Medigap supplement has no annual out-of-pocket maximum. A single bad year can cost far more than shown here.</div>
+    <div class="warn-note" id="moopZeroWarning" style="display:none;">The Advantage plan maximum out-of-pocket was entered as $0, which is not a real MOOP value. Treating it as not entered; Path B medical cost sharing is shown uncapped.</div>
+    <div class="warn-note" id="uncoveredDrugWarning" style="display:none;">Drug coverage is not included on Path B. The enrollee pays the full retail drug cost shown, and may also owe a Medicare Part D late enrollment penalty for going without creditable coverage.</div>
+    <div class="warn-note" id="lifetimeReserveWarning" style="display:none;">The modeled length of stay exceeds 150 days, using up all 60 lifetime reserve days. Costs beyond that are unlimited under Original Medicare and are not fully captured here.</div>
+
+    <div class="card">
+      <div class="card-title">Path A: Original Medicare + Medigap + Part D</div>
+      <div class="row"><span class="row-label">Annual premiums</span><span class="row-val" id="dAPremiums">--</span></div>
+      <div class="row"><span class="row-label">Medical cost sharing</span><span class="row-val" id="dAMedical">--</span></div>
+      <div class="row"><span class="row-label">Drug cost sharing</span><span class="row-val" id="dADrugs">--</span></div>
+      <div class="row"><span class="row-label"><strong>Path A total annual cost</strong></span><span class="row-val" id="dATotal">--</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Path B: Medicare Advantage</div>
+      <div class="row"><span class="row-label">Annual premiums</span><span class="row-val" id="dBPremiums">--</span></div>
+      <div class="row"><span class="row-label">Medical cost sharing, before MOOP</span><span class="row-val" id="dBMedicalRaw">--</span></div>
+      <div class="row"><span class="row-label">Medical cost sharing, after MOOP</span><span class="row-val" id="dBMedical">--</span></div>
+      <div class="row"><span class="row-label">MOOP reached</span><span class="row-val" id="dMoopReached">--</span></div>
+      <div class="row"><span class="row-label">Drug cost sharing</span><span class="row-val" id="dBDrugs">--</span></div>
+      <div class="row"><span class="row-label"><strong>Path B total annual cost</strong></span><span class="row-val" id="dBTotal">--</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Comparison &amp; Risk</div>
+      <div class="row"><span class="row-label"><strong>Annual difference</strong></span><span class="row-val" id="dDifference">--</span></div>
+      <div class="row"><span class="row-label">Path A bad-year total</span><span class="row-val" id="dATotalBad">--</span></div>
+      <div class="row"><span class="row-label">Path B bad-year total</span><span class="row-val" id="dBTotalBad">--</span></div>
+      <div class="row"><span class="row-label">Bad-year difference</span><span class="row-val" id="dDifferenceBad">--</span></div>
+      <div class="row"><span class="row-label">Path A worst-case ceiling</span><span class="row-val" id="dACeiling">--</span></div>
+      <div class="row"><span class="row-label">Path B worst-case ceiling</span><span class="row-val" id="dBCeiling">--</span></div>
+
+      <div class="disclaimer">This compares projected annual cost only. It does not compare networks, formularies, prior authorization rules, or provider access, and those often matter more than the dollar difference. Plan details vary by county. Confirm with the plan and with your State Health Insurance Assistance Program before enrolling.</div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-165 · Data: 2026 CMS Parts A &amp; B and Part D standard benefit parameters
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+const $   = id => document.getElementById(id);
+const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
+const money = n => Math.round(n * 100) / 100;
+
+function parseNumList(str, fallback) {
+  const parts = String(str).split(',').map(s => parseFloat(s.trim()));
+  if (parts.some(n => !Number.isFinite(n))) return fallback;
+  return parts;
+}
+
+/* Shared Part D phase function (step 7) */
+function drugPhase(drugCost, planDeductible, oopCap) {
+  const deductiblePaid = Math.max(0, Math.min(drugCost, planDeductible));
+  const postDeductible = Math.max(0, drugCost - planDeductible);
+  const coinsurancePaid = money(postDeductible * 0.25);
+  const beforeCap = money(deductiblePaid + coinsurancePaid);
+  return money(Math.min(beforeCap, oopCap));
+}
+
+/* Part A day coinsurance including days 61-90 and up to 60 lifetime reserve days (edge case) */
+function partADayCoinsurance(los, admissions, days61to90Rate, reserveRate) {
+  const daysIn61to90 = Math.max(0, Math.min(los, 90) - 60);
+  const daysInReserve = Math.max(0, Math.min(los, 150) - 90);
+  const unlimitedWarning = los > 150;
+  const cost = money((daysIn61to90 * days61to90Rate + daysInReserve * reserveRate) * admissions);
+  return { cost, unlimitedWarning };
+}
+
+/* Runs the full Path A + Path B computation for a given set of utilization inputs.
+   Used once for the typical year and once for the bad-year stress test. */
+function runPaths(params, C) {
+  const {
+    irmaaTier, primaryVisits, specialistVisits, admissions, los, outpatientCharges, annualDrugCost,
+    medigapMonthly, medigapPlanType, partDPremiumMonthly, partDDeductibleA,
+    maPremiumMonthly, giveback, primaryCopay, specialistCopay,
+    inpatientCopayPerDay, inpatientCopayDays, outpatientCoinsurancePct, maMOOPRaw,
+    drugCoverageIncluded, planDrugDeductibleB
+  } = params;
+
+  const totalVisits = primaryVisits + specialistVisits;
+
+  // Step 1-2: Part B and Part D surcharge, shared
+  const partBMonthly = C.partBByTier[irmaaTier];
+  const partBAnnual = money(partBMonthly * 12);
+  const partDSurchargeAnnual = money(C.partDByTier[irmaaTier] * 12);
+
+  // Step 3: Path A premiums
+  const aPremiums = money(partBAnnual + medigapMonthly * 12 + partDPremiumMonthly * 12 + partDSurchargeAnnual);
+
+  // Step 4: Path A medical cost sharing
+  let aMedical = 0, unlimitedAWarning = false;
+  if (medigapPlanType === 'PlanG') {
+    aMedical = C.partBDeductible;
+  } else if (medigapPlanType === 'PlanN') {
+    aMedical = money(C.partBDeductible + totalVisits * C.planNVisitCopay);
+  } else if (medigapPlanType === 'HDG') {
+    const dayCo = partADayCoinsurance(los, admissions, C.partADays61to90, C.partALifetimeReserve);
+    const rawExposure = money(C.partADeductible * admissions + C.partBDeductible + outpatientCharges * 0.20);
+    aMedical = money(Math.min(rawExposure, C.hdgDeductible));
+    unlimitedAWarning = dayCo.unlimitedWarning; // stays informational; HDG caps the enrollee's exposure regardless
+  } else {
+    // None
+    const dayCo = partADayCoinsurance(los, admissions, C.partADays61to90, C.partALifetimeReserve);
+    unlimitedAWarning = dayCo.unlimitedWarning;
+    aMedical = money(C.partADeductible * admissions + dayCo.cost + C.partBDeductible + Math.max(0, outpatientCharges - C.partBDeductible) * 0.20);
+  }
+
+  // Step 5-6: Path A drugs and total
+  const aDrugs = drugPhase(annualDrugCost, partDDeductibleA, C.partDOOPCap);
+  const aTotal = money(aPremiums + aMedical + aDrugs);
+
+  // Step 8: Path B premiums (clamped so it cannot go below 0, edge case)
+  let bPremiums = money(partBAnnual - giveback * 12 + maPremiumMonthly * 12 + (drugCoverageIncluded ? partDSurchargeAnnual : 0));
+  if (bPremiums < 0) bPremiums = 0;
+
+  // Step 9: Path B medical cost sharing before MOOP
+  const bVisits = money(primaryVisits * primaryCopay + specialistVisits * specialistCopay);
+  const bInpatient = money(admissions * Math.min(los, inpatientCopayDays) * inpatientCopayPerDay);
+  const bOutpatient = money(outpatientCharges * outpatientCoinsurancePct / 100);
+  const bMedicalRaw = money(bVisits + bInpatient + bOutpatient);
+
+  // Step 10: apply the MOOP (0 treated as "not entered", edge case)
+  const moopNotEntered = maMOOPRaw <= 0;
+  const maMOOP = moopNotEntered ? Infinity : maMOOPRaw;
+  const bMedical = moopNotEntered ? bMedicalRaw : money(Math.min(bMedicalRaw, maMOOP));
+  const moopReached = !moopNotEntered && bMedicalRaw > maMOOP;
+
+  // Step 11: Path B drugs
+  let bDrugs, uncoveredDrugs = false;
+  if (drugCoverageIncluded) {
+    bDrugs = drugPhase(annualDrugCost, planDrugDeductibleB, C.partDOOPCap);
+  } else {
+    bDrugs = money(annualDrugCost);
+    uncoveredDrugs = true;
+  }
+
+  // Step 12: Path B total
+  const bTotal = money(bPremiums + bMedical + bDrugs);
+
+  return {
+    partBAnnual, partDSurchargeAnnual, aPremiums, aMedical, aDrugs, aTotal, unlimitedAWarning,
+    bPremiums, bVisits, bInpatient, bOutpatient, bMedicalRaw, bMedical, moopReached, moopNotEntered,
+    bDrugs, uncoveredDrugs, bTotal
+  };
+}
+
+/* ── CORE MATH (spec steps 1-15) ──────────────────────────────────────────── */
+function calculate() {
+  const irmaaTier = parseInt($('irmaaTier').value, 10) || 0;
+  let primaryVisits = parseFloat($('primaryVisits').value); if (!Number.isFinite(primaryVisits) || primaryVisits < 0) primaryVisits = 0;
+  let specialistVisits = parseFloat($('specialistVisits').value); if (!Number.isFinite(specialistVisits) || specialistVisits < 0) specialistVisits = 0;
+  let admissions = parseFloat($('admissions').value); if (!Number.isFinite(admissions) || admissions < 0) admissions = 0;
+  let los = parseFloat($('los').value); if (!Number.isFinite(los) || los < 0) los = 0;
+  let outpatientCharges = parseFloat($('outpatientCharges').value); if (!Number.isFinite(outpatientCharges) || outpatientCharges < 0) outpatientCharges = 0;
+  let annualDrugCost = parseFloat($('annualDrugCost').value); if (!Number.isFinite(annualDrugCost) || annualDrugCost < 0) annualDrugCost = 0;
+
+  const medigapMonthly = parseFloat($('medigapMonthly').value) || 0;
+  const medigapPlanType = $('medigapPlanType').value;
+  const partDPremiumMonthly = parseFloat($('partDPremiumMonthly').value) || 0;
+  const cPartDMaxDeductible = parseFloat($('cPartDMaxDeductible').value) || 615;
+  let partDDeductibleA = parseFloat($('partDDeductibleA').value); if (!Number.isFinite(partDDeductibleA) || partDDeductibleA < 0) partDDeductibleA = 0;
+  partDDeductibleA = Math.min(partDDeductibleA, cPartDMaxDeductible);
+
+  const maPremiumMonthly = parseFloat($('maPremiumMonthly').value) || 0;
+  const giveback = parseFloat($('giveback').value) || 0;
+  const primaryCopay = parseFloat($('primaryCopay').value) || 0;
+  const specialistCopay = parseFloat($('specialistCopay').value) || 0;
+  const inpatientCopayPerDay = parseFloat($('inpatientCopayPerDay').value) || 0;
+  const inpatientCopayDays = parseFloat($('inpatientCopayDays').value) || 0;
+  const outpatientCoinsurancePct = parseFloat($('outpatientCoinsurancePct').value) || 0;
+  const maMOOPRaw = parseFloat($('maMOOP').value) || 0;
+  const drugCoverageIncluded = $('drugCoverageIncluded').checked;
+  let planDrugDeductibleB = parseFloat($('planDrugDeductibleB').value); if (!Number.isFinite(planDrugDeductibleB) || planDrugDeductibleB < 0) planDrugDeductibleB = 0;
+  planDrugDeductibleB = Math.min(planDrugDeductibleB, cPartDMaxDeductible);
+
+  const C = {
+    partBByTier: parseNumList($('cPartB').value, [202.90,284.10,405.80,527.50,649.20,689.90]),
+    partDByTier: parseNumList($('cPartD').value, [0,14.50,37.50,60.40,83.30,91.00]),
+    partBDeductible: parseFloat($('cPartBDeductible').value) || 283,
+    partADeductible: parseFloat($('cPartADeductible').value) || 1736,
+    partADays61to90: parseFloat($('cPartADays61to90').value) || 434,
+    partALifetimeReserve: parseFloat($('cPartALifetimeReserve').value) || 868,
+    partDOOPCap: parseFloat($('cPartDOOPCap').value) || 2100,
+    planNVisitCopay: parseFloat($('cPlanNVisitCopay').value) || 20,
+    hdgDeductible: parseFloat($('cHdgDeductible').value) || 2900
+  };
+  const badYearAdmissions = parseFloat($('cBadYearAdmissions').value) || 2;
+  const badYearLOS = parseFloat($('cBadYearLOS').value) || 7;
+  const badYearMultiplier = parseFloat($('cBadYearMultiplier').value) || 3;
+
+  const baseParams = {
+    irmaaTier, primaryVisits, specialistVisits, admissions, los, outpatientCharges, annualDrugCost,
+    medigapMonthly, medigapPlanType, partDPremiumMonthly, partDDeductibleA,
+    maPremiumMonthly, giveback, primaryCopay, specialistCopay,
+    inpatientCopayPerDay, inpatientCopayDays, outpatientCoinsurancePct, maMOOPRaw,
+    drugCoverageIncluded, planDrugDeductibleB
+  };
+
+  // Typical year
+  const typical = runPaths(baseParams, C);
+
+  // Step 13: comparison
+  const difference = money(typical.aTotal - typical.bTotal);
+  const lowerCostPath = difference > 0 ? 'B' : (difference < 0 ? 'A' : 'tie');
+
+  // Step 14: bad-year stress test (integer multipliers only, no Math.pow)
+  const badYearParams = Object.assign({}, baseParams, {
+    admissions: badYearAdmissions,
+    los: badYearLOS,
+    outpatientCharges: outpatientCharges * badYearMultiplier,
+    annualDrugCost: annualDrugCost * badYearMultiplier
+  });
+  const badYear = runPaths(badYearParams, C);
+  const differenceBadYear = money(badYear.aTotal - badYear.bTotal);
+
+  // Step 15: worst-case ceilings
+  let aCeiling = null, aCeilingIsProxy = false;
+  if (medigapPlanType === 'PlanG') {
+    aCeiling = money(typical.aPremiums + C.partBDeductible + C.partDOOPCap);
+  } else if (medigapPlanType === 'HDG') {
+    aCeiling = money(typical.aPremiums + C.hdgDeductible + C.partDOOPCap);
+    aCeilingIsProxy = true;
+  } else if (medigapPlanType === 'PlanN') {
+    // Not explicitly defined by spec for Plan N; using the bad-year total as a practical proxy (see FLAGS)
+    aCeiling = badYear.aTotal;
+    aCeilingIsProxy = true;
+  } else {
+    aCeiling = null; // None: no annual maximum
+  }
+  const bCeiling = money(typical.bPremiums + (typical.moopNotEntered ? typical.bMedicalRaw : maMOOPRaw) + C.partDOOPCap);
+
+  _lastInputs = {
+    irmaaTier, primaryVisits, specialistVisits, admissions, los, outpatientCharges, annualDrugCost,
+    medigapMonthly, medigapPlanType, partDPremiumMonthly, partDDeductibleA,
+    maPremiumMonthly, giveback, primaryCopay, specialistCopay,
+    inpatientCopayPerDay, inpatientCopayDays, outpatientCoinsurancePct, maMOOPRaw,
+    drugCoverageIncluded, planDrugDeductibleB
+  };
+  _lastResults = {
+    typical, difference, lowerCostPath, badYear, differenceBadYear,
+    aCeiling, aCeilingIsProxy, bCeiling
+  };
+
+  render();
+}
+
+function render() {
+  const r = _lastResults, t = r.typical;
+
+  const headlineText = r.lowerCostPath === 'tie' ? 'Even' : (fmt(r.difference) + ' — Path ' + r.lowerCostPath + ' is cheaper');
+  $('rHeadline').textContent = headlineText;
+  $('rHeadlineNote').textContent = r.lowerCostPath === 'tie' ? 'Both paths cost the same this year' : ('Path ' + r.lowerCostPath + ' is the lower-cost path this year');
+  $('rBadYear').textContent = fmt(r.differenceBadYear) + (r.differenceBadYear === 0 ? ' — even' : (r.differenceBadYear > 0 ? ' — Path B cheaper' : ' — Path A cheaper'));
+  $('rCeiling').textContent = r.aCeiling === null ? 'No maximum' : fmt(r.aCeiling);
+  $('rCeilingNote').textContent = r.aCeiling === null ? 'Original Medicare alone has no annual cap' : 'Path B is always capped by its MOOP';
+
+  $('noMoopWarning').style.display = (r.aCeiling === null) ? 'block' : 'none';
+  $('moopZeroWarning').style.display = t.moopNotEntered ? 'block' : 'none';
+  $('uncoveredDrugWarning').style.display = t.uncoveredDrugs ? 'block' : 'none';
+  $('lifetimeReserveWarning').style.display = t.unlimitedAWarning ? 'block' : 'none';
+
+  $('dAPremiums').textContent = fmt(t.aPremiums);
+  $('dAMedical').textContent = fmt(t.aMedical) + (r.aCeiling === null ? ' (no annual maximum)' : '');
+  $('dADrugs').textContent = fmt(t.aDrugs);
+  $('dATotal').textContent = fmt(t.aTotal);
+
+  $('dBPremiums').textContent = fmt(t.bPremiums);
+  $('dBMedicalRaw').textContent = fmt(t.bMedicalRaw);
+  $('dBMedical').textContent = fmt(t.bMedical) + (t.moopNotEntered ? ' (MOOP not entered)' : '');
+  $('dMoopReached').textContent = t.moopReached ? 'Yes' : 'No';
+  $('dBDrugs').textContent = fmt(t.bDrugs) + (t.uncoveredDrugs ? ' (uncovered)' : '');
+  $('dBTotal').textContent = fmt(t.bTotal);
+
+  $('dDifference').textContent = (r.lowerCostPath === 'tie') ? 'Even' : (fmt(r.difference) + ' (Path ' + r.lowerCostPath + ' cheaper)');
+  $('dATotalBad').textContent = fmt(r.badYear.aTotal);
+  $('dBTotalBad').textContent = fmt(r.badYear.bTotal);
+  $('dDifferenceBad').textContent = fmt(r.differenceBadYear);
+  $('dACeiling').textContent = r.aCeiling === null ? 'No maximum' : (fmt(r.aCeiling) + (r.aCeilingIsProxy ? ' (estimated, see notes)' : ''));
+  $('dBCeiling').textContent = fmt(r.bCeiling);
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults, t = r.typical;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Medicare Plan Comparison Results',
+    `\n_Generated ${d} · AL-165 · apexlogics.org_\n`,
+    '## Context',
+    '| Field | Value |', '|---|---|',
+    `| IRMAA tier | ${i.irmaaTier} |`,
+    `| Medigap plan type | ${i.medigapPlanType} |`,
+    `| Drug coverage on Path B | ${i.drugCoverageIncluded ? 'Included' : 'Not included'} |`,
+    '\n## Path A: Original Medicare + Medigap + Part D',
+    `- **Annual premiums:** ${fmt(t.aPremiums)}`,
+    `- **Medical cost sharing:** ${fmt(t.aMedical)}`,
+    `- **Drug cost sharing:** ${fmt(t.aDrugs)}`,
+    `- **Path A total annual cost:** ${fmt(t.aTotal)}`,
+    '\n## Path B: Medicare Advantage',
+    `- **Annual premiums:** ${fmt(t.bPremiums)}`,
+    `- **Medical cost sharing before MOOP:** ${fmt(t.bMedicalRaw)}`,
+    `- **Medical cost sharing after MOOP:** ${fmt(t.bMedical)}`,
+    `- **MOOP reached:** ${t.moopReached ? 'Yes' : 'No'}`,
+    `- **Drug cost sharing:** ${fmt(t.bDrugs)}`,
+    `- **Path B total annual cost:** ${fmt(t.bTotal)}`,
+    '\n## Comparison & Risk',
+    `- **Annual difference:** ${r.lowerCostPath === 'tie' ? 'Even' : fmt(r.difference) + ' (Path ' + r.lowerCostPath + ' cheaper)'}`,
+    `- **Path A bad-year total:** ${fmt(r.badYear.aTotal)}`,
+    `- **Path B bad-year total:** ${fmt(r.badYear.bTotal)}`,
+    `- **Bad-year difference:** ${fmt(r.differenceBadYear)}`,
+    `- **Path A worst-case ceiling:** ${r.aCeiling === null ? 'No maximum' : fmt(r.aCeiling)}`,
+    `- **Path B worst-case ceiling:** ${fmt(r.bCeiling)}`,
+    '\n---',
+    '_This compares projected annual cost only. It does not compare networks, formularies, prior authorization rules, or provider access, and those often matter more than the dollar difference. Plan details vary by county. Confirm with the plan and with your State Health Insurance Assistance Program before enrolling._',
+    '\n_Source: 2026 CMS Parts A & B and Part D standard benefit parameters._'
+  ];
+  dlFile('medicare-plan-comparison.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults, t = r.typical;
+
+  const payload = {
+    mandate_type: "medicare_plan_comparison_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-165",
+    tool_id: "151-medicare-plan-comparison",
+    tool_name: "Medicare Plan Comparison",
+    inputs: {
+      irmaa_tier: i.irmaaTier,
+      primary_visits: i.primaryVisits,
+      specialist_visits: i.specialistVisits,
+      admissions: i.admissions,
+      length_of_stay: i.los,
+      outpatient_charges: i.outpatientCharges,
+      annual_drug_cost: i.annualDrugCost,
+      medigap_monthly: i.medigapMonthly,
+      medigap_plan_type: i.medigapPlanType,
+      part_d_premium_monthly: i.partDPremiumMonthly,
+      part_d_deductible_a: i.partDDeductibleA,
+      ma_premium_monthly: i.maPremiumMonthly,
+      giveback: i.giveback,
+      primary_copay: i.primaryCopay,
+      specialist_copay: i.specialistCopay,
+      inpatient_copay_per_day: i.inpatientCopayPerDay,
+      inpatient_copay_days: i.inpatientCopayDays,
+      outpatient_coinsurance_pct: i.outpatientCoinsurancePct,
+      ma_moop: i.maMOOPRaw,
+      drug_coverage_included: i.drugCoverageIncluded,
+      plan_drug_deductible_b: i.planDrugDeductibleB,
+      data_version: "2026"
+    },
+    outputs: {
+      a_premiums: t.aPremiums,
+      a_medical: t.aMedical,
+      a_drugs: t.aDrugs,
+      a_total: t.aTotal,
+      b_premiums: t.bPremiums,
+      b_medical_raw: t.bMedicalRaw,
+      b_medical: t.bMedical,
+      moop_reached: t.moopReached,
+      b_drugs: t.bDrugs,
+      b_total: t.bTotal,
+      difference: r.difference,
+      lower_cost_path: r.lowerCostPath,
+      a_total_bad_year: r.badYear.aTotal,
+      b_total_bad_year: r.badYear.bTotal,
+      difference_bad_year: r.differenceBadYear,
+      a_worst_case_ceiling: r.aCeiling,
+      b_worst_case_ceiling: r.bCeiling
+    },
+    downstream_handoff_candidates: [],
+    data_sources: [
+      "2026 CMS Parts A & B and Part D standard benefit parameters"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/medicare_projection";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-165";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* STEP 6, SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['medicare_plan_comparison_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-165_medicare-plan-comparison_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, CHAINGRAPH §6 EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* REPLACE: MANIFEST */
+const MANIFEST = {
+  "tool_id": "151-medicare-plan-comparison",
+  "al_id": "AL-165",
+  "version": "1.0.0",
+  "title": "Medicare Plan Comparison",
+  "description": "Given shared utilization assumptions plus Path A (Original Medicare + Medigap + standalone Part D) and Path B (Medicare Advantage) plan parameters, prices both paths for a typical year and a bad-year stress test, applies the Part D out-of-pocket cap and the Advantage MOOP, and returns the annual difference and worst-case ceilings. Deterministic, zero external data. Policy Mandate: medicare_plan_comparison_record.",
+  "category": "retirement",
+  "journeys": ["initial enrollment at 65","October to December annual enrollment"],
+  "personas": ["new Medicare enrollee","annual enrollment shopper","caregiver","retiree"],
+  "tags": ["Medicare","Medigap","Medicare Advantage","Part D","MOOP","annual enrollment"],
+  "status": "active",
+  "maintenance": "annual (premium and parameter refresh)",
+  "data_vintage": "2026 CMS Parts A & B and Part D standard benefit parameters",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["medicare_plan_comparison_record"],
+  "downstream_handoff_candidates": [],
+  "regulatory_citations": [
+    "2026 CMS Parts A & B and Part D standard benefit parameters"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "irmaa_tier": { "type": "integer" },
+      "medigap_plan_type": { "type": "string" },
+      "ma_moop": { "type": "number" },
+      "drug_coverage_included": { "type": "boolean" }
+    },
+    "required": ["irmaa_tier","medigap_plan_type","ma_moop"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "a_total": { "type": "number" },
+      "b_total": { "type": "number" },
+      "difference": { "type": "number" },
+      "lower_cost_path": { "type": "string" },
+      "a_worst_case_ceiling": { "type": ["number","null"] }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "medicare_plan_comparison",
+    "description": "Given shared utilization assumptions plus Original Medicare/Medigap/Part D and Medicare Advantage plan parameters, returns the annual cost of both paths at a typical year and a bad year, and the worst-case ceilings. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "irmaa_tier": { "type": "integer" },
+        "medigap_plan_type": { "type": "string" },
+        "ma_moop": { "type": "number" }
+      },
+      "required": ["irmaa_tier","medigap_plan_type","ma_moop"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+/* KEEP VERBATIM: MCP / MANIFEST TOGGLE */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

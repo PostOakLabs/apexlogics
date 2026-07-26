@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rental Property Deal Screener · ApexLogics #155</title>
+  <meta name="description" content="Compute NOI, cap rate, DSCR, cash on cash return, break-even occupancy, and the gross rent multiplier from one set of inputs, and screen a listing against common investment thresholds. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/tools/155-rental-deal-screener/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], input[type="text"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+    .row .row-val.pass { color: var(--green); }
+    .row .row-val.fail { color: var(--red); }
+
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+
+    /* Tool-specific: notes + verdict banner (additive, not template chrome) */
+    .info-note { margin-top: 14px; padding: 12px 14px; background: rgba(167,139,250,.06); border: 1px solid var(--border); border-radius: 8px; font-size: .78rem; color: var(--text-muted); }
+    .warn-note { margin-top: 14px; padding: 12px 14px; background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.3); border-radius: 8px; font-size: .78rem; color: var(--text-muted); }
+    .field-error { color: var(--red); font-size: .7rem; font-family: 'JetBrains Mono', monospace; margin-top: 6px; }
+    .verdict-banner { margin: 12px 0 20px; padding: 14px 18px; border-radius: 10px; font-family: 'JetBrains Mono', monospace; font-size: .95rem; font-weight: 600; text-align: center; letter-spacing: .04em; text-transform: uppercase; }
+    .verdict-banner.pass { background: rgba(52,211,153,.12); border: 1px solid rgba(52,211,153,.4); color: var(--green); }
+    .verdict-banner.marginal { background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.4); color: var(--amber); }
+    .verdict-banner.fail { background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.4); color: var(--red); }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">Real Estate · Investment Screening</p>
+  <h1 class="tool-title">Rental Property<br>Deal Screener</h1>
+  <p class="tool-desc">Three numbers decide whether a rental is worth a second look. Net operating income tells you what the property earns before financing. The cap rate tells you what that income is worth against the price. The debt service coverage ratio tells you whether a lender will touch it. This screener computes all three from one set of inputs, along with cash on cash return, break-even occupancy, and the gross rent multiplier, and flags where a deal falls short of common thresholds.</p>
+  <p class="tool-vintage">Data: 2026, all rates user-supplied, screening thresholds are conventions, not statute</p>
+
+  <div class="card">
+    <div class="card-title">Acquisition <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="purchasePrice">Purchase price ($)</label>
+        <input type="number" id="purchasePrice" value="320000" min="0" step="1000" />
+      </div>
+      <div class="field">
+        <label for="closingCosts">Closing costs ($)</label>
+        <input type="number" id="closingCosts" value="8000" min="0" step="100" />
+      </div>
+      <div class="field">
+        <label for="rehab">Immediate repairs and rehab ($)</label>
+        <input type="number" id="rehab" value="12000" min="0" step="100" />
+        <span class="field-hint">Money spent before the first tenant</span>
+      </div>
+      <div class="field">
+        <label for="downPct">Down payment (%)</label>
+        <input type="number" id="downPct" value="25" min="0" max="100" step="0.1" />
+        <span class="field-hint">Investment loans typically require 20 to 30</span>
+      </div>
+      <div class="field">
+        <label for="rate">Loan interest rate (% APR)</label>
+        <input type="number" id="rate" value="7.25" min="0" step="0.001" />
+        <span class="field-hint">Investment rates run above owner-occupied rates. Not fetched.</span>
+      </div>
+      <div class="field">
+        <label for="termYears">Loan term (years)</label>
+        <input type="number" id="termYears" value="30" min="0" max="40" step="1" />
+      </div>
+    </div>
+    <div class="field-error" id="priceError"></div>
+    <div class="field-error" id="termError"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Income <span class="badge">STEP 2</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="monthlyRent">Gross monthly rent, all units ($)</label>
+        <input type="number" id="monthlyRent" value="2800" min="0" step="50" />
+        <span class="field-hint">Market rent, not what the current owner charges</span>
+      </div>
+      <div class="field">
+        <label for="otherIncome">Other monthly income ($)</label>
+        <input type="number" id="otherIncome" value="50" min="0" step="10" />
+        <span class="field-hint">Laundry, parking, storage, pet fees</span>
+      </div>
+      <div class="field">
+        <label for="vacancyPct">Vacancy and credit loss (%)</label>
+        <input type="number" id="vacancyPct" value="7" min="0" step="0.1" />
+        <span class="field-hint">5 to 10 is typical. Do not use 0.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Operating Expenses, All Annual Unless Noted <span class="badge">STEP 3</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="propertyTax">Property tax ($)</label>
+        <input type="number" id="propertyTax" value="4200" min="0" step="100" />
+      </div>
+      <div class="field">
+        <label for="insurance">Insurance ($)</label>
+        <input type="number" id="insurance" value="1600" min="0" step="50" />
+        <span class="field-hint">Landlord policies cost more than homeowner policies</span>
+      </div>
+      <div class="field">
+        <label for="managementPct">Property management (% of collected rent)</label>
+        <input type="number" id="managementPct" value="8" min="0" step="0.1" />
+        <span class="field-hint">Enter 0 only if you truly self-manage. Based on effective gross income, not scheduled rent.</span>
+      </div>
+      <div class="field">
+        <label for="maintenancePct">Repairs and maintenance (% of gross rent)</label>
+        <input type="number" id="maintenancePct" value="8" min="0" step="0.1" />
+        <span class="field-hint">Based on scheduled rent, not collected income</span>
+      </div>
+      <div class="field">
+        <label for="capexPct">Capital expenditure reserve (% of gross rent)</label>
+        <input type="number" id="capexPct" value="8" min="0" step="0.1" />
+        <span class="field-hint">Roof, HVAC, water heater. Skipping this is the most common screening error.</span>
+      </div>
+      <div class="field">
+        <label for="ownerUtilities">Utilities paid by owner ($)</label>
+        <input type="number" id="ownerUtilities" value="0" min="0" step="50" />
+      </div>
+      <div class="field">
+        <label for="hoa">HOA dues ($)</label>
+        <input type="number" id="hoa" value="0" min="0" step="50" />
+      </div>
+      <div class="field">
+        <label for="otherOpex">Other operating expenses ($)</label>
+        <input type="number" id="otherOpex" value="600" min="0" step="50" />
+        <span class="field-hint">Licensing, legal, accounting, turnover</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Constants Panel <span class="badge">EDITABLE</span></div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="cDscrThreshold">DSCR screening threshold (%)</label>
+        <input type="number" id="cDscrThreshold" value="125" step="1" />
+        <span class="field-hint">Common investment lender minimum, not statute</span>
+      </div>
+      <div class="field">
+        <label for="cCapRateThreshold">Cap rate screening threshold (%)</label>
+        <input type="number" id="cCapRateThreshold" value="6.00" step="0.1" />
+        <span class="field-hint">Apex screening convention, varies enormously by market</span>
+      </div>
+      <div class="field">
+        <label for="cCocThreshold">Cash on cash screening threshold (%)</label>
+        <input type="number" id="cCocThreshold" value="8.00" step="0.1" />
+        <span class="field-hint">Apex screening convention</span>
+      </div>
+      <div class="field">
+        <label for="cMinMonthlyCashFlow">Minimum monthly cash flow per unit ($)</label>
+        <input type="number" id="cMinMonthlyCashFlow" value="100" step="10" />
+        <span class="field-hint">Apex screening convention</span>
+      </div>
+      <div class="field">
+        <label for="cOnePercentRule">One percent rule threshold (%)</label>
+        <input type="number" id="cOnePercentRule" value="1.00" step="0.1" />
+        <span class="field-hint">Investor rule of thumb</span>
+      </div>
+      <div class="field">
+        <label for="cFiftyPercentRule">Fifty percent rule expense benchmark (%)</label>
+        <input type="number" id="cFiftyPercentRule" value="50" step="1" />
+        <span class="field-hint">Investor rule of thumb</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Screen This Deal →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="verdict-banner" id="verdictBanner">--</div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Net Operating Income</div>
+        <div class="metric-val green" id="rHeadline">--</div>
+        <div class="metric-note">Before financing</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Cap Rate</div>
+        <div class="metric-val accent" id="rCapRate">--</div>
+        <div class="metric-note">On purchase price</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">DSCR</div>
+        <div class="metric-val amber" id="rDscr">--</div>
+        <div class="metric-note" id="rDscrNote">1.25x is a common lender minimum</div>
+      </div>
+    </div>
+
+    <div class="warn-note" id="vacancyZeroNote" style="display:none;">Vacancy is entered as 0%. No property is occupied every day of every year; consider a realistic vacancy assumption.</div>
+    <div class="warn-note" id="fiftyPercentNote" style="display:none;">Entered operating expenses are less than 60% of the fifty percent rule benchmark. Underestimating expenses is the classic screening failure; double-check maintenance, capex, and management assumptions.</div>
+    <div class="info-note" id="selfManageNote" style="display:none;">Management is entered at 0%, meaning self-management. Self-management is unpaid labor, not free labor; consider what a manager would cost if you ever stop doing it yourself.</div>
+
+    <div class="card">
+      <div class="card-title">Income &amp; Operating Expenses</div>
+      <div class="row"><span class="row-label">Gross scheduled income</span><span class="row-val" id="dGsi">--</span></div>
+      <div class="row"><span class="row-label">Vacancy loss</span><span class="row-val" id="dVacancyLoss">--</span></div>
+      <div class="row"><span class="row-label">Effective gross income</span><span class="row-val" id="dEgi">--</span></div>
+      <div class="row"><span class="row-label">Total operating expenses</span><span class="row-val" id="dOpex">--</span></div>
+      <div class="row"><span class="row-label">Operating expense ratio</span><span class="row-val" id="dOer">--</span></div>
+      <div class="row"><span class="row-label"><strong>Net operating income</strong></span><span class="row-val" id="dNoi">--</span></div>
+      <div class="row"><span class="row-label">Mortgage payments are not an operating expense; they are shown separately below</span><span class="row-val"></span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Returns</div>
+      <div class="row"><span class="row-label">Cap rate on purchase price</span><span class="row-val" id="dCapRate">--</span></div>
+      <div class="row"><span class="row-label">Cap rate on total project cost</span><span class="row-val" id="dCapRateOnCost">--</span></div>
+      <div class="row"><span class="row-label">Loan amount</span><span class="row-val" id="dLoanAmount">--</span></div>
+      <div class="row"><span class="row-label">Monthly debt service</span><span class="row-val" id="dMonthlyDebtService">--</span></div>
+      <div class="row"><span class="row-label">Annual debt service</span><span class="row-val" id="dAnnualDebtService">--</span></div>
+      <div class="row"><span class="row-label">DSCR</span><span class="row-val" id="dDscr">--</span></div>
+      <div class="row"><span class="row-label">Annual cash flow</span><span class="row-val" id="dAnnualCashFlow">--</span></div>
+      <div class="row"><span class="row-label">Monthly cash flow</span><span class="row-val" id="dMonthlyCashFlow">--</span></div>
+      <div class="row"><span class="row-label">Total cash invested</span><span class="row-val" id="dCashInvested">--</span></div>
+      <div class="row"><span class="row-label">Cash on cash return</span><span class="row-val" id="dCoc">--</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Rules of Thumb &amp; Screen</div>
+      <div class="row"><span class="row-label">Gross rent multiplier</span><span class="row-val" id="dGrm">--</span></div>
+      <div class="row"><span class="row-label">Break-even occupancy</span><span class="row-val" id="dBreakEven">--</span></div>
+      <div class="row"><span class="row-label">One percent rule</span><span class="row-val" id="dOnePercent">--</span></div>
+      <div class="row"><span class="row-label">Fifty percent rule expense benchmark</span><span class="row-val" id="dFiftyBenchmark">--</span></div>
+      <div class="row"><span class="row-label">DSCR ≥ 1.25x</span><span class="row-val" id="dPassDscr">--</span></div>
+      <div class="row"><span class="row-label">Cap rate ≥ threshold</span><span class="row-val" id="dPassCap">--</span></div>
+      <div class="row"><span class="row-label">Cash on cash ≥ threshold</span><span class="row-val" id="dPassCoc">--</span></div>
+      <div class="row"><span class="row-label">Monthly cash flow ≥ threshold</span><span class="row-val" id="dPassCashFlow">--</span></div>
+      <div class="row"><span class="row-label">One percent rule pass</span><span class="row-val" id="dPassOnePercent">--</span></div>
+      <div class="row"><span class="row-label"><strong>Metrics passed</strong></span><span class="row-val" id="dPassCount">--</span></div>
+      <div class="row"><span class="row-label"><strong>Screen verdict</strong></span><span class="row-val" id="dVerdict">--</span></div>
+
+      <div class="info-note">This is a screen, not a recommendation. It tells you whether a deal clears common thresholds, not whether you should buy it.</div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-169 · Data: 2026, screening conventions, not statute
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+const $   = id => document.getElementById(id);
+const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
+const money = n => Math.round(n * 100) / 100;
+const bps = n => Math.round(n * 10000);
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+/* ── CORE MATH (spec steps 1-19) ──────────────────────────────────────────── */
+function calculate() {
+  $('priceError').textContent = '';
+  $('termError').textContent = '';
+
+  let purchasePrice = parseFloat($('purchasePrice').value); if (!Number.isFinite(purchasePrice) || purchasePrice < 0) purchasePrice = 0;
+  if (purchasePrice <= 0) {
+    $('priceError').textContent = 'Purchase price must be greater than 0.';
+    return;
+  }
+  let closingCosts = parseFloat($('closingCosts').value); if (!Number.isFinite(closingCosts) || closingCosts < 0) closingCosts = 0;
+  let rehab = parseFloat($('rehab').value); if (!Number.isFinite(rehab) || rehab < 0) rehab = 0;
+  let downPct = parseFloat($('downPct').value); if (!Number.isFinite(downPct)) downPct = 25;
+  downPct = clamp(downPct, 0, 100);
+  let rate = parseFloat($('rate').value); if (!Number.isFinite(rate) || rate < 0) rate = 0;
+  let termYears = parseInt($('termYears').value, 10); if (!Number.isFinite(termYears)) termYears = 0;
+  if (termYears <= 0) {
+    $('termError').textContent = 'Loan term must be at least 1 year.';
+    return;
+  }
+
+  let monthlyRent = parseFloat($('monthlyRent').value); if (!Number.isFinite(monthlyRent) || monthlyRent < 0) monthlyRent = 0;
+  let otherIncome = parseFloat($('otherIncome').value); if (!Number.isFinite(otherIncome) || otherIncome < 0) otherIncome = 0;
+  let vacancyPct = parseFloat($('vacancyPct').value); if (!Number.isFinite(vacancyPct)) vacancyPct = 7;
+  vacancyPct = clamp(vacancyPct, 0, 100);
+
+  let propertyTax = parseFloat($('propertyTax').value) || 0;
+  let insurance = parseFloat($('insurance').value) || 0;
+  let managementPct = parseFloat($('managementPct').value); if (!Number.isFinite(managementPct) || managementPct < 0) managementPct = 0;
+  let maintenancePct = parseFloat($('maintenancePct').value); if (!Number.isFinite(maintenancePct) || maintenancePct < 0) maintenancePct = 0;
+  let capexPct = parseFloat($('capexPct').value); if (!Number.isFinite(capexPct) || capexPct < 0) capexPct = 0;
+  let ownerUtilities = parseFloat($('ownerUtilities').value) || 0;
+  let hoa = parseFloat($('hoa').value) || 0;
+  let otherOpex = parseFloat($('otherOpex').value) || 0;
+
+  const dscrThresholdBps = bps((parseFloat($('cDscrThreshold').value) || 125) / 100);
+  const capRateThresholdBps = bps((parseFloat($('cCapRateThreshold').value) || 6.00) / 100);
+  const cocThresholdBps = bps((parseFloat($('cCocThreshold').value) || 8.00) / 100);
+  const minMonthlyCashFlow = parseFloat($('cMinMonthlyCashFlow').value) || 100;
+  const onePercentRuleBps = bps((parseFloat($('cOnePercentRule').value) || 1.00) / 100);
+  const fiftyPercentRule = (parseFloat($('cFiftyPercentRule').value) || 50) / 100;
+
+  // Step 1-3: income
+  const gsi = money((monthlyRent + otherIncome) * 12);
+  const vacancyLoss = money(gsi * vacancyPct / 100);
+  const egi = money(gsi - vacancyLoss);
+
+  // Step 4: variable expenses
+  const management = money(egi * managementPct / 100);
+  const maintenance = money(gsi * maintenancePct / 100);
+  const capexReserve = money(gsi * capexPct / 100);
+
+  // Step 5-6: opex and NOI
+  const opex = money(propertyTax + insurance + management + maintenance + capexReserve + ownerUtilities + hoa + otherOpex);
+  const noi = money(egi - opex);
+
+  // Step 7: operating expense ratio
+  const oerBps = Math.round(opex / Math.max(egi, 0.01) * 10000);
+
+  // Step 8-9: cap rates
+  const capRateBps = Math.round(noi / purchasePrice * 10000);
+  const capRateOnCostBps = Math.round(noi / Math.max(purchasePrice + closingCosts + rehab, 0.01) * 10000);
+
+  // Step 10: loan and debt service
+  const downPayment = money(purchasePrice * downPct / 100);
+  const loanAmount = money(purchasePrice - downPayment);
+  const i = rate / 100 / 12;
+  const n = Math.min(termYears * 12, 480);
+  let monthlyDebtService;
+  if (loanAmount <= 0) {
+    monthlyDebtService = 0;
+  } else if (i === 0) {
+    monthlyDebtService = money(loanAmount / n);
+  } else {
+    let f = 1;
+    for (let k = 0; k < n; k++) f = f * (1 + i);
+    monthlyDebtService = money(loanAmount * i * f / (f - 1));
+  }
+  const annualDebtService = money(monthlyDebtService * 12);
+
+  // Step 11: DSCR
+  const dscrBps = annualDebtService === 0 ? null : Math.round(noi / annualDebtService * 10000);
+
+  // Step 12: cash flow
+  const annualCashFlow = money(noi - annualDebtService);
+  const monthlyCashFlow = money(annualCashFlow / 12);
+
+  // Step 13-14: cash invested and cash on cash
+  const cashInvested = money(downPayment + closingCosts + rehab);
+  const cocBps = Math.round(annualCashFlow / Math.max(cashInvested, 0.01) * 10000);
+
+  // Step 15: gross rent multiplier
+  const grmBps = Math.round(purchasePrice / Math.max(gsi, 0.01) * 10000);
+
+  // Step 16: break-even occupancy
+  const breakEvenOccupancyBps = Math.round((opex + annualDebtService) / Math.max(gsi, 0.01) * 10000);
+
+  // Step 17: one percent rule
+  const onePercentBps = Math.round(monthlyRent / Math.max(purchasePrice, 0.01) * 10000);
+
+  // Step 18: fifty percent rule
+  const fiftyPercentOpex = money(gsi * fiftyPercentRule);
+  const underestimatedExpenses = opex < fiftyPercentOpex * 0.60;
+
+  // Step 19: screen verdict
+  const dscrPass = dscrBps === null || dscrBps >= dscrThresholdBps;
+  const capPass = capRateBps >= capRateThresholdBps;
+  const cocPass = cocBps >= cocThresholdBps;
+  const cashFlowPass = monthlyCashFlow >= minMonthlyCashFlow;
+  const onePercentPass = onePercentBps >= onePercentRuleBps;
+  const passCount = [dscrPass, capPass, cocPass, cashFlowPass, onePercentPass].filter(Boolean).length;
+  const verdict = passCount >= 4 ? 'screen passed' : (passCount >= 2 ? 'marginal' : 'screen failed');
+
+  _lastInputs = {
+    purchasePrice, closingCosts, rehab, downPct, rate, termYears,
+    monthlyRent, otherIncome, vacancyPct,
+    propertyTax, insurance, managementPct, maintenancePct, capexPct, ownerUtilities, hoa, otherOpex
+  };
+  _lastResults = {
+    gsi, vacancyLoss, egi, management, maintenance, capexReserve, opex, noi, oerBps,
+    capRateBps, capRateOnCostBps,
+    downPayment, loanAmount, monthlyDebtService, annualDebtService, dscrBps,
+    annualCashFlow, monthlyCashFlow, cashInvested, cocBps,
+    grmBps, breakEvenOccupancyBps, onePercentBps, fiftyPercentOpex, underestimatedExpenses,
+    dscrPass, capPass, cocPass, cashFlowPass, onePercentPass, passCount, verdict
+  };
+
+  render();
+}
+
+function render() {
+  const r = _lastResults, i = _lastInputs;
+
+  $('rHeadline').textContent = fmt(r.noi);
+  $('rCapRate').textContent = (r.capRateBps / 100).toFixed(2) + '%';
+  $('rDscr').textContent = r.dscrBps === null ? 'n/a' : (r.dscrBps / 10000).toFixed(2) + 'x';
+  $('rDscrNote').textContent = r.dscrBps === null ? 'Not applicable, no debt' : '1.25x is a common lender minimum';
+
+  const banner = $('verdictBanner');
+  banner.textContent = r.verdict;
+  banner.className = 'verdict-banner ' + (r.verdict === 'screen passed' ? 'pass' : (r.verdict === 'marginal' ? 'marginal' : 'fail'));
+
+  $('vacancyZeroNote').style.display = (i.vacancyPct === 0) ? 'block' : 'none';
+  $('fiftyPercentNote').style.display = r.underestimatedExpenses ? 'block' : 'none';
+  $('selfManageNote').style.display = (i.managementPct === 0) ? 'block' : 'none';
+
+  $('dGsi').textContent = fmt(r.gsi);
+  $('dVacancyLoss').textContent = fmt(r.vacancyLoss);
+  $('dEgi').textContent = fmt(r.egi);
+  $('dOpex').textContent = fmt(r.opex);
+  $('dOer').textContent = (r.oerBps / 100).toFixed(2) + '%';
+  $('dNoi').textContent = (r.noi < 0 ? '-' : '') + fmt(r.noi);
+
+  $('dCapRate').textContent = (r.capRateBps / 100).toFixed(2) + '%';
+  $('dCapRateOnCost').textContent = (r.capRateOnCostBps / 100).toFixed(2) + '%';
+  $('dLoanAmount').textContent = fmt(r.loanAmount);
+  $('dMonthlyDebtService').textContent = fmt(r.monthlyDebtService) + '/mo';
+  $('dAnnualDebtService').textContent = fmt(r.annualDebtService);
+  $('dDscr').textContent = r.dscrBps === null ? 'Not applicable, no debt' : (r.dscrBps / 10000).toFixed(2) + 'x';
+  $('dAnnualCashFlow').textContent = (r.annualCashFlow < 0 ? '-' : '') + fmt(r.annualCashFlow);
+  $('dMonthlyCashFlow').textContent = (r.monthlyCashFlow < 0 ? '-' : '') + fmt(r.monthlyCashFlow);
+  $('dCashInvested').textContent = fmt(r.cashInvested);
+  $('dCoc').textContent = (r.cocBps / 100).toFixed(2) + '%';
+
+  $('dGrm').textContent = (r.grmBps / 10000).toFixed(2) + 'x';
+  $('dBreakEven').textContent = (r.breakEvenOccupancyBps / 100).toFixed(2) + '%';
+  $('dOnePercent').textContent = (r.onePercentBps / 100).toFixed(2) + '%';
+  $('dFiftyBenchmark').textContent = fmt(r.fiftyPercentOpex);
+
+  const passLabel = p => p ? 'Pass' : 'Fail';
+  const passClass = p => p ? 'pass' : 'fail';
+  $('dPassDscr').textContent = passLabel(r.dscrPass); $('dPassDscr').className = 'row-val ' + passClass(r.dscrPass);
+  $('dPassCap').textContent = passLabel(r.capPass); $('dPassCap').className = 'row-val ' + passClass(r.capPass);
+  $('dPassCoc').textContent = passLabel(r.cocPass); $('dPassCoc').className = 'row-val ' + passClass(r.cocPass);
+  $('dPassCashFlow').textContent = passLabel(r.cashFlowPass); $('dPassCashFlow').className = 'row-val ' + passClass(r.cashFlowPass);
+  $('dPassOnePercent').textContent = passLabel(r.onePercentPass); $('dPassOnePercent').className = 'row-val ' + passClass(r.onePercentPass);
+  $('dPassCount').textContent = r.passCount + ' of 5';
+  $('dVerdict').textContent = r.verdict;
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Rental Property Deal Screener Results',
+    `\n_Generated ${d} · AL-169 · apexlogics.org_\n`,
+    '## Inputs',
+    '| Field | Value |', '|---|---|',
+    `| Purchase price | ${fmt(i.purchasePrice)} |`,
+    `| Gross monthly rent | ${fmt(i.monthlyRent)} |`,
+    `| Down payment | ${i.downPct}% |`,
+    `| Loan rate / term | ${i.rate}% / ${i.termYears} years |`,
+    '\n## Results',
+    `- **Gross scheduled income:** ${fmt(r.gsi)}`,
+    `- **Vacancy loss:** ${fmt(r.vacancyLoss)}`,
+    `- **Effective gross income:** ${fmt(r.egi)}`,
+    `- **Total operating expenses:** ${fmt(r.opex)}`,
+    `- **Operating expense ratio:** ${(r.oerBps/100).toFixed(2)}%`,
+    `- **Net operating income:** ${fmt(r.noi)}`,
+    `- **Cap rate on purchase price:** ${(r.capRateBps/100).toFixed(2)}%`,
+    `- **Cap rate on total project cost:** ${(r.capRateOnCostBps/100).toFixed(2)}%`,
+    `- **Loan amount:** ${fmt(r.loanAmount)}`,
+    `- **Monthly debt service:** ${fmt(r.monthlyDebtService)}`,
+    `- **Annual debt service:** ${fmt(r.annualDebtService)}`,
+    `- **DSCR:** ${r.dscrBps === null ? 'Not applicable, no debt' : (r.dscrBps/10000).toFixed(2) + 'x'}`,
+    `- **Annual cash flow:** ${fmt(r.annualCashFlow)}`,
+    `- **Monthly cash flow:** ${fmt(r.monthlyCashFlow)}`,
+    `- **Total cash invested:** ${fmt(r.cashInvested)}`,
+    `- **Cash on cash return:** ${(r.cocBps/100).toFixed(2)}%`,
+    `- **Gross rent multiplier:** ${(r.grmBps/10000).toFixed(2)}x`,
+    `- **Break-even occupancy:** ${(r.breakEvenOccupancyBps/100).toFixed(2)}%`,
+    `- **One percent rule:** ${(r.onePercentBps/100).toFixed(2)}%`,
+    `- **Fifty percent rule expense benchmark:** ${fmt(r.fiftyPercentOpex)}`,
+    `- **Metrics passed:** ${r.passCount} of 5`,
+    `- **Screen verdict:** ${r.verdict}`,
+    '\n---',
+    '_This is a screen, not a recommendation. It tells you whether a deal clears common thresholds, not whether you should buy it._'
+  ];
+  dlFile('rental-deal-screener.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  const payload = {
+    mandate_type: "rental_deal_screen_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-169",
+    tool_id: "155-rental-deal-screener",
+    tool_name: "Rental Property Deal Screener",
+    inputs: {
+      purchase_price: i.purchasePrice,
+      closing_costs: i.closingCosts,
+      rehab: i.rehab,
+      down_pct: i.downPct,
+      rate: i.rate,
+      term_years: i.termYears,
+      monthly_rent: i.monthlyRent,
+      other_income: i.otherIncome,
+      vacancy_pct: i.vacancyPct,
+      property_tax: i.propertyTax,
+      insurance: i.insurance,
+      management_pct: i.managementPct,
+      maintenance_pct: i.maintenancePct,
+      capex_pct: i.capexPct,
+      owner_utilities: i.ownerUtilities,
+      hoa: i.hoa,
+      other_opex: i.otherOpex,
+      data_version: "2026"
+    },
+    outputs: {
+      gsi: r.gsi,
+      vacancy_loss: r.vacancyLoss,
+      egi: r.egi,
+      opex: r.opex,
+      oer_bps: r.oerBps,
+      noi: r.noi,
+      cap_rate_bps: r.capRateBps,
+      cap_rate_on_cost_bps: r.capRateOnCostBps,
+      loan_amount: r.loanAmount,
+      monthly_debt_service: r.monthlyDebtService,
+      annual_debt_service: r.annualDebtService,
+      dscr_bps: r.dscrBps,
+      annual_cash_flow: r.annualCashFlow,
+      monthly_cash_flow: r.monthlyCashFlow,
+      cash_invested: r.cashInvested,
+      coc_bps: r.cocBps,
+      grm_bps: r.grmBps,
+      break_even_occupancy_bps: r.breakEvenOccupancyBps,
+      one_percent_bps: r.onePercentBps,
+      fifty_percent_opex: r.fiftyPercentOpex,
+      dscr_pass: r.dscrPass,
+      cap_pass: r.capPass,
+      coc_pass: r.cocPass,
+      cash_flow_pass: r.cashFlowPass,
+      one_percent_pass: r.onePercentPass,
+      pass_count: r.passCount,
+      verdict: r.verdict
+    },
+    downstream_handoff_candidates: ["156-rental-depreciation-tax-shield"],
+    data_sources: [
+      "User-supplied acquisition and operating figures",
+      "Apex screening conventions (not statutory)"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/real_estate_projection";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-169";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* STEP 6, SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['rental_deal_screen_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-169_rental-deal-screener_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, CHAINGRAPH §6 EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* REPLACE: MANIFEST */
+const MANIFEST = {
+  "tool_id": "155-rental-deal-screener",
+  "al_id": "AL-169",
+  "version": "1.0.0",
+  "title": "Rental Property Deal Screener",
+  "description": "Given acquisition, income, and operating expense inputs, computes NOI, cap rate, cap rate on total cost, DSCR, cash flow, cash on cash return, gross rent multiplier, and break-even occupancy, then screens the deal against five common investment thresholds. Deterministic, zero external data, T1 tier (no dated statutory figures). Policy Mandate: rental_deal_screen_record.",
+  "category": "real_estate",
+  "journeys": ["screening a listing","lender pre-qualification on an investment loan"],
+  "personas": ["first rental property buyer","small landlord","BRRRR investor","real estate agent"],
+  "tags": ["NOI","cap rate","DSCR","cash on cash","rental property","break-even occupancy","GRM"],
+  "status": "active",
+  "maintenance": "none required (T1, screening conventions only)",
+  "data_vintage": "2026 (all rates user-supplied; screening thresholds are conventions, not statute)",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["rental_deal_screen_record"],
+  "downstream_handoff_candidates": ["156-rental-depreciation-tax-shield"],
+  "regulatory_citations": [],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "purchase_price": { "type": "number" },
+      "monthly_rent": { "type": "number" },
+      "down_pct": { "type": "number" },
+      "rate": { "type": "number" },
+      "term_years": { "type": "number" }
+    },
+    "required": ["purchase_price","monthly_rent","down_pct","rate","term_years"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "noi": { "type": "number" },
+      "cap_rate_bps": { "type": "integer" },
+      "dscr_bps": { "type": ["integer","null"] },
+      "coc_bps": { "type": "integer" },
+      "verdict": { "type": "string" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "rental_deal_screener",
+    "description": "Given acquisition, income, and operating expense inputs, returns NOI, cap rate, DSCR, cash on cash return, break-even occupancy, gross rent multiplier, and a five-metric screen verdict. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "purchase_price": { "type": "number" },
+        "monthly_rent": { "type": "number" },
+        "down_pct": { "type": "number" },
+        "rate": { "type": "number" },
+        "term_years": { "type": "number" }
+      },
+      "required": ["purchase_price","monthly_rent","down_pct","rate","term_years"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+/* KEEP VERBATIM: MCP / MANIFEST TOGGLE */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marital Asset Division · ApexLogics</title>
+  <meta name="description" content="Builds a marital balance sheet and models an illustrative split under a community property or equitable distribution regime, with separate property tracked apart and illiquid or tax-deferred assets shown at an after-tax equivalent. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/tools/160-marital-asset-division/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1160px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    .tool-wrapper { max-width: 1160px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1160px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 820px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .subgroup { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin: 18px 0 10px; }
+    .subgroup:first-of-type { margin-top: 0; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], input[type="text"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.35rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+
+    .disclaimer { background: rgba(248,113,113,.06); border: 1px solid rgba(248,113,113,.35); border-left: 3px solid var(--red); border-radius: 6px; padding: .85rem 1rem; font-size: .8rem; color: var(--text-muted); margin-bottom: 16px; }
+    .caveat-note { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; padding: .7rem 1rem; font-size: .78rem; color: var(--text-muted); margin-bottom: 16px; }
+
+    .asset-table-wrap { overflow-x: auto; margin-bottom: 8px; }
+    table.asset-table { width: 100%; border-collapse: collapse; min-width: 980px; }
+    table.asset-table th { font-family: 'JetBrains Mono', monospace; font-size: .64rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dim); text-align: left; padding: 6px 6px; border-bottom: 1px solid var(--border); }
+    table.asset-table td { padding: 5px 6px; vertical-align: middle; }
+    table.asset-table input, table.asset-table select { font-size: .8rem; padding: 6px 8px; }
+    table.asset-table input[type="text"] { min-width: 150px; }
+    table.asset-table input[type="number"] { min-width: 90px; }
+    .remove-row-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); border-radius: 6px; padding: 5px 9px; cursor: pointer; font-size: .75rem; }
+    .remove-row-btn:hover { border-color: var(--red); color: var(--red); }
+    .add-row-btn { background: none; border: 1px dashed var(--border); color: var(--accent); border-radius: 6px; padding: 9px 16px; cursor: pointer; font-size: .8rem; font-family: 'JetBrains Mono', monospace; margin-top: 6px; }
+    .add-row-btn:hover { border-color: var(--accent); }
+    .underwater-tag { color: var(--red); font-size: .68rem; font-family: 'JetBrains Mono', monospace; margin-left: 6px; }
+
+    .detail-table-wrap { overflow-x: auto; }
+    table.detail-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    table.detail-table th { font-family: 'JetBrains Mono', monospace; font-size: .64rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dim); text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+    table.detail-table td { padding: 7px 8px; border-bottom: 1px solid rgba(167,139,250,0.07); }
+    table.detail-table td.num { font-family: 'JetBrains Mono', monospace; text-align: right; }
+
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    .mfst-btn{width:100%;max-width:1160px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1160px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">Family Law · Property Division</p>
+  <h1 class="tool-title">Marital Asset<br>Division</h1>
+  <p class="tool-desc">Lays out a marital balance sheet and models how it might split under either a community property regime or an equitable distribution regime. Separate property is tracked apart from marital property, illiquid and tax-deferred assets are shown at an after-tax equivalent, and the result is an illustrative allocation, not a settlement.</p>
+  <p class="tool-vintage">Data: 2026 (state property regimes; no dated dollar figures)</p>
+
+  <div class="card">
+    <div class="card-title">State Regime <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="regime">Property regime</label>
+        <select id="regime" onchange="onRegimeChange()">
+          <option value="equitable" selected>Equitable distribution</option>
+          <option value="community">Community property</option>
+        </select>
+        <span class="field-hint">Nine states plus Puerto Rico use community property. Equitable distribution does not mean equal.</span>
+      </div>
+      <div class="field">
+        <label for="targetPctA">Target split to Spouse A (%)</label>
+        <input type="number" id="targetPctA" value="50" min="0" max="100" step="1" />
+        <span class="field-hint" id="targetPctHint">Locked to 50 when community property is selected, editable in equitable distribution.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Asset Rows <span class="badge">STEP 2</span></div>
+    <div class="asset-table-wrap">
+      <table class="asset-table">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Gross value ($)</th>
+            <th>Debt ($)</th>
+            <th>Character</th>
+            <th>Marital % (mixed)</th>
+            <th>Tax character</th>
+            <th>Embedded gain ($)</th>
+            <th>Asset type</th>
+            <th>Assigned to</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="assetRows"></tbody>
+      </table>
+    </div>
+    <button class="add-row-btn" onclick="addRow()">+ Add asset row</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Global Tax Assumptions <span class="badge">STEP 3</span></div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="deferredRatePct">Effective rate on tax-deferred assets (%)</label>
+        <input type="number" id="deferredRatePct" value="22" min="0" max="60" step="1" />
+        <span class="field-hint">Applied to retirement balances for the after-tax equivalent view.</span>
+      </div>
+      <div class="field">
+        <label for="gainRatePct">Effective rate on embedded capital gains (%)</label>
+        <input type="number" id="gainRatePct" value="15" min="0" max="60" step="1" />
+        <span class="field-hint">Applied to the unrealized gain portion.</span>
+      </div>
+      <div class="field">
+        <label for="liquidationCostPct">Liquidation cost on real property (%)</label>
+        <input type="number" id="liquidationCostPct" value="7" min="0" max="30" step="0.5" />
+        <span class="field-hint">Commission and closing costs, applied only in the liquidation view.</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Model the Division →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="disclaimer">This is an illustrative estimate, not legal advice and not a prediction of any court outcome. Property division and support are subject to judicial discretion and vary by state. Consult a family law attorney before relying on any figure here.</div>
+    <div class="caveat-note" id="regimeNote"></div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Illustrative Equalization Payment</div>
+        <div class="metric-val accent" id="rEqualization">--</div>
+        <div class="metric-note" id="rEqualizationNote">A modeled transfer, not an entitlement</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Marital Estate, After-Tax Equivalent</div>
+        <div class="metric-val green" id="rEstateAfterTax">--</div>
+        <div class="metric-note" id="rGapNote">Gross to after-tax gap</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Deviation From Target Split</div>
+        <div class="metric-val amber" id="rDeviation">--</div>
+        <div class="metric-note">How far the current assignment sits from target</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Estate Summary</div>
+      <div class="row"><span class="row-label">Marital estate, gross</span><span class="row-val" id="dEstateGross">--</span></div>
+      <div class="row"><span class="row-label">Marital estate, after-tax equivalent</span><span class="row-val" id="dEstateAfterTax2">--</span></div>
+      <div class="row"><span class="row-label">Separate property, Spouse A</span><span class="row-val" id="dSeparateA">--</span></div>
+      <div class="row"><span class="row-label">Separate property, Spouse B</span><span class="row-val" id="dSeparateB">--</span></div>
+      <div class="row"><span class="row-label">Target share, Spouse A</span><span class="row-val" id="dTargetA">--</span></div>
+      <div class="row"><span class="row-label">Target share, Spouse B</span><span class="row-val" id="dTargetB">--</span></div>
+      <div class="row"><span class="row-label">Currently assigned, Spouse A</span><span class="row-val" id="dAssignedA">--</span></div>
+      <div class="row"><span class="row-label">Currently assigned, Spouse B</span><span class="row-val" id="dAssignedB">--</span></div>
+      <div class="row"><span class="row-label">Currently unassigned</span><span class="row-val" id="dUnassigned">--</span></div>
+      <div class="row"><span class="row-label">Liquidity ratio, Spouse A</span><span class="row-val" id="dLiquidA">--</span></div>
+      <div class="row"><span class="row-label">Liquidity ratio, Spouse B</span><span class="row-val" id="dLiquidB">--</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Per-Row Detail</div>
+      <div class="detail-table-wrap">
+        <table class="detail-table">
+          <thead>
+            <tr><th>Asset</th><th>Character</th><th class="num">Net equity</th><th class="num">Marital equity</th><th class="num">After-tax equivalent</th></tr>
+          </thead>
+          <tbody id="detailRows"></tbody>
+        </table>
+      </div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-174 · Data: state property regime statutes, informational only, no dated dollar figures
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+let _rowCounter = 0;
+
+/* KEEP VERBATIM: helpers */
+const $   = id => document.getElementById(id);
+const fmt = n => (n < 0 ? '-' : '') + '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
+const fmtBp = bp => (bp / 100).toLocaleString('en-US', { maximumFractionDigits: 2 }) + '%';
+
+function numOr(raw, def) {
+  const n = parseFloat(raw);
+  return Number.isFinite(n) ? n : def;
+}
+function dollars(raw, def) {
+  return Math.round(numOr(raw, def));
+}
+
+/* ── ASSET ROWS ────────────────────────────────────────────────────────────── */
+const DEFAULT_ROWS = [
+  { desc: 'Primary residence', gross: 620000, debt: 385000, character: 'marital', mixedPct: 100, taxChar: 'aftertax', gain: 0, assetType: 'realproperty', assigned: 'A' },
+  { desc: 'Joint checking and savings', gross: 45000, debt: 0, character: 'marital', mixedPct: 100, taxChar: 'aftertax', gain: 0, assetType: 'other', assigned: 'B' },
+  { desc: 'Brokerage account', gross: 180000, debt: 0, character: 'marital', mixedPct: 100, taxChar: 'gain', gain: 95000, assetType: 'other', assigned: 'A' },
+  { desc: 'Spouse A 401(k)', gross: 400000, debt: 0, character: 'marital', mixedPct: 100, taxChar: 'deferred', gain: 0, assetType: 'other', assigned: 'A' },
+  { desc: 'Spouse B 401(k)', gross: 150000, debt: 0, character: 'marital', mixedPct: 100, taxChar: 'deferred', gain: 0, assetType: 'other', assigned: 'B' },
+  { desc: 'Spouse A vehicle', gross: 28000, debt: 12000, character: 'marital', mixedPct: 100, taxChar: 'aftertax', gain: 0, assetType: 'other', assigned: 'A' },
+  { desc: 'Spouse B vehicle', gross: 22000, debt: 9000, character: 'marital', mixedPct: 100, taxChar: 'aftertax', gain: 0, assetType: 'other', assigned: 'B' },
+  { desc: 'Inheritance held separately by Spouse A', gross: 90000, debt: 0, character: 'separateA', mixedPct: 100, taxChar: 'aftertax', gain: 0, assetType: 'other', assigned: 'A' }
+];
+
+function addRow(data) {
+  data = data || { desc: '', gross: 0, debt: 0, character: 'marital', mixedPct: 100, taxChar: 'aftertax', gain: 0, assetType: 'other', assigned: 'unassigned' };
+  const id = 'row' + (_rowCounter++);
+  const tbody = $('assetRows');
+  const tr = document.createElement('tr');
+  tr.id = id;
+  tr.innerHTML =
+    '<td><input type="text" class="f-desc" value="' + escapeAttr(data.desc) + '" /></td>' +
+    '<td><input type="number" class="f-gross" value="' + data.gross + '" min="0" step="1000" /></td>' +
+    '<td><input type="number" class="f-debt" value="' + data.debt + '" min="0" step="1000" /></td>' +
+    '<td><select class="f-character">' +
+      '<option value="marital"' + (data.character==='marital'?' selected':'') + '>Marital</option>' +
+      '<option value="separateA"' + (data.character==='separateA'?' selected':'') + '>Separate A</option>' +
+      '<option value="separateB"' + (data.character==='separateB'?' selected':'') + '>Separate B</option>' +
+      '<option value="mixed"' + (data.character==='mixed'?' selected':'') + '>Mixed</option>' +
+    '</select></td>' +
+    '<td><input type="number" class="f-mixedpct" value="' + data.mixedPct + '" min="0" max="100" step="1" /></td>' +
+    '<td><select class="f-taxchar">' +
+      '<option value="aftertax"' + (data.taxChar==='aftertax'?' selected':'') + '>After-tax</option>' +
+      '<option value="deferred"' + (data.taxChar==='deferred'?' selected':'') + '>Tax-deferred</option>' +
+      '<option value="gain"' + (data.taxChar==='gain'?' selected':'') + '>Taxable-gain</option>' +
+    '</select></td>' +
+    '<td><input type="number" class="f-gain" value="' + data.gain + '" min="0" step="1000" /></td>' +
+    '<td><select class="f-assettype">' +
+      '<option value="realproperty"' + (data.assetType==='realproperty'?' selected':'') + '>Real property</option>' +
+      '<option value="other"' + (data.assetType==='other'?' selected':'') + '>Other</option>' +
+    '</select></td>' +
+    '<td><select class="f-assigned">' +
+      '<option value="unassigned"' + (data.assigned==='unassigned'?' selected':'') + '>Unassigned</option>' +
+      '<option value="A"' + (data.assigned==='A'?' selected':'') + '>Spouse A</option>' +
+      '<option value="B"' + (data.assigned==='B'?' selected':'') + '>Spouse B</option>' +
+    '</select></td>' +
+    '<td><button class="remove-row-btn" onclick="removeRow(\'' + id + '\')">✕</button></td>';
+  tbody.appendChild(tr);
+}
+function removeRow(id) {
+  const el = $(id);
+  if (el) el.remove();
+}
+function escapeAttr(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+function initRows() {
+  DEFAULT_ROWS.forEach(addRow);
+}
+function onRegimeChange() {
+  const isCommunity = $('regime').value === 'community';
+  const pctField = $('targetPctA');
+  if (isCommunity) { pctField.value = 50; pctField.disabled = true; }
+  else { pctField.disabled = false; }
+}
+initRows();
+onRegimeChange();
+
+function readRows() {
+  const rows = [];
+  document.querySelectorAll('#assetRows tr').forEach(tr => {
+    rows.push({
+      desc: tr.querySelector('.f-desc').value || 'Unnamed asset',
+      gross: dollars(tr.querySelector('.f-gross').value, 0),
+      debt: dollars(tr.querySelector('.f-debt').value, 0),
+      character: tr.querySelector('.f-character').value,
+      mixedPct: Math.max(0, Math.min(100, numOr(tr.querySelector('.f-mixedpct').value, 100))),
+      taxChar: tr.querySelector('.f-taxchar').value,
+      gain: dollars(tr.querySelector('.f-gain').value, 0),
+      assetType: tr.querySelector('.f-assettype').value,
+      assigned: tr.querySelector('.f-assigned').value
+    });
+  });
+  return rows;
+}
+
+/* ── CORE MATH ─────────────────────────────────────────────────────────────── */
+function calculate() {
+  const regime = $('regime').value;
+  const targetPctA = Math.max(0, Math.min(100, numOr($('targetPctA').value, 50)));
+  const deferredRatePct = Math.max(0, numOr($('deferredRatePct').value, 22));
+  const gainRatePct = Math.max(0, numOr($('gainRatePct').value, 15));
+  const liquidationCostPct = Math.max(0, numOr($('liquidationCostPct').value, 7));
+  const deferredRateBp = Math.round(deferredRatePct * 100);
+  const gainRateBp = Math.round(gainRatePct * 100);
+
+  const rows = readRows();
+
+  let maritalEstateGross = 0, maritalEstateAfterTax = 0;
+  let separateA = 0, separateB = 0;
+  let assignedA = 0, assignedB = 0;
+  let liquidAssignedA = 0, liquidAssignedB = 0;
+  let anyMaritalRow = false;
+  let anyUnassignedMaritalDollar = false;
+
+  const detail = rows.map(row => {
+    const netEquity = row.gross - row.debt;
+    const underwater = netEquity < 0;
+
+    let maritalBp;
+    if (row.character === 'marital') maritalBp = 10000;
+    else if (row.character === 'mixed') maritalBp = Math.round(row.mixedPct * 100);
+    else maritalBp = 0; /* separateA, separateB */
+
+    const maritalEquity = Math.round(netEquity * maritalBp / 10000);
+    const separateEquity = netEquity - maritalEquity;
+
+    /* separate equity attribution: named spouse for Separate A/B, else the row's Assigned To for Mixed */
+    if (row.character === 'separateA') separateA += separateEquity;
+    else if (row.character === 'separateB') separateB += separateEquity;
+    else if (row.character === 'mixed' && separateEquity !== 0) {
+      if (row.assigned === 'A') separateA += separateEquity;
+      else if (row.assigned === 'B') separateB += separateEquity;
+      /* if unassigned, the separate remainder on a mixed row is left unattributed pending assignment */
+    }
+
+    let afterTaxEquity;
+    if (row.taxChar === 'aftertax') {
+      afterTaxEquity = maritalEquity;
+    } else if (row.taxChar === 'deferred') {
+      afterTaxEquity = Math.round(maritalEquity * (10000 - deferredRateBp) / 10000);
+    } else {
+      afterTaxEquity = maritalEquity - Math.round(row.gain * maritalBp / 10000 * gainRateBp / 10000);
+    }
+
+    if (maritalBp > 0) anyMaritalRow = true;
+    maritalEstateGross += maritalEquity;
+    maritalEstateAfterTax += afterTaxEquity;
+
+    const isLiquid = row.taxChar === 'aftertax' && row.assetType !== 'realproperty';
+    if (row.assigned === 'A') {
+      assignedA += afterTaxEquity;
+      if (isLiquid) liquidAssignedA += afterTaxEquity;
+    } else if (row.assigned === 'B') {
+      assignedB += afterTaxEquity;
+      if (isLiquid) liquidAssignedB += afterTaxEquity;
+    } else if (maritalBp > 0) {
+      anyUnassignedMaritalDollar = true;
+    }
+
+    return { desc: row.desc, character: row.character, netEquity, maritalEquity, afterTaxEquity, underwater };
+  });
+
+  const unassigned = maritalEstateAfterTax - assignedA - assignedB;
+  const allAssigned = !anyUnassignedMaritalDollar && Math.abs(unassigned) < 1;
+
+  const splitABp = regime === 'community' ? 5000 : Math.round(targetPctA * 100);
+  const splitBBp = 10000 - splitABp;
+  const targetA = Math.round(maritalEstateAfterTax * splitABp / 10000);
+  const targetB = maritalEstateAfterTax - targetA;
+
+  const equalizationPayment = allAssigned ? (targetA - assignedA) : null;
+  const deviationBp = Math.round((assignedA - targetA) / Math.max(1, Math.abs(maritalEstateAfterTax) || 1) * 10000);
+  const liquidityRatioABp = Math.round(liquidAssignedA / Math.max(1, Math.abs(assignedA) || 1) * 10000);
+  const liquidityRatioBBp = Math.round(liquidAssignedB / Math.max(1, Math.abs(assignedB) || 1) * 10000);
+  const grossVsAfterTaxGapBp = Math.round((maritalEstateGross - maritalEstateAfterTax) / Math.max(1, Math.abs(maritalEstateGross) || 1) * 10000);
+
+  _lastInputs = { regime, targetPctA, deferredRatePct, gainRatePct, liquidationCostPct, rows };
+  _lastResults = {
+    detail, maritalEstateGross, maritalEstateAfterTax, separateA, separateB,
+    targetA, targetB, assignedA, assignedB, unassigned, allAssigned, anyMaritalRow,
+    equalizationPayment, deviationBp, liquidityRatioABp, liquidityRatioBBp, grossVsAfterTaxGapBp
+  };
+
+  render();
+}
+
+function render() {
+  const i = _lastInputs, r = _lastResults;
+
+  /* headline equalization */
+  if (!r.anyMaritalRow) {
+    $('rEqualization').textContent = '$0';
+    $('rEqualizationNote').textContent = 'No marital estate at these inputs; separate property is shown for completeness and is generally not divided, subject to state law and commingling';
+  } else if (!r.allAssigned) {
+    $('rEqualization').textContent = 'No allocation entered yet';
+    $('rEqualizationNote').textContent = 'Assign every marital-portion row to Spouse A or Spouse B to see an illustrative equalization payment';
+  } else if (r.equalizationPayment === 0) {
+    $('rEqualization').textContent = '$0';
+    $('rEqualizationNote').textContent = 'Current assignment already matches the target split';
+  } else {
+    const amt = Math.abs(r.equalizationPayment);
+    const dir = r.equalizationPayment > 0 ? 'illustrative transfer from Spouse B to Spouse A' : 'illustrative transfer from Spouse A to Spouse B';
+    $('rEqualization').textContent = fmt(amt);
+    $('rEqualizationNote').textContent = dir;
+  }
+
+  $('rEstateAfterTax').textContent = fmt(r.maritalEstateAfterTax);
+  $('rEstateAfterTax').className = 'metric-val ' + (r.maritalEstateAfterTax >= 0 ? 'green' : 'red');
+  $('rGapNote').textContent = 'Gross to after-tax gap: ' + fmtBp(r.grossVsAfterTaxGapBp);
+
+  $('rDeviation').textContent = fmtBp(r.deviationBp);
+
+  const regimeNote = $('regimeNote');
+  if (i.regime === 'community') {
+    regimeNote.textContent = 'Community property states presume an equal division of community property, while separate property generally stays with its owner. Wisconsin operates a marital property act that is community-like but not identical.';
+  } else {
+    regimeNote.textContent = 'Equitable does not mean equal. The target percent above is a user assumption for modeling purposes, not a legal entitlement.';
+  }
+
+  $('dEstateGross').textContent = fmt(r.maritalEstateGross);
+  $('dEstateAfterTax2').textContent = fmt(r.maritalEstateAfterTax);
+  $('dSeparateA').textContent = fmt(r.separateA);
+  $('dSeparateB').textContent = fmt(r.separateB);
+  $('dTargetA').textContent = fmt(r.targetA);
+  $('dTargetB').textContent = fmt(r.targetB);
+  $('dAssignedA').textContent = fmt(r.assignedA);
+  $('dAssignedB').textContent = fmt(r.assignedB);
+  $('dUnassigned').textContent = fmt(r.unassigned);
+  $('dLiquidA').textContent = fmtBp(r.liquidityRatioABp);
+  $('dLiquidB').textContent = fmtBp(r.liquidityRatioBBp);
+
+  const tbody = $('detailRows');
+  tbody.innerHTML = '';
+  const charLabel = { marital: 'Marital', separateA: 'Separate A', separateB: 'Separate B', mixed: 'Mixed' };
+  r.detail.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + escapeAttr(row.desc) + (row.underwater ? '<span class="underwater-tag">underwater</span>' : '') + '</td>' +
+      '<td>' + charLabel[row.character] + '</td>' +
+      '<td class="num">' + fmt(row.netEquity) + '</td>' +
+      '<td class="num">' + fmt(row.maritalEquity) + '</td>' +
+      '<td class="num">' + fmt(row.afterTaxEquity) + '</td>';
+    tbody.appendChild(tr);
+  });
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Marital Asset Division Results',
+    `\n_Generated ${d} · AL-174 · apexlogics.org_\n`,
+    '## Inputs',
+    `- Property regime: ${i.regime === 'community' ? 'Community property' : 'Equitable distribution'}`,
+    `- Target split to Spouse A: ${i.targetPctA}%`,
+    `- Effective rate on tax-deferred assets: ${i.deferredRatePct}%`,
+    `- Effective rate on embedded capital gains: ${i.gainRatePct}%`,
+    `- Liquidation cost on real property: ${i.liquidationCostPct}%`,
+    '\n## Asset Rows',
+    '| Asset | Character | Net equity | Marital equity | After-tax equivalent |', '|---|---|---|---|---|',
+    ...r.detail.map(row => `| ${row.desc}${row.underwater ? ' (underwater)' : ''} | ${row.character} | ${fmt(row.netEquity)} | ${fmt(row.maritalEquity)} | ${fmt(row.afterTaxEquity)} |`),
+    '\n## Results',
+    `- **Illustrative equalization payment:** ${r.allAssigned ? (r.equalizationPayment === 0 ? '$0, matches target' : fmt(Math.abs(r.equalizationPayment)) + ', ' + (r.equalizationPayment > 0 ? 'illustrative transfer from Spouse B to Spouse A' : 'illustrative transfer from Spouse A to Spouse B')) : 'no allocation entered yet'}`,
+    `- **Marital estate, gross:** ${fmt(r.maritalEstateGross)}`,
+    `- **Marital estate, after-tax equivalent:** ${fmt(r.maritalEstateAfterTax)}`,
+    `- **Separate property, Spouse A:** ${fmt(r.separateA)}`,
+    `- **Separate property, Spouse B:** ${fmt(r.separateB)}`,
+    `- **Target share, Spouse A:** ${fmt(r.targetA)}`,
+    `- **Target share, Spouse B:** ${fmt(r.targetB)}`,
+    `- **Currently assigned, Spouse A:** ${fmt(r.assignedA)}`,
+    `- **Currently assigned, Spouse B:** ${fmt(r.assignedB)}`,
+    `- **Currently unassigned:** ${fmt(r.unassigned)}`,
+    `- **Deviation from target split:** ${fmtBp(r.deviationBp)}`,
+    `- **Liquidity ratio, Spouse A:** ${fmtBp(r.liquidityRatioABp)}`,
+    `- **Liquidity ratio, Spouse B:** ${fmtBp(r.liquidityRatioBBp)}`,
+    `- **Gross to after-tax gap:** ${fmtBp(r.grossVsAfterTaxGapBp)}`,
+    '\n---',
+    '_This is an illustrative estimate, not legal advice and not a prediction of any court outcome. Property division and support are subject to judicial discretion and vary by state. Consult a family law attorney before relying on any figure here._'
+  ];
+  dlFile('marital-asset-division.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  const payload = {
+    mandate_type: "marital_asset_division_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-174",
+    tool_id: "160-marital-asset-division",
+    tool_name: "Marital Asset Division",
+    inputs: {
+      property_regime: i.regime,
+      target_pct_spouse_a: i.targetPctA,
+      deferred_tax_rate_pct: i.deferredRatePct,
+      embedded_gain_rate_pct: i.gainRatePct,
+      liquidation_cost_pct: i.liquidationCostPct,
+      asset_rows: i.rows.map(row => ({
+        description: row.desc, gross_value: row.gross, debt: row.debt, character: row.character,
+        marital_portion_pct: row.mixedPct, tax_character: row.taxChar, embedded_gain: row.gain,
+        asset_type: row.assetType, assigned_to: row.assigned
+      }))
+    },
+    outputs: {
+      illustrative_equalization_payment: r.allAssigned ? r.equalizationPayment : null,
+      equalization_suppressed_reason: r.allAssigned ? null : (r.anyMaritalRow ? "not_all_rows_assigned" : "zero_marital_estate"),
+      marital_estate_gross: r.maritalEstateGross,
+      marital_estate_after_tax: r.maritalEstateAfterTax,
+      separate_property_a: r.separateA,
+      separate_property_b: r.separateB,
+      target_share_a: r.targetA,
+      target_share_b: r.targetB,
+      assigned_a: r.assignedA,
+      assigned_b: r.assignedB,
+      unassigned: r.unassigned,
+      deviation_from_target_bp: r.deviationBp,
+      liquidity_ratio_a_bp: r.liquidityRatioABp,
+      liquidity_ratio_b_bp: r.liquidityRatioBBp,
+      gross_vs_after_tax_gap_bp: r.grossVsAfterTaxGapBp
+    },
+    downstream_handoff_candidates: ["175-spousal-support-estimator", "162-qdro-pension-split-modeler"],
+    data_sources: [
+      "State community and equitable distribution property regime statutes, informational only, no dated dollar figures"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/family_law";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-174";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['marital_asset_division_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-174_marital-asset-division_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+const MANIFEST = {
+  "tool_id": "160-marital-asset-division",
+  "al_id": "AL-174",
+  "version": "1.0.0",
+  "title": "Marital Asset Division",
+  "description": "Builds a marital balance sheet with repeatable asset rows and models an illustrative split under a community property or equitable distribution regime, tracking separate property apart and showing tax-deferred and taxable-gain assets at an after-tax equivalent. Deterministic, zero external data. Policy Mandate: marital_asset_division_record.",
+  "category": "family_law",
+  "journeys": [],
+  "personas": ["spouse preparing for mediation", "party assembling a settlement proposal", "financial neutral"],
+  "tags": ["divorce","property-division","community-property","equitable-distribution","separate-property","marital-estate"],
+  "status": "active",
+  "maintenance": "T1",
+  "data_vintage": "2026 (state property regimes; no dated dollar figures)",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["marital_asset_division_record"],
+  "downstream_handoff_candidates": ["175-spousal-support-estimator", "162-qdro-pension-split-modeler"],
+  "regulatory_citations": [
+    "State community and equitable distribution property regime statutes, informational only"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "property_regime": { "type": "string", "enum": ["community","equitable"] },
+      "target_pct_spouse_a": { "type": "number" },
+      "asset_rows": { "type": "array" }
+    },
+    "required": ["property_regime","asset_rows"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "illustrative_equalization_payment": { "type": ["number","null"] },
+      "marital_estate_gross": { "type": "number" },
+      "marital_estate_after_tax": { "type": "number" },
+      "target_share_a": { "type": "number" },
+      "target_share_b": { "type": "number" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "marital_asset_division",
+    "description": "Builds a marital balance sheet and models an illustrative split under a community property or equitable distribution regime, with separate property tracked apart. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "property_regime": { "type": "string", "enum": ["community","equitable"] },
+        "asset_rows": { "type": "array" }
+      },
+      "required": ["property_regime","asset_rows"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

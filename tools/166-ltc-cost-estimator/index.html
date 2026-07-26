@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Long-Term Care Cost Estimator · ApexLogics</title>
+  <meta name="description" content="Compares what care actually costs across four settings: paid help at home, adult day care, assisted living, and a nursing home, with the crossover point where in-home care stops being the cheaper option. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/tools/166-ltc-cost-estimator/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .subgroup { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin: 18px 0 10px; }
+    .subgroup:first-of-type { margin-top: 0; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.35rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+
+    .caveat-note { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; padding: .8rem 1rem; font-size: .8rem; color: var(--text-muted); margin-bottom: 16px; }
+    .warn-note { background: rgba(251,191,36,.06); border: 1px solid rgba(251,191,36,.35); border-left: 3px solid var(--amber); border-radius: 6px; padding: .7rem 1rem; font-size: .78rem; color: var(--text-muted); margin-bottom: 16px; display: none; }
+    .warn-note.visible { display: block; }
+    .edge-note { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; padding: .7rem 1rem; font-size: .78rem; color: var(--text-muted); margin-bottom: 16px; display: none; }
+    .edge-note.visible { display: block; }
+
+    .compare-table-wrap { overflow-x: auto; }
+    table.compare-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    table.compare-table th { font-family: 'JetBrains Mono', monospace; font-size: .64rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dim); text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+    table.compare-table td { padding: 8px; border-bottom: 1px solid rgba(167,139,250,0.07); }
+    table.compare-table td.num { font-family: 'JetBrains Mono', monospace; text-align: right; }
+
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">Long-Term Care · Cost Planning</p>
+  <h1 class="tool-title">Long-Term Care<br>Cost Estimator</h1>
+  <p class="tool-desc">Compares what care actually costs across four settings: paid help at home, adult day care, assisted living, and a nursing home. Set the hours of care needed, the local cost adjustment for where you live, and a cost inflation rate, then see the crossover point where in-home care stops being the cheaper option.</p>
+  <p class="tool-vintage">Data: 2026 (national median care costs, survey based, user-overridable)</p>
+
+  <div class="card">
+    <div class="card-title">Care Costs <span class="badge">STEP 1</span></div>
+
+    <div class="subgroup">Home care</div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="careTypeAtHome">Care type at home</label>
+        <select id="careTypeAtHome">
+          <option value="nonmedical" selected>Non-medical caregiver</option>
+          <option value="aide">Home health aide</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="homeCareHourly">Home care hourly rate ($/hr)</label>
+        <input type="number" id="homeCareHourly" value="35" min="0" max="500" step="1" />
+        <span class="field-hint">National median for a non-medical caregiver.</span>
+      </div>
+      <div class="field">
+        <label for="homeHealthAideHourly">Home health aide hourly rate ($/hr)</label>
+        <input type="number" id="homeHealthAideHourly" value="38" min="0" max="500" step="1" />
+        <span class="field-hint">Medically supervised care costs more.</span>
+      </div>
+      <div class="field">
+        <label for="hoursPerWeek">Hours of home care per week</label>
+        <input type="number" id="hoursPerWeek" value="44" min="0" max="168" step="1" />
+        <span class="field-hint">The survey-standard assumption. Full-time coverage runs 168.</span>
+      </div>
+    </div>
+
+    <div class="subgroup">Adult day care</div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="dayCareDaily">Adult day care, daily rate ($/day)</label>
+        <input type="number" id="dayCareDaily" value="105" min="0" max="1000" step="5" />
+        <span class="field-hint">Typically weekdays only.</span>
+      </div>
+      <div class="field">
+        <label for="dayCareDays">Days of adult day care per week</label>
+        <input type="number" id="dayCareDays" value="5" min="0" max="7" step="1" />
+      </div>
+      <div class="field"></div>
+    </div>
+
+    <div class="subgroup">Assisted living</div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="alMonthly">Assisted living, monthly ($/mo)</label>
+        <input type="number" id="alMonthly" value="5900" min="0" max="50000" step="100" />
+        <span class="field-hint">National median, base rate.</span>
+      </div>
+      <div class="field">
+        <label for="alSurcharge">Assisted living care level surcharge ($/mo)</label>
+        <input type="number" id="alSurcharge" value="800" min="0" max="20000" step="100" />
+        <span class="field-hint">Many communities charge a tier above the base rent.</span>
+      </div>
+      <div class="field"></div>
+    </div>
+
+    <div class="subgroup">Nursing home</div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="nhRoomType">Nursing home room type</label>
+        <select id="nhRoomType">
+          <option value="semi" selected>Semi-private</option>
+          <option value="private">Private</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="nhSemi">Nursing home, semi-private, monthly ($/mo)</label>
+        <input type="number" id="nhSemi" value="9342" min="0" max="50000" step="100" />
+        <span class="field-hint">National median.</span>
+      </div>
+      <div class="field">
+        <label for="nhPrivate">Nursing home, private room, monthly ($/mo)</label>
+        <input type="number" id="nhPrivate" value="11294" min="0" max="50000" step="100" />
+        <span class="field-hint">National median.</span>
+      </div>
+    </div>
+
+    <div class="subgroup">Regional and time assumptions</div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="regionalAdjustPct">Regional cost adjustment (%)</label>
+        <input type="number" id="regionalAdjustPct" value="100" min="1" max="500" step="1" />
+        <span class="field-hint">100 is the national median. Alaska runs far above, several southern states well below.</span>
+      </div>
+      <div class="field">
+        <label for="careInflationPct">Annual care cost inflation (%/yr)</label>
+        <input type="number" id="careInflationPct" value="4.0" min="0" max="20" step="0.1" />
+        <span class="field-hint">Care costs have historically outpaced general inflation.</span>
+      </div>
+      <div class="field">
+        <label for="yearsProjected">Years of care to project</label>
+        <input type="number" id="yearsProjected" value="3" min="0" max="30" step="1" />
+        <span class="field-hint">Average nursing home stays run under three years, home care often longer.</span>
+      </div>
+    </div>
+
+    <div class="subgroup">Household, insurance, and selected setting</div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="householdAvoidedMonthly">Household costs avoided by moving to a facility ($/mo)</label>
+        <input type="number" id="householdAvoidedMonthly" value="1400" min="0" max="50000" step="50" />
+        <span class="field-hint">Mortgage or rent, utilities, food, that stop if the home is given up.</span>
+      </div>
+      <div class="field">
+        <label for="insuranceDailyBenefit">Long-term care insurance daily benefit ($/day)</label>
+        <input type="number" id="insuranceDailyBenefit" value="0" min="0" max="2000" step="10" />
+        <span class="field-hint">Enter 0 if none.</span>
+      </div>
+      <div class="field">
+        <label for="insuranceBenefitYears">Insurance benefit period (years)</label>
+        <input type="number" id="insuranceBenefitYears" value="3" min="0" max="30" step="1" />
+      </div>
+      <div class="field">
+        <label for="insuranceEliminationDays">Insurance elimination period (days)</label>
+        <input type="number" id="insuranceEliminationDays" value="90" min="0" max="1000" step="5" />
+        <span class="field-hint">Days you pay before benefits start.</span>
+      </div>
+      <div class="field">
+        <label for="selectedSetting">Setting to project for the insurance offset</label>
+        <select id="selectedSetting">
+          <option value="home" selected>Home care</option>
+          <option value="daycare">Adult day care</option>
+          <option value="al">Assisted living, net</option>
+          <option value="nh">Nursing home, net</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="annualIncome">Annual household income, optional ($)</label>
+        <input type="number" id="annualIncome" value="0" min="0" max="10000000" step="1000" />
+        <span class="field-hint">Leave 0 to skip the cost-as-share-of-income row.</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Compare Care Costs →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="caveat-note">Care costs are survey medians and vary enormously by state and metro area, from roughly a third below the national median in the lowest-cost states to several times above it in Alaska. Every figure here is a starting point you should replace with local quotes.</div>
+    <div class="warn-note" id="warnNote"></div>
+    <div class="edge-note" id="edgeNote"></div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Annual Cost, Selected Setting</div>
+        <div class="metric-val accent" id="rSelectedAnnual">--</div>
+        <div class="metric-note" id="rSelectedNote">Year-one cost at your regional adjustment</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Crossover vs Assisted Living</div>
+        <div class="metric-val green" id="rCrossoverAL">--</div>
+        <div class="metric-note">Weekly home-care hours where assisted living becomes cheaper</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Lowest Modeled Cost Setting</div>
+        <div class="metric-val amber" id="rLowestSetting">--</div>
+        <div class="metric-note">Cost is one input among many. See note below.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Four-Way Comparison, Year One</div>
+      <div class="compare-table-wrap">
+        <table class="compare-table">
+          <thead><tr><th>Setting</th><th class="num">Annual</th><th class="num">Monthly</th><th class="num">Net of avoided household costs</th></tr></thead>
+          <tbody>
+            <tr><td>Home care</td><td class="num" id="dHomeAnnual">--</td><td class="num" id="dHomeMonthly">--</td><td class="num">n/a, household still running</td></tr>
+            <tr><td>Adult day care</td><td class="num" id="dDayAnnual">--</td><td class="num" id="dDayMonthly">--</td><td class="num">n/a, household still running</td></tr>
+            <tr><td>Assisted living</td><td class="num" id="dALAnnual">--</td><td class="num" id="dALMonthly">--</td><td class="num" id="dALNet">--</td></tr>
+            <tr><td>Nursing home</td><td class="num" id="dNHAnnual">--</td><td class="num" id="dNHMonthly">--</td><td class="num" id="dNHNet">--</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">Crossover hours versus assisted living</span><span class="row-val" id="dCrossAL">--</span></div>
+      <div class="row"><span class="row-label">Crossover hours versus nursing home</span><span class="row-val" id="dCrossNH">--</span></div>
+      <div class="row"><span class="row-label">Projected total, selected setting, over the care period</span><span class="row-val" id="dProjected">--</span></div>
+      <div class="row"><span class="row-label">Insurance benefit applied</span><span class="row-val" id="dInsurance">--</span></div>
+      <div class="row"><span class="row-label">Out of pocket total</span><span class="row-val" id="dOutOfPocket">--</span></div>
+      <div class="row" id="rowIncomeShare" style="display:none"><span class="row-label">Cost as a share of household income</span><span class="row-val" id="dIncomeShare">--</span></div>
+      <div class="row"><span class="row-label">Note</span><span class="row-val" id="dFixedNote" style="font-family:inherit;text-align:right;max-width:60%;">Cost is one input among many. Care setting decisions turn on medical need, safety, and family capacity, none of which this tool models.</span></div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-180 · Data: CareScout / Genworth Cost of Care survey medians, 2026, user-overridable
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+/* KEEP VERBATIM: helpers */
+const $   = id => document.getElementById(id);
+const fmt = n => (n < 0 ? '-' : '') + '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
+
+function numOr(raw, def) {
+  const n = parseFloat(raw);
+  return Number.isFinite(n) ? n : def;
+}
+function dollars(raw, def) {
+  return Math.round(numOr(raw, def));
+}
+
+/* multi-year projection with inflation, loop only, no fractional exponents */
+function project(annualCost, years, inflBp) {
+  let total = 0, c = annualCost;
+  for (let y = 0; y < years; y++) { total += Math.round(c); c = c * (10000 + inflBp) / 10000; }
+  return Math.round(total);
+}
+
+/* ── CORE MATH ─────────────────────────────────────────────────────────────── */
+function calculate() {
+  const careTypeAtHome = $('careTypeAtHome').value;
+  const homeCareHourlyInput = Math.max(0, numOr($('homeCareHourly').value, 35));
+  const homeHealthAideHourlyInput = Math.max(0, numOr($('homeHealthAideHourly').value, 38));
+  const hoursPerWeek = Math.max(0, Math.round(numOr($('hoursPerWeek').value, 44)));
+  const dayCareDaily = dollars($('dayCareDaily').value, 105);
+  const dayCareDays = Math.max(0, Math.round(numOr($('dayCareDays').value, 5)));
+  const alMonthly = dollars($('alMonthly').value, 5900);
+  const alSurcharge = dollars($('alSurcharge').value, 800);
+  const nhRoomType = $('nhRoomType').value;
+  const nhSemi = dollars($('nhSemi').value, 9342);
+  const nhPrivate = dollars($('nhPrivate').value, 11294);
+  const regionalAdjustPctRaw = Math.max(0, numOr($('regionalAdjustPct').value, 100));
+  const regionalAdjustPct = Math.max(1, regionalAdjustPctRaw);
+  const regionFloored = regionalAdjustPctRaw < 1;
+  const careInflationPct = Math.max(0, numOr($('careInflationPct').value, 4.0));
+  const yearsProjected = Math.max(0, Math.round(numOr($('yearsProjected').value, 3)));
+  const householdAvoidedMonthly = dollars($('householdAvoidedMonthly').value, 1400);
+  const insuranceDailyBenefit = dollars($('insuranceDailyBenefit').value, 0);
+  const insuranceBenefitYears = Math.max(0, Math.round(numOr($('insuranceBenefitYears').value, 3)));
+  const insuranceEliminationDays = Math.max(0, Math.round(numOr($('insuranceEliminationDays').value, 90)));
+  const selectedSetting = $('selectedSetting').value;
+  const annualIncome = dollars($('annualIncome').value, 0);
+
+  const homeHourly = careTypeAtHome === 'aide' ? homeHealthAideHourlyInput : homeCareHourlyInput;
+  const nhMonthly = nhRoomType === 'private' ? nhPrivate : nhSemi;
+
+  /* step 1 */
+  const regionBp = Math.round(regionalAdjustPct * 100);
+  const inflBp = Math.round(careInflationPct * 100);
+
+  /* step 2-3 */
+  const homeAnnualBase = Math.round(homeHourly * hoursPerWeek * 52);
+  const homeAnnual = Math.round(homeAnnualBase * regionBp / 10000);
+
+  /* step 4 */
+  const dayCareAnnual = Math.round(dayCareDaily * dayCareDays * 52 * regionBp / 10000);
+
+  /* step 5 */
+  const alAnnual = Math.round((alMonthly + alSurcharge) * 12 * regionBp / 10000);
+
+  /* step 6 */
+  const nhAnnual = Math.round(nhMonthly * 12 * regionBp / 10000);
+
+  /* step 7 */
+  const avoidedAnnual = householdAvoidedMonthly * 12;
+  const alNetRaw = alAnnual - avoidedAnnual;
+  const nhNetRaw = nhAnnual - avoidedAnnual;
+  const alNet = Math.max(0, alNetRaw);
+  const nhNet = Math.max(0, nhNetRaw);
+  const avoidedTooHighAL = alNetRaw < 0;
+  const avoidedTooHighNH = nhNetRaw < 0;
+
+  /* step 8, crossover */
+  const zeroHomeHours = hoursPerWeek === 0 || homeAnnual === 0;
+  const weeklyHomeRate = homeHourly * 52;
+  const crossHoursAL = weeklyHomeRate > 0 ? Math.round(alNet / Math.max(1, weeklyHomeRate)) : null;
+  const crossHoursNH = weeklyHomeRate > 0 ? Math.round(nhNet / Math.max(1, weeklyHomeRate)) : null;
+  const noCrossoverAL = crossHoursAL !== null && crossHoursAL > 168;
+  const noCrossoverNH = crossHoursNH !== null && crossHoursNH > 168;
+
+  /* step 9, projections per setting */
+  const homeProjected = project(homeAnnual, yearsProjected, inflBp);
+  const dayProjected = project(dayCareAnnual, yearsProjected, inflBp);
+  const alProjected = project(alNet, yearsProjected, inflBp);
+  const nhProjected = project(nhNet, yearsProjected, inflBp);
+
+  const settingAnnualMap = { home: homeAnnual, daycare: dayCareAnnual, al: alNet, nh: nhNet };
+  const settingProjectedMap = { home: homeProjected, daycare: dayProjected, al: alProjected, nh: nhProjected };
+  const selectedSettingAnnual = settingAnnualMap[selectedSetting];
+  const selectedProjectedTotal = settingProjectedMap[selectedSetting];
+
+  /* step 10, insurance offset */
+  const insuranceAnnualMax = insuranceDailyBenefit * 365;
+  const eliminationExceedsPeriod = insuranceEliminationDays > yearsProjected * 365;
+  let insurancePaid = 0, outOfPocketTotal = selectedProjectedTotal;
+  if (insuranceDailyBenefit > 0 && !eliminationExceedsPeriod && yearsProjected > 0) {
+    const eliminationCost = Math.round(selectedSettingAnnual / 365 * insuranceEliminationDays);
+    const coveredYears = Math.min(yearsProjected, insuranceBenefitYears);
+    const projectedCovered = project(selectedSettingAnnual, coveredYears, inflBp);
+    insurancePaid = Math.max(0, Math.min(projectedCovered - eliminationCost, insuranceAnnualMax * coveredYears));
+    outOfPocketTotal = selectedProjectedTotal - insurancePaid;
+  }
+
+  /* step 11 */
+  const homeMonthly = Math.round(homeAnnual / 12);
+  const dayMonthly = Math.round(dayCareAnnual / 12);
+  const alMonthlyOut = Math.round(alAnnual / 12);
+  const nhMonthlyOut = Math.round(nhAnnual / 12);
+
+  /* step 12, lowest cost setting, year-one net cost */
+  const yearOneCosts = { 'Home care': homeAnnual, 'Adult day care': dayCareAnnual, 'Assisted living': alNet, 'Nursing home': nhNet };
+  let lowestSetting = null, lowestVal = Infinity;
+  for (const k in yearOneCosts) { if (yearOneCosts[k] < lowestVal) { lowestVal = yearOneCosts[k]; lowestSetting = k; } }
+
+  /* step 13 */
+  const costAsShareOfIncomeBp = annualIncome > 0 ? Math.round(selectedSettingAnnual / Math.max(1, annualIncome) * 10000) : null;
+
+  _lastInputs = {
+    careTypeAtHome, homeCareHourly: homeCareHourlyInput, homeHealthAideHourly: homeHealthAideHourlyInput,
+    hoursPerWeek, dayCareDaily, dayCareDays, alMonthly, alSurcharge, nhRoomType, nhSemi, nhPrivate,
+    regionalAdjustPct: regionalAdjustPctRaw, careInflationPct, yearsProjected, householdAvoidedMonthly,
+    insuranceDailyBenefit, insuranceBenefitYears, insuranceEliminationDays, selectedSetting, annualIncome
+  };
+  _lastResults = {
+    regionFloored, homeAnnual, homeMonthly, dayCareAnnual, dayMonthly, alAnnual, alMonthlyOut, alNet,
+    nhAnnual, nhMonthlyOut, nhNet, avoidedTooHighAL, avoidedTooHighNH, zeroHomeHours,
+    crossHoursAL, crossHoursNH, noCrossoverAL, noCrossoverNH,
+    homeProjected, dayProjected, alProjected, nhProjected, selectedProjectedTotal,
+    eliminationExceedsPeriod, insurancePaid, outOfPocketTotal, lowestSetting, costAsShareOfIncomeBp
+  };
+
+  render();
+}
+
+function render() {
+  const i = _lastInputs, r = _lastResults;
+
+  const settingLabel = { home: 'Home care', daycare: 'Adult day care', al: 'Assisted living, net', nh: 'Nursing home, net' };
+  $('rSelectedAnnual').textContent = fmt({home:r.homeAnnual,daycare:r.dayCareAnnual,al:r.alNet,nh:r.nhNet}[i.selectedSetting]);
+  $('rSelectedNote').textContent = 'Year-one cost at your regional adjustment, ' + settingLabel[i.selectedSetting];
+
+  $('rCrossoverAL').textContent = r.zeroHomeHours ? 'Suppressed' : (r.noCrossoverAL ? 'No crossover within 168 hrs/wk' : r.crossHoursAL + ' hrs/wk');
+  $('rLowestSetting').textContent = r.lowestSetting + ' (lowest modeled cost)';
+
+  if (r.regionFloored) { $('warnNote').textContent = 'Regional adjustment below 1 percent was floored at 1 percent to keep costs from collapsing to zero.'; $('warnNote').classList.add('visible'); }
+  else { $('warnNote').classList.remove('visible'); }
+
+  let notes = [];
+  notes.push('Home care and adult day care do not get credit for avoided household costs, because the household is still running while that care is delivered. Assisted living and nursing home figures are shown net of the avoided household costs entered above, and that asymmetry is the single most important correction in this comparison.');
+  if (r.zeroHomeHours) notes.push('Zero hours of home care were entered. Home care annual cost is 0 and the crossover calculation is suppressed; only facility settings compare meaningfully here.');
+  if (i.hoursPerWeek >= 168) notes.push('At 168 hours a week, round-the-clock home care is being modeled hourly, which often runs far above any facility. Live-in arrangements are frequently priced as a flat daily rate instead. Consider overriding the hourly rate with a daily-rate equivalent if you have one.');
+  if (r.avoidedTooHighAL || r.avoidedTooHighNH) notes.push('The avoided household cost entered is high enough that it would drive a facility net cost negative. It was floored at 0, and the input is likely too high for one or both facility types.');
+  if (i.yearsProjected === 0) notes.push('Zero years were projected. All projected totals are 0, and only the year-one annual figures above are meaningful.');
+  if (r.insurancePaid > 0 && i.insuranceDailyBenefit * 365 * Math.min(i.yearsProjected, i.insuranceBenefitYears) >= r.selectedProjectedTotal) notes.push('The insurance daily benefit is generous enough relative to modeled cost that it caps at the actual projected cost, never producing a negative out-of-pocket figure.');
+  if (r.eliminationExceedsPeriod) notes.push('The insurance elimination period is longer than the care period being projected, so insurance pays 0 on this run.');
+  if (r.noCrossoverAL) notes.push('At these rates, home care is cheaper than assisted living at every hour count up to a 168 hour week. No crossover applies within that range.');
+
+  $('edgeNote').textContent = notes.join(' ');
+  $('edgeNote').classList.add('visible');
+
+  $('dHomeAnnual').textContent = fmt(r.homeAnnual);
+  $('dHomeMonthly').textContent = fmt(r.homeMonthly);
+  $('dDayAnnual').textContent = fmt(r.dayCareAnnual);
+  $('dDayMonthly').textContent = fmt(r.dayMonthly);
+  $('dALAnnual').textContent = fmt(r.alAnnual);
+  $('dALMonthly').textContent = fmt(r.alMonthlyOut);
+  $('dALNet').textContent = fmt(r.alNet);
+  $('dNHAnnual').textContent = fmt(r.nhAnnual);
+  $('dNHMonthly').textContent = fmt(r.nhMonthlyOut);
+  $('dNHNet').textContent = fmt(r.nhNet);
+
+  $('dCrossAL').textContent = r.zeroHomeHours ? 'Suppressed' : (r.noCrossoverAL ? 'No crossover within 168 hrs/wk' : r.crossHoursAL + ' hrs/wk');
+  $('dCrossNH').textContent = r.zeroHomeHours ? 'Suppressed' : (r.noCrossoverNH ? 'No crossover within 168 hrs/wk' : r.crossHoursNH + ' hrs/wk');
+  $('dProjected').textContent = fmt(r.selectedProjectedTotal);
+  $('dInsurance').textContent = fmt(r.insurancePaid);
+  $('dOutOfPocket').textContent = fmt(r.outOfPocketTotal);
+
+  if (r.costAsShareOfIncomeBp !== null) {
+    $('rowIncomeShare').style.display = 'flex';
+    $('dIncomeShare').textContent = (r.costAsShareOfIncomeBp / 100).toLocaleString('en-US', { maximumFractionDigits: 2 }) + '%';
+  } else {
+    $('rowIncomeShare').style.display = 'none';
+  }
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Long-Term Care Cost Estimator Results',
+    `\n_Generated ${d} · AL-180 · apexlogics.org_\n`,
+    'Care costs are survey medians and vary enormously by state and metro area, from roughly a third below the national median in the lowest-cost states to several times above it in Alaska. Every figure here is a starting point you should replace with local quotes.',
+    '\n## Four-Way Comparison, Year One',
+    '| Setting | Annual | Monthly | Net of avoided household costs |', '|---|---|---|---|',
+    `| Home care | ${fmt(r.homeAnnual)} | ${fmt(r.homeMonthly)} | n/a, household still running |`,
+    `| Adult day care | ${fmt(r.dayCareAnnual)} | ${fmt(r.dayMonthly)} | n/a, household still running |`,
+    `| Assisted living | ${fmt(r.alAnnual)} | ${fmt(r.alMonthlyOut)} | ${fmt(r.alNet)} |`,
+    `| Nursing home | ${fmt(r.nhAnnual)} | ${fmt(r.nhMonthlyOut)} | ${fmt(r.nhNet)} |`,
+    '\n## Results',
+    `- **Annual cost, selected setting:** ${fmt({home:r.homeAnnual,daycare:r.dayCareAnnual,al:r.alNet,nh:r.nhNet}[i.selectedSetting])}`,
+    `- **Crossover hours versus assisted living:** ${r.zeroHomeHours ? 'suppressed, zero home care hours entered' : (r.noCrossoverAL ? 'no crossover within a 168 hour week' : r.crossHoursAL + ' hours per week')}`,
+    `- **Crossover hours versus nursing home:** ${r.zeroHomeHours ? 'suppressed, zero home care hours entered' : (r.noCrossoverNH ? 'no crossover within a 168 hour week' : r.crossHoursNH + ' hours per week')}`,
+    `- **Projected total, selected setting, over the care period:** ${fmt(r.selectedProjectedTotal)}`,
+    `- **Insurance benefit applied:** ${fmt(r.insurancePaid)}`,
+    `- **Out of pocket total:** ${fmt(r.outOfPocketTotal)}`,
+    `- **Lowest modeled cost setting:** ${r.lowestSetting}`,
+    r.costAsShareOfIncomeBp !== null ? `- **Cost as a share of household income:** ${(r.costAsShareOfIncomeBp/100).toFixed(2)}%` : '',
+    '\n_Home care and adult day care do not get credit for avoided household costs, because the household is still running while that care is delivered. Assisted living and nursing home figures are net of avoided household costs._',
+    '\n_Cost is one input among many. Care setting decisions turn on medical need, safety, and family capacity, none of which this tool models._'
+  ].filter(Boolean);
+  dlFile('ltc-cost-estimator.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  const payload = {
+    mandate_type: "ltc_cost_estimate_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-180",
+    tool_id: "166-ltc-cost-estimator",
+    tool_name: "Long-Term Care Cost Estimator",
+    inputs: {
+      care_type_at_home: i.careTypeAtHome,
+      home_care_hourly: i.homeCareHourly,
+      home_health_aide_hourly: i.homeHealthAideHourly,
+      hours_per_week: i.hoursPerWeek,
+      day_care_daily: i.dayCareDaily,
+      day_care_days_per_week: i.dayCareDays,
+      assisted_living_monthly: i.alMonthly,
+      assisted_living_surcharge: i.alSurcharge,
+      nursing_home_room_type: i.nhRoomType,
+      nursing_home_semi_private: i.nhSemi,
+      nursing_home_private: i.nhPrivate,
+      regional_adjustment_pct: i.regionalAdjustPct,
+      care_inflation_pct: i.careInflationPct,
+      years_projected: i.yearsProjected,
+      household_avoided_monthly: i.householdAvoidedMonthly,
+      insurance_daily_benefit: i.insuranceDailyBenefit,
+      insurance_benefit_years: i.insuranceBenefitYears,
+      insurance_elimination_days: i.insuranceEliminationDays,
+      selected_setting: i.selectedSetting,
+      annual_household_income: i.annualIncome
+    },
+    outputs: {
+      annual_cost_selected_setting: {home:r.homeAnnual,daycare:r.dayCareAnnual,al:r.alNet,nh:r.nhNet}[i.selectedSetting],
+      home_care_annual: r.homeAnnual,
+      home_care_monthly: r.homeMonthly,
+      day_care_annual: r.dayCareAnnual,
+      day_care_monthly: r.dayMonthly,
+      assisted_living_annual: r.alAnnual,
+      assisted_living_monthly_out: r.alMonthlyOut,
+      assisted_living_net: r.alNet,
+      nursing_home_annual: r.nhAnnual,
+      nursing_home_monthly_out: r.nhMonthlyOut,
+      nursing_home_net: r.nhNet,
+      crossover_hours_vs_al: r.zeroHomeHours ? null : (r.noCrossoverAL ? null : r.crossHoursAL),
+      crossover_hours_vs_nh: r.zeroHomeHours ? null : (r.noCrossoverNH ? null : r.crossHoursNH),
+      projected_total_selected_setting: r.selectedProjectedTotal,
+      insurance_benefit_applied: r.insurancePaid,
+      out_of_pocket_total: r.outOfPocketTotal,
+      lowest_modeled_cost_setting: r.lowestSetting,
+      cost_as_share_of_income_bp: r.costAsShareOfIncomeBp
+    },
+    downstream_handoff_candidates: ["167-medicaid-spend-down-modeler"],
+    data_sources: [
+      "CareScout / Genworth Cost of Care survey medians, 2026, user-overridable"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/long_term_care";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-180";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['ltc_cost_estimate_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-180_ltc-cost-estimator_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+const MANIFEST = {
+  "tool_id": "166-ltc-cost-estimator",
+  "al_id": "AL-180",
+  "version": "1.0.0",
+  "title": "Long-Term Care Cost Estimator",
+  "description": "Compares what care actually costs across four settings: paid help at home, adult day care, assisted living, and a nursing home, correctly crediting facility settings (but not home settings) for avoided household costs, with a crossover-hours calculation and an insurance offset. Deterministic, zero external data. Policy Mandate: ltc_cost_estimate_record.",
+  "category": "long_term_care",
+  "journeys": [],
+  "personas": ["adult child arranging care for a parent", "couple planning for future care", "LTC insurance shopper"],
+  "tags": ["long-term-care","home-health-aide","assisted-living","nursing-home","care-costs","ltc-insurance","cost-inflation"],
+  "status": "active",
+  "maintenance": "T2",
+  "data_vintage": "2026 (national median care costs, survey based, user-overridable)",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["ltc_cost_estimate_record"],
+  "downstream_handoff_candidates": ["167-medicaid-spend-down-modeler"],
+  "regulatory_citations": [
+    "CareScout / Genworth Cost of Care survey medians, 2026, user-overridable, not a statutory schedule"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "home_care_hourly": { "type": "number" },
+      "hours_per_week": { "type": "integer" },
+      "assisted_living_monthly": { "type": "number" },
+      "nursing_home_semi_private": { "type": "number" }
+    },
+    "required": []
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "home_care_annual": { "type": "number" },
+      "assisted_living_net": { "type": "number" },
+      "nursing_home_net": { "type": "number" },
+      "crossover_hours_vs_al": { "type": ["integer","null"] },
+      "lowest_modeled_cost_setting": { "type": "string" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "ltc_cost_estimator",
+    "description": "Compares care costs across home care, adult day care, assisted living, and a nursing home, crediting facility settings for avoided household costs and reporting the crossover hours where a facility becomes cheaper. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "home_care_hourly": { "type": "number" },
+        "hours_per_week": { "type": "integer" }
+      },
+      "required": []
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>
