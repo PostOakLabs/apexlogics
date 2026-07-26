@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ISO 20022 Message Lineage · ApexLogics Showcase</title>
+  <meta name="description" content="Checks a settlement instruction's identifying fields, including IBAN check digits, against ISO 20022 structural rules and stamps the result into a verifiable hash. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/showcase/iso20022-message-lint/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <!-- KEEP VERBATIM: Google Fonts link -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* KEEP VERBATIM: design tokens */
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    /* KEEP VERBATIM: nav chrome */
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    /* KEEP VERBATIM: page shell + PII banner */
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    /* Hero */
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    /* Cards + fields */
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], input[type="text"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    /* Results */
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+
+    /* Verdict banner */
+    .verdict-card { background: var(--surface2); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; }
+    .verdict-card.ok { border-left-color: var(--green); }
+    .verdict-card.warn { border-left-color: var(--amber); }
+    .verdict-card.no { border-left-color: var(--red); }
+    .verdict-big { font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 600; margin-bottom: 6px; }
+    .verdict-big.ok { color: var(--green); }
+    .verdict-big.warn { color: var(--amber); }
+    .verdict-big.no { color: var(--red); }
+    .verdict-sub { color: var(--text-muted); font-size: 0.86rem; }
+
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; text-align: right; }
+
+    .hash-line { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); margin-top: 12px; word-break: break-all; }
+
+    /* KEEP VERBATIM: export row (Markdown FIRST, Policy Mandate SECOND) */
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    /* KEEP VERBATIM: footer */
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    /* KEEP VERBATIM: mfst disclosure */
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<!-- ══ KEEP VERBATIM: NAV ══ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+      <a href="../index.html" class="nav-pill">&#x2190; Showcase Gallery</a>
+    </div>
+  </div>
+</nav>
+<!-- ══ END NAV ══ -->
+
+<div class="tool-wrapper">
+
+  <!-- KEEP VERBATIM: PII banner -->
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">OCG-Industries Showcase · Cluster ⑥ Payments and Financial Infrastructure</p>
+  <h1 class="tool-title">ISO 20022 Message<br>Lineage</h1>
+  <p class="tool-desc">A settlement message that gets rejected on structure costs a day and a phone call. Enter the identifying fields of a payment instruction and this tool checks each one against its published structural rule, including the IBAN check digits, then binds the result and the message into a single lineage key. Re-running the same fields reproduces the same findings and the same hash, so a message that passed can be shown to have passed against a stated rule set.</p>
+  <p class="tool-vintage">Data vintage: 2026</p>
+
+  <div class="card">
+    <div class="card-title">Inputs <span class="badge">STEP 1</span></div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="msgId">Message Identifier</label>
+        <input type="text" id="msgId" value="MSGID20260723001" maxlength="35" />
+        <span class="field-hint">The instruction identifier, up to 35 characters.</span>
+      </div>
+      <div class="field">
+        <label for="endToEndId">End to End Identifier</label>
+        <input type="text" id="endToEndId" value="E2E-INV-88213" maxlength="35" />
+      </div>
+      <div class="field">
+        <label for="debtorBic">Debtor Agent BIC</label>
+        <input type="text" id="debtorBic" value="CHASUS33XXX" maxlength="11" />
+      </div>
+      <div class="field">
+        <label for="debtorIban">Debtor Account IBAN</label>
+        <input type="text" id="debtorIban" value="GB29NWBK60161331926819" maxlength="34" />
+      </div>
+      <div class="field">
+        <label for="currency">Settlement Currency Code</label>
+        <input type="text" id="currency" value="USD" maxlength="3" />
+      </div>
+      <div class="field">
+        <label for="amountCents">Settlement Amount (minor units)</label>
+        <input type="number" id="amountCents" value="150000" min="0" step="1" />
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Lint Message →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="verdict-card" id="verdictCard">
+      <div class="verdict-big" id="verdictBig">--</div>
+      <div class="verdict-sub" id="verdictSub">--</div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Checks Failed</div>
+        <div class="metric-val" id="rFailCount">--</div>
+        <div class="metric-note">Out of 6 structural checks</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">First Failure</div>
+        <div class="metric-val amber" id="rFirstFailure">--</div>
+        <div class="metric-note">Checked in order: msg id, e2e id, BIC, IBAN, currency, amount</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">IBAN Country</div>
+        <div class="metric-val accent" id="rIbanCountry">--</div>
+        <div class="metric-note">First two characters of the IBAN</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">Message identifier valid</span><span class="row-val" id="dMsgOk">--</span></div>
+      <div class="row"><span class="row-label">End to end identifier valid</span><span class="row-val" id="dE2eOk">--</span></div>
+      <div class="row"><span class="row-label">BIC structurally valid</span><span class="row-val" id="dBicOk">--</span></div>
+      <div class="row"><span class="row-label">IBAN check digit valid</span><span class="row-val" id="dIbanOk">--</span></div>
+      <div class="row"><span class="row-label">Currency code valid</span><span class="row-val" id="dCcyOk">--</span></div>
+      <div class="row"><span class="row-label">Amount valid</span><span class="row-val" id="dAmountOk">--</span></div>
+      <div class="row"><span class="row-label">Lineage key</span><span class="row-val" id="dKey">--</span></div>
+      <div class="hash-line" id="hashLine"></div>
+
+      <!-- KEEP VERBATIM: export row -->
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- KEEP VERBATIM: mfst disclosure -->
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · SC-29 · Data: ISO 20022 message structure · ISO 13616-1 IBAN, ISO 7064 MOD 97-10
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+/* KEEP VERBATIM: helpers */
+const $ = id => document.getElementById(id);
+
+/* Bundle-wide helpers, reused verbatim */
+function fingerprint(str){ var h=5381,s=String(str).toUpperCase(); for(var i=0;i<s.length;i++) h=((Math.imul(h,33)+s.charCodeAt(i))&0x7fffffff); return h; }
+function alnum(raw){ return String(raw==null?'':raw).toUpperCase().replace(/[^A-Z0-9]/g,''); }
+
+/* ISO 13616-1 / ISO 7064 MOD 97-10 IBAN check, integer safe */
+function ibanCheck(raw){
+  var s = alnum(raw);
+  if (s.length < 15 || s.length > 34) return false;
+  var r = s.slice(4) + s.slice(0,4), acc = 0;
+  for (var i=0;i<r.length;i++){
+    var c = r.charCodeAt(i), part;
+    if (c >= 65 && c <= 90) part = String(c - 55); else part = String.fromCharCode(c);
+    for (var j=0;j<part.length;j++) acc = (acc * 10 + (part.charCodeAt(j) - 48)) % 97;
+  }
+  return acc === 1;
+}
+
+/* ── TOOL identity ─────────────────────────────────────────────────────────── */
+var TOOL = {
+  al_id: 'SC-29',
+  tool_id: 'sc-iso20022-message-lint',
+  mcp_name: 'iso20022_message_lint',
+  mandate_type: 'org.apexlogics/iso20022_message_lint',
+  ap2_mandate_type: 'iso20022_message_lint_record',
+  chain: 'showcase-iso20022-message-lint',
+  cluster: 'payments',
+  tool_name: 'ISO 20022 Message Lineage',
+  source_card: 'https://ainumbers.co/chaingraph/ocg-industries.html#c6-3',
+  data_vintage: '2026'
+};
+
+/* ── CORE MATH ─────────────────────────────────────────────────────────────── */
+/* Pure, synchronous, deterministic structural checks only. */
+function calculate() {
+  const msgIdRaw     = String($('msgId').value || '').trim();
+  const e2eIdRaw      = String($('endToEndId').value || '').trim();
+  const debtorBic      = String($('debtorBic').value || '').trim();
+  const debtorIban      = String($('debtorIban').value || '').trim();
+  const currencyRaw      = String($('currency').value || '').trim();
+
+  let amountCents = parseInt($('amountCents').value, 10);
+  if (!Number.isFinite(amountCents)) amountCents = 0;
+
+  const msgIdOk = msgIdRaw.length >= 1 && msgIdRaw.length <= 35;
+  const e2eOk   = e2eIdRaw.length >= 1 && e2eIdRaw.length <= 35;
+
+  const bicAlnum = alnum(debtorBic);
+  const bicOk = (bicAlnum.length === 8 || bicAlnum.length === 11) && /^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(bicAlnum);
+
+  const ccyAlnum = alnum(currencyRaw);
+  const ccyOk = /^[A-Z]{3}$/.test(ccyAlnum);
+
+  const amountOk = Number.isInteger(amountCents) && amountCents > 0;
+
+  const ibanOk = ibanCheck(debtorIban);
+  const ibanAlnum = alnum(debtorIban);
+  const ibanCountry = ibanAlnum.length >= 2 ? ibanAlnum.slice(0,2) : 'none';
+
+  const checks = [
+    ['msg_id', msgIdOk],
+    ['end_to_end_id', e2eOk],
+    ['bic', bicOk],
+    ['iban', ibanOk],
+    ['currency', ccyOk],
+    ['amount', amountOk]
+  ];
+  const failCount = checks.filter(c => !c[1]).length;
+  const passed = failCount === 0;
+  let firstFailure = 'none';
+  for (const c of checks) { if (!c[1]) { firstFailure = c[0]; break; } }
+
+  const lineageKey = fingerprint(msgIdRaw + '|' + e2eIdRaw + '|' + bicAlnum + '|' + ibanAlnum + '|' + ccyAlnum + '|' + amountCents);
+
+  _lastInputs  = { msgIdRaw, e2eIdRaw, debtorBic, debtorIban, currencyRaw, amountCents, bicAlnum, ibanAlnum, ccyAlnum, ibanCountry };
+  _lastResults = { msgIdOk, e2eOk, bicOk, ibanOk, ccyOk, amountOk, failCount, firstFailure, passed, lineageKey };
+
+  render();
+
+  (async () => {
+    try {
+      const payload = buildDomainPayload(_lastInputs, _lastResults);
+      const hash = await apexHash(payload.policy_parameters, payload.output_payload);
+      $('hashLine').textContent = 'execution_hash: ' + hash;
+    } catch (_e) {}
+  })();
+}
+
+function render() {
+  const i = _lastInputs, r = _lastResults;
+  const verdictClass = r.passed ? 'ok' : 'no';
+
+  $('verdictCard').className = 'verdict-card ' + verdictClass;
+  $('verdictBig').className  = 'verdict-big ' + verdictClass;
+  $('verdictBig').textContent = r.passed ? '✓ Structure valid' : '✗ Structure rejected';
+  $('verdictSub').textContent = 'First failure: ' + r.firstFailure + ' · ' + r.failCount + '/6 checks failed · lineage key ' + r.lineageKey;
+
+  $('rFailCount').textContent    = r.failCount + ' / 6';
+  $('rFailCount').className      = 'metric-val ' + (r.failCount === 0 ? 'green' : 'red');
+  $('rFirstFailure').textContent = r.firstFailure;
+  $('rIbanCountry').textContent  = i.ibanCountry;
+
+  $('dMsgOk').textContent    = r.msgIdOk ? 'Yes' : 'No';
+  $('dE2eOk').textContent    = r.e2eOk ? 'Yes' : 'No';
+  $('dBicOk').textContent    = r.bicOk ? 'Yes' : 'No';
+  $('dIbanOk').textContent   = r.ibanOk ? 'Yes' : 'No';
+  $('dCcyOk').textContent    = r.ccyOk ? 'Yes' : 'No';
+  $('dAmountOk').textContent = r.amountOk ? 'Yes' : 'No';
+  $('dKey').textContent      = r.lineageKey;
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const lines = [
+    '# ISO 20022 Message Lineage Results',
+    '\n_AL-ID SC-29 · apexlogics.org showcase_\n',
+    '## Inputs',
+    '| Field | Value |', '|---|---|',
+    `| Message identifier | ${i.msgIdRaw || '(none)'} |`,
+    `| End to end identifier | ${i.e2eIdRaw || '(none)'} |`,
+    `| Debtor agent BIC | ${i.debtorBic || '(none)'} |`,
+    `| Debtor account IBAN | ${i.debtorIban || '(none)'} |`,
+    `| Settlement currency | ${i.currencyRaw || '(none)'} |`,
+    `| Settlement amount (minor units) | ${i.amountCents} |`,
+    '\n## Results',
+    `- **Structure valid:** ${r.passed ? 'Yes' : 'No'}`,
+    `- **Checks failed:** ${r.failCount} / 6`,
+    `- **First failure:** ${r.firstFailure}`,
+    `- **IBAN country:** ${i.ibanCountry}`,
+    `- **Lineage key:** ${r.lineageKey}`,
+    '\n---',
+    '_ISO 20022 message structure. ISO 13616-1 IBAN, ISO 7064 MOD 97-10._'
+  ];
+  dlFile('iso20022-message-lint.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── Shared domain payload builder ──────────────────────────────────────────── */
+function buildDomainPayload(i, r) {
+  const payload = {
+    mandate_type: 'iso20022_message_lint_record',
+    al_id: TOOL.al_id,
+    tool_id: TOOL.tool_id,
+    tool_name: TOOL.tool_name,
+    inputs: {
+      msg_id: i.msgIdRaw,
+      end_to_end_id: i.e2eIdRaw,
+      debtor_bic: i.debtorBic,
+      debtor_iban: i.debtorIban,
+      currency: i.currencyRaw,
+      amount_cents: i.amountCents
+    },
+    outputs: {
+      msg_id: i.msgIdRaw,
+      end_to_end_id: i.e2eIdRaw,
+      iban_country: i.ibanCountry,
+      currency_normalized: i.ccyAlnum,
+      amount_cents: i.amountCents,
+      msg_id_ok: r.msgIdOk,
+      e2e_ok: r.e2eOk,
+      bic_ok: r.bicOk,
+      iban_ok: r.ibanOk,
+      ccy_ok: r.ccyOk,
+      amount_ok: r.amountOk,
+      fail_count: r.failCount,
+      first_failure: r.firstFailure,
+      passed: r.passed,
+      lineage_key: r.lineageKey
+    },
+    downstream_handoff_candidates: ['sc-reconciliation-evidence'],
+    data_sources: ['ISO 20022 message structure', 'ISO 13616-1 IBAN, ISO 7064 MOD 97-10'],
+    license: 'CC-BY-4.0'
+  };
+
+  payload.chaingraph_version = '0.4.0';
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = TOOL.mandate_type;
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get('ap2');
+    if (_cgIn) {
+      const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) {
+        payload.chain = {
+          parent_hashes: [_cgP.execution_hash],
+          parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null],
+          chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1
+        };
+      }
+    }
+  } catch (_e) {}
+
+  const _cgDomain = {};
+  for (const _k in payload) {
+    if (['chaingraph_version','ap2_mandate_type','mandate_type','tool_id','tool_version','al_id','generated_at','tool_name','chain','policy_parameters','output_payload','compliance_flags','audit_signature','execution_hash'].indexOf(_k) === -1) {
+      _cgDomain[_k] = payload[_k];
+    }
+  }
+  payload.policy_parameters = { execution_backend: 'js', hash_precision: 'integer_checksum', inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  return payload;
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+
+  const payload = buildDomainPayload(_lastInputs, _lastResults);
+
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  payload.generated_at = new Date().toISOString();
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  payload.tool_version = '1.0.0';
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE.
+     Validate the SNAPSHOT, not the relocated payload.
+     ══════════════════════════════════════════════════════════════════════════ */
+  const _cgPreval = Object.assign({}, payload);
+
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['iso20022_message_lint_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`SC-29_iso20022-message-lint_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, OCG Standard §4 canonical execution hash ──────── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* MANIFEST, mirrors manifest.json in substance */
+const MANIFEST = {
+  "tool_id": "sc29-iso20022-message-lint",
+  "al_id": "SC-29",
+  "version": "1.0.0",
+  "title": "ISO 20022 Message Lineage",
+  "description": "Given the identifying fields of a payment instruction, checks each against ISO 20022 structural rules including IBAN check digits, and stamps the result. Deterministic, zero external data. Policy Mandate v2.0: iso20022_message_lint_record.",
+  "category": "showcase",
+  "cluster": "payments",
+  "tags": ["payments","iso20022","iban","structural-validation","showcase"],
+  "status": "showcase",
+  "maintenance": "zero",
+  "data_vintage": "2026",
+  "frozen_baseline": true,
+  "ap2_export": true,
+  "ap2_mandate_types": ["iso20022_message_lint_record"],
+  "downstream_handoff_candidates": ["sc-reconciliation-evidence"],
+  "regulatory_citations": ["ISO 20022 message structure", "ISO 13616-1 IBAN, ISO 7064 MOD 97-10"],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "msg_id": { "type": "string" },
+      "end_to_end_id": { "type": "string" },
+      "debtor_bic": { "type": "string" },
+      "debtor_iban": { "type": "string" },
+      "currency": { "type": "string" },
+      "amount_cents": { "type": "integer" }
+    },
+    "required": ["msg_id","debtor_bic","debtor_iban","currency"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "passed": { "type": "boolean" },
+      "fail_count": { "type": "integer" },
+      "first_failure": { "type": "string" },
+      "lineage_key": { "type": "integer" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "iso20022_message_lint",
+    "description": "Given identifying fields of a payment instruction, checks structural validity including IBAN check digits and returns a pass/fail with first failure. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "msg_id": { "type": "string" },
+        "end_to_end_id": { "type": "string" },
+        "debtor_bic": { "type": "string" },
+        "debtor_iban": { "type": "string" },
+        "currency": { "type": "string" },
+        "amount_cents": { "type": "integer" }
+      },
+      "required": ["msg_id","debtor_bic","debtor_iban","currency"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "source_card": "https://ainumbers.co/chaingraph/ocg-industries.html#c6-3",
+  "license": "CC-BY-4.0"
+};
+
+/* KEEP VERBATIM: mfst toggle */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

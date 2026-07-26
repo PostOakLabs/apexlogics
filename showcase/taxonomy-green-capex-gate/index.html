@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<!--
+  ══════════════════════════════════════════════════════════════════════════════
+  APEX LOGICS, SC-107 EU-Taxonomy Green-CapEx Gate
+  Built from SSOT-TEMPLATE.html. Only REPLACE slots were edited.
+  ══════════════════════════════════════════════════════════════════════════════
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EU-Taxonomy Green-CapEx Gate · ApexLogics SC-107</title>
+  <meta name="description" content="Enter one activity's EU Taxonomy screening checklist and CapEx and score its alignment tier, green-CapEx ratio, and gaps against a frozen integer weight vector. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/showcase/taxonomy-green-capex-gate/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <!-- KEEP VERBATIM: Google Fonts link -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* KEEP VERBATIM: design tokens (CONTRACT Appendix A). */
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    /* KEEP VERBATIM: nav chrome ─────────────────────────────────────────── */
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    /* KEEP VERBATIM: page shell + PII banner */
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    /* Hero */
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    /* Cards + fields */
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], input[type="text"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    /* Results */
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .verdict { border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; border: 1px solid var(--border); }
+    .verdict.ok { background: rgba(52,211,153,0.08); border-color: var(--green); }
+    .verdict.no { background: rgba(248,113,113,0.08); border-color: var(--red); }
+    .verdict.warn { background: rgba(251,191,36,0.08); border-color: var(--amber); }
+    .verdict-big { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 600; margin-bottom: 6px; }
+    .verdict.ok .verdict-big { color: var(--green); }
+    .verdict.no .verdict-big { color: var(--red); }
+    .verdict.warn .verdict-big { color: var(--amber); }
+    .verdict-sub { color: var(--text-muted); font-size: 0.86rem; }
+    .gap-list { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(167,139,250,0.12); font-size: 0.8rem; color: var(--text-muted); }
+    .gap-list ul { margin: 6px 0 0 18px; }
+    .gate-note { font-size: 0.72rem; color: var(--text-dim); margin-top: 10px; font-family: 'JetBrains Mono', monospace; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; text-align: right; }
+    .hash-line { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); margin-top: 14px; word-break: break-all; }
+
+    /* KEEP VERBATIM: export row (Markdown FIRST, Policy Mandate SECOND) */
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    /* KEEP VERBATIM: footer */
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    /* KEEP VERBATIM: mfst disclosure */
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<!-- ══ KEEP VERBATIM: NAV, do not edit anything between here and </nav> ══ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+      <a href="../index.html" class="nav-pill">&#x2190; Showcase Gallery</a>
+    </div>
+  </div>
+</nav>
+<!-- ══ END NAV ══ -->
+
+<div class="tool-wrapper">
+
+  <!-- KEEP VERBATIM: PII banner. -->
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">OCG-Industries Showcase · Cluster ⑲ Energy, Grid and Carbon</p>
+  <h1 class="tool-title">EU-Taxonomy<br>Green-CapEx Gate</h1>
+  <p class="tool-desc">Taxonomy alignment and green asset ratios now sit inside audited reporting, so the alignment call needs a trail rather than a memo. Enter one activity's screening checklist and its CapEx, and this page scores the screen against a frozen integer weight vector, routes an alignment tier, computes the green-CapEx ratio in basis points, and stamps it with a reproducible hash.</p>
+  <p class="tool-vintage">Data: Reg. (EU) 2020/852 (EU Taxonomy) · editorial screen v1</p>
+
+  <div class="card">
+    <div class="card-title">Activity Screen <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="activityCapexCents">CapEx for this activity (cents)</label>
+        <input type="number" id="activityCapexCents" value="10000000" min="0" step="1" />
+      </div>
+      <div class="field">
+        <label for="totalCapexCents">Total CapEx in the denominator (cents)</label>
+        <input type="number" id="totalCapexCents" value="100000000" min="0" step="1" />
+      </div>
+      <div class="field">
+        <label for="substantialContribution">Substantial-contribution criterion evidenced</label>
+        <select id="substantialContribution">
+          <option value="yes" selected>Yes</option>
+          <option value="no">No</option>
+        </select>
+        <span class="field-hint">Worth 40 of 100 points</span>
+      </div>
+      <div class="field">
+        <label for="dnshScreensPassed">DNSH screens passed (of 5)</label>
+        <input type="number" id="dnshScreensPassed" value="5" min="0" max="5" step="1" />
+        <span class="field-hint">Scales linearly up to 20 of 100 points</span>
+      </div>
+      <div class="field">
+        <label for="minimumSafeguards">Minimum safeguards evidenced</label>
+        <select id="minimumSafeguards">
+          <option value="yes" selected>Yes</option>
+          <option value="no">No</option>
+        </select>
+        <span class="field-hint">Worth 20 of 100 points</span>
+      </div>
+      <div class="field">
+        <label for="technicalScreeningEvidenced">Technical screening criteria documented</label>
+        <select id="technicalScreeningEvidenced">
+          <option value="yes" selected>Yes</option>
+          <option value="no">No</option>
+        </select>
+        <span class="field-hint">Worth 20 of 100 points</span>
+      </div>
+      <div class="field">
+        <label for="upstreamAlignmentKey">Upstream alignment-screen reference (optional)</label>
+        <input type="text" id="upstreamAlignmentKey" value="" placeholder="Reference or hash, leave blank if none" />
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Score Alignment →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="verdict" id="verdict">
+      <div class="verdict-big" id="verdictBig">--</div>
+      <div class="verdict-sub" id="verdictSub">--</div>
+      <div class="gap-list" id="gapList" style="display:none;"></div>
+      <div class="gate-note">aligned is an output field and conditional UI. It reflects the frozen weight vector shown above, not an auditor's or a regulator's determination.</div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Alignment Score</div>
+        <div class="metric-val accent" id="rScore">--</div>
+        <div class="metric-note">Out of 100, frozen weight vector</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Green-CapEx Ratio</div>
+        <div class="metric-val green" id="rRatio">--</div>
+        <div class="metric-note">Aligned CapEx over total CapEx</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Tier</div>
+        <div class="metric-val amber" id="rTier">--</div>
+        <div class="metric-note">aligned, eligible_not_aligned, out_of_scope</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">Activity CapEx</span><span class="row-val" id="dActivityCapex">--</span></div>
+      <div class="row"><span class="row-label">Total CapEx</span><span class="row-val" id="dTotalCapex">--</span></div>
+      <div class="row"><span class="row-label">Substantial contribution</span><span class="row-val" id="dSubstantial">--</span></div>
+      <div class="row"><span class="row-label">DNSH screens passed</span><span class="row-val" id="dDnsh">--</span></div>
+      <div class="row"><span class="row-label">Minimum safeguards</span><span class="row-val" id="dSafeguards">--</span></div>
+      <div class="row"><span class="row-label">Technical screening documented</span><span class="row-val" id="dTechnical">--</span></div>
+      <div class="row"><span class="row-label">Eligible</span><span class="row-val" id="dEligible">--</span></div>
+      <div class="row"><span class="row-label">Aligned CapEx</span><span class="row-val" id="dAlignedCapex">--</span></div>
+      <div class="row"><span class="row-label">Upstream reference</span><span class="row-val" id="dUpstream">--</span></div>
+      <div class="row"><span class="row-label">Screen key</span><span class="row-val" id="dScreenKey">--</span></div>
+      <div class="hash-line" id="hashLine"></div>
+
+      <!-- KEEP VERBATIM: export row. Markdown FIRST, Policy Mandate SECOND. -->
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+    <p class="metric-note" style="margin-top:10px;">The weight vector and cutpoints are an Apex Logics editorial model of published screening criteria, shown in full so you can check them. No assurance opinion, no regulatory advice, hash-verifiable only.</p>
+
+  </div>
+
+  <!-- KEEP VERBATIM: mfst disclosure block -->
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · SC-107 · Data: Reg. (EU) 2020/852 (EU Taxonomy) · editorial screen v1
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+/* KEEP VERBATIM: helpers */
+const $   = id => document.getElementById(id);
+
+/* Shared fingerprint fn, pasted verbatim per bundle determinism conventions. */
+function fingerprint(str){ var h=5381,s=String(str).toUpperCase(); for(var i=0;i<s.length;i++) h=((Math.imul(h,33)+s.charCodeAt(i))&0x7fffffff); return h; }
+
+/* ── CORE MATH ─────────────────────────────────────────────────────────────── */
+/* REPLACE: compute() body. Frozen integer weights, Math.floor division only. */
+function calculate() {
+  const yn = id => $(id).value === 'yes';
+
+  let activityCapexCents = parseInt($('activityCapexCents').value, 10);
+  if (!Number.isFinite(activityCapexCents)) activityCapexCents = 0;
+  activityCapexCents = Math.max(0, activityCapexCents);
+
+  let totalCapexCents = parseInt($('totalCapexCents').value, 10);
+  if (!Number.isFinite(totalCapexCents)) totalCapexCents = 0;
+  totalCapexCents = Math.max(0, totalCapexCents);
+
+  const substantialContribution = yn('substantialContribution');
+
+  let dnshScreensPassed = parseInt($('dnshScreensPassed').value, 10);
+  if (!Number.isFinite(dnshScreensPassed)) dnshScreensPassed = 0;
+  dnshScreensPassed = Math.max(0, Math.min(5, dnshScreensPassed));
+
+  const minimumSafeguards = yn('minimumSafeguards');
+  const technicalScreeningEvidenced = yn('technicalScreeningEvidenced');
+
+  const upstreamAlignmentKey = String($('upstreamAlignmentKey').value == null ? '' : $('upstreamAlignmentKey').value).trim();
+
+  /* Weights, declared and shown to the reader:
+     substantial_contribution 40, dnsh 20, minimum_safeguards 20, technical_screening 20 */
+  const dnshPoints = Math.floor(dnshScreensPassed * 20 / 5);
+  const alignmentScore = (substantialContribution ? 40 : 0) + dnshPoints + (minimumSafeguards ? 20 : 0) + (technicalScreeningEvidenced ? 20 : 0);
+  const alignmentBp = alignmentScore * 100;
+  const aligned = alignmentScore >= 90 && substantialContribution && minimumSafeguards;
+  const eligible = substantialContribution || technicalScreeningEvidenced;
+  const alignedCapexCents = aligned ? activityCapexCents : 0;
+  const greenCapexRatioBp = totalCapexCents > 0 ? Math.floor(alignedCapexCents * 10000 / totalCapexCents) : 0;
+  const tier = aligned ? 'aligned' : (eligible ? 'eligible_not_aligned' : 'out_of_scope');
+
+  /* fixed declaration order, never sorted at runtime by value */
+  const gaps = [];
+  if (!substantialContribution) gaps.push('substantial_contribution');
+  if (dnshScreensPassed < 5) gaps.push('dnsh_screens');
+  if (!minimumSafeguards) gaps.push('minimum_safeguards');
+  if (!technicalScreeningEvidenced) gaps.push('technical_screening');
+
+  const screenKey = fingerprint(activityCapexCents + '|' + substantialContribution + '|' + dnshScreensPassed + '|' + minimumSafeguards + '|' + technicalScreeningEvidenced);
+
+  _lastInputs = {
+    activityCapexCents, totalCapexCents, substantialContribution, dnshScreensPassed, minimumSafeguards, technicalScreeningEvidenced, upstreamAlignmentKey
+  };
+  _lastResults = {
+    alignmentScore, alignmentBp, dnshPoints, eligible, aligned, alignedCapexCents, greenCapexRatioBp, tier, gaps, screenKey,
+    upstreamReference: upstreamAlignmentKey || 'none'
+  };
+
+  render();
+}
+
+/* REPLACE: render() body, write results into the markup above. */
+function render() {
+  const i = _lastInputs, r = _lastResults;
+
+  const v = $('verdict');
+  if (r.tier === 'aligned') {
+    v.className = 'verdict ok';
+    $('verdictBig').textContent = '✓ Taxonomy-aligned activity';
+  } else if (r.tier === 'eligible_not_aligned') {
+    v.className = 'verdict warn';
+    $('verdictBig').textContent = '⚠ Eligible, not aligned';
+  } else {
+    v.className = 'verdict no';
+    $('verdictBig').textContent = '✗ Out of scope';
+  }
+  $('verdictSub').textContent = r.alignmentScore + ' / 100 · green-CapEx ratio ' + (r.greenCapexRatioBp / 100).toFixed(2) + '% · ' + r.gaps.length + ' gap' + (r.gaps.length === 1 ? '' : 's');
+
+  const gapList = $('gapList');
+  if (r.tier !== 'aligned' && r.gaps.length) {
+    gapList.style.display = 'block';
+    gapList.innerHTML = 'Failed criteria:<ul>' + r.gaps.map(g => '<li>' + g + '</li>').join('') + '</ul>';
+  } else {
+    gapList.style.display = 'none';
+    gapList.innerHTML = '';
+  }
+
+  $('rScore').textContent = r.alignmentScore + ' / 100';
+  $('rRatio').textContent = (r.greenCapexRatioBp / 100).toFixed(2) + '%';
+  $('rTier').textContent  = r.tier;
+
+  $('dActivityCapex').textContent = '$' + (i.activityCapexCents / 100).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  $('dTotalCapex').textContent = '$' + (i.totalCapexCents / 100).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  $('dSubstantial').textContent = i.substantialContribution ? 'Yes' : 'No';
+  $('dDnsh').textContent = i.dnshScreensPassed + ' / 5';
+  $('dSafeguards').textContent = i.minimumSafeguards ? 'Yes' : 'No';
+  $('dTechnical').textContent = i.technicalScreeningEvidenced ? 'Yes' : 'No';
+  $('dEligible').textContent = r.eligible ? 'Yes' : 'No';
+  $('dAlignedCapex').textContent = '$' + (r.alignedCapexCents / 100).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  $('dUpstream').textContent = r.upstreamReference;
+  $('dScreenKey').textContent = String(r.screenKey);
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  $('hashLine').textContent = '';
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# EU-Taxonomy Green-CapEx Gate Results',
+    `\n_Generated ${d} · SC-107 · apexlogics.org_\n`,
+    '## Screen',
+    '| Field | Value |', '|---|---|',
+    `| Activity CapEx | $${(i.activityCapexCents/100).toFixed(2)} |`,
+    `| Total CapEx | $${(i.totalCapexCents/100).toFixed(2)} |`,
+    `| Substantial contribution evidenced | ${i.substantialContribution ? 'Yes' : 'No'} |`,
+    `| DNSH screens passed | ${i.dnshScreensPassed} / 5 |`,
+    `| Minimum safeguards evidenced | ${i.minimumSafeguards ? 'Yes' : 'No'} |`,
+    `| Technical screening documented | ${i.technicalScreeningEvidenced ? 'Yes' : 'No'} |`,
+    '\n## Results',
+    `- **Alignment score:** ${r.alignmentScore} / 100`,
+    `- **Green-CapEx ratio:** ${(r.greenCapexRatioBp/100).toFixed(2)}%`,
+    `- **Tier:** ${r.tier}`,
+    `- **Eligible:** ${r.eligible ? 'Yes' : 'No'}`,
+    `- **Gaps:** ${r.gaps.length ? r.gaps.join(', ') : 'none'}`,
+    `- **Upstream reference:** ${r.upstreamReference}`,
+    '\n---',
+    '_Source: Reg. (EU) 2020/852 (EU Taxonomy), editorial screen v1. No assurance opinion, no regulatory advice, hash-verifiable only._'
+  ];
+  dlFile('taxonomy-green-capex-gate.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+/* The ORDER of the steps below is non-negotiable. Edit field VALUES only.
+   Never emit ap2_version. */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  /* STEP 1, REPLACE: domain payload */
+  const payload = {
+    mandate_type: "taxonomy_green_capex_record",
+    generated_at: new Date().toISOString(),
+    al_id: "SC-107",
+    tool_id: "sc107-taxonomy-green-capex-gate",
+    tool_name: "EU-Taxonomy Green-CapEx Gate",
+    inputs: {
+      activity_capex_cents: i.activityCapexCents,
+      total_capex_cents: i.totalCapexCents,
+      substantial_contribution: i.substantialContribution,
+      dnsh_screens_passed: i.dnshScreensPassed,
+      minimum_safeguards: i.minimumSafeguards,
+      technical_screening_evidenced: i.technicalScreeningEvidenced
+    },
+    outputs: {
+      alignment_score: r.alignmentScore,
+      alignment_bp: r.alignmentBp,
+      dnsh_points: r.dnshPoints,
+      eligible: r.eligible,
+      aligned: r.aligned,
+      aligned_capex_cents: r.alignedCapexCents,
+      green_capex_ratio_bp: r.greenCapexRatioBp,
+      tier: r.tier,
+      gaps: r.gaps,
+      screen_key: r.screenKey,
+      upstream_reference: r.upstreamReference
+    },
+    downstream_handoff_candidates: [],
+    data_sources: [
+      "Reg. (EU) 2020/852 (EU Taxonomy)",
+      "Apex Logics editorial screen v1"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  /* STEP 2, KEEP VERBATIM: OpenChainGraph L1 + L2 (parent capture via ?ap2=) */
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/taxonomy_green_capex_gate";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "SC-107";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  /* STEP 3, KEEP VERBATIM: build _cgDomain by excluding envelope keys */
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "integer_checksum", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  /* STEP 4, KEEP VERBATIM: canonical execution hash */
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  /* STEP 5, KEEP VERBATIM: OCG v0.4 envelope fields (hash-excluded, additive) */
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     STEP 6, SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE.
+     ══════════════════════════════════════════════════════════════════════════ */
+  const _cgPreval = Object.assign({}, payload);
+
+  /* STEP 7, KEEP VERBATIM: relocate non-allowed keys into hash-excluded apex_meta */
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  /* STEP 8, validate the SNAPSHOT, then and only then create the object URL. */
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['taxonomy_green_capex_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  /* update the on-page hash line */
+  $('hashLine').textContent = 'execution_hash: ' + payload.execution_hash;
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`SC-107_taxonomy-green-capex-gate_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, CHAINGRAPH §6 EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* REPLACE: MANIFEST, must match the tool's manifest.json byte for byte in substance. */
+const MANIFEST = {
+  "tool_id": "sc107-taxonomy-green-capex-gate",
+  "al_id": "SC-107",
+  "version": "1.0.0",
+  "title": "EU-Taxonomy Green-CapEx Gate",
+  "description": "Given one activity's EU Taxonomy screening checklist (substantial contribution, DNSH screens passed, minimum safeguards, technical screening) and its CapEx, computes an alignment score from a frozen integer weight vector, an alignment tier, the green-CapEx ratio in basis points, and the exact list of failed criteria. Deterministic, zero external data beyond the editorial screen. Policy Mandate: taxonomy_green_capex_record.",
+  "category": "showcase",
+  "journeys": [],
+  "personas": ["sustainability-finance lead"],
+  "tags": ["energy", "carbon", "eu-taxonomy", "showcase", "zero-PII"],
+  "status": "showcase",
+  "maintenance": "zero",
+  "data_vintage": "Reg. (EU) 2020/852 (EU Taxonomy), editorial screen v1",
+  "frozen_baseline": true,
+  "ap2_export": true,
+  "ap2_mandate_types": ["taxonomy_green_capex_record"],
+  "downstream_handoff_candidates": [],
+  "regulatory_citations": [
+    "Reg. (EU) 2020/852 (EU Taxonomy)"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "activity_capex_cents": { "type": "integer", "minimum": 0 },
+      "total_capex_cents": { "type": "integer", "minimum": 0 },
+      "substantial_contribution": { "type": "boolean" },
+      "dnsh_screens_passed": { "type": "integer", "minimum": 0, "maximum": 5 },
+      "minimum_safeguards": { "type": "boolean" },
+      "technical_screening_evidenced": { "type": "boolean" },
+      "upstream_alignment_key": { "type": "string" }
+    },
+    "required": ["activity_capex_cents","total_capex_cents","substantial_contribution","dnsh_screens_passed","minimum_safeguards","technical_screening_evidenced"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "alignment_score": { "type": "integer" },
+      "alignment_bp": { "type": "integer" },
+      "dnsh_points": { "type": "integer" },
+      "eligible": { "type": "boolean" },
+      "aligned": { "type": "boolean" },
+      "aligned_capex_cents": { "type": "integer" },
+      "green_capex_ratio_bp": { "type": "integer" },
+      "tier": { "type": "string", "enum": ["aligned","eligible_not_aligned","out_of_scope"] },
+      "gaps": { "type": "array", "items": { "type": "string" } },
+      "screen_key": { "type": "integer" },
+      "upstream_reference": { "type": "string" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "taxonomy_green_capex_gate",
+    "description": "Given one activity's EU Taxonomy screening checklist and CapEx, returns an alignment score from a frozen weight vector, an alignment tier, the green-CapEx ratio, and the exact list of failed criteria. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "activity_capex_cents": { "type": "integer", "minimum": 0 },
+        "total_capex_cents": { "type": "integer", "minimum": 0 },
+        "substantial_contribution": { "type": "boolean" },
+        "dnsh_screens_passed": { "type": "integer", "minimum": 0, "maximum": 5 },
+        "minimum_safeguards": { "type": "boolean" },
+        "technical_screening_evidenced": { "type": "boolean" }
+      },
+      "required": ["activity_capex_cents","total_capex_cents","substantial_contribution","dnsh_screens_passed","minimum_safeguards","technical_screening_evidenced"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+/* KEEP VERBATIM: MCP / MANIFEST TOGGLE (standardized, additive) */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

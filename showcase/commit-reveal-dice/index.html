@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Commit and Reveal Dice · Apex Logics Showcase</title>
+  <meta name="description" content="Enter a commitment and a reveal, and this tool recomputes the commitment and derives the roll deterministically from the revealed values, so a player cannot re-roll after seeing the outcome. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/showcase/commit-reveal-dice/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #60A5FA; --accent-dim: rgba(96,165,250,0.18); --accent-low: rgba(96,165,250,0.08);
+      --border: rgba(96,165,250,0.18); --border-focus: #60A5FA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field.full { grid-column: 1 / -1; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="text"], input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; font-weight: 500; word-break: break-all; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(96,165,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; word-break: break-all; text-align: right; }
+    .hash-line { font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; color: var(--text-dim); margin-top: 14px; word-break: break-all; }
+    .gate-note { font-size: 0.78rem; color: var(--text-muted); margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 12px; }
+
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<!-- ══ NAV ══ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+      <a href="../index.html" class="nav-pill">&#x2190; Showcase Gallery</a>
+    </div>
+  </div>
+</nav>
+<!-- ══ END NAV ══ -->
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">OCG-Industries Showcase · Cluster ② Gaming and Interactive</p>
+  <h1 class="tool-title">Commit and Reveal Dice</h1>
+  <p class="tool-desc">In a play-by-post game there is nobody holding the dice. Commit and reveal fixes that. A player publishes a commitment first, then reveals the secret behind it, and anyone can recompute the commitment to confirm nothing changed after the outcome was known. Enter a commitment and a reveal here, and this page recomputes the commitment and derives the roll deterministically from the revealed values.</p>
+  <p class="tool-vintage">Data: no external data</p>
+
+  <div class="card">
+    <div class="card-title">Inputs <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="tableId">Table identifier</label>
+        <input type="text" id="tableId" value="table-crimson-oath" />
+      </div>
+      <div class="field">
+        <label for="playerHandle">Player handle</label>
+        <input type="text" id="playerHandle" value="ranger_kestrel" />
+        <span class="field-hint">Self-asserted. This page does not verify identity.</span>
+      </div>
+      <div class="field">
+        <label for="turnIndex">Turn index</label>
+        <input type="number" id="turnIndex" value="1" min="0" max="100000" step="1" />
+      </div>
+      <div class="field">
+        <label for="publishedCommitment">Published commitment</label>
+        <input type="text" id="publishedCommitment" value="" />
+        <span class="field-hint">The commitment the player posted before rolling. Leave blank to generate one from the reveal below.</span>
+      </div>
+      <div class="field">
+        <label for="revealedSecret">Revealed secret</label>
+        <input type="text" id="revealedSecret" value="oak-lantern-49" />
+      </div>
+      <div class="field">
+        <label for="dieSides">Die sides</label>
+        <input type="number" id="dieSides" value="20" min="2" max="1000" step="1" />
+      </div>
+      <div class="field">
+        <label for="diceCount">Number of dice</label>
+        <input type="number" id="diceCount" value="1" min="1" max="20" step="1" />
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Reveal and Derive Roll →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Reveal Status</div>
+        <div class="metric-val" id="rStatus">--</div>
+        <div class="metric-note" id="rStatusNote">Valid when the reveal matches the published commitment, or no commitment was supplied</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Rolls</div>
+        <div class="metric-val accent" id="rRolls">--</div>
+        <div class="metric-note">Derived from the commitment, one value per die</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Total</div>
+        <div class="metric-val accent" id="rTotal">--</div>
+        <div class="metric-note">Sum of the revealed rolls, zero on a failed reveal</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">Table identifier</span><span class="row-val" id="dTableId">--</span></div>
+      <div class="row"><span class="row-label">Player handle</span><span class="row-val" id="dPlayerHandle">--</span></div>
+      <div class="row"><span class="row-label">Turn index</span><span class="row-val" id="dTurnIndex">--</span></div>
+      <div class="row"><span class="row-label">Computed commitment</span><span class="row-val" id="dComputedCommitment">--</span></div>
+      <div class="row"><span class="row-label">Commitment match</span><span class="row-val" id="dCommitmentMatch">--</span></div>
+      <div class="row"><span class="row-label">Die sides / count</span><span class="row-val" id="dDieConfig">--</span></div>
+      <div class="row"><span class="row-label">Revealed rolls</span><span class="row-val" id="dRevealedRolls">--</span></div>
+      <div class="row"><span class="row-label">Revealed total</span><span class="row-val" id="dRevealedTotal">--</span></div>
+      <div class="row"><span class="row-label">Turn key</span><span class="row-val" id="dTurnKey">--</span></div>
+
+      <div class="hash-line" id="hashLine">execution_hash: --</div>
+      <div class="gate-note" id="gateNote">The commitment here is a fingerprint, not a cryptographic commitment scheme with hiding guarantees, and player identity is self-asserted. It demonstrates the commit and reveal shape, not a production randomness beacon. Try changing one character of the revealed secret and watch the commitment fail.</div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate Record v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · SC-10 · Data: no external data
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+/* KEEP VERBATIM: helpers */
+const $   = id => document.getElementById(id);
+
+/* KEEP VERBATIM: bundle-wide fingerprint helper */
+function fingerprint(str){ var h=5381,s=String(str).toUpperCase(); for(var i=0;i<s.length;i++) h=((Math.imul(h,33)+s.charCodeAt(i))&0x7fffffff); return h; }
+
+/* ── CORE LOGIC: pure, synchronous, deterministic ────────────────────────────── */
+function calculate() {
+  const t = raw => String(raw == null ? '' : raw).trim();
+
+  const table_id = t($('tableId').value);
+  const player_handle = t($('playerHandle').value);
+
+  let turn_index = parseInt($('turnIndex').value, 10);
+  if (!Number.isFinite(turn_index)) turn_index = 1;
+  if (turn_index < 0) turn_index = 0;
+  if (turn_index > 100000) turn_index = 100000;
+
+  const published_commitment = t($('publishedCommitment').value);
+  const revealed_secret = t($('revealedSecret').value);
+
+  let die_sides = parseInt($('dieSides').value, 10);
+  if (!Number.isFinite(die_sides)) die_sides = 20;
+  if (die_sides < 2) die_sides = 2;
+  if (die_sides > 1000) die_sides = 1000;
+
+  let dice_count = parseInt($('diceCount').value, 10);
+  if (!Number.isFinite(dice_count)) dice_count = 1;
+  if (dice_count < 1) dice_count = 1;
+  if (dice_count > 20) dice_count = 20;
+
+  const computed_commitment = fingerprint(table_id + "|" + player_handle + "|" + turn_index + "|" + revealed_secret);
+  const commitment_supplied = (published_commitment !== "");
+  const commitment_match = !commitment_supplied ? "not_checked" : (String(computed_commitment) === published_commitment ? "match" : "mismatch");
+
+  var acc = computed_commitment;
+  var rolls = [];
+  for (var j = 0; j < dice_count; j++) {
+    acc = fingerprint(acc + "|" + j);
+    rolls.push((acc % die_sides) + 1);
+  }
+  const roll_csv = rolls.join(",");
+  const roll_total = rolls.reduce((a,b) => a+b, 0);
+
+  const roll_valid = (commitment_match !== "mismatch");
+  const revealed_total = roll_valid ? roll_total : 0;
+  const revealed_rolls = roll_valid ? roll_csv : "none";
+
+  const turn_key = fingerprint(table_id + "|" + turn_index + "|" + computed_commitment);
+
+  _lastInputs  = { table_id, player_handle, turn_index, published_commitment, revealed_secret, die_sides, dice_count };
+  _lastResults = { table_id, player_handle, turn_index, computed_commitment, commitment_match, die_sides, dice_count, revealed_rolls, revealed_total, roll_valid, turn_key };
+
+  render();
+}
+
+function render() {
+  const i = _lastInputs, r = _lastResults;
+
+  if (r.roll_valid) {
+    $('rStatus').textContent = (r.commitment_match === 'match') ? '✓ Reveal matches commitment' : '✓ Commitment generated';
+    $('rStatus').className = 'metric-val green';
+    $('rStatusNote').textContent = 'Rolls: ' + r.revealed_rolls + ' · total ' + r.revealed_total;
+  } else {
+    $('rStatus').textContent = '✗ Reveal does not match';
+    $('rStatus').className = 'metric-val red';
+    $('rStatusNote').textContent = 'The published commitment does not recompute from the revealed secret, so this roll cannot be accepted.';
+  }
+
+  $('rRolls').textContent = r.revealed_rolls;
+  $('rTotal').textContent = String(r.revealed_total);
+
+  $('dTableId').textContent            = i.table_id === '' ? '(none)' : i.table_id;
+  $('dPlayerHandle').textContent        = i.player_handle === '' ? '(none)' : i.player_handle;
+  $('dTurnIndex').textContent           = String(i.turn_index);
+  $('dComputedCommitment').textContent  = String(r.computed_commitment);
+  $('dCommitmentMatch').textContent     = r.commitment_match;
+  $('dDieConfig').textContent           = r.die_sides + ' sides × ' + r.dice_count + ' dice';
+  $('dRevealedRolls').textContent       = r.revealed_rolls;
+  $('dRevealedTotal').textContent       = String(r.revealed_total);
+  $('dTurnKey').textContent             = String(r.turn_key);
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  updateHashLine(i, r);
+}
+
+/* Live hash preview shown on the page; the same preimage shape is re-derived
+   inside exportAP2() at export time via the canonical apexHash step order. */
+async function updateHashLine(i, r) {
+  try {
+    const pp = { execution_backend: 'js', hash_precision: 'integer_checksum', inputs: { table_id: i.table_id, player_handle: i.player_handle, turn_index: i.turn_index, die_sides: i.die_sides, dice_count: i.dice_count } };
+    const op = { table_id: r.table_id, player_handle: r.player_handle, turn_index: r.turn_index, computed_commitment: r.computed_commitment, commitment_match: r.commitment_match, die_sides: r.die_sides, dice_count: r.dice_count, revealed_rolls: r.revealed_rolls, revealed_total: r.revealed_total, roll_valid: r.roll_valid, turn_key: r.turn_key };
+    const h = await apexHash(pp, op);
+    $('hashLine').textContent = 'execution_hash: ' + h;
+  } catch (_e) {
+    $('hashLine').textContent = 'execution_hash: (unavailable)';
+  }
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Commit and Reveal Dice Results',
+    `\n_Generated ${d} · SC-10 · apexlogics.org_\n`,
+    '## Inputs',
+    '| Field | Value |', '|---|---|',
+    `| Table identifier | ${i.table_id === '' ? '(none)' : i.table_id} |`,
+    `| Player handle | ${i.player_handle === '' ? '(none)' : i.player_handle} |`,
+    `| Turn index | ${i.turn_index} |`,
+    `| Published commitment | ${i.published_commitment === '' ? '(none, generated)' : i.published_commitment} |`,
+    `| Die sides / count | ${i.die_sides} / ${i.dice_count} |`,
+    '\n## Results',
+    `- **Reveal status:** ${r.roll_valid ? (r.commitment_match === 'match' ? 'Reveal matches commitment' : 'Commitment generated') : 'Reveal does not match'}`,
+    `- **Computed commitment:** ${r.computed_commitment}`,
+    `- **Revealed rolls:** ${r.revealed_rolls}`,
+    `- **Revealed total:** ${r.revealed_total}`,
+    `- **Turn key:** ${r.turn_key}`,
+    '\n---',
+    '_Source: no external data. The commitment here is a fingerprint, not a cryptographic commitment scheme with hiding guarantees, and player identity is self-asserted._'
+  ];
+  dlFile('commit-reveal-dice.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (Policy Mandate Record + OpenChainGraph) ─────────── */
+/* The ORDER of the steps below is non-negotiable. Edit field VALUES only.
+   Never emit ap2_version. */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  /* STEP 1: domain payload */
+  const payload = {
+    mandate_type: "commit_reveal_dice_record",
+    generated_at: new Date().toISOString(),
+    al_id: "SC-10",
+    tool_id: "sc10-commit-reveal-dice",
+    tool_name: "Commit and Reveal Dice",
+    inputs: {
+      table_id: i.table_id,
+      player_handle: i.player_handle,
+      turn_index: i.turn_index,
+      die_sides: i.die_sides,
+      dice_count: i.dice_count
+    },
+    outputs: {
+      table_id: r.table_id,
+      player_handle: r.player_handle,
+      turn_index: r.turn_index,
+      computed_commitment: r.computed_commitment,
+      commitment_match: r.commitment_match,
+      die_sides: r.die_sides,
+      dice_count: r.dice_count,
+      revealed_rolls: r.revealed_rolls,
+      revealed_total: r.revealed_total,
+      roll_valid: r.roll_valid,
+      turn_key: r.turn_key
+    },
+    downstream_handoff_candidates: ["sc10-commit-reveal-dice"],
+    data_sources: ["no external data"],
+    license: "CC-BY-4.0"
+  };
+
+  /* STEP 2, KEEP VERBATIM: OpenChainGraph L1 + L2 (parent capture via ?ap2=) */
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/commit_reveal_dice";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "SC-10";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  /* STEP 3, KEEP VERBATIM: build _cgDomain by excluding envelope keys */
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "integer_checksum", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  /* STEP 4, KEEP VERBATIM: canonical execution hash */
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  /* STEP 5, KEEP VERBATIM: OCG v0.4 envelope fields (hash-excluded, additive) */
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     STEP 6, SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE.
+     ══════════════════════════════════════════════════════════════════════════ */
+  const _cgPreval = Object.assign({}, payload);
+
+  /* STEP 7, KEEP VERBATIM: relocate non-allowed keys into hash-excluded apex_meta */
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  /* STEP 8, validate the SNAPSHOT, then and only then create the object URL. */
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['commit_reveal_dice_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`SC-10_commit-reveal-dice_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, OCG Standard §4 canonical execution hash ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* MANIFEST, mirrors manifest.json byte for byte in substance */
+const MANIFEST = {
+  "tool_id": "sc10-commit-reveal-dice",
+  "al_id": "SC-10",
+  "version": "1.0.0",
+  "title": "Commit and Reveal Dice",
+  "description": "Given a table id, player handle, turn index, an optional published commitment, a revealed secret, and dice configuration, recomputes the commitment from the revealed values, checks it against any published commitment, and derives a deterministic roll sequence. A mismatched reveal suppresses the outcome. Deterministic, zero external data. Policy Mandate type: commit_reveal_dice_record.",
+  "category": "showcase",
+  "journeys": [],
+  "personas": [],
+  "tags": ["showcase","gaming","commit-reveal","provenance"],
+  "status": "showcase",
+  "maintenance": "zero",
+  "data_vintage": "no external data",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["commit_reveal_dice_record"],
+  "downstream_handoff_candidates": ["sc10-commit-reveal-dice"],
+  "regulatory_citations": [
+    "no external data"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "table_id":               { "type": "string" },
+      "player_handle":          { "type": "string" },
+      "turn_index":             { "type": "integer" },
+      "published_commitment":   { "type": "string" },
+      "revealed_secret":        { "type": "string" },
+      "die_sides":              { "type": "integer" },
+      "dice_count":             { "type": "integer" }
+    },
+    "required": ["table_id","revealed_secret"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "table_id":              { "type": "string" },
+      "player_handle":         { "type": "string" },
+      "turn_index":            { "type": "integer" },
+      "computed_commitment":   { "type": "integer" },
+      "commitment_match":      { "type": "string" },
+      "die_sides":             { "type": "integer" },
+      "dice_count":            { "type": "integer" },
+      "revealed_rolls":        { "type": "string" },
+      "revealed_total":        { "type": "integer" },
+      "roll_valid":            { "type": "boolean" },
+      "turn_key":              { "type": "integer" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "commit_reveal_dice",
+    "description": "Given a table id, player handle, turn index, an optional published commitment, and a revealed secret, recomputes the commitment and derives a deterministic dice roll. A mismatched reveal suppresses the outcome. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "table_id":               { "type": "string" },
+        "player_handle":          { "type": "string" },
+        "turn_index":             { "type": "integer" },
+        "published_commitment":   { "type": "string" },
+        "revealed_secret":        { "type": "string" },
+        "die_sides":              { "type": "integer" },
+        "dice_count":             { "type": "integer" }
+      },
+      "required": ["table_id","revealed_secret"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0",
+  "source_card": "https://ainumbers.co/chaingraph/ocg-industries.html#c2-4",
+  "cluster": "gaming-interactive",
+  "chain": "showcase-commit-reveal-dice",
+  "mandate_type": "org.apexlogics/commit_reveal_dice"
+};
+
+/* KEEP VERBATIM: MCP / MANIFEST TOGGLE */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

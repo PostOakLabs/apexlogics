@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Annual Gift Exclusion Strategy · ApexLogics</title>
+  <meta name="description" content="Models a multi-year gifting plan across any number of recipients, including gift splitting between spouses and the five-year education account election, and shows what portion spills over into the lifetime exemption. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/tools/165-annual-gift-exclusion-strategy/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .subgroup { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin: 18px 0 10px; }
+    .subgroup:first-of-type { margin-top: 0; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .field.checkbox-field { flex-direction: row; align-items: center; gap: 8px; }
+    .field.checkbox-field input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); }
+    .field.checkbox-field label { margin: 0; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.35rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+
+    .disclaimer { background: rgba(248,113,113,.06); border: 1px solid rgba(248,113,113,.35); border-left: 3px solid var(--red); border-radius: 6px; padding: .85rem 1rem; font-size: .8rem; color: var(--text-muted); margin-bottom: 16px; }
+    .caveat-note { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; padding: .7rem 1rem; font-size: .78rem; color: var(--text-muted); margin-bottom: 16px; display: none; }
+    .caveat-note.visible { display: block; }
+    .warn-note { background: rgba(251,191,36,.06); border: 1px solid rgba(251,191,36,.35); border-left: 3px solid var(--amber); border-radius: 6px; padding: .7rem 1rem; font-size: .78rem; color: var(--text-muted); margin-bottom: 16px; display: none; }
+    .warn-note.visible { display: block; }
+
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">Estate Planning · Lifetime Gifting</p>
+  <h1 class="tool-title">Annual Gift Exclusion<br>Strategy</h1>
+  <p class="tool-desc">The annual gift exclusion lets you give a set amount to each recipient every year without filing a gift tax return or touching your lifetime exemption. This models a multi-year gifting plan across any number of recipients, including gift splitting between spouses and the five-year election for education accounts, and shows what portion spills over into the lifetime exemption.</p>
+  <p class="tool-vintage">Data: 2026 (annual exclusion $19,000; non-citizen spouse $194,000; exemption $15M/$30M, permanent)</p>
+
+  <div class="card">
+    <div class="card-title">Gifting Plan <span class="badge">STEP 1</span></div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="annualExclusion">Annual exclusion per recipient ($)</label>
+        <input type="number" id="annualExclusion" value="19000" min="0" max="1000000" step="500" />
+        <span class="field-hint">2026 amount. Indexed in future years. Overridable.</span>
+      </div>
+      <div class="field checkbox-field">
+        <input type="checkbox" id="giftSplitting" checked />
+        <label for="giftSplitting">Gift splitting with a spouse</label>
+      </div>
+      <div class="field"></div>
+      <div class="field">
+        <label for="recipientCount">Number of recipients</label>
+        <input type="number" id="recipientCount" value="4" min="0" max="500" step="1" />
+        <span class="field-hint">Children, grandchildren, anyone.</span>
+      </div>
+      <div class="field">
+        <label for="plannedGift">Planned gift per recipient per year ($)</label>
+        <input type="number" id="plannedGift" value="25000" min="0" max="10000000" step="1000" />
+        <span class="field-hint">Enter what you intend to give, not the limit.</span>
+      </div>
+      <div class="field">
+        <label for="years">Years in the plan</label>
+        <input type="number" id="years" value="10" min="0" max="60" step="1" />
+      </div>
+      <div class="field">
+        <label for="growthRatePct">Annual growth rate on gifted assets (%/yr)</label>
+        <input type="number" id="growthRatePct" value="5.0" min="0" max="30" step="0.1" />
+        <span class="field-hint">For the removed-from-estate projection.</span>
+      </div>
+      <div class="field">
+        <label for="lifetimeExemption">Lifetime exemption available ($)</label>
+        <input type="number" id="lifetimeExemption" value="15000000" min="0" max="100000000" step="100000" />
+        <span class="field-hint">Per donor. Overridable.</span>
+      </div>
+      <div class="field">
+        <label for="lifetimeUsed">Lifetime exemption already used ($)</label>
+        <input type="number" id="lifetimeUsed" value="0" min="0" max="100000000" step="10000" />
+        <span class="field-hint">Prior taxable gifts.</span>
+      </div>
+    </div>
+
+    <div class="subgroup">Non-citizen spouse</div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="spouseGift">Gift to a non-US-citizen spouse ($/yr)</label>
+        <input type="number" id="spouseGift" value="0" min="0" max="10000000" step="1000" />
+        <span class="field-hint">Uses a separate, larger annual exclusion.</span>
+      </div>
+      <div class="field">
+        <label for="nonCitizenExclusion">Non-citizen spouse annual exclusion ($)</label>
+        <input type="number" id="nonCitizenExclusion" value="194000" min="0" max="1000000" step="1000" />
+        <span class="field-hint">2026 amount. Overridable.</span>
+      </div>
+      <div class="field"></div>
+    </div>
+
+    <div class="subgroup">Five-year education account election</div>
+    <div class="form-grid three">
+      <div class="field checkbox-field">
+        <input type="checkbox" id="fiveYearElection" />
+        <label for="fiveYearElection">Use the five-year education account election</label>
+      </div>
+      <div class="field">
+        <label for="fiveYearBeneficiaries">Number of beneficiaries in the five-year election</label>
+        <input type="number" id="fiveYearBeneficiaries" value="2" min="0" max="500" step="1" />
+      </div>
+      <div class="field">
+        <label for="frontLoadPerBeneficiary">Front-loaded amount per beneficiary ($)</label>
+        <input type="number" id="frontLoadPerBeneficiary" value="95000" min="0" max="10000000" step="1000" />
+        <span class="field-hint">Five times the annual exclusion is the ceiling per donor.</span>
+      </div>
+    </div>
+
+    <div class="subgroup">Direct payments and estate context</div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="directPayments">Direct tuition and medical payments ($/yr)</label>
+        <input type="number" id="directPayments" value="0" min="0" max="10000000" step="1000" />
+        <span class="field-hint">Paid directly to the institution, unlimited and outside the exclusion entirely.</span>
+      </div>
+      <div class="field checkbox-field">
+        <input type="checkbox" id="estateAboveExemption" />
+        <label for="estateAboveExemption">My estate is above the federal exemption</label>
+      </div>
+      <div class="field"></div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Model the Gifting Plan →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="disclaimer">This is an illustrative estimate, not legal or tax advice. Estate outcomes depend on state law, titling, and beneficiary designations. Consult an estate attorney.</div>
+    <div class="warn-note" id="warnNote"></div>
+    <div class="caveat-note" id="edgeNote" style="display:none"></div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Total Transferred Over the Plan</div>
+        <div class="metric-val accent" id="rTotalTransferred">--</div>
+        <div class="metric-note">All gifts plus direct payments, undiscounted</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Value Removed From the Estate</div>
+        <div class="metric-val green" id="rEstateRemoved">--</div>
+        <div class="metric-note">Cumulative gifts, compounded at the assumed growth rate</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Lifetime Exemption Remaining</div>
+        <div class="metric-val amber" id="rExemptionRemaining">--</div>
+        <div class="metric-note" id="rForm709Note">Form 709 filing indicated</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">Effective annual exclusion per recipient</span><span class="row-val" id="dEffectiveExclusion">--</span></div>
+      <div class="row"><span class="row-label">Excluded amount per recipient per year</span><span class="row-val" id="dExcludedPortion">--</span></div>
+      <div class="row"><span class="row-label">Taxable gift per recipient per year</span><span class="row-val" id="dTaxableGift">--</span></div>
+      <div class="row"><span class="row-label">Cumulative gifted, over the plan</span><span class="row-val" id="dCumulativeGifted">--</span></div>
+      <div class="row"><span class="row-label">Cumulative taxable gifts against the lifetime exemption</span><span class="row-val" id="dCumulativeTaxable">--</span></div>
+      <div class="row" id="rowFiveYear" style="display:none"><span class="row-label">Five-year election total and excess</span><span class="row-val" id="dFiveYear">--</span></div>
+      <div class="row" id="rowSpouse" style="display:none"><span class="row-label">Non-citizen spouse excluded and taxable</span><span class="row-val" id="dSpouse">--</span></div>
+      <div class="row"><span class="row-label">Direct tuition and medical payments</span><span class="row-val" id="dDirectPayments">--</span></div>
+      <div class="row" id="rowEstateTax" style="display:none"><span class="row-label">Estate tax avoided at the top rate</span><span class="row-val" id="dEstateTaxAvoided">--</span></div>
+      <div class="row"><span class="row-label">Per-recipient lifetime total</span><span class="row-val" id="dPerRecipient">--</span></div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-179 · Data: IRS Rev. Proc. 2025-32 (annual exclusion, non-citizen spouse exclusion), OBBBA (lifetime exemption, permanent), IRC §529(c)(2)(B) (five-year election), 2026
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+/* KEEP VERBATIM: helpers */
+const $   = id => document.getElementById(id);
+const fmt = n => (n < 0 ? '-' : '') + '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
+const fmtBp = bp => (bp / 100).toLocaleString('en-US', { maximumFractionDigits: 2 }) + '%';
+
+function numOr(raw, def) {
+  const n = parseFloat(raw);
+  return Number.isFinite(n) ? n : def;
+}
+function dollars(raw, def) {
+  return Math.round(numOr(raw, def));
+}
+
+/* ── CORE MATH ─────────────────────────────────────────────────────────────── */
+function calculate() {
+  const annualExclusion = dollars($('annualExclusion').value, 19000);
+  const giftSplitting = $('giftSplitting').checked;
+  const recipientCount = Math.max(0, Math.round(numOr($('recipientCount').value, 4)));
+  const plannedGift = dollars($('plannedGift').value, 25000);
+  const years = Math.max(0, Math.round(numOr($('years').value, 10)));
+  const growthRatePct = Math.max(0, numOr($('growthRatePct').value, 5.0));
+  const lifetimeExemption = dollars($('lifetimeExemption').value, 15000000);
+  const lifetimeUsed = dollars($('lifetimeUsed').value, 0);
+  const spouseGift = dollars($('spouseGift').value, 0);
+  const nonCitizenExclusion = dollars($('nonCitizenExclusion').value, 194000);
+  const fiveYearElection = $('fiveYearElection').checked;
+  let fiveYearBeneficiaries = Math.max(0, Math.round(numOr($('fiveYearBeneficiaries').value, 2)));
+  const frontLoadPerBeneficiary = dollars($('frontLoadPerBeneficiary').value, 95000);
+  const directPayments = dollars($('directPayments').value, 0);
+  const estateAboveExemption = $('estateAboveExemption').checked;
+
+  const growthBp = Math.round(growthRatePct * 100);
+
+  let warnText = '';
+  if (fiveYearElection && fiveYearBeneficiaries > recipientCount) {
+    warnText = 'The number of five-year election beneficiaries exceeded the number of recipients, which would double-count the same person. It was capped at the recipient count for this run.';
+    fiveYearBeneficiaries = recipientCount;
+  }
+
+  /* step 1-6 */
+  const effectiveExclusion = giftSplitting ? annualExclusion * 2 : annualExclusion;
+  const excludedPortion = Math.min(plannedGift, effectiveExclusion);
+  const taxableGift = Math.max(0, plannedGift - effectiveExclusion);
+  const annualExcluded = excludedPortion * recipientCount;
+  const annualTaxable = taxableGift * recipientCount;
+  const annualTotalGifted = annualExcluded + annualTaxable;
+
+  /* step 7, five-year election */
+  const frontLoadCeiling = annualExclusion * 5 * (giftSplitting ? 2 : 1);
+  const frontLoadExcess = fiveYearElection
+    ? Math.max(0, frontLoadPerBeneficiary - frontLoadCeiling) * fiveYearBeneficiaries
+    : 0;
+  const frontLoadTotal = fiveYearElection ? frontLoadPerBeneficiary * fiveYearBeneficiaries : 0;
+
+  /* ordinary annual gifting for beneficiaries not in the five-year election, for years 1-5 */
+  const remainingRecipients = Math.max(0, recipientCount - (fiveYearElection ? fiveYearBeneficiaries : 0));
+  const annualExcludedExcludingFiveYearBeneficiaries = excludedPortion * remainingRecipients;
+
+  /* step 8, non-citizen spouse */
+  const spouseExcluded = Math.min(spouseGift, nonCitizenExclusion);
+  const spouseTaxable = Math.max(0, spouseGift - nonCitizenExclusion);
+
+  /* step 10, multi-year loop, no fractional exponents */
+  let cumulativeGifted = 0, cumulativeTaxable = 0, growthValue = 0;
+  for (let y = 1; y <= years; y++) {
+    const giftedThisYear = (y <= 5 && fiveYearElection)
+      ? annualExcludedExcludingFiveYearBeneficiaries + (y === 1 ? frontLoadTotal : 0)
+      : annualTotalGifted;
+    cumulativeGifted += Math.round(giftedThisYear);
+    cumulativeTaxable += Math.round(annualTaxable + (y === 1 ? frontLoadExcess : 0));
+    growthValue = Math.round((growthValue + giftedThisYear) * (10000 + growthBp) / 10000);
+  }
+  const estateRemoved = growthValue;
+
+  /* step 11 */
+  const exemptionConsumed = cumulativeTaxable + frontLoadExcess + spouseTaxable;
+  const exemptionOverage = Math.max(0, (lifetimeUsed + exemptionConsumed) - lifetimeExemption);
+  const exemptionRemaining = Math.max(0, lifetimeExemption - lifetimeUsed - exemptionConsumed);
+  const giftTaxOnOverage = Math.round(exemptionOverage * 4000 / 10000);
+
+  /* step 12 */
+  const form709Required = (annualTaxable > 0) || giftSplitting || fiveYearElection || (spouseTaxable > 0);
+
+  /* step 13, suppressed unless estate is above the exemption */
+  const estateTaxAvoidedAtTopRate = estateAboveExemption ? Math.round(estateRemoved * 4000 / 10000) : null;
+
+  /* step 14 */
+  const perRecipientLifetimeTotal = Math.round(cumulativeGifted / Math.max(1, recipientCount));
+
+  /* total transferred, headline: gifts plus direct payments, undiscounted, includes spouse gift and front-load year-1 handling captured via cumulativeGifted already; add spouse + direct on top */
+  const totalTransferred = cumulativeGifted + (spouseExcluded + spouseTaxable) * years + directPayments * years;
+
+  _lastInputs = {
+    annualExclusion, giftSplitting, recipientCount, plannedGift, years, growthRatePct,
+    lifetimeExemption, lifetimeUsed, spouseGift, nonCitizenExclusion, fiveYearElection,
+    fiveYearBeneficiaries, frontLoadPerBeneficiary, directPayments, estateAboveExemption
+  };
+  _lastResults = {
+    warnText, effectiveExclusion, excludedPortion, taxableGift, annualExcluded, annualTaxable,
+    annualTotalGifted, frontLoadCeiling, frontLoadExcess, frontLoadTotal, spouseExcluded, spouseTaxable,
+    cumulativeGifted, cumulativeTaxable, estateRemoved, exemptionConsumed, exemptionOverage,
+    exemptionRemaining, giftTaxOnOverage, form709Required, estateTaxAvoidedAtTopRate,
+    perRecipientLifetimeTotal, totalTransferred,
+    zeroRecipients: recipientCount === 0, zeroYears: years === 0
+  };
+
+  render();
+}
+
+function render() {
+  const i = _lastInputs, r = _lastResults;
+
+  $('rTotalTransferred').textContent = fmt(r.totalTransferred);
+  $('rEstateRemoved').textContent = fmt(r.estateRemoved);
+  $('rExemptionRemaining').textContent = fmt(r.exemptionRemaining);
+  $('rForm709Note').textContent = 'Form 709 filing indicated: ' + (r.form709Required ? 'Yes' : 'No') + ' (factual filing observation, not advice)';
+
+  if (r.warnText) { $('warnNote').textContent = r.warnText; $('warnNote').classList.add('visible'); }
+  else { $('warnNote').classList.remove('visible'); }
+
+  let notes = [];
+  if (r.zeroRecipients) notes.push('Zero recipients entered. All outputs are 0 and the multi-year loop is skipped.');
+  if (r.zeroYears) notes.push('Zero years entered. All cumulative outputs are 0.');
+  if (r.taxableGift === 0 && !i.giftSplitting && !i.fiveYearElection && i.plannedGift > 0) notes.push('The planned gift sits at or below the exclusion. No return is indicated on the ordinary annual gifts alone, and any unused exclusion for the year does not carry forward.');
+  if (i.fiveYearElection && r.frontLoadExcess > 0) notes.push('The front-loaded amount per beneficiary exceeds the five-year ceiling. The excess lands on the lifetime exemption in year one, shown explicitly rather than silently capped.');
+  if (!i.estateAboveExemption) notes.push('The estate-tax-avoided row is suppressed because the estate was not marked as above the federal exemption. Showing an estate tax saving to an estate that owes no estate tax would be misleading.');
+  if (r.exemptionOverage > 0) notes.push('Cumulative gifts exceed the lifetime exemption entered. Exemption remaining floors at 0, and the overage is subject to gift tax at the top rate: ' + fmt(r.giftTaxOnOverage) + '.');
+  if (i.spouseGift > 0 && r.spouseTaxable === 0) notes.push('The non-citizen spouse gift sits at or below the special exclusion, which is a separate and smaller allowance than the unlimited marital deduction available to a US citizen spouse.');
+  if (i.directPayments > 0 && i.plannedGift === 0 && i.spouseGift === 0) notes.push('Every exclusion output is 0 because only direct tuition and medical payments were entered. Direct payments made straight to the institution are not gifts for these purposes and never touch the exclusion or exemption arithmetic.');
+
+  if (notes.length) { $('edgeNote').textContent = notes.join(' '); $('edgeNote').style.display = 'block'; }
+  else { $('edgeNote').style.display = 'none'; }
+
+  $('dEffectiveExclusion').textContent = fmt(r.effectiveExclusion);
+  $('dExcludedPortion').textContent = fmt(r.excludedPortion);
+  $('dTaxableGift').textContent = fmt(r.taxableGift);
+  $('dCumulativeGifted').textContent = fmt(r.cumulativeGifted);
+  $('dCumulativeTaxable').textContent = fmt(r.cumulativeTaxable);
+
+  if (i.fiveYearElection) {
+    $('rowFiveYear').style.display = 'flex';
+    $('dFiveYear').textContent = fmt(r.frontLoadTotal) + (r.frontLoadExcess > 0 ? ', excess ' + fmt(r.frontLoadExcess) : ', no excess');
+  } else {
+    $('rowFiveYear').style.display = 'none';
+  }
+
+  if (i.spouseGift > 0) {
+    $('rowSpouse').style.display = 'flex';
+    $('dSpouse').textContent = 'excluded ' + fmt(r.spouseExcluded) + ', taxable ' + fmt(r.spouseTaxable);
+  } else {
+    $('rowSpouse').style.display = 'none';
+  }
+
+  $('dDirectPayments').textContent = fmt(i.directPayments) + '/yr';
+
+  if (r.estateTaxAvoidedAtTopRate !== null) {
+    $('rowEstateTax').style.display = 'flex';
+    $('dEstateTaxAvoided').textContent = fmt(r.estateTaxAvoidedAtTopRate);
+  } else {
+    $('rowEstateTax').style.display = 'none';
+  }
+
+  $('dPerRecipient').textContent = fmt(r.perRecipientLifetimeTotal);
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Annual Gift Exclusion Strategy Results',
+    `\n_Generated ${d} · AL-179 · apexlogics.org_\n`,
+    '## Inputs',
+    '| Field | Value |', '|---|---|',
+    `| Annual exclusion per recipient | ${fmt(i.annualExclusion)} |`,
+    `| Gift splitting with a spouse | ${i.giftSplitting ? 'Yes' : 'No'} |`,
+    `| Number of recipients | ${i.recipientCount} |`,
+    `| Planned gift per recipient per year | ${fmt(i.plannedGift)} |`,
+    `| Years in the plan | ${i.years} |`,
+    `| Annual growth rate on gifted assets | ${i.growthRatePct}%/yr |`,
+    `| Lifetime exemption available | ${fmt(i.lifetimeExemption)} |`,
+    `| Lifetime exemption already used | ${fmt(i.lifetimeUsed)} |`,
+    `| Gift to a non-US-citizen spouse | ${fmt(i.spouseGift)}/yr |`,
+    `| Non-citizen spouse annual exclusion | ${fmt(i.nonCitizenExclusion)} |`,
+    `| Use the five-year education account election | ${i.fiveYearElection ? 'Yes' : 'No'} |`,
+    `| Number of beneficiaries in the five-year election | ${i.fiveYearBeneficiaries} |`,
+    `| Front-loaded amount per beneficiary | ${fmt(i.frontLoadPerBeneficiary)} |`,
+    `| Direct tuition and medical payments | ${fmt(i.directPayments)}/yr |`,
+    `| Estate above the federal exemption | ${i.estateAboveExemption ? 'Yes' : 'No'} |`,
+    '\n## Results',
+    `- **Total transferred over the plan:** ${fmt(r.totalTransferred)}`,
+    `- **Effective annual exclusion per recipient:** ${fmt(r.effectiveExclusion)}`,
+    `- **Excluded amount per recipient per year:** ${fmt(r.excludedPortion)}`,
+    `- **Taxable gift per recipient per year:** ${fmt(r.taxableGift)}`,
+    `- **Cumulative gifted:** ${fmt(r.cumulativeGifted)}`,
+    `- **Cumulative taxable gifts against the lifetime exemption:** ${fmt(r.cumulativeTaxable)}`,
+    `- **Five-year election total and excess:** ${i.fiveYearElection ? fmt(r.frontLoadTotal) + ', excess ' + fmt(r.frontLoadExcess) : 'not applicable'}`,
+    `- **Non-citizen spouse excluded and taxable:** ${i.spouseGift > 0 ? fmt(r.spouseExcluded) + ' excluded, ' + fmt(r.spouseTaxable) + ' taxable' : 'not applicable'}`,
+    `- **Direct tuition and medical payments:** ${fmt(i.directPayments)}/yr, never netted into the exclusion arithmetic`,
+    `- **Value removed from the estate, including growth:** ${fmt(r.estateRemoved)}`,
+    `- **Lifetime exemption remaining:** ${fmt(r.exemptionRemaining)}`,
+    `- **Estate tax avoided at the top rate:** ${r.estateTaxAvoidedAtTopRate !== null ? fmt(r.estateTaxAvoidedAtTopRate) : 'suppressed, estate not marked as above the federal exemption'}`,
+    `- **Form 709 filing indicated:** ${r.form709Required ? 'Yes' : 'No'}`,
+    `- **Per-recipient lifetime total:** ${fmt(r.perRecipientLifetimeTotal)}`,
+    '\n---',
+    '_This is an illustrative estimate, not legal or tax advice. Estate outcomes depend on state law, titling, and beneficiary designations. Consult an estate attorney._'
+  ];
+  dlFile('annual-gift-exclusion-strategy.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  const payload = {
+    mandate_type: "annual_gift_exclusion_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-179",
+    tool_id: "165-annual-gift-exclusion-strategy",
+    tool_name: "Annual Gift Exclusion Strategy",
+    inputs: {
+      annual_exclusion: i.annualExclusion,
+      gift_splitting: i.giftSplitting,
+      recipient_count: i.recipientCount,
+      planned_gift_per_recipient: i.plannedGift,
+      years_in_plan: i.years,
+      growth_rate_pct: i.growthRatePct,
+      lifetime_exemption_available: i.lifetimeExemption,
+      lifetime_exemption_used: i.lifetimeUsed,
+      non_citizen_spouse_gift: i.spouseGift,
+      non_citizen_spouse_exclusion: i.nonCitizenExclusion,
+      five_year_election: i.fiveYearElection,
+      five_year_beneficiaries: i.fiveYearBeneficiaries,
+      front_load_per_beneficiary: i.frontLoadPerBeneficiary,
+      direct_tuition_medical_payments: i.directPayments,
+      estate_above_federal_exemption: i.estateAboveExemption
+    },
+    outputs: {
+      total_transferred: r.totalTransferred,
+      effective_annual_exclusion: r.effectiveExclusion,
+      excluded_amount_per_year: r.excludedPortion,
+      taxable_gift_per_year: r.taxableGift,
+      cumulative_gifted: r.cumulativeGifted,
+      cumulative_taxable_gifts: r.cumulativeTaxable,
+      five_year_election_total: i.fiveYearElection ? r.frontLoadTotal : null,
+      five_year_election_excess: i.fiveYearElection ? r.frontLoadExcess : null,
+      non_citizen_spouse_excluded: i.spouseGift > 0 ? r.spouseExcluded : null,
+      non_citizen_spouse_taxable: i.spouseGift > 0 ? r.spouseTaxable : null,
+      direct_payments: i.directPayments,
+      value_removed_from_estate: r.estateRemoved,
+      lifetime_exemption_remaining: r.exemptionRemaining,
+      estate_tax_avoided_at_top_rate: r.estateTaxAvoidedAtTopRate,
+      form_709_filing_indicated: r.form709Required,
+      per_recipient_lifetime_total: r.perRecipientLifetimeTotal
+    },
+    downstream_handoff_candidates: ["163-net-estate-probate-exposure", "164-estate-tax-liability"],
+    data_sources: [
+      "IRS Rev. Proc. 2025-32, annual gift tax exclusion and non-citizen spouse exclusion",
+      "OBBBA, lifetime gift and estate exemption, permanent",
+      "IRC §529(c)(2)(B), five-year education account election"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/estate_planning";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-179";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['annual_gift_exclusion_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-179_annual-gift-exclusion-strategy_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+const MANIFEST = {
+  "tool_id": "165-annual-gift-exclusion-strategy",
+  "al_id": "AL-179",
+  "version": "1.0.0",
+  "title": "Annual Gift Exclusion Strategy",
+  "description": "Models a multi-year gifting plan across any number of recipients, including gift splitting between spouses and the five-year education account election, and shows what portion spills over into the lifetime exemption. The estate-tax-avoided row is suppressed unless the user's estate is above the federal exemption. Deterministic, zero external data. Policy Mandate: annual_gift_exclusion_record.",
+  "category": "estate",
+  "journeys": [],
+  "personas": ["grandparent funding education", "parent transferring wealth over time", "couple using gift splitting"],
+  "tags": ["annual-gift-exclusion","gift-splitting","529-superfunding","lifetime-exemption","form-709","estate-planning"],
+  "status": "active",
+  "maintenance": "T2",
+  "data_vintage": "2026 (annual exclusion $19,000; non-citizen spouse $194,000; exemption $15M/$30M, permanent)",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["annual_gift_exclusion_record"],
+  "downstream_handoff_candidates": ["163-net-estate-probate-exposure", "164-estate-tax-liability"],
+  "regulatory_citations": [
+    "IRS Rev. Proc. 2025-32, annual gift tax exclusion and non-citizen spouse exclusion",
+    "OBBBA, lifetime gift and estate exemption, permanent",
+    "IRC §529(c)(2)(B), five-year education account election",
+    "IRC §2001(c), top federal estate tax rate"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "annual_exclusion": { "type": "number" },
+      "gift_splitting": { "type": "boolean" },
+      "recipient_count": { "type": "integer" },
+      "planned_gift_per_recipient": { "type": "number" },
+      "years_in_plan": { "type": "integer" }
+    },
+    "required": ["annual_exclusion","recipient_count","planned_gift_per_recipient","years_in_plan"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "total_transferred": { "type": "number" },
+      "cumulative_gifted": { "type": "number" },
+      "value_removed_from_estate": { "type": "number" },
+      "lifetime_exemption_remaining": { "type": "number" },
+      "form_709_filing_indicated": { "type": "boolean" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "annual_gift_exclusion_strategy",
+    "description": "Models a multi-year gifting plan across any number of recipients, including gift splitting and the five-year education account election, and shows the spillover into the lifetime exemption. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "annual_exclusion": { "type": "number" },
+        "recipient_count": { "type": "integer" },
+        "planned_gift_per_recipient": { "type": "number" },
+        "years_in_plan": { "type": "integer" }
+      },
+      "required": ["annual_exclusion","recipient_count","planned_gift_per_recipient","years_in_plan"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

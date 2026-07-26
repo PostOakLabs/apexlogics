@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IRMAA Bracket Calculator · ApexLogics #150</title>
+  <meta name="description" content="Find your IRMAA tier, this year's Medicare surcharge, and exactly how far you are from the next cliff. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/tools/150-irmaa-bracket-calculator/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], input[type="text"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+
+    /* Tool-specific: notes (additive, not template chrome) */
+    .info-note { margin-top: 14px; padding: 12px 14px; background: rgba(167,139,250,.06); border: 1px solid var(--border); border-radius: 8px; font-size: .78rem; color: var(--text-muted); }
+    .warn-note { margin-top: 14px; padding: 12px 14px; background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.3); border-radius: 8px; font-size: .78rem; color: var(--text-muted); }
+    .checkbox-field { display: flex; align-items: center; gap: 8px; flex-direction: row; }
+    .checkbox-field input { width: auto; }
+    .mfs-sub { display: none; margin-top: 10px; }
+    .mfs-sub.visible { display: block; }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">Retirement · Medicare</p>
+  <h1 class="tool-title">IRMAA Bracket<br>Calculator</h1>
+  <p class="tool-desc">Medicare charges higher earners an income-related monthly adjustment on top of the standard Part B and Part D premiums, and it is set by your tax return from two years ago. Enter that year's income and this tool places you in the right tier, shows the annual cost of the surcharge, and measures exactly how far you are from the next threshold. IRMAA is a cliff, not a slope, so one dollar of extra income can cost hundreds.</p>
+  <p class="tool-vintage">Data: 2026 CMS Parts A &amp; B premiums and deductibles fact sheet</p>
+
+  <div class="card">
+    <div class="card-title">Your Look-Back Income <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="filingStatus">Filing status on the look-back return</label>
+        <select id="filingStatus" onchange="toggleMfsSub()">
+          <option value="Single" selected>Single</option>
+          <option value="MFJ">Married Filing Jointly</option>
+          <option value="MFS">Married Filing Separately</option>
+        </select>
+        <span class="field-hint">MFS uses its own two-tier structure when living apart all year</span>
+      </div>
+      <div class="field mfs-sub" id="mfsSub">
+        <label for="mfsLivingApart">Lived apart from spouse all year?</label>
+        <select id="mfsLivingApart">
+          <option value="yes">Yes, lived apart all year</option>
+          <option value="no">No, lived together at some point</option>
+        </select>
+        <span class="field-hint">If no, the single thresholds apply instead of the MFS two-tier table</span>
+      </div>
+      <div class="field">
+        <label for="agi">Adjusted gross income from the look-back year ($)</label>
+        <input type="number" id="agi" value="95000" min="0" step="1000" />
+        <span class="field-hint">For 2026 premiums this is your 2024 return</span>
+      </div>
+      <div class="field">
+        <label for="taxExemptInterest">Tax-exempt interest from the look-back year ($)</label>
+        <input type="number" id="taxExemptInterest" value="0" min="0" step="100" />
+        <span class="field-hint">Added back to make MAGI. Municipal bond interest counts.</span>
+      </div>
+      <div class="field">
+        <label for="enrollees">Medicare enrollees in the household</label>
+        <select id="enrollees">
+          <option value="1" selected>1</option>
+          <option value="2">2</option>
+        </select>
+        <span class="field-hint">The surcharge is charged per person</span>
+      </div>
+      <div class="field">
+        <label for="additionalIncome">Additional income you are considering this year ($)</label>
+        <input type="number" id="additionalIncome" value="0" step="1000" />
+        <span class="field-hint">Roth conversion, capital gain, or bonus. Can be negative to model a reduction.</span>
+      </div>
+    </div>
+    <div class="field" style="margin-top:14px;">
+      <div class="checkbox-field">
+        <input type="checkbox" id="enrolledPartD" checked />
+        <label for="enrolledPartD" style="font-size:.85rem;">Enrolled in Part D</label>
+      </div>
+      <span class="field-hint">Uncheck if you have no drug plan</span>
+    </div>
+    <div class="field" style="margin-top:10px;">
+      <div class="checkbox-field">
+        <input type="checkbox" id="lifeChangingEvent" />
+        <label for="lifeChangingEvent" style="font-size:.85rem;">Life-changing event applies</label>
+      </div>
+      <span class="field-hint">Marriage, divorce, death of a spouse, work stoppage, and similar events let you appeal on form SSA-44. Does not change the math below.</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Constants Panel <span class="badge">EDITABLE</span></div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="cPremiumYear">Premium year these figures apply to</label>
+        <input type="number" id="cPremiumYear" value="2026" step="1" />
+      </div>
+      <div class="field">
+        <label for="cLookback">Tax-year look-back for IRMAA (years)</label>
+        <input type="number" id="cLookback" value="2" step="1" />
+        <span class="field-hint">42 CFR 418.1105</span>
+      </div>
+      <div class="field">
+        <label for="cPartBStandard">2026 standard Part B premium ($/mo)</label>
+        <input type="number" id="cPartBStandard" value="202.90" step="0.10" />
+      </div>
+      <div class="field">
+        <label for="cIrmaaSingle">IRMAA thresholds, single ($, comma-separated)</label>
+        <input type="text" id="cIrmaaSingle" value="109000,137000,171000,205000,500000" />
+      </div>
+      <div class="field">
+        <label for="cIrmaaMFJ">IRMAA thresholds, MFJ ($, comma-separated)</label>
+        <input type="text" id="cIrmaaMFJ" value="218000,274000,342000,410000,750000" />
+      </div>
+      <div class="field">
+        <label for="cIrmaaMFS">IRMAA thresholds, MFS living apart ($, comma-separated)</label>
+        <input type="text" id="cIrmaaMFS" value="109000,394000" />
+        <span class="field-hint">Low confidence, verify against current CMS figures</span>
+      </div>
+      <div class="field">
+        <label for="cPartB">Total monthly Part B premium by tier ($, comma-separated, 6 tiers)</label>
+        <input type="text" id="cPartB" value="202.90,284.10,405.80,527.50,649.20,689.90" />
+      </div>
+      <div class="field">
+        <label for="cPartD">Monthly Part D IRMAA surcharge by tier ($, comma-separated, 6 tiers)</label>
+        <input type="text" id="cPartD" value="0,14.50,37.50,60.40,83.30,91.00" />
+      </div>
+      <div class="field">
+        <label for="cPartBDeductible">2026 Part B annual deductible ($)</label>
+        <input type="number" id="cPartBDeductible" value="283" step="1" />
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Calculate My IRMAA Tier →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Annual Household Surcharge</div>
+        <div class="metric-val amber" id="rHeadline">--</div>
+        <div class="metric-note">Above the standard premium</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Your IRMAA Tier</div>
+        <div class="metric-val accent" id="rTier">--</div>
+        <div class="metric-note">0 is standard, 5 is the top tier</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Headroom To Next Threshold</div>
+        <div class="metric-val green" id="rHeadroom">--</div>
+        <div class="metric-note">Before the next cliff</div>
+      </div>
+    </div>
+
+    <div class="info-note" id="topTierNote" style="display:none;">You are already at the top IRMAA tier. There is no further cliff, so the next-threshold and crossing-cost figures below are not applicable.</div>
+    <div class="info-note" id="lifeChangingNote" style="display:none;">A life-changing event does not change the calculation above, but it may qualify you to appeal your IRMAA determination using form SSA-44 based on more current income.</div>
+
+    <div class="card">
+      <div class="card-title">Your Position</div>
+      <div class="row"><span class="row-label">MAGI used</span><span class="row-val" id="dMagi">--</span></div>
+      <div class="row"><span class="row-label">IRMAA tier</span><span class="row-val" id="dTier">--</span></div>
+      <div class="row"><span class="row-label">Monthly Part B premium</span><span class="row-val" id="dPartBMonthly">--</span></div>
+      <div class="row"><span class="row-label">Monthly Part B surcharge above standard</span><span class="row-val" id="dPartBSurcharge">--</span></div>
+      <div class="row"><span class="row-label">Monthly Part D surcharge</span><span class="row-val" id="dPartDMonthly">--</span></div>
+      <div class="row"><span class="row-label">Annual cost per person</span><span class="row-val" id="dAnnualPerPerson">--</span></div>
+      <div class="row"><span class="row-label">Annual surcharge above standard, per person</span><span class="row-val" id="dAnnualSurchargePerPerson">--</span></div>
+      <div class="row"><span class="row-label"><strong>Annual household surcharge</strong></span><span class="row-val" id="dAnnualSurchargeHousehold">--</span></div>
+      <div class="row"><span class="row-label">Total annual household premium</span><span class="row-val" id="dAnnualHousehold">--</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">The Next Cliff</div>
+      <div class="row"><span class="row-label">Next threshold</span><span class="row-val" id="dNextThreshold">--</span></div>
+      <div class="row"><span class="row-label">Headroom before the next threshold</span><span class="row-val" id="dHeadroom">--</span></div>
+      <div class="row"><span class="row-label">Annual cost of crossing the next threshold</span><span class="row-val" id="dCrossingCost">--</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">If You Add Income This Year</div>
+      <div class="row"><span class="row-label">Projected tier with additional income</span><span class="row-val" id="dProjectedTier">--</span></div>
+      <div class="row"><span class="row-label">Incremental annual cost of the additional income</span><span class="row-val" id="dIncrementalCost">--</span></div>
+      <div class="row"><span class="row-label">Implied marginal rate on the additional income</span><span class="row-val" id="dImpliedRate">--</span></div>
+      <div class="row"><span class="row-label">Premium year / look-back year</span><span class="row-val" id="dPremiumYear">--</span></div>
+
+      <div class="info-note">SSA makes the final IRMAA determination based on your actual filed return. This tool is an estimate to help you plan, not an official notice.</div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-164 · Data: 2026 CMS Parts A &amp; B premiums and deductibles fact sheet · 42 CFR 418.1105
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+const $   = id => document.getElementById(id);
+const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
+const money = n => Math.round(n * 100) / 100;
+const bps = n => Math.round(n * 10000);
+
+function toggleMfsSub() {
+  $('mfsSub').classList.toggle('visible', $('filingStatus').value === 'MFS');
+}
+
+function parseNumList(str, fallback) {
+  const parts = String(str).split(',').map(s => parseFloat(s.trim()));
+  if (parts.some(n => !Number.isFinite(n))) return fallback;
+  return parts;
+}
+
+/* Runs steps 3-7 of the spec against a given MAGI and threshold set */
+function tierLookup(magi, thresholds, partBByTier, partDByTier, enrolledPartD, enrollees) {
+  let tier = 0;
+  for (let k = 0; k < thresholds.length; k++) {
+    if (magi > thresholds[k]) tier = k + 1;
+  }
+  const partBMonthly = partBByTier[tier];
+  const partDSurchargeMonthly = enrolledPartD ? partDByTier[tier] : 0;
+  const partBSurchargeMonthly = money(partBByTier[tier] - partBByTier[0]);
+  const annualPerPerson = money((partBMonthly + partDSurchargeMonthly) * 12);
+  const annualSurchargePerPerson = money((partBSurchargeMonthly + partDSurchargeMonthly) * 12);
+  const annualHousehold = money(annualPerPerson * enrollees);
+  const annualSurchargeHousehold = money(annualSurchargePerPerson * enrollees);
+  return { tier, partBMonthly, partDSurchargeMonthly, partBSurchargeMonthly, annualPerPerson, annualSurchargePerPerson, annualHousehold, annualSurchargeHousehold };
+}
+
+/* ── CORE MATH (spec steps 1-12) ──────────────────────────────────────────── */
+function calculate() {
+  const filingStatus = $('filingStatus').value;
+  const mfsLivingApart = $('mfsLivingApart').value === 'yes';
+  let agi = parseFloat($('agi').value); if (!Number.isFinite(agi)) agi = 0;
+  let taxExemptInterest = parseFloat($('taxExemptInterest').value); if (!Number.isFinite(taxExemptInterest) || taxExemptInterest < 0) taxExemptInterest = 0;
+  const enrollees = parseInt($('enrollees').value, 10);
+  const enrolledPartD = $('enrolledPartD').checked;
+  let additionalIncome = parseFloat($('additionalIncome').value); if (!Number.isFinite(additionalIncome)) additionalIncome = 0;
+  const lifeChangingEvent = $('lifeChangingEvent').checked;
+
+  const cPremiumYear = parseInt($('cPremiumYear').value, 10) || 2026;
+  const cLookback = parseInt($('cLookback').value, 10) || 2;
+  const cIrmaaSingle = parseNumList($('cIrmaaSingle').value, [109000,137000,171000,205000,500000]);
+  const cIrmaaMFJ = parseNumList($('cIrmaaMFJ').value, [218000,274000,342000,410000,750000]);
+  const cIrmaaMFS = parseNumList($('cIrmaaMFS').value, [109000,394000]);
+  const cPartB = parseNumList($('cPartB').value, [202.90,284.10,405.80,527.50,649.20,689.90]);
+  const cPartD = parseNumList($('cPartD').value, [0,14.50,37.50,60.40,83.30,91.00]);
+
+  // Step 2: threshold set
+  let thresholds;
+  if (filingStatus === 'MFJ') thresholds = cIrmaaMFJ;
+  else if (filingStatus === 'MFS') thresholds = mfsLivingApart ? cIrmaaMFS : cIrmaaSingle;
+  else thresholds = cIrmaaSingle;
+
+  // Step 1: MAGI (clamp negative AGI at 0 for the lookup, per edge case)
+  const agiClamped = Math.max(0, agi);
+  const magi = money(agiClamped + taxExemptInterest);
+
+  // Steps 3-7: tier lookup on current MAGI
+  const cur = tierLookup(magi, thresholds, cPartB, cPartD, enrolledPartD, enrollees);
+
+  // Step 8: distance to the next cliff
+  let nextThreshold = null, distanceToNext = null, headroom = null;
+  const atTopTier = cur.tier >= thresholds.length;
+  if (!atTopTier) {
+    nextThreshold = thresholds[cur.tier];
+    distanceToNext = money(nextThreshold - magi);
+    headroom = Math.max(0, money(distanceToNext - 1));
+  }
+
+  // Step 9: cost of crossing
+  let crossingCostAnnual = null;
+  if (!atTopTier) {
+    const nextTierIdx = cur.tier + 1;
+    const nextMonthly = cPartB[nextTierIdx] + (enrolledPartD ? cPartD[nextTierIdx] : 0);
+    const curMonthly = cur.partBMonthly + cur.partDSurchargeMonthly;
+    crossingCostAnnual = money((nextMonthly - curMonthly) * 12 * enrollees);
+  }
+
+  // Step 10: effect of additional income
+  const projectedMAGI = money(magi + additionalIncome);
+  const proj = tierLookup(Math.max(0, projectedMAGI), thresholds, cPartB, cPartD, enrolledPartD, enrollees);
+  const incrementalCost = money(proj.annualHousehold - cur.annualHousehold);
+
+  // Step 11: implied marginal rate
+  let impliedMarginalBps = 0;
+  if (additionalIncome > 0) impliedMarginalBps = bps(incrementalCost / additionalIncome);
+  else if (additionalIncome < 0) impliedMarginalBps = bps(incrementalCost / additionalIncome);
+
+  // Step 12: premium year / look-back year
+  const premiumYear = cPremiumYear;
+  const lookbackYear = premiumYear - cLookback;
+
+  _lastInputs = {
+    filingStatus, mfsLivingApart, agi, taxExemptInterest, enrollees, enrolledPartD,
+    additionalIncome, lifeChangingEvent
+  };
+  _lastResults = {
+    magi, tier: cur.tier, atTopTier,
+    partBMonthly: cur.partBMonthly, partBSurchargeMonthly: cur.partBSurchargeMonthly, partDSurchargeMonthly: cur.partDSurchargeMonthly,
+    annualPerPerson: cur.annualPerPerson, annualSurchargePerPerson: cur.annualSurchargePerPerson,
+    annualHousehold: cur.annualHousehold, annualSurchargeHousehold: cur.annualSurchargeHousehold,
+    nextThreshold, headroom, crossingCostAnnual,
+    projectedTier: proj.tier, incrementalCost, impliedMarginalBps,
+    premiumYear, lookbackYear
+  };
+
+  render();
+}
+
+function render() {
+  const r = _lastResults;
+
+  $('rHeadline').textContent = fmt(r.annualSurchargeHousehold);
+  $('rTier').textContent = r.tier;
+  $('rHeadroom').textContent = r.atTopTier ? 'n/a' : fmt(r.headroom);
+
+  $('topTierNote').style.display = r.atTopTier ? 'block' : 'none';
+  $('lifeChangingNote').style.display = _lastInputs.lifeChangingEvent ? 'block' : 'none';
+
+  $('dMagi').textContent = fmt(r.magi);
+  $('dTier').textContent = r.tier;
+  $('dPartBMonthly').textContent = fmt(r.partBMonthly) + '/mo';
+  $('dPartBSurcharge').textContent = fmt(r.partBSurchargeMonthly) + '/mo';
+  $('dPartDMonthly').textContent = fmt(r.partDSurchargeMonthly) + '/mo';
+  $('dAnnualPerPerson').textContent = fmt(r.annualPerPerson);
+  $('dAnnualSurchargePerPerson').textContent = fmt(r.annualSurchargePerPerson);
+  $('dAnnualSurchargeHousehold').textContent = fmt(r.annualSurchargeHousehold);
+  $('dAnnualHousehold').textContent = fmt(r.annualHousehold);
+
+  $('dNextThreshold').textContent = r.atTopTier ? 'None, top tier' : fmt(r.nextThreshold);
+  $('dHeadroom').textContent = r.atTopTier ? 'n/a' : fmt(r.headroom);
+  $('dCrossingCost').textContent = r.atTopTier ? 'n/a' : fmt(r.crossingCostAnnual);
+
+  $('dProjectedTier').textContent = r.projectedTier;
+  $('dIncrementalCost').textContent = (r.incrementalCost < 0 ? '-' : '') + fmt(r.incrementalCost) + (r.incrementalCost < 0 ? ' (a saving)' : '');
+  $('dImpliedRate').textContent = (r.impliedMarginalBps / 100).toFixed(2) + '%';
+  $('dPremiumYear').textContent = r.premiumYear + ' / ' + r.lookbackYear;
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# IRMAA Bracket Calculator Results',
+    `\n_Generated ${d} · AL-164 · apexlogics.org_\n`,
+    '## Context',
+    '| Field | Value |', '|---|---|',
+    `| Filing status | ${i.filingStatus} |`,
+    `| AGI, look-back year | ${fmt(i.agi)} |`,
+    `| Medicare enrollees | ${i.enrollees} |`,
+    '\n## Results',
+    `- **MAGI used:** ${fmt(r.magi)}`,
+    `- **IRMAA tier:** ${r.tier}`,
+    `- **Monthly Part B premium:** ${fmt(r.partBMonthly)}`,
+    `- **Monthly Part B surcharge above standard:** ${fmt(r.partBSurchargeMonthly)}`,
+    `- **Monthly Part D surcharge:** ${fmt(r.partDSurchargeMonthly)}`,
+    `- **Annual cost per person:** ${fmt(r.annualPerPerson)}`,
+    `- **Annual surcharge above standard, per person:** ${fmt(r.annualSurchargePerPerson)}`,
+    `- **Annual household surcharge:** ${fmt(r.annualSurchargeHousehold)}`,
+    `- **Total annual household premium:** ${fmt(r.annualHousehold)}`,
+    `- **Next threshold:** ${r.atTopTier ? 'None, top tier' : fmt(r.nextThreshold)}`,
+    `- **Headroom before the next threshold:** ${r.atTopTier ? 'n/a' : fmt(r.headroom)}`,
+    `- **Annual cost of crossing the next threshold:** ${r.atTopTier ? 'n/a' : fmt(r.crossingCostAnnual)}`,
+    `- **Projected tier with additional income:** ${r.projectedTier}`,
+    `- **Incremental annual cost of the additional income:** ${fmt(r.incrementalCost)}`,
+    `- **Implied marginal rate on the additional income:** ${(r.impliedMarginalBps/100).toFixed(2)}%`,
+    `- **Premium year / look-back year:** ${r.premiumYear} / ${r.lookbackYear}`,
+    '\n---',
+    '_Source: 2026 CMS Parts A & B premiums and deductibles fact sheet; 42 CFR 418.1105. SSA makes the final IRMAA determination; this is an estimate to help you plan._'
+  ];
+  dlFile('irmaa-bracket-calculator.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  const payload = {
+    mandate_type: "irmaa_bracket_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-164",
+    tool_id: "150-irmaa-bracket-calculator",
+    tool_name: "IRMAA Bracket Calculator",
+    inputs: {
+      filing_status: i.filingStatus,
+      mfs_living_apart: i.filingStatus === 'MFS' ? i.mfsLivingApart : null,
+      agi: i.agi,
+      tax_exempt_interest: i.taxExemptInterest,
+      enrollees: i.enrollees,
+      enrolled_part_d: i.enrolledPartD,
+      additional_income: i.additionalIncome,
+      life_changing_event: i.lifeChangingEvent,
+      data_version: "2026"
+    },
+    outputs: {
+      magi: r.magi,
+      tier: r.tier,
+      part_b_monthly: r.partBMonthly,
+      part_b_surcharge_monthly: r.partBSurchargeMonthly,
+      part_d_surcharge_monthly: r.partDSurchargeMonthly,
+      annual_per_person: r.annualPerPerson,
+      annual_surcharge_per_person: r.annualSurchargePerPerson,
+      annual_household_surcharge: r.annualSurchargeHousehold,
+      annual_household_total: r.annualHousehold,
+      next_threshold: r.atTopTier ? null : r.nextThreshold,
+      headroom: r.atTopTier ? null : r.headroom,
+      crossing_cost_annual: r.atTopTier ? null : r.crossingCostAnnual,
+      projected_tier: r.projectedTier,
+      incremental_cost: r.incrementalCost,
+      implied_marginal_rate_bps: r.impliedMarginalBps,
+      premium_year: r.premiumYear,
+      lookback_year: r.lookbackYear
+    },
+    downstream_handoff_candidates: [],
+    data_sources: [
+      "2026 CMS Parts A & B premiums and deductibles fact sheet",
+      "42 CFR 418.1105"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/medicare_projection";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-164";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* STEP 6, SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['irmaa_bracket_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-164_irmaa-bracket-calculator_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, CHAINGRAPH §6 EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* REPLACE: MANIFEST */
+const MANIFEST = {
+  "tool_id": "150-irmaa-bracket-calculator",
+  "al_id": "AL-164",
+  "version": "1.0.0",
+  "title": "IRMAA Bracket Calculator",
+  "description": "Given a filing status, look-back-year AGI and tax-exempt interest, and Medicare enrollment details, computes MAGI, the IRMAA tier, the resulting Part B and Part D surcharges, the distance to the next threshold, and the effect of additional income under consideration. Deterministic, zero external data. Policy Mandate: irmaa_bracket_record.",
+  "category": "retirement",
+  "journeys": ["annual Medicare premium check","income planning around the cliff"],
+  "personas": ["Medicare enrollee","near-65 pre-enrollee","retiree","financial planner"],
+  "tags": ["IRMAA","Medicare","Part B","Part D","MAGI","surcharge"],
+  "status": "active",
+  "maintenance": "annual (threshold and premium refresh)",
+  "data_vintage": "2026 CMS Parts A & B premiums and deductibles fact sheet",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["irmaa_bracket_record"],
+  "downstream_handoff_candidates": [],
+  "regulatory_citations": [
+    "2026 CMS Parts A & B premiums and deductibles fact sheet", "42 CFR 418.1105"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "filing_status": { "type": "string" },
+      "agi": { "type": "number" },
+      "tax_exempt_interest": { "type": "number" },
+      "enrollees": { "type": "integer" },
+      "enrolled_part_d": { "type": "boolean" },
+      "additional_income": { "type": "number" }
+    },
+    "required": ["filing_status","agi","enrollees"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "tier": { "type": "integer" },
+      "annual_household_surcharge": { "type": "number" },
+      "next_threshold": { "type": ["number","null"] },
+      "implied_marginal_rate_bps": { "type": "integer" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "irmaa_bracket_calculator",
+    "description": "Given a filing status, look-back-year AGI and tax-exempt interest, and Medicare enrollment details, returns the IRMAA tier, the resulting Part B and Part D surcharges, the distance to the next threshold, and the effect of additional income under consideration. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "filing_status": { "type": "string" },
+        "agi": { "type": "number" },
+        "enrollees": { "type": "integer" }
+      },
+      "required": ["filing_status","agi","enrollees"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+/* KEEP VERBATIM: MCP / MANIFEST TOGGLE */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

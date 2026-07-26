@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<!--
+  ══════════════════════════════════════════════════════════════════════════════
+  APEX LOGICS, SC-108 Agency Salability Pre-Check
+  Built from SSOT-TEMPLATE.html. Only REPLACE slots were edited.
+  ══════════════════════════════════════════════════════════════════════════════
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agency Salability Pre-Check · ApexLogics SC-108</title>
+  <meta name="description" content="Enter loan figures and check them against a frozen conforming-limit table and eligibility matrix. Returns eligible or non-agency-review routing, every failed criterion, and a reproducible hash. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/showcase/agency-salability-precheck/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <!-- KEEP VERBATIM: Google Fonts link -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* KEEP VERBATIM: design tokens (CONTRACT Appendix A). */
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    /* KEEP VERBATIM: nav chrome ─────────────────────────────────────────── */
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    /* KEEP VERBATIM: page shell + PII banner */
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    /* Hero */
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    /* Cards + fields */
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    /* Results */
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .verdict { border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; border: 1px solid var(--border); }
+    .verdict.ok { background: rgba(52,211,153,0.08); border-color: var(--green); }
+    .verdict.no { background: rgba(248,113,113,0.08); border-color: var(--red); }
+    .verdict-big { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 600; margin-bottom: 6px; }
+    .verdict.ok .verdict-big { color: var(--green); }
+    .verdict.no .verdict-big { color: var(--red); }
+    .verdict-sub { color: var(--text-muted); font-size: 0.86rem; }
+    .gap-list { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(167,139,250,0.12); font-size: 0.8rem; color: var(--text-muted); }
+    .gap-list ul { margin: 6px 0 0 18px; }
+    .gate-note { font-size: 0.72rem; color: var(--text-dim); margin-top: 10px; font-family: 'JetBrains Mono', monospace; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; text-align: right; }
+    .hash-line { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); margin-top: 14px; word-break: break-all; }
+
+    /* KEEP VERBATIM: export row (Markdown FIRST, Policy Mandate SECOND) */
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    /* KEEP VERBATIM: footer */
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    /* KEEP VERBATIM: mfst disclosure */
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<!-- ══ KEEP VERBATIM: NAV, do not edit anything between here and </nav> ══ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+      <a href="../index.html" class="nav-pill">&#x2190; Showcase Gallery</a>
+    </div>
+  </div>
+</nav>
+<!-- ══ END NAV ══ -->
+
+<div class="tool-wrapper">
+
+  <!-- KEEP VERBATIM: PII banner. -->
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">OCG-Industries Showcase · Cluster ㉑ Real Estate and Title</p>
+  <h1 class="tool-title">Agency Salability<br>Pre-Check</h1>
+  <p class="tool-desc">Repurchase exposure on an ineligible loan is expensive, and a spreadsheet note is not a record. Enter the loan figures and this page checks them against a frozen conforming-limit table and a frozen eligibility matrix, routes the file as eligible or into non-agency review, names every failed criterion, and stamps the screen with a reproducible hash.</p>
+  <p class="tool-vintage">Data: FHFA conforming loan limits 2026 · frozen matrix shown in page</p>
+
+  <div class="card">
+    <div class="card-title">Loan File <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="loanAmountCents">Loan amount (cents)</label>
+        <input type="number" id="loanAmountCents" value="64520000" min="0" step="1" />
+      </div>
+      <div class="field">
+        <label for="units">Units</label>
+        <select id="units">
+          <option value="1" selected>1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="highCostArea">High-cost area ceiling applies</label>
+        <select id="highCostArea">
+          <option value="no" selected>No</option>
+          <option value="yes">Yes</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="ltvBp">LTV (basis points)</label>
+        <input type="number" id="ltvBp" value="8000" min="0" max="12000" step="1" />
+        <span class="field-hint">9500 is 95 percent.</span>
+      </div>
+      <div class="field">
+        <label for="dtiBp">DTI (basis points)</label>
+        <input type="number" id="dtiBp" value="3800" min="0" max="10000" step="1" />
+        <span class="field-hint">4300 is 43 percent.</span>
+      </div>
+      <div class="field">
+        <label for="fico">Representative credit score</label>
+        <input type="number" id="fico" value="742" min="300" max="850" step="1" />
+      </div>
+      <div class="field">
+        <label for="occupancy">Occupancy</label>
+        <select id="occupancy">
+          <option value="primary" selected>Primary residence</option>
+          <option value="second_home">Second home</option>
+          <option value="investment">Investment</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="docComplete">Documentation file complete</label>
+        <select id="docComplete">
+          <option value="yes" selected>Yes</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Pre-Check Loan →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="verdict" id="verdict">
+      <div class="verdict-big" id="verdictBig">--</div>
+      <div class="verdict-sub" id="verdictSub">--</div>
+      <div class="gap-list" id="gapList" style="display:none;"></div>
+      <div class="gate-note">routing is an output field and conditional UI. It records the result of the frozen matrix shown above. It is not a purchase commitment and no investor sees it.</div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Routing</div>
+        <div class="metric-val accent" id="rRouting">--</div>
+        <div class="metric-note">agency_eligible or non_agency_review</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Applicable Limit</div>
+        <div class="metric-val" id="rLimit">--</div>
+        <div class="metric-note">Baseline, times 150% if high-cost</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Limit Headroom</div>
+        <div class="metric-val" id="rHeadroom">--</div>
+        <div class="metric-note">Negative means over the limit</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">Units</span><span class="row-val" id="dUnits">--</span></div>
+      <div class="row"><span class="row-label">Baseline limit</span><span class="row-val" id="dBaselineLimit">--</span></div>
+      <div class="row"><span class="row-label">Applicable limit</span><span class="row-val" id="dApplicableLimit">--</span></div>
+      <div class="row"><span class="row-label">Within limit</span><span class="row-val" id="dWithinLimit">--</span></div>
+      <div class="row"><span class="row-label">Max LTV for occupancy</span><span class="row-val" id="dMaxLtv">--</span></div>
+      <div class="row"><span class="row-label">LTV headroom</span><span class="row-val" id="dLtvHeadroom">--</span></div>
+      <div class="row"><span class="row-label">Max DTI</span><span class="row-val" id="dMaxDti">--</span></div>
+      <div class="row"><span class="row-label">Min FICO</span><span class="row-val" id="dMinFico">--</span></div>
+      <div class="row"><span class="row-label">Documentation complete</span><span class="row-val" id="dDocOk">--</span></div>
+      <div class="row"><span class="row-label">Screen key</span><span class="row-val" id="dScreenKey">--</span></div>
+      <div class="hash-line" id="hashLine"></div>
+
+      <!-- KEEP VERBATIM: export row. Markdown FIRST, Policy Mandate SECOND. -->
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+    <p class="metric-note" style="margin-top:10px;">The limit table and the eligibility matrix are a frozen Apex Logics editorial reading of published agency criteria, shown in full so you can check them, and they are not any investor's live guidelines. No underwriting decision, no purchase commitment, no legal advice. Hash-verifiable only.</p>
+
+  </div>
+
+  <!-- KEEP VERBATIM: mfst disclosure block -->
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · SC-108 · Data: FHFA conforming loan limits 2026 · frozen matrix shown in page
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+/* KEEP VERBATIM: helpers */
+const $   = id => document.getElementById(id);
+
+/* Shared fingerprint fn, pasted verbatim per bundle determinism conventions. */
+function fingerprint(str){ var h=5381,s=String(str).toUpperCase(); for(var i=0;i<s.length;i++) h=((Math.imul(h,33)+s.charCodeAt(i))&0x7fffffff); return h; }
+
+/* Frozen tables, declared as literal objects and shown to the reader above. */
+const BASELINE_LIMIT_DOLLARS = { 1: 806500, 2: 1032650, 3: 1248150, 4: 1551250 };
+const MAX_LTV_BP = { primary: 9700, second_home: 9000, investment: 8500 };
+const MAX_DTI_BP = 5000;
+const MIN_FICO = 620;
+
+/* ── CORE MATH ─────────────────────────────────────────────────────────────── */
+/* REPLACE: compute() body. Frozen integer tables, Math.floor division only. */
+function calculate() {
+  let loanAmountCents = parseInt($('loanAmountCents').value, 10);
+  if (!Number.isFinite(loanAmountCents)) loanAmountCents = 0;
+  loanAmountCents = Math.max(0, loanAmountCents);
+
+  let units = $('units').value;
+  if (!BASELINE_LIMIT_DOLLARS[units]) units = '1';
+
+  const highCostArea = $('highCostArea').value === 'yes';
+
+  let ltvBp = parseInt($('ltvBp').value, 10);
+  if (!Number.isFinite(ltvBp)) ltvBp = 0;
+  ltvBp = Math.max(0, Math.min(12000, ltvBp));
+
+  let dtiBp = parseInt($('dtiBp').value, 10);
+  if (!Number.isFinite(dtiBp)) dtiBp = 0;
+  dtiBp = Math.max(0, Math.min(10000, dtiBp));
+
+  let fico = parseInt($('fico').value, 10);
+  if (!Number.isFinite(fico)) fico = 300;
+  fico = Math.max(300, Math.min(850, fico));
+
+  let occupancy = $('occupancy').value;
+  if (!MAX_LTV_BP[occupancy]) occupancy = 'primary';
+
+  const docComplete = $('docComplete').value === 'yes';
+
+  const baselineLimitCents = BASELINE_LIMIT_DOLLARS[units] * 100;
+  const applicableLimitCents = highCostArea ? Math.floor(baselineLimitCents * 150 / 100) : baselineLimitCents;
+  const withinLimit = loanAmountCents <= applicableLimitCents;
+
+  const maxLtvBp = MAX_LTV_BP[occupancy];
+  const ltvOk = ltvBp <= maxLtvBp;
+
+  const maxDtiBp = MAX_DTI_BP;
+  const dtiOk = dtiBp <= maxDtiBp;
+
+  const minFico = MIN_FICO;
+  const ficoOk = fico >= minFico;
+
+  const docOk = docComplete;
+
+  /* fixed declaration order, never sorted at runtime by value */
+  const failedCriteria = [];
+  if (!withinLimit) failedCriteria.push('loan_limit');
+  if (!ltvOk) failedCriteria.push('ltv');
+  if (!dtiOk) failedCriteria.push('dti');
+  if (!ficoOk) failedCriteria.push('fico');
+  if (!docOk) failedCriteria.push('documentation');
+
+  const eligible = failedCriteria.length === 0;
+  const routing = eligible ? 'agency_eligible' : 'non_agency_review';
+  const limitHeadroomCents = applicableLimitCents - loanAmountCents;
+  const ltvHeadroomBp = maxLtvBp - ltvBp;
+  const screenKey = fingerprint(units + '|' + highCostArea + '|' + loanAmountCents + '|' + occupancy + '|' + ltvBp + '|' + dtiBp + '|' + fico);
+
+  _lastInputs = { loanAmountCents, units, highCostArea, ltvBp, dtiBp, fico, occupancy, docComplete };
+  _lastResults = {
+    baselineLimitCents, applicableLimitCents, withinLimit, limitHeadroomCents,
+    maxLtvBp, ltvOk, ltvHeadroomBp, maxDtiBp, dtiOk, minFico, ficoOk, docOk,
+    failedCriteria, eligible, routing, screenKey
+  };
+
+  render();
+}
+
+/* REPLACE: render() body, write results into the markup above. */
+function render() {
+  const i = _lastInputs, r = _lastResults;
+  const fmt = c => '$' + (c / 100).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+  const v = $('verdict');
+  v.className = 'verdict ' + (r.eligible ? 'ok' : 'no');
+  $('verdictBig').textContent = r.eligible ? '✓ Clears the frozen eligibility matrix' : '✗ Routes to non-agency review';
+  $('verdictSub').textContent = r.failedCriteria.length + ' failed criteri' + (r.failedCriteria.length === 1 ? 'on' : 'a') + (r.failedCriteria.length ? (': ' + r.failedCriteria.join(', ')) : '') + ' · limit headroom ' + fmt(r.limitHeadroomCents);
+
+  const gapList = $('gapList');
+  if (!r.eligible && r.failedCriteria.length) {
+    gapList.style.display = 'block';
+    gapList.innerHTML = 'Failed criteria:<ul>' + r.failedCriteria.map(g => '<li>' + g + '</li>').join('') + '</ul>';
+  } else {
+    gapList.style.display = 'none';
+    gapList.innerHTML = '';
+  }
+
+  $('rRouting').textContent = r.routing;
+  $('rLimit').textContent = fmt(r.applicableLimitCents);
+  $('rHeadroom').textContent = fmt(r.limitHeadroomCents);
+  $('rHeadroom').className = 'metric-val ' + (r.limitHeadroomCents < 0 ? 'red' : 'green');
+
+  $('dUnits').textContent = i.units;
+  $('dBaselineLimit').textContent = fmt(r.baselineLimitCents);
+  $('dApplicableLimit').textContent = fmt(r.applicableLimitCents);
+  $('dWithinLimit').textContent = r.withinLimit ? 'Yes' : 'No';
+  $('dMaxLtv').textContent = (r.maxLtvBp / 100).toFixed(2) + '%';
+  $('dLtvHeadroom').textContent = (r.ltvHeadroomBp / 100).toFixed(2) + ' pts';
+  $('dMaxDti').textContent = (r.maxDtiBp / 100).toFixed(2) + '%';
+  $('dMinFico').textContent = String(r.minFico);
+  $('dDocOk').textContent = r.docOk ? 'Yes' : 'No';
+  $('dScreenKey').textContent = String(r.screenKey);
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  $('hashLine').textContent = '';
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const fmt = c => '$' + (c / 100).toFixed(2);
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Agency Salability Pre-Check Results',
+    `\n_Generated ${d} · SC-108 · apexlogics.org_\n`,
+    '## Loan file',
+    '| Field | Value |', '|---|---|',
+    `| Loan amount | ${fmt(i.loanAmountCents)} |`,
+    `| Units | ${i.units} |`,
+    `| High-cost area | ${i.highCostArea ? 'Yes' : 'No'} |`,
+    `| LTV | ${(i.ltvBp/100).toFixed(2)}% |`,
+    `| DTI | ${(i.dtiBp/100).toFixed(2)}% |`,
+    `| Credit score | ${i.fico} |`,
+    `| Occupancy | ${i.occupancy} |`,
+    `| Documentation complete | ${i.docComplete ? 'Yes' : 'No'} |`,
+    '\n## Results',
+    `- **Applicable limit:** ${fmt(r.applicableLimitCents)}`,
+    `- **Limit headroom:** ${fmt(r.limitHeadroomCents)}`,
+    `- **Max LTV for occupancy:** ${(r.maxLtvBp/100).toFixed(2)}%`,
+    `- **Failed criteria:** ${r.failedCriteria.length ? r.failedCriteria.join(', ') : 'none'}`,
+    `- **Eligible:** ${r.eligible ? 'Yes' : 'No'}`,
+    `- **Routing:** ${r.routing}`,
+    '\n---',
+    '_Source: FHFA conforming loan limits 2026, frozen matrix shown in page. No underwriting decision, no purchase commitment, no legal advice._'
+  ];
+  dlFile('agency-salability-precheck.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+/* The ORDER of the steps below is non-negotiable. Edit field VALUES only.
+   Never emit ap2_version. */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  /* STEP 1, REPLACE: domain payload */
+  const payload = {
+    mandate_type: "agency_salability_record",
+    generated_at: new Date().toISOString(),
+    al_id: "SC-108",
+    tool_id: "sc108-agency-salability-precheck",
+    tool_name: "Agency Salability Pre-Check",
+    inputs: {
+      loan_amount_cents: i.loanAmountCents,
+      units: i.units,
+      high_cost_area: i.highCostArea,
+      ltv_bp: i.ltvBp,
+      dti_bp: i.dtiBp,
+      fico: i.fico,
+      occupancy: i.occupancy,
+      doc_complete: i.docComplete
+    },
+    outputs: {
+      units: i.units,
+      baseline_limit_cents: r.baselineLimitCents,
+      applicable_limit_cents: r.applicableLimitCents,
+      within_limit: r.withinLimit,
+      limit_headroom_cents: r.limitHeadroomCents,
+      max_ltv_bp: r.maxLtvBp,
+      ltv_ok: r.ltvOk,
+      ltv_headroom_bp: r.ltvHeadroomBp,
+      max_dti_bp: r.maxDtiBp,
+      dti_ok: r.dtiOk,
+      min_fico: r.minFico,
+      fico_ok: r.ficoOk,
+      doc_ok: r.docOk,
+      failed_criteria: r.failedCriteria,
+      eligible: r.eligible,
+      routing: r.routing,
+      screen_key: r.screenKey
+    },
+    downstream_handoff_candidates: [],
+    data_sources: [
+      "FHFA conforming loan limits 2026",
+      "Apex Logics editorial eligibility matrix"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  /* STEP 2, KEEP VERBATIM: OpenChainGraph L1 + L2 (parent capture via ?ap2=) */
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/agency_salability_precheck";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "SC-108";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  /* STEP 3, KEEP VERBATIM: build _cgDomain by excluding envelope keys */
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "integer_checksum", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  /* STEP 4, KEEP VERBATIM: canonical execution hash */
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  /* STEP 5, KEEP VERBATIM: OCG v0.4 envelope fields (hash-excluded, additive) */
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     STEP 6, SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE.
+     ══════════════════════════════════════════════════════════════════════════ */
+  const _cgPreval = Object.assign({}, payload);
+
+  /* STEP 7, KEEP VERBATIM: relocate non-allowed keys into hash-excluded apex_meta */
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  /* STEP 8, validate the SNAPSHOT, then and only then create the object URL. */
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['agency_salability_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  /* update the on-page hash line */
+  $('hashLine').textContent = 'execution_hash: ' + payload.execution_hash;
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`SC-108_agency-salability-precheck_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, CHAINGRAPH §6 EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* REPLACE: MANIFEST, must match the tool's manifest.json byte for byte in substance. */
+const MANIFEST = {
+  "tool_id": "sc108-agency-salability-precheck",
+  "al_id": "SC-108",
+  "version": "1.0.0",
+  "title": "Agency Salability Pre-Check",
+  "description": "Given a loan's amount, units, high-cost-area flag, LTV, DTI, credit score, occupancy, and documentation completeness, checks it against a frozen conforming-limit table and a frozen eligibility matrix, returns agency_eligible or non_agency_review routing, and names every failed criterion. Deterministic, zero external data beyond the frozen tables. Policy Mandate: agency_salability_record.",
+  "category": "showcase",
+  "journeys": [],
+  "personas": ["correspondent lender", "secondary-market desk"],
+  "tags": ["real-estate", "secondary-market", "showcase", "zero-PII"],
+  "status": "showcase",
+  "maintenance": "zero",
+  "data_vintage": "FHFA conforming loan limits 2026, frozen matrix shown in page",
+  "frozen_baseline": true,
+  "ap2_export": true,
+  "ap2_mandate_types": ["agency_salability_record"],
+  "downstream_handoff_candidates": [],
+  "regulatory_citations": [
+    "FHFA conforming loan limits 2026"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "loan_amount_cents": { "type": "integer", "minimum": 0 },
+      "units": { "type": "string", "enum": ["1","2","3","4"] },
+      "high_cost_area": { "type": "boolean" },
+      "ltv_bp": { "type": "integer", "minimum": 0, "maximum": 12000 },
+      "dti_bp": { "type": "integer", "minimum": 0, "maximum": 10000 },
+      "fico": { "type": "integer", "minimum": 300, "maximum": 850 },
+      "occupancy": { "type": "string", "enum": ["primary","second_home","investment"] },
+      "doc_complete": { "type": "boolean" }
+    },
+    "required": ["loan_amount_cents","units","high_cost_area","ltv_bp","dti_bp","fico","occupancy","doc_complete"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "baseline_limit_cents": { "type": "integer" },
+      "applicable_limit_cents": { "type": "integer" },
+      "within_limit": { "type": "boolean" },
+      "limit_headroom_cents": { "type": "integer" },
+      "max_ltv_bp": { "type": "integer" },
+      "ltv_ok": { "type": "boolean" },
+      "ltv_headroom_bp": { "type": "integer" },
+      "max_dti_bp": { "type": "integer" },
+      "dti_ok": { "type": "boolean" },
+      "min_fico": { "type": "integer" },
+      "fico_ok": { "type": "boolean" },
+      "doc_ok": { "type": "boolean" },
+      "failed_criteria": { "type": "array", "items": { "type": "string" } },
+      "eligible": { "type": "boolean" },
+      "routing": { "type": "string", "enum": ["agency_eligible","non_agency_review"] },
+      "screen_key": { "type": "integer" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "agency_salability_precheck",
+    "description": "Given a loan's amount, units, high-cost-area flag, LTV, DTI, credit score, occupancy, and documentation completeness, returns eligibility routing against a frozen conforming-limit table and eligibility matrix, and names every failed criterion. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "loan_amount_cents": { "type": "integer", "minimum": 0 },
+        "units": { "type": "string", "enum": ["1","2","3","4"] },
+        "high_cost_area": { "type": "boolean" },
+        "ltv_bp": { "type": "integer", "minimum": 0, "maximum": 12000 },
+        "dti_bp": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "fico": { "type": "integer", "minimum": 300, "maximum": 850 },
+        "occupancy": { "type": "string", "enum": ["primary","second_home","investment"] },
+        "doc_complete": { "type": "boolean" }
+      },
+      "required": ["loan_amount_cents","units","high_cost_area","ltv_bp","dti_bp","fico","occupancy","doc_complete"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+/* KEEP VERBATIM: MCP / MANIFEST TOGGLE (standardized, additive) */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

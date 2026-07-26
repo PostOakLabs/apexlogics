@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Medicare Out-of-Pocket Exposure Modeler · ApexLogics #152</title>
+  <meta name="description" content="Walk a year of Medicare utilization through the 2026 cost-sharing rules, benefit period by benefit period, and see a routine year, a rough year, and a worst-case year side by side. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/tools/152-medicare-oop-exposure/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], input[type="text"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+    .row.warn-row .row-val { color: var(--red); font-weight: 600; }
+
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+
+    /* Tool-specific: notes (additive, not template chrome) */
+    .disclaimer { margin-top: 16px; padding: 12px 14px; background: rgba(248,113,113,.06); border: 1px solid rgba(248,113,113,.25); border-radius: 8px; font-size: .78rem; color: var(--text-muted); }
+    .info-note { margin-top: 14px; padding: 12px 14px; background: rgba(167,139,250,.06); border: 1px solid var(--border); border-radius: 8px; font-size: .78rem; color: var(--text-muted); }
+    .warn-note { margin-top: 14px; padding: 12px 14px; background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.35); border-radius: 8px; font-size: .8rem; color: var(--text); font-weight: 500; }
+    .checkbox-field { display: flex; align-items: center; gap: 8px; flex-direction: row; }
+    .checkbox-field input { width: auto; }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">Retirement · Medicare</p>
+  <h1 class="tool-title">Medicare Out-of-Pocket<br>Exposure Modeler</h1>
+  <p class="tool-desc">Medicare pays most of the bill, but the part it does not pay has no annual ceiling on the medical side unless you carry a supplement or an Advantage plan. This modeler walks a year of utilization through the actual 2026 cost-sharing rules, benefit period by benefit period, and shows what a routine year, a rough year, and a worst-case year each cost you.</p>
+  <p class="tool-vintage">Data: 2026 CMS Parts A &amp; B and Part D standard benefit parameters</p>
+
+  <div class="card">
+    <div class="card-title">Your Coverage &amp; Utilization <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="coverageStructure">Coverage structure</label>
+        <select id="coverageStructure">
+          <option value="OriginalOnly" selected>Original Medicare only</option>
+          <option value="PlanG">Original plus Medigap Plan G</option>
+          <option value="PlanN">Original plus Medigap Plan N</option>
+          <option value="Advantage">Medicare Advantage</option>
+        </select>
+        <span class="field-hint">Determines whether a ceiling exists</span>
+      </div>
+      <div class="field">
+        <label for="irmaaTier">IRMAA tier</label>
+        <select id="irmaaTier">
+          <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+          <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+        </select>
+        <span class="field-hint">Sets the Part B premium</span>
+      </div>
+      <div class="field">
+        <label for="benefitPeriods">Hospital benefit periods this year</label>
+        <input type="number" id="benefitPeriods" value="1" min="0" step="1" />
+        <span class="field-hint">A new period starts after 60 consecutive days out of a facility</span>
+      </div>
+      <div class="field">
+        <label for="daysPerPeriod">Inpatient days per benefit period</label>
+        <input type="number" id="daysPerPeriod" value="5" min="0" step="1" />
+      </div>
+      <div class="field">
+        <label for="snfDays">Skilled nursing facility days per benefit period</label>
+        <input type="number" id="snfDays" value="0" min="0" step="1" />
+        <span class="field-hint">Days 1 to 20 are covered in full</span>
+      </div>
+      <div class="field">
+        <label for="partBApprovedCharges">Medicare-approved Part B charges for the year ($)</label>
+        <input type="number" id="partBApprovedCharges" value="6000" min="0" step="100" />
+        <span class="field-hint">Doctor visits, outpatient, imaging, therapy, durable equipment</span>
+      </div>
+      <div class="field">
+        <label for="annualDrugCost">Annual drug cost ($, plan-negotiated)</label>
+        <input type="number" id="annualDrugCost" value="2500" min="0" step="100" />
+      </div>
+      <div class="field">
+        <label for="partDDeductible">Part D plan deductible ($)</label>
+        <input type="number" id="partDDeductible" value="615" min="0" step="1" />
+      </div>
+      <div class="field">
+        <label for="supplementalMonthlyPremium">Medigap or Advantage monthly premium ($)</label>
+        <input type="number" id="supplementalMonthlyPremium" value="165" min="0" step="1" />
+        <span class="field-hint">Enter 0 if none</span>
+      </div>
+      <div class="field">
+        <label for="advantageMOOP">Advantage maximum out-of-pocket ($)</label>
+        <input type="number" id="advantageMOOP" value="5500" min="0" step="100" />
+        <span class="field-hint">Only used on the Advantage structure</span>
+      </div>
+      <div class="field">
+        <label for="advantageCoinsurance">Advantage medical coinsurance (%)</label>
+        <input type="number" id="advantageCoinsurance" value="20" min="0" max="100" step="1" />
+        <span class="field-hint">Only used on the Advantage structure</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Constants Panel <span class="badge">EDITABLE</span></div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="cPartADeductible">2026 Part A deductible per benefit period ($)</label>
+        <input type="number" id="cPartADeductible" value="1736" step="1" />
+      </div>
+      <div class="field">
+        <label for="cPartADays61to90">2026 Part A coinsurance, days 61-90 ($/day)</label>
+        <input type="number" id="cPartADays61to90" value="434" step="1" />
+      </div>
+      <div class="field">
+        <label for="cPartALifetimeReserve">2026 lifetime reserve day coinsurance ($/day)</label>
+        <input type="number" id="cPartALifetimeReserve" value="868" step="1" />
+      </div>
+      <div class="field">
+        <label for="cLifetimeReserveDays">Lifetime reserve days available (once per lifetime)</label>
+        <input type="number" id="cLifetimeReserveDays" value="60" step="1" />
+      </div>
+      <div class="field">
+        <label for="cSnfDailyCoinsurance">2026 SNF coinsurance, days 21-100 ($/day)</label>
+        <input type="number" id="cSnfDailyCoinsurance" value="217" step="1" />
+      </div>
+      <div class="field">
+        <label for="cSnfCoveredDaysFull">SNF days covered in full</label>
+        <input type="number" id="cSnfCoveredDaysFull" value="20" step="1" />
+      </div>
+      <div class="field">
+        <label for="cSnfMaxDays">SNF days covered per benefit period</label>
+        <input type="number" id="cSnfMaxDays" value="100" step="1" />
+      </div>
+      <div class="field">
+        <label for="cPartBDeductible">2026 Part B annual deductible ($)</label>
+        <input type="number" id="cPartBDeductible" value="283" step="1" />
+      </div>
+      <div class="field">
+        <label for="cPartBCoinsuranceRate">Part B coinsurance after the deductible (%)</label>
+        <input type="number" id="cPartBCoinsuranceRate" value="20" step="1" />
+      </div>
+      <div class="field">
+        <label for="cPartDMaxDeductible">2026 maximum Part D deductible ($)</label>
+        <input type="number" id="cPartDMaxDeductible" value="615" step="1" />
+      </div>
+      <div class="field">
+        <label for="cPartDOOPCap">2026 Part D out-of-pocket cap ($)</label>
+        <input type="number" id="cPartDOOPCap" value="2100" step="1" />
+      </div>
+      <div class="field">
+        <label for="cPartB">Monthly Part B premium by tier ($, comma-separated, 6 tiers)</label>
+        <input type="text" id="cPartB" value="202.90,284.10,405.80,527.50,649.20,689.90" />
+      </div>
+      <div class="field">
+        <label for="cPartD">Monthly Part D IRMAA surcharge by tier ($, comma-separated, 6 tiers)</label>
+        <input type="text" id="cPartD" value="0,14.50,37.50,60.40,83.30,91.00" />
+      </div>
+      <div class="field">
+        <label for="cPlanNVisitCopay">Medigap Plan N visit copay ceiling ($)</label>
+        <input type="number" id="cPlanNVisitCopay" value="20" step="1" />
+      </div>
+      <div class="field">
+        <label for="cAverageVisitCharge">Assumed average Medicare-approved charge per visit ($)</label>
+        <input type="number" id="cAverageVisitCharge" value="250" step="1" />
+      </div>
+      <div class="field">
+        <label for="cWorstCasePeriods">Worst-case benefit periods</label>
+        <input type="number" id="cWorstCasePeriods" value="2" step="1" />
+      </div>
+      <div class="field">
+        <label for="cWorstCaseDays">Worst-case inpatient days per period</label>
+        <input type="number" id="cWorstCaseDays" value="30" step="1" />
+      </div>
+      <div class="field">
+        <label for="cWorstCaseSNF">Worst-case SNF days</label>
+        <input type="number" id="cWorstCaseSNF" value="60" step="1" />
+      </div>
+      <div class="field">
+        <label for="cWorstCaseMultiplier">Worst-case Part B and drug multiplier</label>
+        <input type="number" id="cWorstCaseMultiplier" value="4" step="1" />
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Model My Exposure →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Rough-Year Total Exposure</div>
+        <div class="metric-val amber" id="rHeadline">--</div>
+        <div class="metric-note">Including premiums, this year as entered</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Monthly Budget Equivalent</div>
+        <div class="metric-val accent" id="rMonthlyBudget">--</div>
+        <div class="metric-note">Rough-year total divided by 12</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Annual Ceiling</div>
+        <div class="metric-val green" id="rCeiling">--</div>
+        <div class="metric-note" id="rCeilingNote">--</div>
+      </div>
+    </div>
+
+    <div class="warn-note" id="unlimitedWarning" style="display:none;">This coverage structure has no annual ceiling on the medical side. A single bad year can cost far more than the figures below, with no cap to stop it.</div>
+    <div class="warn-note" id="reserveWarning" style="display:none;">Modeled inpatient days exceed 150 in a benefit period. Lifetime reserve days are exhausted, and days beyond the reserve are the patient's full responsibility with no Medicare payment at all.</div>
+    <div class="info-note" id="snfWarning" style="display:none;">Skilled nursing days beyond 100 in a benefit period are not covered by Medicare at all. Chargeable days are capped at 80 in the coinsurance calculation; days beyond 100 cost the full daily rate and are not reflected in the figure below.</div>
+    <div class="info-note" id="moopFallbackWarning" style="display:none;">The Advantage maximum out-of-pocket was entered as $0 or left blank, which is not a real MOOP value. Treating it as not entered; medical exposure is shown uncapped.</div>
+
+    <div class="card">
+      <div class="card-title">Rough Year, As Entered</div>
+      <div class="row"><span class="row-label">Part A inpatient cost sharing</span><span class="row-val" id="dPartAInpatient">--</span></div>
+      <div class="row"><span class="row-label">Part A skilled nursing cost sharing</span><span class="row-val" id="dPartASNF">--</span></div>
+      <div class="row"><span class="row-label">Part B deductible and coinsurance</span><span class="row-val" id="dPartBTotal">--</span></div>
+      <div class="row"><span class="row-label">Part D cost sharing after the cap</span><span class="row-val" id="dPartDTotal">--</span></div>
+      <div class="row"><span class="row-label">Medical out-of-pocket after coverage structure</span><span class="row-val" id="dMedicalOOP">--</span></div>
+      <div class="row"><span class="row-label">Annual premiums including IRMAA</span><span class="row-val" id="dPremiums">--</span></div>
+      <div class="row"><span class="row-label">Total out-of-pocket excluding premiums</span><span class="row-val" id="dTotalExclPremiums">--</span></div>
+      <div class="row"><span class="row-label"><strong>Total annual exposure including premiums</strong></span><span class="row-val" id="dTotalWithPremiums">--</span></div>
+      <div class="row"><span class="row-label">Monthly budget equivalent</span><span class="row-val" id="dMonthlyBudget">--</span></div>
+      <div class="row warn-row"><span class="row-label">Annual ceiling</span><span class="row-val" id="dCeiling">--</span></div>
+      <div class="row"><span class="row-label">Lifetime reserve days consumed</span><span class="row-val" id="dReserveDaysConsumed">--</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Three Scenarios</div>
+      <div class="row"><span class="row-label">Routine-year total</span><span class="row-val" id="dRoutineTotal">--</span></div>
+      <div class="row"><span class="row-label">Rough-year total</span><span class="row-val" id="dRoughTotal">--</span></div>
+      <div class="row"><span class="row-label">Worst-case total</span><span class="row-val" id="dWorstTotal">--</span></div>
+      <div class="row"><span class="row-label"><strong>Exposure spread</strong></span><span class="row-val" id="dExposureSpread">--</span></div>
+
+      <div class="disclaimer">This compares projected annual cost only, not networks, formularies, or provider access. Plan details vary by county. Confirm with the plan and your State Health Insurance Assistance Program before enrolling.</div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-166 · Data: 2026 CMS Parts A &amp; B and Part D standard benefit parameters
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+const $   = id => document.getElementById(id);
+const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
+const money = n => Math.round(n * 100) / 100;
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+function parseNumList(str, fallback) {
+  const parts = String(str).split(',').map(s => parseFloat(s.trim()));
+  if (parts.some(n => !Number.isFinite(n))) return fallback;
+  return parts;
+}
+
+/* Shared Part D phase function (same as tool 151, step 5) */
+function drugPhase(drugCost, planDeductible, oopCap, coinsuranceRate) {
+  const deductiblePaid = Math.max(0, Math.min(drugCost, planDeductible));
+  const postDeductible = Math.max(0, drugCost - planDeductible);
+  const coinsurancePaid = money(postDeductible * coinsuranceRate);
+  const beforeCap = money(deductiblePaid + coinsurancePaid);
+  return money(Math.min(beforeCap, oopCap));
+}
+
+/* Runs the full pipeline (steps 1-9) for a given utilization scenario */
+function runScenario(p, C) {
+  // Step 1: Part A inpatient, per benefit period
+  const days61to90 = clamp(p.daysPerPeriod - 60, 0, 30);
+  const coins61to90 = money(days61to90 * C.partADays61to90);
+  const reserveDaysPerPeriod = clamp(p.daysPerPeriod - 90, 0, C.lifetimeReserveDays);
+  const coinsReserve = money(reserveDaysPerPeriod * C.partALifetimeReserve);
+  const beyondReserve = Math.max(0, p.daysPerPeriod - (90 + C.lifetimeReserveDays));
+  const unlimitedFlag = beyondReserve > 0;
+  const perPeriodA = p.benefitPeriods > 0 ? money(C.partADeductible + coins61to90 + coinsReserve) : 0;
+
+  // Step 2: total Part A inpatient
+  const partAInpatient = money(perPeriodA * p.benefitPeriods);
+  const reserveDaysConsumed = Math.round(reserveDaysPerPeriod * p.benefitPeriods);
+
+  // Step 3: skilled nursing
+  const snfChargeableDays = clamp(p.snfDays - C.snfCoveredDaysFull, 0, C.snfMaxDays - C.snfCoveredDaysFull);
+  const snfBeyondMax = p.snfDays > C.snfMaxDays;
+  const partASNF = money(snfChargeableDays * C.snfDailyCoinsurance * p.benefitPeriods);
+
+  // Step 4: Part B
+  const partBAfterDeductible = Math.max(0, p.partBApprovedCharges - C.partBDeductible);
+  const partBCoins = money(partBAfterDeductible * C.partBCoinsuranceRate);
+  const partBTotal = money(Math.min(C.partBDeductible, p.partBApprovedCharges) + partBCoins);
+
+  // Step 5: Part D
+  const partDTotal = drugPhase(p.annualDrugCost, p.partDDeductible, C.partDOOPCap, C.partDStandardCoinsurance);
+
+  // Step 6: apply coverage structure
+  let medicalOOP, ceiling, moopFallback = false;
+  if (p.coverageStructure === 'OriginalOnly') {
+    medicalOOP = money(partAInpatient + partASNF + partBTotal);
+    ceiling = null;
+  } else if (p.coverageStructure === 'PlanG') {
+    medicalOOP = C.partBDeductible;
+    ceiling = C.partBDeductible;
+  } else if (p.coverageStructure === 'PlanN') {
+    const estimatedVisits = Math.round(p.partBApprovedCharges / C.averageVisitCharge);
+    medicalOOP = money(C.partBDeductible + C.planNVisitCopay * estimatedVisits);
+    ceiling = null; // soft ceiling, excess-charge exception
+  } else {
+    // Advantage
+    const medicalRaw = money((partAInpatient + partASNF + partBAfterDeductible) * p.advantageCoinsurance / 100);
+    if (p.advantageMOOP <= 0) {
+      medicalOOP = medicalRaw;
+      ceiling = null;
+      moopFallback = true;
+    } else {
+      medicalOOP = money(Math.min(medicalRaw, p.advantageMOOP));
+      ceiling = p.advantageMOOP;
+    }
+  }
+
+  // Step 7: premiums
+  const premiums = money((C.partBByTier[p.irmaaTier] + p.supplementalMonthlyPremium) * 12 + C.partDByTier[p.irmaaTier] * 12);
+
+  // Step 8: totals
+  const totalOOPExcludingPremiums = money(medicalOOP + partDTotal);
+  const totalWithPremiums = money(totalOOPExcludingPremiums + premiums);
+
+  // Step 9: monthly budget
+  const monthlyBudget = money(totalWithPremiums / 12);
+
+  return {
+    partAInpatient, partASNF, partBTotal, partDTotal, medicalOOP, ceiling,
+    premiums, totalOOPExcludingPremiums, totalWithPremiums, monthlyBudget,
+    unlimitedFlag, snfBeyondMax, moopFallback, reserveDaysConsumed
+  };
+}
+
+/* ── CORE MATH (spec steps 1-12) ──────────────────────────────────────────── */
+function calculate() {
+  const coverageStructure = $('coverageStructure').value;
+  const irmaaTier = parseInt($('irmaaTier').value, 10) || 0;
+  let benefitPeriods = parseFloat($('benefitPeriods').value); if (!Number.isFinite(benefitPeriods) || benefitPeriods < 0) benefitPeriods = 0;
+  let daysPerPeriod = parseFloat($('daysPerPeriod').value); if (!Number.isFinite(daysPerPeriod) || daysPerPeriod < 0) daysPerPeriod = 0;
+  let snfDays = parseFloat($('snfDays').value); if (!Number.isFinite(snfDays) || snfDays < 0) snfDays = 0;
+  let partBApprovedCharges = parseFloat($('partBApprovedCharges').value); if (!Number.isFinite(partBApprovedCharges) || partBApprovedCharges < 0) partBApprovedCharges = 0;
+  let annualDrugCost = parseFloat($('annualDrugCost').value); if (!Number.isFinite(annualDrugCost) || annualDrugCost < 0) annualDrugCost = 0;
+
+  const cPartDMaxDeductible = parseFloat($('cPartDMaxDeductible').value) || 615;
+  let partDDeductible = parseFloat($('partDDeductible').value); if (!Number.isFinite(partDDeductible) || partDDeductible < 0) partDDeductible = 0;
+  partDDeductible = Math.min(partDDeductible, cPartDMaxDeductible);
+
+  const supplementalMonthlyPremium = parseFloat($('supplementalMonthlyPremium').value) || 0;
+  const advantageMOOP = parseFloat($('advantageMOOP').value) || 0;
+  const advantageCoinsurance = parseFloat($('advantageCoinsurance').value) || 0;
+
+  const C = {
+    partADeductible: parseFloat($('cPartADeductible').value) || 1736,
+    partADays61to90: parseFloat($('cPartADays61to90').value) || 434,
+    partALifetimeReserve: parseFloat($('cPartALifetimeReserve').value) || 868,
+    lifetimeReserveDays: parseFloat($('cLifetimeReserveDays').value) || 60,
+    snfDailyCoinsurance: parseFloat($('cSnfDailyCoinsurance').value) || 217,
+    snfCoveredDaysFull: parseFloat($('cSnfCoveredDaysFull').value) || 20,
+    snfMaxDays: parseFloat($('cSnfMaxDays').value) || 100,
+    partBDeductible: parseFloat($('cPartBDeductible').value) || 283,
+    partBCoinsuranceRate: (parseFloat($('cPartBCoinsuranceRate').value) || 20) / 100,
+    partDOOPCap: parseFloat($('cPartDOOPCap').value) || 2100,
+    partDStandardCoinsurance: 0.25,
+    partBByTier: parseNumList($('cPartB').value, [202.90,284.10,405.80,527.50,649.20,689.90]),
+    partDByTier: parseNumList($('cPartD').value, [0,14.50,37.50,60.40,83.30,91.00]),
+    planNVisitCopay: parseFloat($('cPlanNVisitCopay').value) || 20,
+    averageVisitCharge: parseFloat($('cAverageVisitCharge').value) || 250
+  };
+  const worstCasePeriods = parseFloat($('cWorstCasePeriods').value) || 2;
+  const worstCaseDays = parseFloat($('cWorstCaseDays').value) || 30;
+  const worstCaseSNF = parseFloat($('cWorstCaseSNF').value) || 60;
+  const worstCaseMultiplier = parseFloat($('cWorstCaseMultiplier').value) || 4;
+
+  const baseParams = {
+    coverageStructure, irmaaTier, benefitPeriods, daysPerPeriod, snfDays,
+    partBApprovedCharges, annualDrugCost, partDDeductible,
+    supplementalMonthlyPremium, advantageMOOP, advantageCoinsurance
+  };
+
+  // Step 10: three scenarios
+  const routineParams = Object.assign({}, baseParams, { benefitPeriods: 0, snfDays: 0 });
+  const routine = runScenario(routineParams, C);
+
+  const rough = runScenario(baseParams, C);
+
+  const worstParams = Object.assign({}, baseParams, {
+    benefitPeriods: worstCasePeriods,
+    daysPerPeriod: worstCaseDays,
+    snfDays: worstCaseSNF,
+    partBApprovedCharges: partBApprovedCharges * worstCaseMultiplier,
+    annualDrugCost: annualDrugCost * worstCaseMultiplier
+  });
+  const worst = runScenario(worstParams, C);
+
+  // Step 11: exposure range
+  const exposureSpread = money(worst.totalWithPremiums - routine.totalWithPremiums);
+
+  // Step 12: no-ceiling warning
+  const unlimitedExposure = rough.ceiling === null;
+
+  _lastInputs = {
+    coverageStructure, irmaaTier, benefitPeriods, daysPerPeriod, snfDays,
+    partBApprovedCharges, annualDrugCost, partDDeductible,
+    supplementalMonthlyPremium, advantageMOOP, advantageCoinsurance
+  };
+  _lastResults = { routine, rough, worst, exposureSpread, unlimitedExposure };
+
+  render();
+}
+
+function render() {
+  const r = _lastResults, rough = r.rough;
+
+  $('rHeadline').textContent = fmt(rough.totalWithPremiums);
+  $('rMonthlyBudget').textContent = fmt(rough.monthlyBudget);
+  $('rCeiling').textContent = rough.ceiling === null ? 'None' : fmt(rough.ceiling);
+  $('rCeilingNote').textContent = rough.ceiling === null ? 'No annual maximum, see warning' : 'Caps medical exposure';
+
+  $('unlimitedWarning').style.display = r.unlimitedExposure ? 'block' : 'none';
+  $('reserveWarning').style.display = rough.unlimitedFlag ? 'block' : 'none';
+  $('snfWarning').style.display = rough.snfBeyondMax ? 'block' : 'none';
+  $('moopFallbackWarning').style.display = rough.moopFallback ? 'block' : 'none';
+
+  $('dPartAInpatient').textContent = fmt(rough.partAInpatient);
+  $('dPartASNF').textContent = fmt(rough.partASNF);
+  $('dPartBTotal').textContent = fmt(rough.partBTotal);
+  $('dPartDTotal').textContent = fmt(rough.partDTotal);
+  $('dMedicalOOP').textContent = fmt(rough.medicalOOP);
+  $('dPremiums').textContent = fmt(rough.premiums);
+  $('dTotalExclPremiums').textContent = fmt(rough.totalOOPExcludingPremiums);
+  $('dTotalWithPremiums').textContent = fmt(rough.totalWithPremiums);
+  $('dMonthlyBudget').textContent = fmt(rough.monthlyBudget);
+  $('dCeiling').textContent = rough.ceiling === null ? 'None, unlimited exposure' : fmt(rough.ceiling);
+  $('dReserveDaysConsumed').textContent = rough.reserveDaysConsumed;
+
+  $('dRoutineTotal').textContent = fmt(r.routine.totalWithPremiums);
+  $('dRoughTotal').textContent = fmt(r.rough.totalWithPremiums);
+  $('dWorstTotal').textContent = fmt(r.worst.totalWithPremiums);
+  $('dExposureSpread').textContent = fmt(r.exposureSpread);
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults, rough = r.rough;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Medicare Out-of-Pocket Exposure Modeler Results',
+    `\n_Generated ${d} · AL-166 · apexlogics.org_\n`,
+    '## Context',
+    '| Field | Value |', '|---|---|',
+    `| Coverage structure | ${i.coverageStructure} |`,
+    `| IRMAA tier | ${i.irmaaTier} |`,
+    `| Benefit periods | ${i.benefitPeriods} |`,
+    '\n## Rough Year, As Entered',
+    `- **Part A inpatient cost sharing:** ${fmt(rough.partAInpatient)}`,
+    `- **Part A skilled nursing cost sharing:** ${fmt(rough.partASNF)}`,
+    `- **Part B deductible and coinsurance:** ${fmt(rough.partBTotal)}`,
+    `- **Part D cost sharing after the cap:** ${fmt(rough.partDTotal)}`,
+    `- **Medical out-of-pocket after coverage structure:** ${fmt(rough.medicalOOP)}`,
+    `- **Annual premiums including IRMAA:** ${fmt(rough.premiums)}`,
+    `- **Total out-of-pocket excluding premiums:** ${fmt(rough.totalOOPExcludingPremiums)}`,
+    `- **Total annual exposure including premiums:** ${fmt(rough.totalWithPremiums)}`,
+    `- **Monthly budget equivalent:** ${fmt(rough.monthlyBudget)}`,
+    `- **Annual ceiling:** ${rough.ceiling === null ? 'None, unlimited exposure' : fmt(rough.ceiling)}`,
+    `- **Lifetime reserve days consumed:** ${rough.reserveDaysConsumed}`,
+    '\n## Three Scenarios',
+    `- **Routine-year total:** ${fmt(r.routine.totalWithPremiums)}`,
+    `- **Rough-year total:** ${fmt(r.rough.totalWithPremiums)}`,
+    `- **Worst-case total:** ${fmt(r.worst.totalWithPremiums)}`,
+    `- **Exposure spread:** ${fmt(r.exposureSpread)}`,
+    '\n---',
+    '_This compares projected annual cost only, not networks, formularies, or provider access. Plan details vary by county. Confirm with the plan and your State Health Insurance Assistance Program before enrolling._',
+    '\n_Source: 2026 CMS Parts A & B and Part D standard benefit parameters._'
+  ];
+  dlFile('medicare-oop-exposure.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults, rough = r.rough;
+
+  const payload = {
+    mandate_type: "medicare_oop_exposure_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-166",
+    tool_id: "152-medicare-oop-exposure",
+    tool_name: "Medicare Out-of-Pocket Exposure Modeler",
+    inputs: {
+      coverage_structure: i.coverageStructure,
+      irmaa_tier: i.irmaaTier,
+      benefit_periods: i.benefitPeriods,
+      days_per_period: i.daysPerPeriod,
+      snf_days: i.snfDays,
+      part_b_approved_charges: i.partBApprovedCharges,
+      annual_drug_cost: i.annualDrugCost,
+      part_d_deductible: i.partDDeductible,
+      supplemental_monthly_premium: i.supplementalMonthlyPremium,
+      advantage_moop: i.advantageMOOP,
+      advantage_coinsurance_pct: i.advantageCoinsurance,
+      data_version: "2026"
+    },
+    outputs: {
+      part_a_inpatient: rough.partAInpatient,
+      part_a_snf: rough.partASNF,
+      part_b_total: rough.partBTotal,
+      part_d_total: rough.partDTotal,
+      medical_oop: rough.medicalOOP,
+      premiums: rough.premiums,
+      total_oop_excluding_premiums: rough.totalOOPExcludingPremiums,
+      total_with_premiums: rough.totalWithPremiums,
+      monthly_budget: rough.monthlyBudget,
+      routine_year_total: r.routine.totalWithPremiums,
+      rough_year_total: r.rough.totalWithPremiums,
+      worst_case_total: r.worst.totalWithPremiums,
+      exposure_spread: r.exposureSpread,
+      annual_ceiling: rough.ceiling,
+      unlimited_exposure: r.unlimitedExposure,
+      lifetime_reserve_days_consumed: rough.reserveDaysConsumed
+    },
+    downstream_handoff_candidates: [],
+    data_sources: [
+      "2026 CMS Parts A & B and Part D standard benefit parameters"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/medicare_projection";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-166";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* STEP 6, SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['medicare_oop_exposure_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-166_medicare-oop-exposure_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, CHAINGRAPH §6 EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* REPLACE: MANIFEST */
+const MANIFEST = {
+  "tool_id": "152-medicare-oop-exposure",
+  "al_id": "AL-166",
+  "version": "1.0.0",
+  "title": "Medicare Out-of-Pocket Exposure Modeler",
+  "description": "Given a coverage structure, IRMAA tier, and a year of Medicare utilization (benefit periods, inpatient days, SNF days, Part B charges, drug cost), walks the actual 2026 cost-sharing rules benefit period by benefit period and returns the medical and drug out-of-pocket cost, total exposure with premiums, and a routine/rough/worst-case scenario spread. Deterministic, zero external data. Policy Mandate: medicare_oop_exposure_record.",
+  "category": "retirement",
+  "journeys": ["retirement budget building","health shock stress test"],
+  "personas": ["Medicare enrollee","caregiver","retiree budgeting for health costs","financial planner"],
+  "tags": ["Medicare","out of pocket","Part A deductible","benefit period","Part D cap","health cost"],
+  "status": "active",
+  "maintenance": "annual (parameter refresh)",
+  "data_vintage": "2026 CMS Parts A & B and Part D standard benefit parameters",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["medicare_oop_exposure_record"],
+  "downstream_handoff_candidates": [],
+  "regulatory_citations": [
+    "2026 CMS Parts A & B and Part D standard benefit parameters", "Medicare statute (benefit periods, lifetime reserve, SNF)"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "coverage_structure": { "type": "string" },
+      "irmaa_tier": { "type": "integer" },
+      "benefit_periods": { "type": "number" },
+      "days_per_period": { "type": "number" },
+      "snf_days": { "type": "number" },
+      "part_b_approved_charges": { "type": "number" },
+      "annual_drug_cost": { "type": "number" }
+    },
+    "required": ["coverage_structure","irmaa_tier","benefit_periods","part_b_approved_charges"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "total_with_premiums": { "type": "number" },
+      "annual_ceiling": { "type": ["number","null"] },
+      "unlimited_exposure": { "type": "boolean" },
+      "exposure_spread": { "type": "number" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "medicare_oop_exposure",
+    "description": "Given a coverage structure, IRMAA tier, and a year of Medicare utilization, returns the medical and drug out-of-pocket cost, total exposure with premiums, whether a ceiling exists, and a routine/rough/worst-case scenario spread. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "coverage_structure": { "type": "string" },
+        "irmaa_tier": { "type": "integer" },
+        "benefit_periods": { "type": "number" },
+        "part_b_approved_charges": { "type": "number" }
+      },
+      "required": ["coverage_structure","irmaa_tier","benefit_periods","part_b_approved_charges"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+/* KEEP VERBATIM: MCP / MANIFEST TOGGLE */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

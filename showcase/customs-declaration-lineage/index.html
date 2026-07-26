@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<!--
+  ══════════════════════════════════════════════════════════════════════════════
+  APEX LOGICS — SSOT TOOL TEMPLATE (copy-and-edit reference)
+  ══════════════════════════════════════════════════════════════════════════════
+  HOW TO USE:
+    1. Copy this file to repo/showcase/customs-declaration-lineage/index.html
+    2. Edit ONLY the slots marked "REPLACE".
+    3. Leave every slot marked "KEEP VERBATIM" untouched — nav chrome, PII banner,
+       export ordering, and apexHash are CONTRACT-governed.
+    4. Write the matching manifest.json (mirror the MANIFEST const at the bottom).
+    5. Run `node scripts/check_tools.js` — MUST print 0 before any commit.
+
+  HARD RULES (CONTRACT):
+    - Single .html file. All CSS/JS inline. Google Fonts only.
+    - Zero network calls after load: no fetch, no async I/O, no WebWorker.
+    - Zero PII: no localStorage, no cookies, no IndexedDB, no sessionStorage.
+    - NO i18n. No language selector, no translation attributes, no language
+      switcher function, and no language key in storage. English only.
+    - Export row order: Markdown FIRST, Policy Mandate (AP2) SECOND.
+    - Nav = "← All Tools" pill + "← Showcase Gallery" pill on showcase pages.
+  ══════════════════════════════════════════════════════════════════════════════
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- REPLACE: title, canonical, description -->
+  <title>Customs Declaration Lineage · ApexLogics Showcase SC-64</title>
+  <meta name="description" content="Enter a customs declaration and its supporting document set and see completeness, format checks, and an amendment-aware digest you can defend at audit. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/showcase/customs-declaration-lineage/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <!-- KEEP VERBATIM: Google Fonts link -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* KEEP VERBATIM: design tokens (CONTRACT Appendix A). */
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    /* KEEP VERBATIM: nav chrome ─────────────────────────────────────────── */
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    /* KEEP VERBATIM: page shell + PII banner */
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    /* Hero */
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    /* Cards + fields */
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="text"], input[type="number"] { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .check-field { display: flex; align-items: center; gap: 8px; font-size: 0.86rem; color: var(--text-muted); }
+    .check-field input { width: auto; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    /* Results */
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+
+    /* KEEP VERBATIM: export row (Markdown FIRST, Policy Mandate SECOND) */
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    /* KEEP VERBATIM: footer */
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .check-grid { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    /* KEEP VERBATIM: mfst disclosure */
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<!-- ══ KEEP VERBATIM: NAV — do not edit anything between here and </nav> ══ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+      <a href="../index.html" class="nav-pill">&#x2190; Showcase Gallery</a>
+    </div>
+  </div>
+</nav>
+<!-- ══ END NAV ══ -->
+
+<div class="tool-wrapper">
+
+  <!-- KEEP VERBATIM: PII banner. The text is fixed by CONTRACT — do not reword. -->
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <!-- REPLACE: hero eyebrow -->
+  <p class="tool-eyebrow">OCG-Industries Showcase · Cluster ⑪ Trade, Customs and Logistics</p>
+  <!-- REPLACE: hero h1 -->
+  <h1 class="tool-title">Customs Declaration<br>Lineage</h1>
+  <!-- REPLACE: hero description (one plain paragraph, no em-dashes) -->
+  <p class="tool-desc">Enter a declaration's core fields, mark which supporting documents you have on hand, and set an amendment index. This tool checks completeness, checks the commodity code and origin country against their expected formats, and derives a digest from the whole declaration plus the amendment number, so amendment 1 and amendment 2 of the same shipment leave two different, comparable fingerprints instead of one record that got quietly overwritten.</p>
+  <!-- REPLACE: data vintage. A bare year is NOT acceptable. Cite the statute or
+       dataset -->
+  <p class="tool-vintage">Data: Regulation (EU) 952/2013 (Union Customs Code) Art.162, Art.173 · WCO Harmonized System</p>
+
+  <!-- REPLACE: input fields. Keep the .card / .form-grid / .field structure. -->
+  <div class="card">
+    <div class="card-title">Declaration Fields <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="declarantEori">Declarant EORI</label>
+        <input type="text" id="declarantEori" value="GB205672212000" />
+      </div>
+      <div class="field">
+        <label for="commodityCode">Commodity code</label>
+        <input type="text" id="commodityCode" value="84713000" />
+        <span class="field-hint">Digits only, 8 or 10 characters</span>
+      </div>
+      <div class="field">
+        <label for="originCountry">Origin country</label>
+        <input type="text" id="originCountry" value="CN" />
+        <span class="field-hint">Two letter code</span>
+      </div>
+      <div class="field">
+        <label for="amendmentIndex">Amendment index</label>
+        <input type="number" id="amendmentIndex" value="0" step="1" />
+      </div>
+      <div class="field">
+        <label for="customsValueCents">Customs value (cents)</label>
+        <input type="number" id="customsValueCents" value="4500000" step="1" />
+      </div>
+      <div class="field">
+        <label for="grossMassGrams">Gross mass (grams)</label>
+        <input type="number" id="grossMassGrams" value="1200000" step="1" />
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Supporting Document Set <span class="badge">STEP 2</span></div>
+    <div class="check-grid">
+      <label class="check-field"><input type="checkbox" id="docCommercialInvoice" checked /> Commercial invoice</label>
+      <label class="check-field"><input type="checkbox" id="docPackingList" checked /> Packing list</label>
+      <label class="check-field"><input type="checkbox" id="docTransportDocument" checked /> Transport document</label>
+      <label class="check-field"><input type="checkbox" id="docOriginProof" /> Certificate of origin</label>
+    </div>
+  </div>
+
+  <!-- REPLACE: button label only -->
+  <button class="run-btn" onclick="calculate()">Check Declaration →</button>
+
+  <!-- REPLACE: results markup. KEEP the id="resultsSection" wrapper and the
+       .results-export-row block verbatim. -->
+  <div class="results-section" id="resultsSection">
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Status</div>
+        <div class="metric-val accent" id="rStatus">—</div>
+        <div class="metric-note">Ready, format fault, incomplete, or empty</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Missing Fields</div>
+        <div class="metric-val amber" id="rMissing">—</div>
+        <div class="metric-note">Of 5 required fields</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Documents on File</div>
+        <div class="metric-val green" id="rDocs">—</div>
+        <div class="metric-note">Of 4 supporting document types</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">Missing field count</span><span class="row-val" id="dMissing">—</span></div>
+      <div class="row"><span class="row-label">Commodity code format ok</span><span class="row-val" id="dCommodityFormat">—</span></div>
+      <div class="row"><span class="row-label">Origin country format ok</span><span class="row-val" id="dOriginFormat">—</span></div>
+      <div class="row"><span class="row-label">Supporting doc count</span><span class="row-val" id="dDocCount">—</span></div>
+      <div class="row"><span class="row-label">Missing doc count</span><span class="row-val" id="dDocMissing">—</span></div>
+      <div class="row"><span class="row-label">Amendment index</span><span class="row-val" id="dAmendment">—</span></div>
+      <div class="row"><span class="row-label">Declaration digest (mutation detector, not a cryptographic digest)</span><span class="row-val" id="dDigest">—</span></div>
+      <div class="row"><span class="row-label">Status</span><span class="row-val" id="dStatus">—</span></div>
+
+      <!-- KEEP VERBATIM: export row. Markdown FIRST, Policy Mandate SECOND. -->
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- KEEP VERBATIM: mfst disclosure block, immediately before the footer -->
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <!-- REPLACE: AL-ID and the citation. Keep the shape:
+       About · CC BY 4.0 · {AL-ID} · Data: {real citation} -->
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · SC-64 · Data: Regulation (EU) 952/2013 (Union Customs Code) Art.162, Art.173 · WCO Harmonized System
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+/* KEEP VERBATIM: helpers */
+const $ = id => document.getElementById(id);
+
+/* KEEP VERBATIM: shared fingerprint helper (djb2, mutation detector only). */
+function fingerprint(str){var h=5381,s=String(str).toUpperCase();for(var i=0;i<s.length;i++)h=((Math.imul(h,33)+s.charCodeAt(i))&0x7fffffff);return h;}
+
+/* ── CORE MATH ─────────────────────────────────────────────────────────────── */
+/* REPLACE: compute() body. Rules:
+     - Pure, synchronous, deterministic. No fetch, no storage, no Math.random.
+     - Never call new Date() inside anything that reaches policy_parameters
+       or output_payload; generated_at at the top level is the only time value.
+     - Guard every division against zero. */
+function calculate() {
+  const declarantEori = String($('declarantEori').value || '').trim();
+  const commodityCode = String($('commodityCode').value || '').trim();
+  const originCountry = String($('originCountry').value || '').trim();
+
+  let customsValueCents = parseInt($('customsValueCents').value, 10);
+  if (!Number.isFinite(customsValueCents)) customsValueCents = 0;
+  let grossMassGrams = parseInt($('grossMassGrams').value, 10);
+  if (!Number.isFinite(grossMassGrams)) grossMassGrams = 0;
+  let amendmentIndex = parseInt($('amendmentIndex').value, 10);
+  if (!Number.isFinite(amendmentIndex)) amendmentIndex = 0;
+
+  const docCommercialInvoice = $('docCommercialInvoice').checked;
+  const docPackingList = $('docPackingList').checked;
+  const docTransportDocument = $('docTransportDocument').checked;
+  const docOriginProof = $('docOriginProof').checked;
+
+  let missingFieldCount = 0;
+  if (!declarantEori) missingFieldCount++;
+  if (!commodityCode) missingFieldCount++;
+  if (!originCountry) missingFieldCount++;
+  if (customsValueCents <= 0) missingFieldCount++;
+  if (grossMassGrams <= 0) missingFieldCount++;
+
+  const commodityCodeFormatOk = /^[0-9]+$/.test(commodityCode) && (commodityCode.length === 8 || commodityCode.length === 10);
+  const originCountryFormatOk = /^[A-Za-z]{2}$/.test(originCountry);
+
+  const docFlags = [docCommercialInvoice, docPackingList, docTransportDocument, docOriginProof];
+  const supportingDocCount = docFlags.filter(Boolean).length;
+  const missingDocCount = 4 - supportingDocCount;
+
+  const declarationDigest = fingerprint(
+    [declarantEori, commodityCode, originCountry, customsValueCents, grossMassGrams,
+     docCommercialInvoice, docPackingList, docTransportDocument, docOriginProof].join('|')
+    + '|amd' + amendmentIndex
+  );
+
+  let status;
+  if (missingFieldCount === 5) status = 'empty';
+  else if (missingFieldCount > 0) status = 'incomplete';
+  else if (!commodityCodeFormatOk || !originCountryFormatOk) status = 'format-fault';
+  else status = 'ready';
+
+  _lastInputs = {
+    declarantEori, commodityCode, originCountry, customsValueCents, grossMassGrams, amendmentIndex,
+    docCommercialInvoice, docPackingList, docTransportDocument, docOriginProof
+  };
+  _lastResults = {
+    missingFieldCount, commodityCodeFormatOk, originCountryFormatOk,
+    supportingDocCount, missingDocCount, amendmentIndex, declarationDigest, status
+  };
+
+  render();
+}
+
+/* REPLACE: render() body — write results into the markup above. */
+function render() {
+  const r = _lastResults;
+  const pass = r.status === 'ready';
+
+  $('rStatus').textContent = r.status;
+  $('rStatus').className   = 'metric-val ' + (pass ? 'green' : r.status === 'empty' ? 'amber' : 'red');
+
+  $('rMissing').textContent = String(r.missingFieldCount) + ' / 5';
+  $('rMissing').className   = 'metric-val ' + (r.missingFieldCount > 0 ? 'red' : 'green');
+
+  $('rDocs').textContent = String(r.supportingDocCount) + ' / 4';
+
+  $('dMissing').textContent         = String(r.missingFieldCount) + ' / 5';
+  $('dCommodityFormat').textContent = r.commodityCodeFormatOk ? 'true' : 'false';
+  $('dOriginFormat').textContent    = r.originCountryFormatOk ? 'true' : 'false';
+  $('dDocCount').textContent        = String(r.supportingDocCount) + ' / 4';
+  $('dDocMissing').textContent      = String(r.missingDocCount);
+  $('dAmendment').textContent       = String(r.amendmentIndex);
+  $('dDigest').textContent          = String(r.declarationDigest);
+  $('dStatus').textContent          = r.status;
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+/* REPLACE: the line contents only. Keep the dlFile() call shape. */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Customs Declaration Lineage Results',
+    `\n_Generated ${d} · SC-64 · apexlogics.org_\n`,
+    '## Inputs',
+    `- Declarant EORI: ${i.declarantEori || '(blank)'}`,
+    `- Commodity code: ${i.commodityCode || '(blank)'}`,
+    `- Origin country: ${i.originCountry || '(blank)'}`,
+    `- Customs value (cents): ${i.customsValueCents}`,
+    `- Gross mass (grams): ${i.grossMassGrams}`,
+    `- Amendment index: ${i.amendmentIndex}`,
+    `- Documents on file: ${[i.docCommercialInvoice && 'commercial invoice', i.docPackingList && 'packing list', i.docTransportDocument && 'transport document', i.docOriginProof && 'certificate of origin'].filter(Boolean).join(', ') || 'none'}`,
+    '\n## Results',
+    `- **Missing field count:** ${r.missingFieldCount} of 5`,
+    `- **Commodity code format ok:** ${r.commodityCodeFormatOk}`,
+    `- **Origin country format ok:** ${r.originCountryFormatOk}`,
+    `- **Supporting doc count:** ${r.supportingDocCount} of 4`,
+    `- **Missing doc count:** ${r.missingDocCount}`,
+    `- **Declaration digest:** ${r.declarationDigest} (mutation detector, not a cryptographic digest)`,
+    `- **Status:** ${r.status}`,
+    '\n_Changing the amendment index changes the digest. Each amendment is its own derivation._',
+    '\n---',
+    '_Source: Regulation (EU) 952/2013 (Union Customs Code) Art.162, Art.173, WCO Harmonized System. For planning purposes only._'
+  ];
+  dlFile('customs-declaration-lineage.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+/* The ORDER of the steps below is non-negotiable. Edit field VALUES only.
+   Never emit ap2_version. */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  /* STEP 1 — REPLACE: domain payload (mandate_type, al_id, tool_id, inputs,
+     outputs, downstream_handoff_candidates, metadata). No Date/Math.random here. */
+  const payload = {
+    mandate_type: "customs_declaration_lineage_record",
+    generated_at: new Date().toISOString(),
+    al_id: "SC-64",
+    tool_id: "sc64-customs-declaration-lineage",
+    tool_name: "Customs Declaration Lineage",
+    inputs: {
+      declarant_eori: i.declarantEori,
+      commodity_code: i.commodityCode,
+      origin_country: i.originCountry,
+      customs_value_cents: i.customsValueCents,
+      gross_mass_grams: i.grossMassGrams,
+      amendment_index: i.amendmentIndex,
+      commercial_invoice: i.docCommercialInvoice,
+      packing_list: i.docPackingList,
+      transport_document: i.docTransportDocument,
+      origin_proof: i.docOriginProof
+    },
+    outputs: {
+      missing_field_count: r.missingFieldCount,
+      commodity_code_format_ok: r.commodityCodeFormatOk,
+      origin_country_format_ok: r.originCountryFormatOk,
+      supporting_doc_count: r.supportingDocCount,
+      missing_doc_count: r.missingDocCount,
+      amendment_index: r.amendmentIndex,
+      declaration_digest: r.declarationDigest,
+      status: r.status
+    },
+    downstream_handoff_candidates: [],
+    data_sources: [
+      "Regulation (EU) 952/2013 (Union Customs Code) Art.162, Art.173",
+      "WCO Harmonized System"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  /* STEP 2 — KEEP VERBATIM: OpenChainGraph L1 + L2 (parent capture via ?ap2=) */
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/customs_declaration_lineage";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-00";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  /* STEP 3 — KEEP VERBATIM: build _cgDomain by excluding envelope keys */
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "integer_checksum", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  /* STEP 4 — KEEP VERBATIM: canonical execution hash */
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  /* STEP 5 — KEEP VERBATIM: OCG v0.4 envelope fields (hash-excluded, additive) */
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     STEP 6 — SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE.
+     The relocation in STEP 7 deletes `inputs`, `ap2_mandate_type` and friends
+     off `payload`. If you validate `payload` instead of `_cgPreval`, the
+     validator sees a payload with no `inputs` and no `ap2_mandate_type`, the
+     export silently fails or emits a broken file, and nothing warns you.
+     This exact bug shipped across ~64 tools. Validate the SNAPSHOT.
+     ══════════════════════════════════════════════════════════════════════════ */
+  const _cgPreval = Object.assign({}, payload);
+
+  /* STEP 7 — KEEP VERBATIM: relocate non-allowed keys into hash-excluded apex_meta */
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  /* STEP 8 — validate the SNAPSHOT, then and only then create the object URL.
+     REPLACE: the `valid` list with your tool's own emitted mandate type(s). */
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['customs_declaration_lineage_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`SC-64_customs-declaration-lineage_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash — CHAINGRAPH §6 EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  // OCG Standard §4 canonical execution hash. RFC 8785 JCS-equivalent
+  // (recursive key sort + JSON.stringify) over {policy_parameters,
+  // output_payload}, SHA-256, BARE lowercase hex (no "sha256:" prefix — matches
+  // AINumbers/OCS for cross-vendor verify). I-JSON guard rejects non-finite /
+  // unsafe-integer values so a non-canonical value can never silently produce an
+  // unstable hash. Mirrors vendored chaingraph/kernels/_hash.mjs.
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* REPLACE: MANIFEST — must match the tool's manifest.json byte for byte in
+   substance (al_id, tool_id, mandate types, citations, MCP definition). */
+const MANIFEST = {
+  "tool_id": "sc64-customs-declaration-lineage",
+  "al_id": "SC-64",
+  "mcp_name": "customs_declaration_lineage",
+  "version": "1.0.0",
+  "title": "Customs Declaration Lineage",
+  "description": "Given a customs declaration's core fields, its supporting document set, and an amendment index, returns missing field count, format checks for commodity code and origin country, supporting and missing document counts, the amendment index, a declaration digest, and a status. Deterministic, zero external data. Policy Mandate v2.0: customs_declaration_lineage_record.",
+  "category": "showcase",
+  "cluster": "trade-customs-logistics",
+  "journeys": [],
+  "personas": ["customs broker"],
+  "tags": ["customs","union-customs-code","harmonized-system","audit","showcase"],
+  "status": "showcase",
+  "maintenance": "zero",
+  "data_vintage": "Regulation (EU) 952/2013 (Union Customs Code) Art.162, Art.173",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["customs_declaration_lineage_record"],
+  "downstream_handoff_candidates": [],
+  "regulatory_citations": [
+    "Regulation (EU) 952/2013 (Union Customs Code) Art.162, Art.173",
+    "WCO Harmonized System"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "declarant_eori": { "type": "string" },
+      "commodity_code": { "type": "string" },
+      "origin_country": { "type": "string" },
+      "customs_value_cents": { "type": "integer" },
+      "gross_mass_grams": { "type": "integer" },
+      "amendment_index": { "type": "integer" },
+      "commercial_invoice": { "type": "boolean" },
+      "packing_list": { "type": "boolean" },
+      "transport_document": { "type": "boolean" },
+      "origin_proof": { "type": "boolean" }
+    },
+    "required": ["amendment_index"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "missing_field_count":       { "type": "integer" },
+      "commodity_code_format_ok":  { "type": "boolean" },
+      "origin_country_format_ok":  { "type": "boolean" },
+      "supporting_doc_count":      { "type": "integer" },
+      "missing_doc_count":         { "type": "integer" },
+      "amendment_index":           { "type": "integer" },
+      "declaration_digest":        { "type": "integer" },
+      "status":                    { "type": "string" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "customs_declaration_lineage",
+    "description": "Given a customs declaration's core fields, document set, and amendment index, returns completeness, format checks, document counts, the amendment index, a digest, and a status. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "declarant_eori": { "type": "string" },
+        "commodity_code": { "type": "string" },
+        "origin_country": { "type": "string" },
+        "customs_value_cents": { "type": "integer" },
+        "gross_mass_grams": { "type": "integer" },
+        "amendment_index": { "type": "integer" },
+        "commercial_invoice": { "type": "boolean" },
+        "packing_list": { "type": "boolean" },
+        "transport_document": { "type": "boolean" },
+        "origin_proof": { "type": "boolean" }
+      },
+      "required": ["amendment_index"]
+    }
+  },
+  "source_card": "https://ainumbers.co/chaingraph/ocg-industries.html#c11-2",
+  "chain": "showcase-customs-declaration-lineage",
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+/* KEEP VERBATIM: MCP / MANIFEST TOGGLE (standardized, additive) */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

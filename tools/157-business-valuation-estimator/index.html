@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Business Valuation Estimator · ApexLogics</title>
+  <meta name="description" content="Three-method small business valuation: seller discretionary earnings multiple, EBITDA multiple, and asset based floor, blended with your own weights. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/tools/157-business-valuation-estimator/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .subgroup { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin: 18px 0 10px; }
+    .subgroup:first-of-type { margin-top: 0; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+
+    .caveat-note { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; padding: .8rem 1rem; font-size: .8rem; color: var(--text-muted); margin-bottom: 16px; }
+
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">Small Business · Exit Planning</p>
+  <h1 class="tool-title">Business Valuation<br>Estimator</h1>
+  <p class="tool-desc">Three standard lenses on what a small business is worth: a seller discretionary earnings multiple, an EBITDA multiple, and an asset based floor. Set your own multiples and blend weights, and see how far apart the three methods land. The spread between them usually tells you more than any single number.</p>
+  <p class="tool-vintage">Data: 2026 (owner-earnings multiples are market conventions, user-overridable)</p>
+
+  <div class="card">
+    <div class="card-title">Inputs <span class="badge">STEP 1</span></div>
+
+    <div class="subgroup">Financials, trailing twelve months</div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="revenue">Annual revenue ($)</label>
+        <input type="number" id="revenue" value="1200000" min="0" max="1000000000" step="1000" />
+        <span class="field-hint">Trailing twelve months gross revenue.</span>
+      </div>
+      <div class="field">
+        <label for="cogs">Cost of goods sold ($)</label>
+        <input type="number" id="cogs" value="480000" min="0" max="1000000000" step="1000" />
+        <span class="field-hint">Direct costs only.</span>
+      </div>
+      <div class="field">
+        <label for="opex">Operating expenses ($)</label>
+        <input type="number" id="opex" value="420000" min="0" max="1000000000" step="1000" />
+        <span class="field-hint">Excluding owner compensation and one-time items.</span>
+      </div>
+      <div class="field">
+        <label for="ownerComp">Owner salary and benefits ($)</label>
+        <input type="number" id="ownerComp" value="120000" min="0" max="10000000" step="1000" />
+        <span class="field-hint">Total paid to the owner-operator, added back for SDE.</span>
+      </div>
+      <div class="field">
+        <label for="ownerAddBacks">Owner personal add-backs ($)</label>
+        <input type="number" id="ownerAddBacks" value="18000" min="0" max="10000000" step="500" />
+        <span class="field-hint">Discretionary items a buyer would not repeat, such as a personal vehicle.</span>
+      </div>
+      <div class="field">
+        <label for="oneTimeExpenses">One-time or non-recurring expenses ($)</label>
+        <input type="number" id="oneTimeExpenses" value="15000" min="0" max="10000000" step="500" />
+        <span class="field-hint">Legal settlements, a move, a failed product launch.</span>
+      </div>
+      <div class="field">
+        <label for="dna">Depreciation and amortization ($)</label>
+        <input type="number" id="dna" value="35000" min="0" max="10000000" step="500" />
+        <span class="field-hint">Non-cash charges, added back for EBITDA.</span>
+      </div>
+      <div class="field">
+        <label for="interest">Interest expense ($)</label>
+        <input type="number" id="interest" value="22000" min="0" max="10000000" step="500" />
+        <span class="field-hint">Added back for EBITDA.</span>
+      </div>
+    </div>
+
+    <div class="subgroup">Multiples</div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="sdeMultiple">SDE multiple</label>
+        <input type="number" id="sdeMultiple" value="2.80" min="0" max="20" step="0.05" />
+        <span class="field-hint">Typical small-business range is roughly 2.0 to 4.0.</span>
+      </div>
+      <div class="field">
+        <label for="ebitdaMultiple">EBITDA multiple</label>
+        <input type="number" id="ebitdaMultiple" value="4.50" min="0" max="20" step="0.05" />
+        <span class="field-hint">Typical lower-middle-market range is roughly 3.5 to 6.5.</span>
+      </div>
+    </div>
+
+    <div class="subgroup">Assets and liabilities</div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="tangibleFMV">Tangible asset fair market value ($)</label>
+        <input type="number" id="tangibleFMV" value="340000" min="0" max="1000000000" step="1000" />
+        <span class="field-hint">Equipment, vehicles, real property, at realistic resale value.</span>
+      </div>
+      <div class="field">
+        <label for="inventory">Inventory at cost ($)</label>
+        <input type="number" id="inventory" value="90000" min="0" max="1000000000" step="1000" />
+        <span class="field-hint">Saleable inventory only.</span>
+      </div>
+      <div class="field">
+        <label for="receivables">Accounts receivable, collectible ($)</label>
+        <input type="number" id="receivables" value="110000" min="0" max="1000000000" step="1000" />
+        <span class="field-hint">Net of expected bad debt.</span>
+      </div>
+      <div class="field">
+        <label for="liabilitiesAssumed">Total liabilities assumed ($)</label>
+        <input type="number" id="liabilitiesAssumed" value="185000" min="0" max="1000000000" step="1000" />
+        <span class="field-hint">Debt and payables a buyer would take on.</span>
+      </div>
+    </div>
+
+    <div class="subgroup">Blend weights, need not sum to 100</div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="wSDE">Weight: SDE method (%)</label>
+        <input type="number" id="wSDE" value="40" min="0" max="1000" step="1" />
+        <span class="field-hint">The three weights are normalized.</span>
+      </div>
+      <div class="field">
+        <label for="wEBITDA">Weight: EBITDA method (%)</label>
+        <input type="number" id="wEBITDA" value="40" min="0" max="1000" step="1" />
+      </div>
+      <div class="field">
+        <label for="wAsset">Weight: asset method (%)</label>
+        <input type="number" id="wAsset" value="20" min="0" max="1000" step="1" />
+      </div>
+    </div>
+
+    <div class="subgroup">Discounts</div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="ownerDependencePct">Owner dependence discount (%)</label>
+        <input type="number" id="ownerDependencePct" value="10" min="0" max="100" step="1" />
+        <span class="field-hint">Reduction for a business that cannot run without the owner. 0 to 40 is typical.</span>
+      </div>
+      <div class="field">
+        <label for="concentrationPct">Customer concentration discount (%)</label>
+        <input type="number" id="concentrationPct" value="5" min="0" max="100" step="1" />
+        <span class="field-hint">Reduction where a few clients dominate revenue.</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Estimate Business Value →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="caveat-note">Valuation multiples are market conventions, not published rates. A real transaction price depends on deal structure, buyer type, financing, and diligence findings. This is an illustrative estimate for planning, not an appraisal or a fairness opinion.</div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Blended Estimated Value</div>
+        <div class="metric-val accent" id="rBlended">--</div>
+        <div class="metric-note" id="rBlendedNote">Weighted across three methods, after discounts</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Estimated Range</div>
+        <div class="metric-val green" id="rRange">--</div>
+        <div class="metric-note">Plus or minus 15 percent, a modelling convention</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Method Spread</div>
+        <div class="metric-val amber" id="rSpread">--</div>
+        <div class="metric-note" id="rSpreadNote">Gap between the widest and narrowest method</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">SDE (seller discretionary earnings)</span><span class="row-val" id="dSDE">--</span></div>
+      <div class="row"><span class="row-label">Value, SDE method</span><span class="row-val" id="dValueSDE">--</span></div>
+      <div class="row"><span class="row-label">EBITDA</span><span class="row-val" id="dEBITDA">--</span></div>
+      <div class="row"><span class="row-label">Value, EBITDA method</span><span class="row-val" id="dValueEBITDA">--</span></div>
+      <div class="row"><span class="row-label">Asset based value</span><span class="row-val" id="dValueAsset">--</span></div>
+      <div class="row" id="rowNetAsset" style="display:none"><span class="row-label">Net asset value (informational, before floor at zero)</span><span class="row-val" id="dNetAsset">--</span></div>
+      <div class="row"><span class="row-label">Applied discount</span><span class="row-val" id="dDiscount">--</span></div>
+      <div class="row"><span class="row-label">Implied revenue multiple</span><span class="row-val" id="dImpliedRevMult">--</span></div>
+      <div class="row" id="rowWeightNote" style="display:none"><span class="row-label">Weight normalization</span><span class="row-val" id="dWeightNote">--</span></div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-171 · Data: 2026 broker valuation conventions (SDE and EBITDA multiples), user-overridable, no external data feed
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+/* KEEP VERBATIM: helpers */
+const $   = id => document.getElementById(id);
+const fmt = n => '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
+const fmtBp = bp => (bp / 100).toLocaleString('en-US', { maximumFractionDigits: 2 }) + '%';
+const money = n => Math.round(n * 100) / 100;
+
+/* input coercion helpers, standard defaults */
+function numOr(raw, def) {
+  const n = parseFloat(raw);
+  return Number.isFinite(n) ? n : def;
+}
+function dollars(raw, def) {
+  return Math.round(numOr(raw, def));
+}
+
+/* ── CORE MATH ─────────────────────────────────────────────────────────────── */
+function calculate() {
+  const revenue             = dollars($('revenue').value, 1200000);
+  const cogs                = dollars($('cogs').value, 480000);
+  const opex                = dollars($('opex').value, 420000);
+  const ownerComp           = dollars($('ownerComp').value, 120000);
+  const ownerAddBacks       = dollars($('ownerAddBacks').value, 18000);
+  const oneTimeExpenses     = dollars($('oneTimeExpenses').value, 15000);
+  const dna                 = dollars($('dna').value, 35000);
+  const interest            = dollars($('interest').value, 22000);
+  const sdeMultiple         = Math.max(0, numOr($('sdeMultiple').value, 2.80));
+  const ebitdaMultiple      = Math.max(0, numOr($('ebitdaMultiple').value, 4.50));
+  const tangibleFMV         = dollars($('tangibleFMV').value, 340000);
+  const inventory           = dollars($('inventory').value, 90000);
+  const receivables         = dollars($('receivables').value, 110000);
+  const liabilitiesAssumed  = dollars($('liabilitiesAssumed').value, 185000);
+  const wSDERaw             = Math.max(0, numOr($('wSDE').value, 40));
+  const wEBITDARaw          = Math.max(0, numOr($('wEBITDA').value, 40));
+  const wAssetRaw           = Math.max(0, numOr($('wAsset').value, 20));
+  const ownerDependencePct  = Math.max(0, numOr($('ownerDependencePct').value, 10));
+  const concentrationPct    = Math.max(0, numOr($('concentrationPct').value, 5));
+
+  /* steps 1-4 */
+  const grossProfit     = revenue - cogs;
+  const operatingIncome = grossProfit - opex;
+  const sde    = operatingIncome + ownerComp + ownerAddBacks + oneTimeExpenses;
+  const ebitda = operatingIncome + dna + interest + oneTimeExpenses;
+
+  /* steps 5-6, suppress non-positive methods */
+  const sdeSuppressed    = sde <= 0;
+  const ebitdaSuppressed = ebitda <= 0;
+  const valueSDE    = sdeSuppressed    ? 0 : Math.round(sde * sdeMultiple);
+  const valueEBITDA = ebitdaSuppressed ? 0 : Math.round(ebitda * ebitdaMultiple);
+
+  /* steps 7-8 */
+  const assetBase     = tangibleFMV + inventory + receivables;
+  const netAssetValue = assetBase - liabilitiesAssumed;
+  const valueAsset     = Math.max(0, netAssetValue);
+
+  const allMethodsZero = sdeSuppressed && ebitdaSuppressed && valueAsset === 0;
+
+  /* step 9, normalize weights, suppressed methods get zero weight */
+  let wSDE    = sdeSuppressed    ? 0 : wSDERaw;
+  let wEBITDA = ebitdaSuppressed ? 0 : wEBITDARaw;
+  let wAsset  = wAssetRaw;
+  const wSum = wSDE + wEBITDA + wAsset;
+
+  let bpSDE, bpEBITDA, bpAsset, equalThirdsFallback = false;
+  if (wSum <= 0) {
+    equalThirdsFallback = true;
+    const activeCount = (sdeSuppressed ? 0 : 1) + (ebitdaSuppressed ? 0 : 1) + 1;
+    const share = Math.round(10000 / activeCount);
+    bpSDE    = sdeSuppressed    ? 0 : share;
+    bpEBITDA = ebitdaSuppressed ? 0 : share;
+    bpAsset  = share;
+  } else {
+    bpSDE    = Math.round(wSDE    / wSum * 10000);
+    bpEBITDA = Math.round(wEBITDA / wSum * 10000);
+    bpAsset  = Math.round(wAsset  / wSum * 10000);
+  }
+  /* remainder to the largest weight so the three basis-point values sum to exactly 10000 */
+  const bpDiff = 10000 - (bpSDE + bpEBITDA + bpAsset);
+  if (bpDiff !== 0) {
+    if (bpSDE >= bpEBITDA && bpSDE >= bpAsset) bpSDE += bpDiff;
+    else if (bpEBITDA >= bpSDE && bpEBITDA >= bpAsset) bpEBITDA += bpDiff;
+    else bpAsset += bpDiff;
+  }
+
+  /* step 10 */
+  const blendedRaw = allMethodsZero ? 0 : Math.round(
+    (valueSDE * bpSDE + valueEBITDA * bpEBITDA + valueAsset * bpAsset) / 10000
+  );
+
+  /* step 11 */
+  const discountBp = Math.min(6000, Math.round((ownerDependencePct + concentrationPct) * 100));
+
+  /* step 12 */
+  const blendedValue = allMethodsZero ? 0 : Math.round(blendedRaw * (10000 - discountBp) / 10000);
+
+  /* step 13 */
+  const rangeLow  = Math.round(blendedValue * 0.85);
+  const rangeHigh = Math.round(blendedValue * 1.15);
+
+  /* step 14, spread across active methods only */
+  const activeValues = [];
+  if (!sdeSuppressed) activeValues.push(valueSDE);
+  if (!ebitdaSuppressed) activeValues.push(valueEBITDA);
+  activeValues.push(valueAsset);
+  const maxV = Math.max(...activeValues);
+  const minV = Math.min(...activeValues);
+  const methodSpreadBp = allMethodsZero ? 0 : Math.round((maxV - minV) / Math.max(1, blendedRaw) * 10000);
+  const methodsDisagree = methodSpreadBp > 6000;
+
+  /* step 15, suppressed on zero revenue rather than dividing by zero */
+  const impliedRevenueMultipleBp = revenue > 0 ? Math.round(blendedValue / revenue * 10000) : 0;
+
+  _lastInputs = {
+    revenue, cogs, opex, ownerComp, ownerAddBacks, oneTimeExpenses, dna, interest,
+    sdeMultiple, ebitdaMultiple, tangibleFMV, inventory, receivables, liabilitiesAssumed,
+    weightSdePct: wSDERaw, weightEbitdaPct: wEBITDARaw, weightAssetPct: wAssetRaw,
+    ownerDependencePct, concentrationPct
+  };
+  _lastResults = {
+    sde, ebitda, valueSDE, valueEBITDA, valueAsset, netAssetValue,
+    sdeSuppressed, ebitdaSuppressed, allMethodsZero, equalThirdsFallback,
+    bpSDE, bpEBITDA, bpAsset, discountBp, blendedRaw, blendedValue,
+    rangeLow, rangeHigh, methodSpreadBp, methodsDisagree, impliedRevenueMultipleBp
+  };
+
+  render();
+}
+
+function render() {
+  const i = _lastInputs, r = _lastResults;
+
+  $('rBlended').textContent = r.allMethodsZero ? '$0' : fmt(r.blendedValue);
+  $('rBlendedNote').textContent = r.allMethodsZero
+    ? 'No positive value under any method at these inputs'
+    : 'Weighted across three methods, after discounts';
+
+  $('rRange').textContent = r.allMethodsZero ? '$0 – $0' : (fmt(r.rangeLow) + ' – ' + fmt(r.rangeHigh));
+
+  $('rSpread').textContent = fmtBp(r.methodSpreadBp);
+  $('rSpread').className = 'metric-val ' + (r.methodsDisagree ? 'red' : 'amber');
+  $('rSpreadNote').textContent = r.methodsDisagree
+    ? 'Methods disagree widely, treat the blend with caution'
+    : 'Gap between the widest and narrowest method';
+
+  $('dSDE').textContent = r.sdeSuppressed ? 'Not meaningful at current earnings' : fmt(r.sde);
+  $('dValueSDE').textContent = r.sdeSuppressed ? 'Not meaningful at current earnings' : fmt(r.valueSDE);
+  $('dEBITDA').textContent = r.ebitdaSuppressed ? 'Not meaningful at current earnings' : fmt(r.ebitda);
+  $('dValueEBITDA').textContent = r.ebitdaSuppressed ? 'Not meaningful at current earnings' : fmt(r.valueEBITDA);
+  $('dValueAsset').textContent = fmt(r.valueAsset);
+
+  if (r.netAssetValue < 0) {
+    $('rowNetAsset').style.display = 'flex';
+    $('dNetAsset').textContent = '-' + fmt(r.netAssetValue);
+  } else {
+    $('rowNetAsset').style.display = 'none';
+  }
+
+  $('dDiscount').textContent = fmtBp(r.discountBp);
+  $('dImpliedRevMult').textContent = i.revenue > 0 ? fmtBp(r.impliedRevenueMultipleBp) : 'Suppressed, revenue is zero';
+
+  if (r.equalThirdsFallback) {
+    $('rowWeightNote').style.display = 'flex';
+    $('dWeightNote').textContent = 'All usable weights were zero, fell back to equal thirds';
+  } else {
+    $('rowWeightNote').style.display = 'none';
+  }
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Business Valuation Estimator Results',
+    `\n_Generated ${d} · AL-171 · apexlogics.org_\n`,
+    '## Inputs',
+    '| Field | Value |', '|---|---|',
+    `| Annual revenue | ${fmt(i.revenue)} |`,
+    `| Cost of goods sold | ${fmt(i.cogs)} |`,
+    `| Operating expenses | ${fmt(i.opex)} |`,
+    `| Owner salary and benefits | ${fmt(i.ownerComp)} |`,
+    `| Owner personal add-backs | ${fmt(i.ownerAddBacks)} |`,
+    `| One-time or non-recurring expenses | ${fmt(i.oneTimeExpenses)} |`,
+    `| Depreciation and amortization | ${fmt(i.dna)} |`,
+    `| Interest expense | ${fmt(i.interest)} |`,
+    `| SDE multiple | ${i.sdeMultiple.toFixed(2)}x |`,
+    `| EBITDA multiple | ${i.ebitdaMultiple.toFixed(2)}x |`,
+    `| Tangible asset fair market value | ${fmt(i.tangibleFMV)} |`,
+    `| Inventory at cost | ${fmt(i.inventory)} |`,
+    `| Accounts receivable, collectible | ${fmt(i.receivables)} |`,
+    `| Total liabilities assumed | ${fmt(i.liabilitiesAssumed)} |`,
+    `| Weight, SDE method | ${i.weightSdePct}% |`,
+    `| Weight, EBITDA method | ${i.weightEbitdaPct}% |`,
+    `| Weight, asset method | ${i.weightAssetPct}% |`,
+    `| Owner dependence discount | ${i.ownerDependencePct}% |`,
+    `| Customer concentration discount | ${i.concentrationPct}% |`,
+    '\n## Results',
+    `- **Blended estimated value:** ${r.allMethodsZero ? '$0, no positive value under any method' : fmt(r.blendedValue)}`,
+    `- **SDE:** ${r.sdeSuppressed ? 'not meaningful at current earnings' : fmt(r.sde)}`,
+    `- **Value, SDE method:** ${r.sdeSuppressed ? 'not meaningful at current earnings' : fmt(r.valueSDE)}`,
+    `- **EBITDA:** ${r.ebitdaSuppressed ? 'not meaningful at current earnings' : fmt(r.ebitda)}`,
+    `- **Value, EBITDA method:** ${r.ebitdaSuppressed ? 'not meaningful at current earnings' : fmt(r.valueEBITDA)}`,
+    `- **Asset based value:** ${fmt(r.valueAsset)}`,
+    `- **Applied discount:** ${fmtBp(r.discountBp)}`,
+    `- **Estimated range:** ${r.allMethodsZero ? '$0 to $0' : fmt(r.rangeLow) + ' to ' + fmt(r.rangeHigh)}`,
+    `- **Method spread:** ${fmtBp(r.methodSpreadBp)}${r.methodsDisagree ? ' (methods disagree widely, treat the blend with caution)' : ''}`,
+    `- **Implied revenue multiple:** ${i.revenue > 0 ? fmtBp(r.impliedRevenueMultipleBp) : 'suppressed, revenue is zero'}`,
+    '\n---',
+    '_Source: 2026 broker valuation conventions (SDE and EBITDA multiples), user-overridable, no external data feed. For planning purposes only, not an appraisal._'
+  ];
+  dlFile('business-valuation-estimator.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  const payload = {
+    mandate_type: "business_valuation_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-171",
+    tool_id: "157-business-valuation-estimator",
+    tool_name: "Business Valuation Estimator",
+    inputs: {
+      annual_revenue: i.revenue,
+      cost_of_goods_sold: i.cogs,
+      operating_expenses: i.opex,
+      owner_salary_and_benefits: i.ownerComp,
+      owner_personal_add_backs: i.ownerAddBacks,
+      one_time_expenses: i.oneTimeExpenses,
+      depreciation_and_amortization: i.dna,
+      interest_expense: i.interest,
+      sde_multiple: i.sdeMultiple,
+      ebitda_multiple: i.ebitdaMultiple,
+      tangible_asset_fmv: i.tangibleFMV,
+      inventory_at_cost: i.inventory,
+      accounts_receivable: i.receivables,
+      total_liabilities_assumed: i.liabilitiesAssumed,
+      weight_sde_pct: i.weightSdePct,
+      weight_ebitda_pct: i.weightEbitdaPct,
+      weight_asset_pct: i.weightAssetPct,
+      owner_dependence_discount_pct: i.ownerDependencePct,
+      customer_concentration_discount_pct: i.concentrationPct
+    },
+    outputs: {
+      blended_estimated_value: r.blendedValue,
+      sde: r.sde,
+      value_sde_method: r.valueSDE,
+      sde_suppressed: r.sdeSuppressed,
+      ebitda: r.ebitda,
+      value_ebitda_method: r.valueEBITDA,
+      ebitda_suppressed: r.ebitdaSuppressed,
+      asset_based_value: r.valueAsset,
+      net_asset_value: r.netAssetValue,
+      applied_discount_bp: r.discountBp,
+      estimated_range_low: r.rangeLow,
+      estimated_range_high: r.rangeHigh,
+      method_spread_bp: r.methodSpreadBp,
+      methods_disagree: r.methodsDisagree,
+      implied_revenue_multiple_bp: r.impliedRevenueMultipleBp,
+      equal_thirds_fallback: r.equalThirdsFallback,
+      no_positive_value: r.allMethodsZero
+    },
+    downstream_handoff_candidates: ["157-business-valuation-estimator", "159-business-sale-tax-impact-modeler"],
+    data_sources: [
+      "2026 broker valuation conventions (SDE and EBITDA multiples), user-overridable, no external data feed"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/business_valuation";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-171";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['business_valuation_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-171_business-valuation-estimator_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+const MANIFEST = {
+  "tool_id": "157-business-valuation-estimator",
+  "al_id": "AL-171",
+  "version": "1.0.0",
+  "title": "Business Valuation Estimator",
+  "description": "Three method small business valuation blending an SDE multiple, an EBITDA multiple, and an asset based floor, with user-set weights and owner-dependence and customer-concentration discounts. Deterministic, zero external data. Policy Mandate: business_valuation_record.",
+  "category": "small_business",
+  "journeys": [],
+  "personas": ["owner-operator considering sale", "buyer screening a target", "succession planner", "business broker client"],
+  "tags": ["business-valuation","sde-multiple","ebitda-multiple","asset-based","exit-planning","small-business"],
+  "status": "active",
+  "maintenance": "T2",
+  "data_vintage": "2026 (owner-earnings multiples are market conventions, user-overridable)",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["business_valuation_record"],
+  "downstream_handoff_candidates": ["157-business-valuation-estimator", "159-business-sale-tax-impact-modeler"],
+  "regulatory_citations": [
+    "2026 broker valuation conventions (SDE and EBITDA multiples), no external statutory source"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "annual_revenue": { "type": "number" },
+      "cost_of_goods_sold": { "type": "number" },
+      "operating_expenses": { "type": "number" },
+      "owner_salary_and_benefits": { "type": "number" },
+      "owner_personal_add_backs": { "type": "number" },
+      "one_time_expenses": { "type": "number" },
+      "depreciation_and_amortization": { "type": "number" },
+      "interest_expense": { "type": "number" },
+      "sde_multiple": { "type": "number" },
+      "ebitda_multiple": { "type": "number" },
+      "tangible_asset_fmv": { "type": "number" },
+      "inventory_at_cost": { "type": "number" },
+      "accounts_receivable": { "type": "number" },
+      "total_liabilities_assumed": { "type": "number" },
+      "weight_sde_pct": { "type": "number" },
+      "weight_ebitda_pct": { "type": "number" },
+      "weight_asset_pct": { "type": "number" },
+      "owner_dependence_discount_pct": { "type": "number" },
+      "customer_concentration_discount_pct": { "type": "number" }
+    },
+    "required": ["annual_revenue","cost_of_goods_sold","operating_expenses"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "blended_estimated_value": { "type": "number" },
+      "sde": { "type": "number" },
+      "value_sde_method": { "type": "number" },
+      "ebitda": { "type": "number" },
+      "value_ebitda_method": { "type": "number" },
+      "asset_based_value": { "type": "number" },
+      "applied_discount_bp": { "type": "integer" },
+      "estimated_range_low": { "type": "number" },
+      "estimated_range_high": { "type": "number" },
+      "method_spread_bp": { "type": "integer" },
+      "implied_revenue_multiple_bp": { "type": "integer" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "business_valuation_estimator",
+    "description": "Blends an SDE multiple, an EBITDA multiple, and an asset based floor into a weighted small business valuation estimate, with owner-dependence and customer-concentration discounts. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "annual_revenue": { "type": "number" },
+        "cost_of_goods_sold": { "type": "number" },
+        "operating_expenses": { "type": "number" },
+        "owner_salary_and_benefits": { "type": "number" },
+        "sde_multiple": { "type": "number" },
+        "ebitda_multiple": { "type": "number" }
+      },
+      "required": ["annual_revenue","cost_of_goods_sold","operating_expenses"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://apexadvisory.site",
+  "license": "CC-BY-4.0"
+};
+
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>
