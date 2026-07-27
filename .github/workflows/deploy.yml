@@ -47,8 +47,17 @@ jobs:
       - name: 🧪 JS syntax gate (CONTRACT §7.2 / CG-25 — blocking)
         run: node scripts/check_tools.js
 
-      - name: 🔍 Index sync — verify all tools are on the homepage
-        # Fails the build if any tool subdir in tools/ has no card in index.html
+      - name: 🔢 Count-drift gate (CONTRACT §7.2 / CG-32 — blocking)
+        # index.html / tools.html carry hand-typed suite/showcase/workflow/guide
+        # counts; this fails the build the moment any of them drift from
+        # suite-registry.json + the live directory listings. Run with --fix
+        # locally to self-heal.
+        run: node scripts/verify-counts.mjs
+
+      - name: 🔍 Index sync — verify all tools are in the catalog
+        # Fails the build if any tool subdir in tools/ has no card in tools.html
+        # (AL-HOMESPLIT, CG-32 — retargeted from index.html, now a curated
+        # landing page that intentionally shows a subset).
         # To suppress a false positive: add the slug to INTENTIONAL_OMISSIONS
         # in scripts/check_index_sync.py and commit that change.
         run: python scripts/check_index_sync.py --strict --no-color
