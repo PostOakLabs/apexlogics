@@ -22,7 +22,7 @@
 
 ## What's Public Here vs. Internal-Only
 
-**This repo (public):** `suite-registry.json`, `llms.txt`, `index.html`, `tools/*/`, `workflows/*/`, `guides/*/`, `.well-known/mcp.json`, `assets/`, `scripts/`, `sitemap.xml`, `sitemap.html`, `robots.txt`, `contact.html`, `about.html`
+**This repo (public):** `suite-registry.json`, `llms.txt`, `index.html`, `tools.html`, `tools/*/`, `workflows/*/`, `guides/*/`, `.well-known/mcp.json`, `assets/`, `scripts/`, `sitemap.xml`, `sitemap.html`, `robots.txt`, `contact.html`, `about.html`
 
 **Internal only (parent folder, NOT pushed):** `apexlogics_CONTRACT.md`, `ApexLogics_v8_MasterSpec.md`, `ARCHIVE/`, build spec files
 
@@ -37,7 +37,7 @@ Do not commit parent-folder internal files to this repo.
 - **DreamHost user:** `apexlogics` | **Host:** `pdx1-shared-a1-41.dreamhost.com`
 - **Web root:** `/home/apexlogics/apexlogics.org`
 - **SSH key:** `C:\Users\Disco\.ssh\apexlogics_deploy`
-- **Pre-flight (blocking gate):** `node scripts/check_tools.js` must exit 0; `scripts/check_index_sync.py` verifies tool subdirs match hub cards.
+- **Pre-flight (blocking gate):** `node scripts/check_tools.js` must exit 0; `node scripts/verify-counts.mjs` must exit 0 (count-drift gate, CG-32 — `--fix` to self-heal); `scripts/check_index_sync.py` verifies tool subdirs match `tools.html` cards (not `index.html` — that's the curated landing page).
 - **Worker:** `apexlogics-mcp-worker/` has its own CI `deploy.yml` (gates + `generate.mjs` + wrangler dry-run, then auto-deploy). `generate.mjs` fetches the **live** `apexlogics.org/suite-registry.json` — so land the registry change first, then the worker push; CI regenerates `tools.json` and rebuilds the `find_tool` BM25 index. Do **not** run `npx wrangler deploy` by hand.
 
 Claude runs git natively — commit + push directly after the gate passes (no paste-block for Tim). Prefer a branch+PR over direct push to `main` so CI carries it:
@@ -55,7 +55,8 @@ git push -u origin <branch>    # then open PR; CI auto-merges + deploys
 
 ```
 repo/
-├── index.html              # Hub (tool cards + workflow section) — grep don't read whole
+├── index.html              # Curated landing page (hero, topic tiles, 8 featured cards) — NOT the catalog (AL-HOMESPLIT)
+├── tools.html              # Full tool catalog — all 167 cards, filter/search/persona UI. "Hub cards" for CG-23 means this file now.
 ├── suite-registry.json     # MCP registry — authoritative tool/count source; grep don't read whole
 ├── llms.txt                # Agent index — tools, workflows, guides, mandate types
 ├── sitemap.xml             # All URLs
@@ -69,8 +70,10 @@ repo/
 ├── .well-known/mcp.json    # MCP discovery shim (137+ mandate types)
 ├── assets/                 # logo.svg, logo-favicon.svg
 └── scripts/
-    ├── check_index_sync.py # Pre-flight hub↔dirs sync checker
-    └── check_tools.js      # JS syntax gate (CG-25 — blocking before any tool HTML commit)
+    ├── check_index_sync.py # Pre-flight catalog↔dirs sync checker (targets tools.html, CG-32)
+    ├── check_tools.js      # JS syntax gate (CG-25 — blocking before any tool HTML commit)
+    ├── counts.mjs          # Single source of truth for suite/showcase/workflow/guide counts
+    └── verify-counts.mjs   # Count-drift gate (CG-32 — blocking; --fix to self-heal)
 ```
 
 ---
@@ -78,7 +81,7 @@ repo/
 ## Ship Cycle Checklist (CG-23 parity rule)
 
 Before every commit touching tool files, verify count parity across all five surfaces:
-1. Hub cards in `index.html`
+1. Hub cards in `tools.html` (not `index.html` — that's the curated landing page, CG-32)
 2. Tool entries in `suite-registry.json`
 3. `### #` lines in `llms.txt`
 4. `<url>` entries in `sitemap.xml`
