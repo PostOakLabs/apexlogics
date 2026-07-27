@@ -10,7 +10,11 @@ Human log for `repo/.htaccess`. Excluded from deploy (`*.md` rsync exclude), so 
 
 ## Active redirects
 
-_None yet._ First candidate (the AL-AP2PROSE slug rename `/tools/ap2-advisor-prompt-composer/` → `/tools/advisor-prompt-composer/`) referenced in `AL-REDIRECTS-SPEC.md` did not happen — verified 2026-07-27, live slug is still `ap2-advisor-prompt-composer`. `AL-AP2PROSE` (done, PR #28) turned out to be a different, narrower WU (deleted 4 outbound `ap2-protocol.org` prose links/anchors) — not the rename the spec assumed. No stub to drop as a result.
+| Old path | New path | WU | Date |
+|---|---|---|---|
+| `/tools/ap2-advisor-prompt-composer/` | `/tools/advisor-prompt-composer/` | AL-AP2PROSE Part B | 2026-07-27 |
+
+The rename AL-REDIRECTS' P1 survey found had *not yet* happened (verified 2026-07-27, that morning) landed same-day as AL-AP2PROSE Part B, right after this mechanism merged. `/tools/ap2-advisor-prompt-composer/` now 301s to `/tools/advisor-prompt-composer/` per the rule above.
 
 ## P1 survey findings (2026-07-27, AL-REDIRECTS)
 
