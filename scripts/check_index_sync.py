@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 """
-check_index_sync.py — Apex Logics homepage sync validator
+check_index_sync.py — Apex Logics catalog sync validator
 ==========================================================
-Compares tools/{slug}/index.html subdirs against index.html tool cards.
+Compares tools/{slug}/index.html subdirs against tools.html tool cards.
+
+AL-HOMESPLIT (2026-07-26): retargeted from index.html (now a curated landing
+page showing 8 featured tools) to tools.html (the full 167-tool catalog).
 
 Usage:
   python scripts/check_index_sync.py            # report only
   python scripts/check_index_sync.py --strict   # exit 1 if any missing (for CI)
 
 What it checks:
-  1. Every subdirectory in tools/ that contains index.html is referenced in index.html
-  2. Every href in index.html that points to tools/*/index.html actually exists on disk
+  1. Every subdirectory in tools/ that contains index.html is referenced in tools.html
+  2. Every href in tools.html that points to tools/*/index.html actually exists on disk
   3. Reports a count summary
 
 Exit codes:
@@ -25,7 +28,7 @@ import argparse
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOLS_DIR = os.path.join(REPO_ROOT, "tools")
-INDEX_PATH = os.path.join(REPO_ROOT, "index.html")
+INDEX_PATH = os.path.join(REPO_ROOT, "tools.html")
 
 # Slugs that are intentionally omitted from index.html.
 # Edit this list if you deliberately exclude a tool from the homepage.
@@ -49,7 +52,7 @@ def main():
         for v in ["ANSI_RED", "ANSI_GREEN", "ANSI_YELLOW", "ANSI_BOLD", "ANSI_RESET"]:
             globals()[v] = ""
 
-    print(f"{ANSI_BOLD}Apex Logics — index.html sync check{ANSI_RESET}")
+    print(f"{ANSI_BOLD}Apex Logics — tools.html sync check{ANSI_RESET}")
     print(f"Tools dir : {TOOLS_DIR}")
     print(f"Index file: {INDEX_PATH}\n")
 
