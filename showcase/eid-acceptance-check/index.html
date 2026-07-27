@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cross-Border eID Acceptance · ApexLogics</title>
+  <meta name="description" content="Checks a foreign digital identity's asserted assurance level and attribute set against the level and attributes a relying party requires, and stamps the acceptance decision. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/showcase/eid-acceptance-check/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], input[type="text"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">OCG-Industries Showcase · Cluster ⑨ Digital Identity and Credentials</p>
+  <h1 class="tool-title">Cross-Border eID Acceptance</h1>
+  <p class="tool-desc">A relying party facing a foreign identity has two questions: is the assurance level high enough, and is the attribute set complete enough. Enter the level asserted, the level your service requires, and the attributes the credential carries, and this tool decides acceptance against both and stamps the decision. Re-running the same credential reproduces the same decision and the same hash.</p>
+  <p class="tool-vintage">Data: eIDAS assurance level tiers, Regulation (EU) 910/2014 · no external data</p>
+
+  <div class="card">
+    <div class="card-title">Inputs <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="homeRegime">Home Regime</label>
+        <input type="text" id="homeRegime" value="EU-eIDAS" />
+        <span class="field-hint">The scheme that issued the identity</span>
+      </div>
+      <div class="field">
+        <label for="relyingRegime">Relying Regime</label>
+        <input type="text" id="relyingRegime" value="US-domestic" />
+        <span class="field-hint">The scheme the relying party operates under</span>
+      </div>
+      <div class="field">
+        <label for="assertedLevel">Asserted Level</label>
+        <input type="number" id="assertedLevel" value="2" min="1" max="3" step="1" />
+        <span class="field-hint">1 low, 2 substantial, 3 high.</span>
+      </div>
+      <div class="field">
+        <label for="requiredLevel">Required Level</label>
+        <input type="number" id="requiredLevel" value="2" min="1" max="3" step="1" />
+        <span class="field-hint">The minimum level your service requires</span>
+      </div>
+      <div class="field" style="grid-column: 1 / -1;">
+        <label for="attributesPresent">Attributes Present</label>
+        <input type="text" id="attributesPresent" value="FAMILY-NAME, GIVEN-NAME, DATE-OF-BIRTH-FLAG, UNIQUE-IDENTIFIER" />
+        <span class="field-hint">Comma separated. Use FAMILY-NAME, GIVEN-NAME, DATE-OF-BIRTH-FLAG, UNIQUE-IDENTIFIER. Enter labels only, never actual personal data.</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Check Acceptance →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Acceptance</div>
+        <div class="metric-val accent" id="rAccepted">--</div>
+        <div class="metric-note" id="rAcceptedNote">Level sufficient and attributes complete</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Level Gap</div>
+        <div class="metric-val amber" id="rLevelGap">--</div>
+        <div class="metric-note">Required minus asserted (negative is headroom)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Attribute Coverage</div>
+        <div class="metric-val amber" id="rAttrCoverage">--</div>
+        <div class="metric-note">Against the frozen minimum set</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">Home regime</span><span class="row-val" id="dHomeRegime">--</span></div>
+      <div class="row"><span class="row-label">Relying regime</span><span class="row-val" id="dRelyingRegime">--</span></div>
+      <div class="row"><span class="row-label">Asserted / required level</span><span class="row-val" id="dLevels">--</span></div>
+      <div class="row"><span class="row-label">Attributes normalized</span><span class="row-val" id="dAttrs">--</span></div>
+      <div class="row"><span class="row-label">Missing attributes</span><span class="row-val" id="dMissingAttrs">--</span></div>
+      <div class="row"><span class="row-label">Refusal reason</span><span class="row-val" id="dRefusalReason">--</span></div>
+      <div class="row"><span class="row-label">Acceptance key</span><span class="row-val" id="dAcceptanceKey">--</span></div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · SC-56 · Data: eIDAS assurance level tiers, Regulation (EU) 910/2014 · no external data
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+/* KEEP VERBATIM: helpers */
+const $   = id => document.getElementById(id);
+
+/* Bundle-wide fingerprint helper (mutation detector, not a cryptographic digest) */
+function fingerprint(str){ var h=5381,s=String(str).toUpperCase(); for(var i=0;i<s.length;i++) h=((Math.imul(h,33)+s.charCodeAt(i))&0x7fffffff); return h; }
+/* Bundle-wide token normalizer */
+function tokens(raw){ return String(raw==null?'':raw).toUpperCase().split(',').map(function(s){return s.trim();}).filter(function(s){return s.length>0;}); }
+function unique(arr){ var out=[], seen={}; for (var i=0;i<arr.length;i++){ if (!seen[arr[i]]){ seen[arr[i]]=true; out.push(arr[i]); } } return out; }
+
+const REQUIRED_ATTRS = ['FAMILY-NAME','GIVEN-NAME','UNIQUE-IDENTIFIER'];
+
+/* ── CORE LOGIC ────────────────────────────────────────────────────────────── */
+function calculate() {
+  const homeRegime = String($('homeRegime').value == null ? '' : $('homeRegime').value).trim();
+  const relyingRegime = String($('relyingRegime').value == null ? '' : $('relyingRegime').value).trim();
+
+  let assertedLevel = parseInt($('assertedLevel').value, 10);
+  if (!Number.isFinite(assertedLevel)) assertedLevel = 1;
+  assertedLevel = Math.max(1, Math.min(3, assertedLevel));
+
+  let requiredLevel = parseInt($('requiredLevel').value, 10);
+  if (!Number.isFinite(requiredLevel)) requiredLevel = 2;
+  requiredLevel = Math.max(1, Math.min(3, requiredLevel));
+
+  const levelSufficient = assertedLevel >= requiredLevel;
+  const levelGap = requiredLevel - assertedLevel;
+
+  const attrs = unique(tokens($('attributesPresent').value));
+  const attrCount = attrs.length;
+  const missingAttrsArr = REQUIRED_ATTRS.filter(function(a){ return attrs.indexOf(a) === -1; });
+  const missingAttrCount = missingAttrsArr.length;
+  const missingAttrs = missingAttrCount === 0 ? 'none' : missingAttrsArr.join(',');
+  const attributeComplete = missingAttrCount === 0;
+
+  const accepted = levelSufficient && attributeComplete;
+  let refusalReason = 'none';
+  if (!levelSufficient) refusalReason = 'assurance_level';
+  else if (!attributeComplete) refusalReason = 'missing_attributes';
+
+  const sortedAttrs = attrs.slice().sort();
+  const acceptanceKey = fingerprint(homeRegime + '|' + relyingRegime + '|' + assertedLevel + '|' + requiredLevel + '|' + sortedAttrs.join(','));
+
+  _lastResults = {
+    home_regime: homeRegime,
+    relying_regime: relyingRegime,
+    asserted_level: assertedLevel,
+    required_level: requiredLevel,
+    level_gap: levelGap,
+    level_sufficient: levelSufficient,
+    attr_count: attrCount,
+    attributes_normalized: attrs.join(','),
+    missing_attr_count: missingAttrCount,
+    missing_attrs: missingAttrs,
+    attribute_complete: attributeComplete,
+    accepted: accepted,
+    refusal_reason: refusalReason,
+    acceptance_key: acceptanceKey
+  };
+  _lastInputs = {
+    home_regime: homeRegime,
+    relying_regime: relyingRegime,
+    asserted_level: assertedLevel,
+    required_level: requiredLevel,
+    attributes_present: attrs.join(',')
+  };
+
+  render();
+}
+
+function render() {
+  const r = _lastResults;
+
+  $('rAccepted').textContent = r.accepted ? 'Accepted' : 'Refused';
+  $('rAccepted').className   = 'metric-val ' + (r.accepted ? 'green' : 'red');
+  $('rAcceptedNote').textContent = r.refusal_reason === 'none' ? 'No refusal reason' : 'Refusal reason: ' + r.refusal_reason;
+
+  $('rLevelGap').textContent = r.level_gap;
+  $('rLevelGap').className   = 'metric-val ' + (r.level_sufficient ? 'green' : 'red');
+
+  $('rAttrCoverage').textContent = r.attribute_complete ? 'Complete' : (r.missing_attr_count + ' missing');
+  $('rAttrCoverage').className   = 'metric-val ' + (r.attribute_complete ? 'green' : 'red');
+
+  $('dHomeRegime').textContent    = r.home_regime || '(none)';
+  $('dRelyingRegime').textContent = r.relying_regime || '(none)';
+  $('dLevels').textContent        = r.asserted_level + ' / ' + r.required_level;
+  $('dAttrs').textContent         = r.attributes_normalized || '(none)';
+  $('dMissingAttrs').textContent  = r.missing_attrs;
+  $('dRefusalReason').textContent = r.refusal_reason;
+  $('dAcceptanceKey').textContent = r.acceptance_key;
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastResults) return;
+  const r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Cross-Border eID Acceptance Results',
+    `\n_Generated ${d} · SC-56 · apexlogics.org_\n`,
+    '## Inputs',
+    '| Field | Value |', '|---|---|',
+    `| Home regime | ${r.home_regime || '(none)'} |`,
+    `| Relying regime | ${r.relying_regime || '(none)'} |`,
+    `| Asserted level | ${r.asserted_level} |`,
+    `| Required level | ${r.required_level} |`,
+    `| Attributes present | ${r.attributes_normalized || '(none)'} |`,
+    '\n## Results',
+    `- **Accepted:** ${r.accepted ? 'Yes' : 'No'}`,
+    `- **Level sufficient:** ${r.level_sufficient ? 'Yes' : 'No'} (gap ${r.level_gap})`,
+    `- **Attribute coverage complete:** ${r.attribute_complete ? 'Yes' : 'No'}`,
+    `- **Missing attributes:** ${r.missing_attrs}`,
+    `- **Refusal reason:** ${r.refusal_reason}`,
+    `- **Acceptance key:** ${r.acceptance_key}`,
+    '\n---',
+    '_Source: eIDAS assurance level tiers, Regulation (EU) 910/2014. No external data. This compares an asserted level and an attribute list you type; it validates no wallet, checks no trust list, and the remaining blockers to real cross-border acceptance are legal and political rather than technical._'
+  ];
+  dlFile('eid-acceptance-check.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  /* STEP 1, domain payload */
+  const payload = {
+    mandate_type: "eid_acceptance_check_record",
+    generated_at: new Date().toISOString(),
+    al_id: "SC-56",
+    tool_id: "sc56-eid-acceptance-check",
+    tool_name: "Cross-Border eID Acceptance",
+    inputs: {
+      home_regime: i.home_regime,
+      relying_regime: i.relying_regime,
+      asserted_level: i.asserted_level,
+      required_level: i.required_level,
+      attributes_present: i.attributes_present
+    },
+    outputs: {
+      home_regime: r.home_regime,
+      relying_regime: r.relying_regime,
+      asserted_level: r.asserted_level,
+      required_level: r.required_level,
+      level_gap: r.level_gap,
+      level_sufficient: r.level_sufficient,
+      attr_count: r.attr_count,
+      attributes_normalized: r.attributes_normalized,
+      missing_attr_count: r.missing_attr_count,
+      missing_attrs: r.missing_attrs,
+      attribute_complete: r.attribute_complete,
+      accepted: r.accepted,
+      refusal_reason: r.refusal_reason,
+      acceptance_key: r.acceptance_key
+    },
+    downstream_handoff_candidates: [],
+    data_sources: [
+      "eIDAS assurance level tiers, Regulation (EU) 910/2014"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  /* STEP 2, KEEP VERBATIM: OpenChainGraph L1 + L2 (parent capture via ?ap2=) */
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/eid_acceptance_check";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "SC-56";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  /* STEP 3, KEEP VERBATIM: build _cgDomain by excluding envelope keys */
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "integer_checksum", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  /* STEP 4, KEEP VERBATIM: canonical execution hash */
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  /* STEP 5, KEEP VERBATIM: OCG v0.4 envelope fields (hash-excluded, additive) */
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* STEP 6, SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  /* STEP 7, KEEP VERBATIM: relocate non-allowed keys into hash-excluded apex_meta */
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  /* STEP 8, validate the SNAPSHOT */
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['eid_acceptance_check_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`SC-56_eid-acceptance-check_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, CHAINGRAPH §6 EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* MANIFEST, must match manifest.json in substance */
+const MANIFEST = {
+  "tool_id": "sc56-eid-acceptance-check",
+  "al_id": "SC-56",
+  "version": "1.0.0",
+  "title": "Cross-Border eID Acceptance",
+  "description": "Compares a foreign digital identity's asserted eIDAS assurance level and attribute set against the level and attribute set a relying party requires, and stamps the acceptance decision along with the refusal reason when refused. Deterministic, zero external data. Policy Mandate v2.0: eid_acceptance_check_record.",
+  "category": "digital-identity",
+  "journeys": [],
+  "personas": ["relying-party"],
+  "tags": ["eidas","eid","digital-identity","cross-border","assurance-level"],
+  "status": "live",
+  "maintenance": "zero",
+  "data_vintage": "eIDAS assurance level tiers, Regulation (EU) 910/2014",
+  "frozen_baseline": true,
+  "ap2_export": true,
+  "ap2_mandate_types": ["eid_acceptance_check_record"],
+  "downstream_handoff_candidates": [],
+  "regulatory_citations": [
+    "Regulation (EU) No 910/2014 (eIDAS)"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "home_regime": { "type": "string" },
+      "relying_regime": { "type": "string" },
+      "asserted_level": { "type": "integer" },
+      "required_level": { "type": "integer" },
+      "attributes_present": { "type": "string" }
+    },
+    "required": ["home_regime","relying_regime"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "home_regime": { "type": "string" },
+      "relying_regime": { "type": "string" },
+      "asserted_level": { "type": "integer" },
+      "required_level": { "type": "integer" },
+      "level_gap": { "type": "integer" },
+      "level_sufficient": { "type": "boolean" },
+      "attr_count": { "type": "integer" },
+      "attributes_normalized": { "type": "string" },
+      "missing_attr_count": { "type": "integer" },
+      "missing_attrs": { "type": "string" },
+      "attribute_complete": { "type": "boolean" },
+      "accepted": { "type": "boolean" },
+      "refusal_reason": { "type": "string" },
+      "acceptance_key": { "type": "integer" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "eid_acceptance_check",
+    "description": "Compares a foreign digital identity's asserted eIDAS assurance level and attribute set against a relying party's requirements and returns an acceptance decision with a refusal reason. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "home_regime": { "type": "string" },
+        "relying_regime": { "type": "string" },
+        "asserted_level": { "type": "integer" },
+        "required_level": { "type": "integer" },
+        "attributes_present": { "type": "string" }
+      },
+      "required": ["home_regime","relying_regime"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://postoaklabs.com",
+  "license": "CC-BY-4.0"
+};
+
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exhibit Visit Receipt · ApexLogics Showcase</title>
+  <meta name="description" content="Enter the stations an exhibit visit touched, in order, with the dwell time at each. This tool folds the route into a reproducible visit receipt and checks it against the exhibit's declared station order." />
+  <link rel="canonical" href="https://apexlogics.org/showcase/exhibit-visit-receipt/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <!-- KEEP VERBATIM: Google Fonts link -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* KEEP VERBATIM: design tokens (CONTRACT Appendix A). */
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    /* KEEP VERBATIM: nav chrome ─────────────────────────────────────────── */
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    /* KEEP VERBATIM: page shell + PII banner */
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    /* Hero */
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    /* Scope callout (required scope note, exploratory-slice cards) */
+    .scope-note { background: rgba(167,139,250,.06); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; padding: .8rem 1rem; font-size: .82rem; color: var(--text-muted); margin: 0 0 20px; }
+    .scope-note strong { color: var(--text); }
+
+    /* Cards + fields */
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], input[type="text"], select, textarea { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    textarea { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; min-height: 110px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    /* Results */
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+
+    .verdict { border-radius: 12px; border: 1px solid var(--border); padding: 20px 24px; margin-bottom: 16px; }
+    .verdict.ok { border-color: rgba(52,211,153,.45); background: rgba(52,211,153,.06); }
+    .verdict.no { border-color: rgba(248,113,113,.45); background: rgba(248,113,113,.06); }
+    .verdict-big { font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 600; margin-bottom: 6px; }
+    .verdict.ok .verdict-big { color: var(--green); }
+    .verdict.no .verdict-big { color: var(--red); }
+    .verdict-sub { color: var(--text-muted); font-size: 0.9rem; }
+
+    .hash-line { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); word-break: break-all; margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--border); }
+    .gate-note { font-size: 0.82rem; color: var(--text-muted); margin-top: 10px; }
+
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+    .row .row-val.green { color: var(--green); }
+    .row .row-val.red { color: var(--red); }
+
+    /* KEEP VERBATIM: export row (Markdown FIRST, Policy Mandate SECOND) */
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    /* KEEP VERBATIM: footer */
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+
+    /* KEEP VERBATIM: mfst disclosure */
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<!-- ══ KEEP VERBATIM: NAV, do not edit anything between here and </nav> ══ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+      <a href="../index.html" class="nav-pill">&#x2190; Showcase Gallery</a>
+    </div>
+  </div>
+</nav>
+<!-- ══ END NAV ══ -->
+
+<div class="tool-wrapper">
+
+  <!-- KEEP VERBATIM: PII banner. -->
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">OCG-Industries Showcase · Cluster ⑤ Physical Installations and Civic Infrastructure</p>
+  <h1 class="tool-title">Exhibit Visit Receipt</h1>
+  <p class="tool-desc">An exhibit claims a visitor route, and there is no way to check it after the fact. Enter the stations a visit touched, in order, with the integer dwell in seconds at each, and this page folds them into a visit receipt and checks the route against the exhibit's declared station order. The same route always folds to the same receipt, so a reported visit can be re-derived.</p>
+
+  <div class="scope-note">
+    <strong>Scope.</strong> Every value here is entered by hand. This shows what an exhibit receipt would look like and that it is reproducible. It does not capture anything from a physical space, and it holds no visitor data.
+  </div>
+
+  <p class="tool-vintage">Data: no external data</p>
+
+  <div class="card">
+    <div class="card-title">Inputs <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="exhibitId">Exhibit identifier</label>
+        <input type="text" id="exhibitId" value="ATRIUM-WING-3" />
+      </div>
+      <div class="field">
+        <label for="minDwell">Minimum dwell to count a station, in seconds</label>
+        <input type="number" id="minDwell" value="10" min="0" step="1" />
+      </div>
+    </div>
+    <div class="form-grid" style="margin-top:14px;">
+      <div class="field">
+        <label for="declaredRoute">Declared station order, comma separated</label>
+        <input type="text" id="declaredRoute" value="entry,atrium,vault,exit" />
+        <span class="field-hint">For example entry,atrium,vault,exit</span>
+      </div>
+      <div class="field">
+        <label for="visited">Stations visited, one per line</label>
+        <textarea id="visited">entry:45
+atrium:120
+vault:90
+exit:30</textarea>
+        <span class="field-hint">One per line as station:dwellseconds, for example atrium:120. Order is the order you list them.</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Fold Visit Receipt →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="verdict" id="verdict">
+      <div class="verdict-big" id="verdictBig">--</div>
+      <div class="verdict-sub" id="verdictSub">--</div>
+      <div class="gate-note" id="gateNote">--</div>
+      <div class="hash-line" id="hashLine">execution_hash: --</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">Exhibit identifier</span><span class="row-val" id="dExhibitId">--</span></div>
+      <div class="row"><span class="row-label">Visits entered</span><span class="row-val" id="dVisitCount">--</span></div>
+      <div class="row"><span class="row-label">Counted stations</span><span class="row-val" id="dCountedCount">--</span></div>
+      <div class="row"><span class="row-label">Skimmed stations (under minimum dwell)</span><span class="row-val" id="dSkimmedCount">--</span></div>
+      <div class="row"><span class="row-label">Total dwell (seconds)</span><span class="row-val" id="dTotalDwell">--</span></div>
+      <div class="row"><span class="row-label">Coverage of declared route</span><span class="row-val" id="dCoverage">--</span></div>
+      <div class="row"><span class="row-label">First deviation position</span><span class="row-val" id="dDeviation">--</span></div>
+      <div class="row"><span class="row-label">Route followed</span><span class="row-val" id="dRouteFollowed">--</span></div>
+      <div class="row"><span class="row-label">First station</span><span class="row-val" id="dFirstStation">--</span></div>
+      <div class="row"><span class="row-label">Last station</span><span class="row-val" id="dLastStation">--</span></div>
+      <div class="row"><span class="row-label">Visit receipt</span><span class="row-val" id="dVisitReceipt">--</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Stations Visited, in Order</div>
+      <div id="stationRows"></div>
+
+      <!-- KEEP VERBATIM: export row. Markdown FIRST, Policy Mandate SECOND. -->
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- KEEP VERBATIM: mfst disclosure block -->
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · SC-24 · Data: no external data
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+let _lastVisits  = null;
+
+/* KEEP VERBATIM: helpers */
+const $ = id => document.getElementById(id);
+
+/* Bundle-wide fingerprint helper (mutation detector, NOT a cryptographic digest) */
+function fingerprint(str){ var h=5381,s=String(str).toUpperCase(); for(var i=0;i<s.length;i++) h=((Math.imul(h,33)+s.charCodeAt(i))&0x7fffffff); return h; }
+
+/* ── CORE LOGIC: exhibit visit receipt ────────────────────────────────────── */
+function calculate() {
+  const exhibit_id = String($('exhibitId').value == null ? '' : $('exhibitId').value).trim();
+
+  let min_dwell_seconds = parseInt($('minDwell').value, 10);
+  if (!Number.isFinite(min_dwell_seconds)) min_dwell_seconds = 10;
+  if (min_dwell_seconds < 0) min_dwell_seconds = 0;
+
+  // Declared route: split on commas, trim, uppercase, drop empties.
+  const route = String($('declaredRoute').value == null ? '' : $('declaredRoute').value)
+    .split(',').map(function(s){ return s.trim().toUpperCase(); }).filter(function(s){ return s.length > 0; });
+
+  // Visited: split on newlines, trim, drop empties, split each on the LAST colon.
+  const rawLines = String($('visited').value == null ? '' : $('visited').value).split('\n');
+  const visits = [];
+  for (let i = 0; i < rawLines.length; i++) {
+    const line = rawLines[i].trim();
+    if (line.length === 0) continue;
+    const idx = line.lastIndexOf(':');
+    let station, dwellRaw;
+    if (idx === -1) { station = line; dwellRaw = ''; }
+    else { station = line.substring(0, idx).trim(); dwellRaw = line.substring(idx + 1).trim(); }
+    station = station.toUpperCase();
+    let dwell = parseInt(dwellRaw, 10);
+    if (!Number.isFinite(dwell)) dwell = 0;
+    visits.push({ station: station, dwell: dwell });
+  }
+
+  const visit_count = visits.length;
+  let total_dwell_seconds = 0;
+  for (let i = 0; i < visits.length; i++) total_dwell_seconds += visits[i].dwell;
+
+  const counted = visits.filter(function(v){ return v.dwell >= min_dwell_seconds; });
+  const counted_count = counted.length;
+  const skimmed_count = visit_count - counted_count;
+
+  let first_deviation_index = -1;
+  for (let idx = 0; idx < counted.length; idx++) {
+    if (idx >= route.length) { first_deviation_index = idx; break; }
+    if (counted[idx].station !== route[idx]) { first_deviation_index = idx; break; }
+  }
+
+  const route_followed = (route.length > 0 && counted_count === route.length && first_deviation_index === -1);
+
+  const coverage_bp = route.length > 0 ? Math.floor(counted_count * 10000 / route.length) : 0;
+
+  let acc = fingerprint(exhibit_id);
+  for (let i = 0; i < visits.length; i++) {
+    acc = fingerprint(acc + '|' + i + '|' + visits[i].station + '|' + visits[i].dwell);
+  }
+  const visit_receipt = acc;
+
+  const receipt_status = route_followed ? 'route_confirmed' : 'route_deviated';
+  const first_station = visit_count > 0 ? visits[0].station : 'none';
+  const last_station = visit_count > 0 ? visits[visit_count - 1].station : 'none';
+
+  const outputs = {
+    exhibit_id: exhibit_id,
+    visit_count: visit_count,
+    counted_count: counted_count,
+    skimmed_count: skimmed_count,
+    total_dwell_seconds: total_dwell_seconds,
+    min_dwell_seconds: min_dwell_seconds,
+    coverage_bp: coverage_bp,
+    first_deviation_index: first_deviation_index,
+    route_followed: route_followed,
+    receipt_status: receipt_status,
+    first_station: first_station,
+    last_station: last_station,
+    visit_receipt: visit_receipt
+  };
+
+  const countedStations = {};
+  for (let i = 0; i < counted.length; i++) countedStations[i + '_' + counted[i].station + '_' + counted[i].dwell] = true;
+
+  _lastInputs  = { exhibit_id, route, min_dwell_seconds };
+  _lastVisits  = visits.map(function(v, i){ return { index: i, station: v.station, dwell: v.dwell, counted: v.dwell >= min_dwell_seconds }; });
+  _lastResults = outputs;
+
+  render();
+}
+
+/* Render results into the DOM, then compute and display execution_hash. */
+async function render() {
+  const o = _lastResults;
+
+  const verdictEl = $('verdict');
+  verdictEl.className = 'verdict ' + (o.route_followed ? 'ok' : 'no');
+  $('verdictBig').textContent = o.route_followed ? '✓ Route confirmed' : '✗ Route deviated';
+
+  if (o.route_followed) {
+    $('verdictSub').textContent = 'Every declared station was visited in order for at least the minimum dwell, and the visit folds to a receipt anyone can regenerate.';
+  } else if (o.min_dwell_seconds >= 0 && _lastInputs.route.length === 0) {
+    $('verdictSub').textContent = 'No declared station order was entered, so there is nothing to confirm against.';
+  } else if (o.first_deviation_index !== -1) {
+    $('verdictSub').textContent = 'The counted route deviates from the declared order at position ' + o.first_deviation_index + ' (0-indexed).';
+  } else if (o.skimmed_count > 0) {
+    $('verdictSub').textContent = o.skimmed_count + ' station' + (o.skimmed_count === 1 ? '' : 's') + ' fell under the minimum dwell and were not counted, so the route is incomplete.';
+  } else {
+    $('verdictSub').textContent = 'The counted stations do not match the declared route length.';
+  }
+
+  $('gateNote').textContent = 'Raise the minimum dwell above and re-run to watch stations drop out of the counted route.';
+
+  $('dExhibitId').textContent = o.exhibit_id || '(none)';
+  $('dVisitCount').textContent = o.visit_count;
+  $('dCountedCount').textContent = o.counted_count;
+  $('dSkimmedCount').textContent = o.skimmed_count;
+  $('dTotalDwell').textContent = o.total_dwell_seconds + ' s';
+  $('dCoverage').textContent = (Math.min(o.coverage_bp, 10000) / 100).toFixed(2) + '% (capped at 100% for display only)';
+  $('dDeviation').textContent = o.first_deviation_index === -1 ? 'none' : o.first_deviation_index;
+  const rf = $('dRouteFollowed'); rf.textContent = o.route_followed ? 'Yes' : 'No'; rf.className = 'row-val ' + (o.route_followed ? 'green' : 'red');
+  $('dFirstStation').textContent = o.first_station;
+  $('dLastStation').textContent = o.last_station;
+  $('dVisitReceipt').textContent = o.visit_receipt;
+
+  const container = $('stationRows');
+  container.innerHTML = '';
+  for (let i = 0; i < _lastVisits.length; i++) {
+    const v = _lastVisits[i];
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = '<span class="row-label">' + (i + 1) + '. ' + v.station + '</span>' +
+      '<span class="row-val ' + (v.counted ? 'green' : 'red') + '">' + v.dwell + ' s · ' + (v.counted ? 'counted' : 'skimmed') + '</span>';
+    container.appendChild(row);
+  }
+  if (_lastVisits.length === 0) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = '<span class="row-label">(no visits entered)</span><span class="row-val">--</span>';
+    container.appendChild(row);
+  }
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    const pp = { execution_backend: 'js', hash_precision: 'integer_checksum', inputs: { exhibit_id: _lastInputs.exhibit_id, route: _lastInputs.route, min_dwell_seconds: _lastInputs.min_dwell_seconds, visits: _lastVisits } };
+    const h = await apexHash(pp, o);
+    $('hashLine').textContent = 'execution_hash: ' + h;
+  } catch (_e) {
+    $('hashLine').textContent = 'execution_hash: (unavailable in this browser)';
+  }
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastResults) return;
+  const o = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Exhibit Visit Receipt Results',
+    `\n_Generated ${d} · SC-24 · apexlogics.org_\n`,
+    '## Result',
+    '| Field | Value |', '|---|---|',
+    `| Exhibit identifier | ${o.exhibit_id || '(none)'} |`,
+    `| Visits entered | ${o.visit_count} |`,
+    `| Counted stations | ${o.counted_count} |`,
+    `| Skimmed stations | ${o.skimmed_count} |`,
+    `| Total dwell (seconds) | ${o.total_dwell_seconds} |`,
+    `| Coverage of declared route (bp) | ${o.coverage_bp} |`,
+    `| First deviation position | ${o.first_deviation_index === -1 ? 'none' : o.first_deviation_index} |`,
+    `| Route followed | ${o.route_followed ? 'Yes' : 'No'} |`,
+    `| First station | ${o.first_station} |`,
+    `| Last station | ${o.last_station} |`,
+    `| Visit receipt | ${o.visit_receipt} |`,
+    '\n---',
+    '_Source: no external data. Every value entered by hand; this does not capture anything from a physical space. ApexLogics Showcase · apexlogics.org_'
+  ];
+  dlFile('exhibit-visit-receipt.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+/* The ORDER of the steps below is non-negotiable. Edit field VALUES only. */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, o = _lastResults;
+
+  /* STEP 1: domain payload */
+  const payload = {
+    mandate_type: "exhibit_visit_receipt_record",
+    generated_at: new Date().toISOString(),
+    al_id: "SC-24",
+    tool_id: "sc24-exhibit-visit-receipt",
+    tool_name: "Exhibit Visit Receipt",
+    inputs: {
+      exhibit_id: i.exhibit_id,
+      declared_route: i.route,
+      min_dwell_seconds: i.min_dwell_seconds,
+      visits: _lastVisits
+    },
+    outputs: {
+      exhibit_id: o.exhibit_id,
+      visit_count: o.visit_count,
+      counted_count: o.counted_count,
+      skimmed_count: o.skimmed_count,
+      total_dwell_seconds: o.total_dwell_seconds,
+      min_dwell_seconds: o.min_dwell_seconds,
+      coverage_bp: o.coverage_bp,
+      first_deviation_index: o.first_deviation_index,
+      route_followed: o.route_followed,
+      receipt_status: o.receipt_status,
+      first_station: o.first_station,
+      last_station: o.last_station,
+      visit_receipt: o.visit_receipt
+    },
+    downstream_handoff_candidates: ["sc24-exhibit-visit-receipt"],
+    data_sources: [
+      "No external data. All values are entered by the reader."
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  /* STEP 2, KEEP VERBATIM: OpenChainGraph L1 + L2 (parent capture via ?ap2=) */
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/exhibit_visit_receipt";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "SC-24";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  /* STEP 3, KEEP VERBATIM: build _cgDomain by excluding envelope keys */
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "integer_checksum", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  /* STEP 4, KEEP VERBATIM: canonical execution hash */
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  /* STEP 5, KEEP VERBATIM: OCG v0.4 envelope fields (hash-excluded, additive) */
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* STEP 6, SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  /* STEP 7, KEEP VERBATIM: relocate non-allowed keys into hash-excluded apex_meta */
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  /* STEP 8, validate the SNAPSHOT, then and only then create the object URL. */
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['exhibit_visit_receipt_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`SC-24_exhibit-visit-receipt_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, CHAINGRAPH §6 EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* MANIFEST, mirrors manifest.json in substance */
+const MANIFEST = {
+  "_canonical_filename": "SC-24_exhibit-visit-receipt.manifest.json",
+  "tool_id": "sc24-exhibit-visit-receipt",
+  "al_id": "SC-24",
+  "version": "1.0.0",
+  "title": "Exhibit Visit Receipt",
+  "description": "Given a declared station order, a minimum dwell threshold, and a list of stations visited with dwell times, folds the visit into a reproducible receipt and checks whether the counted route matches the declared order. Deterministic, zero external data. Policy Mandate v2.0: exhibit_visit_receipt_record.",
+  "category": "showcase",
+  "cluster": "physical-installations",
+  "journeys": [],
+  "personas": ["museum exhibit technologist", "curator"],
+  "tags": ["showcase","museum","route-verification","hash-verifiable"],
+  "status": "showcase",
+  "maintenance": "zero",
+  "data_vintage": "no external data",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["exhibit_visit_receipt_record"],
+  "downstream_handoff_candidates": ["sc24-exhibit-visit-receipt"],
+  "regulatory_citations": ["no external data"],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "exhibit_id":       { "type": "string" },
+      "declared_route":   { "type": "string" },
+      "visited":          { "type": "string" },
+      "min_dwell_seconds":{ "type": "integer" }
+    },
+    "required": ["exhibit_id","declared_route","visited"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "exhibit_id":            { "type": "string" },
+      "visit_count":           { "type": "integer" },
+      "counted_count":         { "type": "integer" },
+      "skimmed_count":         { "type": "integer" },
+      "total_dwell_seconds":   { "type": "integer" },
+      "min_dwell_seconds":     { "type": "integer" },
+      "coverage_bp":           { "type": "integer" },
+      "first_deviation_index": { "type": "integer" },
+      "route_followed":        { "type": "boolean" },
+      "receipt_status":        { "type": "string", "enum": ["route_confirmed","route_deviated"] },
+      "first_station":         { "type": "string" },
+      "last_station":          { "type": "string" },
+      "visit_receipt":         { "type": "integer" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "exhibit_visit_receipt",
+    "description": "Given a declared station order, a minimum dwell threshold, and the stations visited with dwell times, folds the visit into a reproducible receipt and checks it against the declared order. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "exhibit_id":        { "type": "string" },
+        "declared_route":    { "type": "string" },
+        "visited":           { "type": "string" },
+        "min_dwell_seconds": { "type": "integer" }
+      },
+      "required": ["exhibit_id","declared_route","visited"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://postoaklabs.com",
+  "license": "CC-BY-4.0"
+};
+
+/* KEEP VERBATIM: MCP / MANIFEST TOGGLE */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

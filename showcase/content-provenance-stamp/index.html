@@ -1,0 +1,575 @@
+<!-- INTERNAL, not rendered: run-via reference is named kernels compute_ipfs_cid and generate_iscc_code on mcp.ainumbers.co. Live slug not confirmed at build time; do not print on page. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Content Provenance Stamp · ApexLogics Showcase</title>
+  <meta name="description" content="Paste the same content twice, once exactly and once with whitespace or casing changed, to see how an exact identifier and a similarity signal diverge under re-encoding — the reason provenance systems carry both." />
+  <link rel="canonical" href="https://apexlogics.org/showcase/content-provenance-stamp/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <!-- KEEP VERBATIM: Google Fonts link -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* KEEP VERBATIM: design tokens (CONTRACT Appendix A). */
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    /* KEEP VERBATIM: nav chrome ─────────────────────────────────────────── */
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    /* KEEP VERBATIM: page shell + PII banner */
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    /* Hero */
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.2rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    /* Scope callout (naming/coverage note, required copy) */
+    .scope-note { background: rgba(167,139,250,.06); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; padding: .8rem 1rem; font-size: .82rem; color: var(--text-muted); margin: 0 0 20px; }
+    .scope-note strong { color: var(--text); }
+
+    /* Cards + fields */
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    textarea { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; width: 100%; min-height: 150px; resize: vertical; transition: border-color 0.2s; }
+    textarea:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    /* Results */
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+
+    .verdict { border-radius: 12px; border: 1px solid var(--border); padding: 20px 24px; margin-bottom: 16px; }
+    .verdict.ok { border-color: rgba(52,211,153,.45); background: rgba(52,211,153,.06); }
+    .verdict.warn { border-color: rgba(251,191,36,.45); background: rgba(251,191,36,.06); }
+    .verdict.info { border-color: rgba(96,165,250,.45); background: rgba(96,165,250,.06); }
+    .verdict.no { border-color: rgba(248,113,113,.45); background: rgba(248,113,113,.06); }
+    .verdict-big { font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 600; margin-bottom: 6px; }
+    .verdict.ok .verdict-big { color: var(--green); }
+    .verdict.warn .verdict-big { color: var(--amber); }
+    .verdict.info .verdict-big { color: var(--blue); }
+    .verdict.no .verdict-big { color: var(--red); }
+    .verdict-sub { color: var(--text-muted); font-size: 0.9rem; }
+
+    .hash-line { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); word-break: break-all; margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--border); }
+    .gate-note { font-size: 0.82rem; color: var(--text-muted); margin-top: 10px; }
+
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+    .row .row-val.green { color: var(--green); }
+    .row .row-val.red { color: var(--red); }
+
+    /* KEEP VERBATIM: export row (Markdown FIRST, Policy Mandate SECOND) */
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    /* KEEP VERBATIM: footer */
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.7rem; }
+      .results-export-row { flex-direction: column; }
+    }
+
+    /* KEEP VERBATIM: mfst disclosure */
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<!-- ══ KEEP VERBATIM: NAV, do not edit anything between here and </nav> ══ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+      <a href="../index.html" class="nav-pill">&#x2190; Showcase Gallery</a>
+    </div>
+  </div>
+</nav>
+<!-- ══ END NAV ══ -->
+
+<div class="tool-wrapper">
+
+  <!-- KEEP VERBATIM: PII banner. -->
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">OCG-Industries Showcase · Cluster ⑱ Document and Data Conversion</p>
+  <h1 class="tool-title">Content Provenance Stamp</h1>
+  <p class="tool-desc">Paste the same content into both boxes below, then change whitespace or casing in the second one, and this page shows why provenance systems carry two different kinds of identifier. An exact identifier changes the instant a single byte does. A similarity signal survives whitespace and casing changes but still says nothing about meaning. Both are useful, and neither is the other.</p>
+
+  <div class="scope-note">
+    <strong>Naming.</strong> A production content-provenance stamp identifies exact bytes with an IPFS CID and identifies similar content with an ISCC code, computed on the AINumbers server. Both are heavyweight, specified algorithms that are not re-derived here. This page demonstrates the same exact-versus-similarity idea using its own local fingerprints only, which is why it's titled "Content Provenance Stamp" rather than naming those two standards directly.
+  </div>
+
+  <p class="tool-vintage">Data: ISO 24138 ISCC · IPFS CID v1 specification · no external data</p>
+
+  <div class="card">
+    <div class="card-title">Inputs <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="contentOriginal">Content, original</label>
+        <textarea id="contentOriginal">The quarterly field report notes stable sensor uptime across all monitoring stations.</textarea>
+      </div>
+      <div class="field">
+        <label for="contentVariant">Content, variant</label>
+        <textarea id="contentVariant">THE QUARTERLY FIELD REPORT NOTES STABLE SENSOR   UPTIME ACROSS ALL MONITORING STATIONS.</textarea>
+        <span class="field-hint">Paste the same text with whitespace or casing changed to see the difference.</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Stamp Content →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="verdict" id="verdict">
+      <div class="verdict-big" id="verdictBig">--</div>
+      <div class="verdict-sub" id="verdictSub">--</div>
+      <div class="gate-note" id="gateNote">--</div>
+      <div class="hash-line" id="hashLine">execution_hash: --</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">Exact digest, original</span><span class="row-val" id="dExactOrig">--</span></div>
+      <div class="row"><span class="row-label">Exact digest, variant</span><span class="row-val" id="dExactVar">--</span></div>
+      <div class="row"><span class="row-label">Exact match</span><span class="row-val" id="dExactMatch">--</span></div>
+      <div class="row"><span class="row-label">Similarity digest, original</span><span class="row-val" id="dSimOrig">--</span></div>
+      <div class="row"><span class="row-label">Similarity digest, variant</span><span class="row-val" id="dSimVar">--</span></div>
+      <div class="row"><span class="row-label">Similarity match</span><span class="row-val" id="dSimMatch">--</span></div>
+      <div class="row"><span class="row-label">Token count, original</span><span class="row-val" id="dTokOrig">--</span></div>
+      <div class="row"><span class="row-label">Token count, variant</span><span class="row-val" id="dTokVar">--</span></div>
+      <div class="row"><span class="row-label">Shared token count</span><span class="row-val" id="dShared">--</span></div>
+      <div class="row"><span class="row-label">Jaccard similarity</span><span class="row-val" id="dJaccard">--</span></div>
+      <div class="row"><span class="row-label">Stamp class</span><span class="row-val" id="dStampClass">--</span></div>
+      <div class="row"><span class="row-label">Status</span><span class="row-val" id="dStatus">--</span></div>
+
+      <!-- KEEP VERBATIM: export row. Markdown FIRST, Policy Mandate SECOND. -->
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- KEEP VERBATIM: mfst disclosure block -->
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · SC-93 · Data: ISO 24138 ISCC · IPFS CID v1 specification · no external data
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+/* KEEP VERBATIM: helpers */
+const $ = id => document.getElementById(id);
+
+/* Bundle-wide fingerprint helper (mutation detector, NOT a cryptographic digest) */
+function fingerprint(str){ var h=5381,s=String(str).toUpperCase(); for(var i=0;i<s.length;i++) h=((Math.imul(h,33)+s.charCodeAt(i))&0x7fffffff); return h; }
+
+function normalize(text) {
+  return String(text == null ? '' : text).toUpperCase().replace(/\s+/g, ' ').trim();
+}
+
+/* ── CORE LOGIC: content provenance stamp ─────────────────────────────────── */
+function calculate() {
+  const content_original = String($('contentOriginal').value == null ? '' : $('contentOriginal').value);
+  const content_variant  = String($('contentVariant').value == null ? '' : $('contentVariant').value);
+
+  const exact_digest_original = fingerprint(content_original);
+  const exact_digest_variant  = fingerprint(content_variant);
+  const exact_match = (exact_digest_original === exact_digest_variant);
+
+  const normalized_original = normalize(content_original);
+  const normalized_variant  = normalize(content_variant);
+  const similarity_digest_original = fingerprint(normalized_original);
+  const similarity_digest_variant  = fingerprint(normalized_variant);
+  const similarity_match = (similarity_digest_original === similarity_digest_variant);
+
+  const tokensOriginal = normalized_original.length ? normalized_original.split(' ').filter(function(t){ return t.length > 0; }) : [];
+  const tokensVariant  = normalized_variant.length ? normalized_variant.split(' ').filter(function(t){ return t.length > 0; }) : [];
+  const token_count_original = tokensOriginal.length;
+  const token_count_variant  = tokensVariant.length;
+
+  const setOriginal = new Set(tokensOriginal);
+  const setVariant  = new Set(tokensVariant);
+  let shared_token_count = 0;
+  setOriginal.forEach(function(t){ if (setVariant.has(t)) shared_token_count++; });
+  const unionSet = new Set(tokensOriginal.concat(tokensVariant));
+  const unionSize = unionSet.size;
+  const jaccard_bp = unionSize > 0 ? Math.round(shared_token_count * 10000 / unionSize) : 0;
+
+  let stamp_class;
+  if (exact_match) stamp_class = 'identical';
+  else if (similarity_match) stamp_class = 'reencoded';
+  else if (jaccard_bp >= 5000) stamp_class = 'related';
+  else stamp_class = 'unrelated';
+
+  const status = stamp_class;
+
+  const outputs = {
+    exact_digest_original: exact_digest_original,
+    exact_digest_variant: exact_digest_variant,
+    exact_match: exact_match,
+    similarity_digest_original: similarity_digest_original,
+    similarity_digest_variant: similarity_digest_variant,
+    similarity_match: similarity_match,
+    token_count_original: token_count_original,
+    token_count_variant: token_count_variant,
+    shared_token_count: shared_token_count,
+    jaccard_bp: jaccard_bp,
+    stamp_class: stamp_class,
+    status: status
+  };
+
+  _lastInputs  = { content_original, content_variant };
+  _lastResults = outputs;
+
+  render();
+}
+
+/* Render results into the DOM, then compute and display execution_hash. */
+async function render() {
+  const o = _lastResults;
+
+  const CLASS_MAP = {
+    identical: { cls: 'ok',   big: '✓ Identical',  sub: 'Both boxes hash to the same exact digest — not one byte differs.' },
+    reencoded: { cls: 'info', big: '≈ Re-encoded',  sub: 'The exact digests differ, but after normalizing whitespace and casing the two match — the same content, re-encoded.' },
+    related:   { cls: 'warn', big: '~ Related',     sub: 'Neither digest matches, but the two share enough tokens to look related rather than coincidental.' },
+    unrelated: { cls: 'no',   big: '✗ Unrelated',   sub: 'Neither the exact nor the similarity digest matches, and the shared-token overlap is low.' }
+  };
+  const m = CLASS_MAP[o.stamp_class] || CLASS_MAP.unrelated;
+
+  $('verdict').className = 'verdict ' + m.cls;
+  $('verdictBig').textContent = m.big;
+  $('verdictSub').textContent = m.sub;
+  $('gateNote').textContent = 'Change only the whitespace or casing in the variant box and re-run: the exact digest changes, the similarity digest does not.';
+
+  $('dExactOrig').textContent = o.exact_digest_original;
+  $('dExactVar').textContent = o.exact_digest_variant;
+  const em = $('dExactMatch'); em.textContent = o.exact_match ? 'Yes' : 'No'; em.className = 'row-val ' + (o.exact_match ? 'green' : 'red');
+  $('dSimOrig').textContent = o.similarity_digest_original;
+  $('dSimVar').textContent = o.similarity_digest_variant;
+  const sm = $('dSimMatch'); sm.textContent = o.similarity_match ? 'Yes' : 'No'; sm.className = 'row-val ' + (o.similarity_match ? 'green' : 'red');
+  $('dTokOrig').textContent = o.token_count_original;
+  $('dTokVar').textContent = o.token_count_variant;
+  $('dShared').textContent = o.shared_token_count;
+  $('dJaccard').textContent = (o.jaccard_bp / 100).toFixed(2) + '%';
+  $('dStampClass').textContent = o.stamp_class;
+  $('dStatus').textContent = o.status;
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    const pp = { execution_backend: 'js', hash_precision: 'integer_checksum', inputs: _lastInputs };
+    const h = await apexHash(pp, o);
+    $('hashLine').textContent = 'execution_hash: ' + h;
+  } catch (_e) {
+    $('hashLine').textContent = 'execution_hash: (unavailable in this browser)';
+  }
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastResults) return;
+  const o = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Content Provenance Stamp Results',
+    `\n_Generated ${d} · SC-93 · apexlogics.org_\n`,
+    'Local fingerprints only. Not an IPFS CID or an ISCC code.\n',
+    '## Result',
+    '| Field | Value |', '|---|---|',
+    `| Exact digest, original | ${o.exact_digest_original} |`,
+    `| Exact digest, variant | ${o.exact_digest_variant} |`,
+    `| Exact match | ${o.exact_match ? 'Yes' : 'No'} |`,
+    `| Similarity digest, original | ${o.similarity_digest_original} |`,
+    `| Similarity digest, variant | ${o.similarity_digest_variant} |`,
+    `| Similarity match | ${o.similarity_match ? 'Yes' : 'No'} |`,
+    `| Token count, original | ${o.token_count_original} |`,
+    `| Token count, variant | ${o.token_count_variant} |`,
+    `| Shared token count | ${o.shared_token_count} |`,
+    `| Jaccard (bp) | ${o.jaccard_bp} |`,
+    `| Stamp class | ${o.stamp_class} |`,
+    `| Status | ${o.status} |`,
+    '\n---',
+    '_Source: no external data. A production stamp uses IPFS CID and ISCC on the AINumbers server; this page uses local fingerprints only. ApexLogics Showcase · apexlogics.org_'
+  ];
+  dlFile('content-provenance-stamp.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+/* The ORDER of the steps below is non-negotiable. Edit field VALUES only. */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, o = _lastResults;
+
+  /* STEP 1: domain payload */
+  const payload = {
+    mandate_type: "content_provenance_stamp_record",
+    generated_at: new Date().toISOString(),
+    al_id: "SC-93",
+    tool_id: "sc93-content-provenance-stamp",
+    tool_name: "Content Provenance Stamp",
+    inputs: {
+      content_original: i.content_original,
+      content_variant: i.content_variant
+    },
+    outputs: {
+      exact_digest_original: o.exact_digest_original,
+      exact_digest_variant: o.exact_digest_variant,
+      exact_match: o.exact_match,
+      similarity_digest_original: o.similarity_digest_original,
+      similarity_digest_variant: o.similarity_digest_variant,
+      similarity_match: o.similarity_match,
+      token_count_original: o.token_count_original,
+      token_count_variant: o.token_count_variant,
+      shared_token_count: o.shared_token_count,
+      jaccard_bp: o.jaccard_bp,
+      stamp_class: o.stamp_class,
+      status: o.status
+    },
+    downstream_handoff_candidates: [],
+    data_sources: [
+      "ISO 24138 ISCC and IPFS CID v1 named for context only; not computed here. No external data."
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  /* STEP 2, KEEP VERBATIM: OpenChainGraph L1 + L2 (parent capture via ?ap2=) */
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/content_provenance_stamp";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "SC-93";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  /* STEP 3, KEEP VERBATIM: build _cgDomain by excluding envelope keys */
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "integer_checksum", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  /* STEP 4, KEEP VERBATIM: canonical execution hash */
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  /* STEP 5, KEEP VERBATIM: OCG v0.4 envelope fields (hash-excluded, additive) */
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* STEP 6, SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  /* STEP 7, KEEP VERBATIM: relocate non-allowed keys into hash-excluded apex_meta */
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  /* STEP 8, validate the SNAPSHOT, then and only then create the object URL. */
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['content_provenance_stamp_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`SC-93_content-provenance-stamp_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, CHAINGRAPH §6 EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* MANIFEST, mirrors manifest.json in substance */
+const MANIFEST = {
+  "_canonical_filename": "SC-93_content-provenance-stamp.manifest.json",
+  "tool_id": "sc93-content-provenance-stamp",
+  "al_id": "SC-93",
+  "version": "1.0.0",
+  "title": "Content Provenance Stamp",
+  "description": "Given two pieces of content, computes an exact digest and a whitespace/casing-normalized similarity digest for each, plus a token-overlap Jaccard signal, to demonstrate why provenance systems carry both an exact identifier and a similarity signal. Uses local fingerprints only, not a real IPFS CID or ISCC code. Deterministic, zero external data. Policy Mandate v2.0: content_provenance_stamp_record.",
+  "category": "showcase",
+  "cluster": "document-data-conversion",
+  "journeys": [],
+  "personas": ["publisher", "archivist"],
+  "tags": ["showcase","provenance","content-identity","hash-verifiable"],
+  "status": "showcase",
+  "maintenance": "zero",
+  "data_vintage": "ISO 24138 ISCC · IPFS CID v1 specification · no external data",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["content_provenance_stamp_record"],
+  "downstream_handoff_candidates": [],
+  "regulatory_citations": ["ISO 24138 ISCC (named for context only)", "IPFS CID v1 specification (named for context only)"],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "content_original": { "type": "string" },
+      "content_variant":  { "type": "string" }
+    },
+    "required": ["content_original","content_variant"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "exact_digest_original":      { "type": "integer" },
+      "exact_digest_variant":       { "type": "integer" },
+      "exact_match":                { "type": "boolean" },
+      "similarity_digest_original": { "type": "integer" },
+      "similarity_digest_variant":  { "type": "integer" },
+      "similarity_match":           { "type": "boolean" },
+      "token_count_original":       { "type": "integer" },
+      "token_count_variant":        { "type": "integer" },
+      "shared_token_count":         { "type": "integer" },
+      "jaccard_bp":                 { "type": "integer" },
+      "stamp_class":                { "type": "string", "enum": ["identical","reencoded","related","unrelated"] },
+      "status":                     { "type": "string", "enum": ["identical","reencoded","related","unrelated"] }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "content_provenance_stamp",
+    "description": "Given original and variant content, computes exact and normalized-similarity digests plus a token-overlap Jaccard signal, classifying the pair as identical, re-encoded, related, or unrelated. Local fingerprints only; not a real IPFS CID or ISCC code. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "content_original": { "type": "string" },
+        "content_variant":  { "type": "string" }
+      },
+      "required": ["content_original","content_variant"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://postoaklabs.com",
+  "license": "CC-BY-4.0"
+};
+
+/* KEEP VERBATIM: MCP / MANIFEST TOGGLE */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

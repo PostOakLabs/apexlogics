@@ -1,0 +1,633 @@
+<!-- INTERNAL, not rendered: run-via reference is named kernel parse_camt053_reconciliation on mcp.ainumbers.co. Live slug not confirmed at build time; do not print on page. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CAMT.053 Reconciliation Parse · ApexLogics Showcase</title>
+  <meta name="description" content="Paste a simplified statement entry list — reference, amount, CRDT or DBIT — plus an opening and closing balance. This tool parses it, balances it, and folds the entry list into a statement digest." />
+  <link rel="canonical" href="https://apexlogics.org/showcase/camt053-reconciliation-parse/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <!-- KEEP VERBATIM: Google Fonts link -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* KEEP VERBATIM: design tokens (CONTRACT Appendix A). */
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    /* KEEP VERBATIM: nav chrome ─────────────────────────────────────────── */
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    /* KEEP VERBATIM: page shell + PII banner */
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    /* Hero */
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.2rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    /* Accuracy callout (required, verbatim substance) */
+    .accuracy-note { background: rgba(248,113,113,.06); border: 1px solid rgba(248,113,113,.35); border-left: 3px solid var(--red); border-radius: 6px; padding: .8rem 1rem; font-size: .82rem; color: var(--text-muted); margin: 0 0 20px; }
+    .accuracy-note strong { color: var(--text); }
+
+    /* Cards + fields */
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], input[type="text"], select, textarea { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    textarea { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; min-height: 160px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    /* Results */
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+
+    .verdict { border-radius: 12px; border: 1px solid var(--border); padding: 20px 24px; margin-bottom: 16px; }
+    .verdict.ok { border-color: rgba(52,211,153,.45); background: rgba(52,211,153,.06); }
+    .verdict.no { border-color: rgba(248,113,113,.45); background: rgba(248,113,113,.06); }
+    .verdict.warn { border-color: rgba(251,191,36,.45); background: rgba(251,191,36,.06); }
+    .verdict-big { font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 600; margin-bottom: 6px; }
+    .verdict.ok .verdict-big { color: var(--green); }
+    .verdict.no .verdict-big { color: var(--red); }
+    .verdict.warn .verdict-big { color: var(--amber); }
+    .verdict-sub { color: var(--text-muted); font-size: 0.9rem; }
+
+    .hash-line { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); word-break: break-all; margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--border); }
+    .gate-note { font-size: 0.82rem; color: var(--text-muted); margin-top: 10px; }
+
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+    .row .row-val.green { color: var(--green); }
+    .row .row-val.red { color: var(--red); }
+
+    /* KEEP VERBATIM: export row (Markdown FIRST, Policy Mandate SECOND) */
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    /* KEEP VERBATIM: footer */
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.7rem; }
+      .results-export-row { flex-direction: column; }
+    }
+
+    /* KEEP VERBATIM: mfst disclosure */
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<!-- ══ KEEP VERBATIM: NAV, do not edit anything between here and </nav> ══ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+      <a href="../index.html" class="nav-pill">&#x2190; Showcase Gallery</a>
+    </div>
+  </div>
+</nav>
+<!-- ══ END NAV ══ -->
+
+<div class="tool-wrapper">
+
+  <!-- KEEP VERBATIM: PII banner. -->
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">OCG-Industries Showcase · Cluster ⑱ Document and Data Conversion</p>
+  <h1 class="tool-title">CAMT.053 Reconciliation Parse</h1>
+  <p class="tool-desc">A statement parse is a derivation: whatever a reconciliation report says, it should trace back to the entries and the opening balance it started from. Paste a simplified entry list, a reference, an amount in cents, and a CRDT or DBIT indicator, one per line, along with an opening and closing balance, and this page parses it, balances it, and folds the entry list into a statement digest.</p>
+
+  <div class="accuracy-note">
+    <strong>Accuracy.</strong> This parses a simplified entry list, not a real camt.053 XML document. It demonstrates the balancing derivation that a full parse feeds.
+  </div>
+
+  <p class="tool-vintage">Data: ISO 20022 camt.053.001 bank-to-customer statement · IETF RFC 4180</p>
+
+  <div class="card">
+    <div class="card-title">Inputs <span class="badge">STEP 1</span></div>
+    <div class="form-grid">
+      <div class="field">
+        <label for="entries">Entries, one per line: reference,amount_cents,CRDT_or_DBIT</label>
+        <textarea id="entries">INV-1001,150000,CRDT
+INV-1002,42500,CRDT
+FEE-2201,7500,DBIT
+INV-1002,42500,CRDT
+malformed line here
+REV-3301,not-a-number,DBIT</textarea>
+        <span class="field-hint">Three comma-separated fields per line. Lines that don't split into exactly three parts, or whose amount isn't an integer, are counted as malformed.</span>
+      </div>
+    </div>
+    <div class="form-grid two" style="margin-top:14px;">
+      <div class="field">
+        <label for="openingBalance">Opening balance, cents</label>
+        <input type="number" id="openingBalance" value="500000" step="1" />
+      </div>
+      <div class="field">
+        <label for="closingBalance">Closing balance, cents</label>
+        <input type="number" id="closingBalance" value="685000" step="1" />
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Parse and Balance →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="verdict" id="verdict">
+      <div class="verdict-big" id="verdictBig">--</div>
+      <div class="verdict-sub" id="verdictSub">--</div>
+      <div class="gate-note" id="gateNote">--</div>
+      <div class="hash-line" id="hashLine">execution_hash: --</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">Entries entered</span><span class="row-val" id="dEntryCount">--</span></div>
+      <div class="row"><span class="row-label">Malformed lines</span><span class="row-val" id="dMalformed">--</span></div>
+      <div class="row"><span class="row-label">Credit entries</span><span class="row-val" id="dCreditCount">--</span></div>
+      <div class="row"><span class="row-label">Debit entries</span><span class="row-val" id="dDebitCount">--</span></div>
+      <div class="row"><span class="row-label">Credit total (cents)</span><span class="row-val" id="dCreditTotal">--</span></div>
+      <div class="row"><span class="row-label">Debit total (cents)</span><span class="row-val" id="dDebitTotal">--</span></div>
+      <div class="row"><span class="row-label">Net movement (cents)</span><span class="row-val" id="dNetMovement">--</span></div>
+      <div class="row"><span class="row-label">Opening balance (cents)</span><span class="row-val" id="dOpening">--</span></div>
+      <div class="row"><span class="row-label">Closing balance (cents)</span><span class="row-val" id="dClosing">--</span></div>
+      <div class="row"><span class="row-label">Computed closing (cents)</span><span class="row-val" id="dComputedClosing">--</span></div>
+      <div class="row"><span class="row-label">Balance delta (cents)</span><span class="row-val" id="dDelta">--</span></div>
+      <div class="row"><span class="row-label">Balances</span><span class="row-val" id="dBalances">--</span></div>
+      <div class="row"><span class="row-label">Duplicate reference count</span><span class="row-val" id="dDupRefs">--</span></div>
+      <div class="row"><span class="row-label">Statement digest</span><span class="row-val" id="dStatementDigest">--</span></div>
+      <div class="row"><span class="row-label">Status</span><span class="row-val" id="dStatus">--</span></div>
+
+      <!-- KEEP VERBATIM: export row. Markdown FIRST, Policy Mandate SECOND. -->
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- KEEP VERBATIM: mfst disclosure block -->
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · SC-92 · Data: ISO 20022 camt.053.001 bank-to-customer statement · IETF RFC 4180
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+/* KEEP VERBATIM: helpers */
+const $ = id => document.getElementById(id);
+
+/* Bundle-wide fingerprint helper (mutation detector, NOT a cryptographic digest) */
+function fingerprint(str){ var h=5381,s=String(str).toUpperCase(); for(var i=0;i<s.length;i++) h=((Math.imul(h,33)+s.charCodeAt(i))&0x7fffffff); return h; }
+
+/* ── CORE LOGIC: camt.053 reconciliation parse ────────────────────────────── */
+function calculate() {
+  function intField(id, def) {
+    let n = parseInt($(id).value, 10);
+    if (!Number.isFinite(n)) n = def;
+    return n;
+  }
+  const opening_balance_cents = intField('openingBalance', 0);
+  const closing_balance_cents = intField('closingBalance', 0);
+
+  const rawLines = String($('entries').value == null ? '' : $('entries').value).split('\n');
+  const lines = [];
+  for (let i = 0; i < rawLines.length; i++) {
+    const t = rawLines[i].trim();
+    if (t.length === 0) continue;
+    lines.push(t);
+  }
+
+  const entry_count = lines.length;
+  let malformed_line_count = 0;
+  const wellFormed = []; // { reference, amount, indicator }
+
+  for (let i = 0; i < lines.length; i++) {
+    const parts = lines[i].split(',');
+    if (parts.length !== 3) { malformed_line_count++; continue; }
+    const reference = parts[0].trim();
+    const amountStr = parts[1].trim();
+    const indicator = parts[2].trim().toUpperCase();
+    const amount = parseInt(amountStr, 10);
+    if (!Number.isFinite(amount) || String(amount) !== amountStr.replace(/^\+/, '')) {
+      // Not a clean integer string; still accept plain integer forms like "007" leniently via parseInt,
+      // but reject anything parseInt can't make sense of at all.
+      if (!Number.isFinite(amount)) { malformed_line_count++; continue; }
+    }
+    wellFormed.push({ reference: reference, amount: amount, indicator: indicator });
+  }
+
+  let credit_count = 0, debit_count = 0, credit_total_cents = 0, debit_total_cents = 0;
+  for (let i = 0; i < wellFormed.length; i++) {
+    const e = wellFormed[i];
+    if (e.indicator === 'CRDT') { credit_count++; credit_total_cents += e.amount; }
+    else if (e.indicator === 'DBIT') { debit_count++; debit_total_cents += e.amount; }
+  }
+
+  const net_movement_cents = credit_total_cents - debit_total_cents;
+  const computed_closing_cents = opening_balance_cents + net_movement_cents;
+  const balance_delta_cents = closing_balance_cents - computed_closing_cents;
+  const balances = (balance_delta_cents === 0);
+
+  let duplicate_reference_count = 0;
+  {
+    const seen = {};
+    for (let i = 0; i < wellFormed.length; i++) {
+      const r = wellFormed[i].reference;
+      if (seen[r]) duplicate_reference_count++;
+      else seen[r] = true;
+    }
+  }
+
+  const normalizedLines = wellFormed.map(function(e){ return e.reference + ',' + e.amount + ',' + e.indicator; });
+  const statement_digest = fingerprint(normalizedLines.join('\n'));
+
+  let status;
+  if (entry_count === 0) status = 'empty';
+  else if (malformed_line_count > 0) status = 'malformed-input';
+  else if (balances) status = 'balanced';
+  else status = 'out-of-balance';
+
+  const outputs = {
+    entry_count: entry_count,
+    malformed_line_count: malformed_line_count,
+    credit_count: credit_count,
+    debit_count: debit_count,
+    credit_total_cents: credit_total_cents,
+    debit_total_cents: debit_total_cents,
+    net_movement_cents: net_movement_cents,
+    opening_balance_cents: opening_balance_cents,
+    closing_balance_cents: closing_balance_cents,
+    computed_closing_cents: computed_closing_cents,
+    balance_delta_cents: balance_delta_cents,
+    balances: balances,
+    duplicate_reference_count: duplicate_reference_count,
+    statement_digest: statement_digest,
+    status: status
+  };
+
+  _lastInputs  = { entries_normalized: normalizedLines, opening_balance_cents, closing_balance_cents, raw_line_count: entry_count };
+  _lastResults = outputs;
+
+  render();
+}
+
+/* Render results into the DOM, then compute and display execution_hash. */
+async function render() {
+  const o = _lastResults;
+
+  let cls = 'no', big = '✗ Out of balance', sub = '';
+  if (o.status === 'balanced') { cls = 'ok'; big = '✓ Balances'; sub = 'Opening balance plus net movement from these entries matches the reported closing balance exactly.'; }
+  else if (o.status === 'malformed-input') { cls = 'warn'; big = '⚠ Malformed input present'; sub = o.malformed_line_count + ' line(s) could not be parsed and were excluded from the totals below.'; }
+  else if (o.status === 'empty') { cls = 'warn'; big = '— Empty input'; sub = 'No entries were entered.'; }
+  else { sub = 'Balance delta of ' + o.balance_delta_cents + ' cent(s) between the reported closing balance and the computed closing balance.'; }
+
+  $('verdict').className = 'verdict ' + cls;
+  $('verdictBig').textContent = big;
+  $('verdictSub').textContent = sub;
+  $('gateNote').textContent = 'Change one CRDT to DBIT and re-run: watch net movement, computed closing, and the balance delta all shift together.';
+
+  $('dEntryCount').textContent = o.entry_count;
+  const mf = $('dMalformed'); mf.textContent = o.malformed_line_count; mf.className = 'row-val ' + (o.malformed_line_count === 0 ? 'green' : 'red');
+  $('dCreditCount').textContent = o.credit_count;
+  $('dDebitCount').textContent = o.debit_count;
+  $('dCreditTotal').textContent = o.credit_total_cents;
+  $('dDebitTotal').textContent = o.debit_total_cents;
+  $('dNetMovement').textContent = o.net_movement_cents;
+  $('dOpening').textContent = o.opening_balance_cents;
+  $('dClosing').textContent = o.closing_balance_cents;
+  $('dComputedClosing').textContent = o.computed_closing_cents;
+  $('dDelta').textContent = o.balance_delta_cents;
+  const bl = $('dBalances'); bl.textContent = o.balances ? 'Yes' : 'No'; bl.className = 'row-val ' + (o.balances ? 'green' : 'red');
+  $('dDupRefs').textContent = o.duplicate_reference_count;
+  $('dStatementDigest').textContent = o.statement_digest;
+  $('dStatus').textContent = o.status;
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    const pp = { execution_backend: 'js', hash_precision: 'integer_checksum', inputs: _lastInputs };
+    const h = await apexHash(pp, o);
+    $('hashLine').textContent = 'execution_hash: ' + h;
+  } catch (_e) {
+    $('hashLine').textContent = 'execution_hash: (unavailable in this browser)';
+  }
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastResults) return;
+  const o = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# CAMT.053 Reconciliation Parse Results',
+    `\n_Generated ${d} · SC-92 · apexlogics.org_\n`,
+    'This parses a simplified entry list, not a real camt.053 XML document.\n',
+    '## Result',
+    '| Field | Value |', '|---|---|',
+    `| Entries entered | ${o.entry_count} |`,
+    `| Malformed lines | ${o.malformed_line_count} |`,
+    `| Credit entries | ${o.credit_count} |`,
+    `| Debit entries | ${o.debit_count} |`,
+    `| Credit total (cents) | ${o.credit_total_cents} |`,
+    `| Debit total (cents) | ${o.debit_total_cents} |`,
+    `| Net movement (cents) | ${o.net_movement_cents} |`,
+    `| Opening balance (cents) | ${o.opening_balance_cents} |`,
+    `| Closing balance (cents) | ${o.closing_balance_cents} |`,
+    `| Computed closing (cents) | ${o.computed_closing_cents} |`,
+    `| Balance delta (cents) | ${o.balance_delta_cents} |`,
+    `| Balances | ${o.balances ? 'Yes' : 'No'} |`,
+    `| Duplicate reference count | ${o.duplicate_reference_count} |`,
+    `| Statement digest | ${o.statement_digest} |`,
+    `| Status | ${o.status} |`,
+    '\n---',
+    '_Source: no external data. Demonstrates the balancing derivation only. ApexLogics Showcase · apexlogics.org_'
+  ];
+  dlFile('camt053-reconciliation-parse.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+/* The ORDER of the steps below is non-negotiable. Edit field VALUES only. */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, o = _lastResults;
+
+  /* STEP 1: domain payload */
+  const payload = {
+    mandate_type: "camt053_reconciliation_parse_record",
+    generated_at: new Date().toISOString(),
+    al_id: "SC-92",
+    tool_id: "sc92-camt053-reconciliation-parse",
+    tool_name: "CAMT.053 Reconciliation Parse",
+    inputs: {
+      entries_normalized: i.entries_normalized,
+      opening_balance_cents: i.opening_balance_cents,
+      closing_balance_cents: i.closing_balance_cents,
+      raw_line_count: i.raw_line_count
+    },
+    outputs: {
+      entry_count: o.entry_count,
+      malformed_line_count: o.malformed_line_count,
+      credit_count: o.credit_count,
+      debit_count: o.debit_count,
+      credit_total_cents: o.credit_total_cents,
+      debit_total_cents: o.debit_total_cents,
+      net_movement_cents: o.net_movement_cents,
+      opening_balance_cents: o.opening_balance_cents,
+      closing_balance_cents: o.closing_balance_cents,
+      computed_closing_cents: o.computed_closing_cents,
+      balance_delta_cents: o.balance_delta_cents,
+      balances: o.balances,
+      duplicate_reference_count: o.duplicate_reference_count,
+      statement_digest: o.statement_digest,
+      status: o.status
+    },
+    downstream_handoff_candidates: [],
+    data_sources: [
+      "ISO 20022 camt.053.001 bank-to-customer statement (simplified entry list, not real XML). IETF RFC 4180."
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  /* STEP 2, KEEP VERBATIM: OpenChainGraph L1 + L2 (parent capture via ?ap2=) */
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/camt053_reconciliation_parse";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "SC-92";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  /* STEP 3, KEEP VERBATIM: build _cgDomain by excluding envelope keys */
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "integer_checksum", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  /* STEP 4, KEEP VERBATIM: canonical execution hash */
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  /* STEP 5, KEEP VERBATIM: OCG v0.4 envelope fields (hash-excluded, additive) */
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* STEP 6, SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  /* STEP 7, KEEP VERBATIM: relocate non-allowed keys into hash-excluded apex_meta */
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  /* STEP 8, validate the SNAPSHOT, then and only then create the object URL. */
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['camt053_reconciliation_parse_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`SC-92_camt053-reconciliation-parse_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, CHAINGRAPH §6 EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* MANIFEST, mirrors manifest.json in substance */
+const MANIFEST = {
+  "_canonical_filename": "SC-92_camt053-reconciliation-parse.manifest.json",
+  "tool_id": "sc92-camt053-reconciliation-parse",
+  "al_id": "SC-92",
+  "version": "1.0.0",
+  "title": "CAMT.053 Reconciliation Parse",
+  "description": "Given a simplified reference/amount/CRDT-DBIT entry list plus an opening and closing balance, parses and balances the statement, flags malformed lines and duplicate references, and folds the entry list into a statement digest. Deterministic, zero external data. Policy Mandate v2.0: camt053_reconciliation_parse_record.",
+  "category": "showcase",
+  "cluster": "document-data-conversion",
+  "journeys": [],
+  "personas": ["treasury operations analyst"],
+  "tags": ["showcase","camt053","reconciliation","banking","hash-verifiable"],
+  "status": "showcase",
+  "maintenance": "zero",
+  "data_vintage": "ISO 20022 camt.053.001 bank-to-customer statement · IETF RFC 4180",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["camt053_reconciliation_parse_record"],
+  "downstream_handoff_candidates": [],
+  "regulatory_citations": ["ISO 20022 camt.053.001", "IETF RFC 4180"],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "entries":               { "type": "string" },
+      "opening_balance_cents": { "type": "integer" },
+      "closing_balance_cents": { "type": "integer" }
+    },
+    "required": ["entries","opening_balance_cents","closing_balance_cents"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "entry_count":               { "type": "integer" },
+      "malformed_line_count":      { "type": "integer" },
+      "credit_count":              { "type": "integer" },
+      "debit_count":               { "type": "integer" },
+      "credit_total_cents":        { "type": "integer" },
+      "debit_total_cents":         { "type": "integer" },
+      "net_movement_cents":        { "type": "integer" },
+      "opening_balance_cents":     { "type": "integer" },
+      "closing_balance_cents":     { "type": "integer" },
+      "computed_closing_cents":    { "type": "integer" },
+      "balance_delta_cents":       { "type": "integer" },
+      "balances":                  { "type": "boolean" },
+      "duplicate_reference_count":{ "type": "integer" },
+      "statement_digest":          { "type": "integer" },
+      "status":                    { "type": "string", "enum": ["balanced","out-of-balance","malformed-input","empty"] }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "camt053_reconciliation_parse",
+    "description": "Given a simplified reference/amount/CRDT-DBIT entry list plus an opening and closing balance, parses and balances the statement and returns malformed-line and duplicate-reference flags plus a statement digest. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "entries":               { "type": "string" },
+        "opening_balance_cents": { "type": "integer" },
+        "closing_balance_cents": { "type": "integer" }
+      },
+      "required": ["entries","opening_balance_cents","closing_balance_cents"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://postoaklabs.com",
+  "license": "CC-BY-4.0"
+};
+
+/* KEEP VERBATIM: MCP / MANIFEST TOGGLE */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>
