@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
 <title>Skilled Trades Career Builder — ApexLogics OpenChainGraph</title>
 <meta name="description" content="Policy-Mandate-verified 3-step chain: trade wage progression → specialization cert ROI → contractor break-even. Each step output feeds the next as a verified artifact hash.">
 <link rel="canonical" href="https://apexlogics.org/chaingraph/trades.html">
@@ -200,10 +201,26 @@ async function step2(){
 function buildArt(){const steps=S.filter(Boolean);return{bundle_version:'1.0',ocg_spec_version:'0.5.0',bundle_type:'chaingraph_journey_bundle',persona:PERSONA,journey:JOURNEY,generated_at:new Date().toISOString(),chain_depth:steps.length,steps:steps};}
 function exportMd(){const done=S.filter(Boolean);if(!done.length){alert('Run at least one step first.');return;}let md='# Skilled Trades Chain Report\n\n**Journey:** '+JOURNEY+'\n**Generated:** '+new Date().toLocaleString()+'\n\n';done.forEach((s,i)=>{md+='## Step '+(i+1)+' · '+s.tool_id+'\n**Hash:** `'+s.execution_hash+'`\n\n### Inputs\n```json\n'+JSON.stringify(s.policy_parameters,null,2)+'\n```\n\n### Outputs\n```json\n'+JSON.stringify(s.output_payload,null,2)+'\n```\n\n';});const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([md],{type:'text/markdown'}));a.download='trades-chain-'+Date.now()+'.md';a.click();}
 function exportAP2(){const done=S.filter(Boolean);if(!done.length){alert('Run at least one step first.');return;}const art=buildArt();window._ap2LastMandate=JSON.stringify(art);const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(art,null,2)],{type:'application/json'}));a.download='trades-ap2-'+Date.now()+'.json';a.click();}
-function adv(i){if(!S[i]){alert('Run this step first.');return;}sessionStorage.setItem('_ap2LastMandate',JSON.stringify(S[i]));window._ap2LastMandate=JSON.stringify(S[i]);window.open('../tools/advisor-prompt-composer/','_blank');}
-function advFull(){const art=buildArt();if(!art.steps.length){alert('Run at least one step first.');return;}sessionStorage.setItem('_ap2LastMandate',JSON.stringify(art));window._ap2LastMandate=JSON.stringify(art);window.open('../tools/advisor-prompt-composer/','_blank');}
+function adv(i){if(!S[i]){alert('Run this step first.');return;}openAdvisor(S[i]);}
+function advFull(){const art=buildArt();if(!art.steps.length){alert('Run at least one step first.');return;}openAdvisor(art);}
 const MANIFEST={al_id:'CG-27',type:'chaingraph',persona:PERSONA,journey:JOURNEY,ap2_version:'2.1.0',steps:SM,url:'https://apexlogics.org/chaingraph/trades.html'};
 function toggleMfst(){const body=document.getElementById('mfstBody'),btn=document.getElementById('mfstBtn');if(body.classList.toggle('open')){document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);btn.textContent='▼ MCP / Manifest';}else btn.textContent='▶ MCP / Manifest';}
+
+// AP2 mandate handoff — CONTRACT CG-10/§6.3-6.4 (?ap2= URL param, no sessionStorage — CG-26)
+function openAdvisor(mandate){
+  const json=JSON.stringify(mandate);
+  const encoded=encodeURIComponent(json);
+  if(encoded.length<2000){
+    window.open('../tools/advisor-prompt-composer/?ap2='+encoded,'_blank','noopener');
+  } else {
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));
+    a.download='mandate-'+Date.now()+'.json';
+    a.click();
+    alert('This artifact is large — downloaded as JSON. Paste its contents into the Advisor Composer’s paste box.');
+    window.open('../tools/advisor-prompt-composer/','_blank','noopener');
+  }
+}
 </script>
 </body>
 </html>
