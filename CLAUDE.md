@@ -37,7 +37,7 @@ Do not commit parent-folder internal files to this repo.
 - **DreamHost user:** `apexlogics` | **Host:** `pdx1-shared-a1-41.dreamhost.com`
 - **Web root:** `/home/apexlogics/apexlogics.org`
 - **SSH key:** `C:\Users\Disco\.ssh\apexlogics_deploy`
-- **Pre-flight (blocking gate):** `node scripts/check_tools.js` must exit 0; `node scripts/verify-counts.mjs` must exit 0 (count-drift gate, CG-32 — `--fix` to self-heal); `scripts/check_index_sync.py` verifies tool subdirs match `tools.html` cards (not `index.html` — that's the curated landing page).
+- **Pre-flight (blocking gate):** `node scripts/check_tools.js` must exit 0; `node scripts/verify-counts.mjs` must exit 0 (count-drift gate, CG-32 — `--fix` to self-heal); `node scripts/check-no-storage.mjs` must exit 0 (zero-PII/zero-client-storage gate, CG-35 — no baseline, no exception list); `scripts/check_index_sync.py` verifies tool subdirs match `tools.html` cards (not `index.html` — that's the curated landing page).
 - **Worker:** `apexlogics-mcp-worker/` has its own CI `deploy.yml` (gates + `generate.mjs` + wrangler dry-run, then auto-deploy). `generate.mjs` fetches the **live** `apexlogics.org/suite-registry.json` — so land the registry change first, then the worker push; CI regenerates `tools.json` and rebuilds the `find_tool` BM25 index. Do **not** run `npx wrangler deploy` by hand.
 
 Claude runs git natively — commit + push directly after the gate passes (no paste-block for Tim). Prefer a branch+PR over direct push to `main` so CI carries it:
@@ -73,7 +73,8 @@ repo/
     ├── check_index_sync.py # Pre-flight catalog↔dirs sync checker (targets tools.html, CG-32)
     ├── check_tools.js      # JS syntax gate (CG-25 — blocking before any tool HTML commit)
     ├── counts.mjs          # Single source of truth for suite/showcase/workflow/guide counts
-    └── verify-counts.mjs   # Count-drift gate (CG-32 — blocking; --fix to self-heal)
+    ├── verify-counts.mjs   # Count-drift gate (CG-32 — blocking; --fix to self-heal)
+    └── check-no-storage.mjs # Zero-PII/zero-client-storage gate (CG-35 — blocking, zero exceptions)
 ```
 
 ---
