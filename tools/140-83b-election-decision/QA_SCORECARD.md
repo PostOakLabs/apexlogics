@@ -9,7 +9,7 @@
 | 5 | No `sessionStorage` (no intro dismiss needed here) | ✅ |
 | 6 | PII banner exact text present | ✅ |
 | 7 | Nav: single `← All Tools` pill → `../../index.html` only | ✅ |
-| 8 | No ApexAdvisory / AINumbers nav pills on tool | ✅ |
+| 8 | No Post Oak Labs / AINumbers nav pills on tool | ✅ |
 | 9 | Logo: "Apex" in amber #E8A838, "Logics" in --text | ✅ |
 | 10 | Footer: `About · CC BY 4.0 · AL-147 · Data: ...` | ✅ |
 | 11 | No partner links in footer | ✅ |

@@ -14,7 +14,7 @@
 | 6 | No lang-bar / multilanguage toggle | ✅ PASS | English-only |
 | 7 | PII banner exact text | ✅ PASS | `🔒 All inputs are processed locally...` exact match |
 | 8 | Nav: single `← All Tools` pill, `../../index.html` | ✅ PASS | One pill, correct relative path |
-| 9 | No ApexAdvisory/AINumbers nav pills | ✅ PASS | None present |
+| 9 | No Post Oak Labs/AINumbers nav pills | ✅ PASS | None present |
 | 10 | Footer: `About · CC BY 4.0 · AL-135 · Data: ...` | ✅ PASS | `<a href="../../about.html">About</a> · CC BY 4.0 · AL-135 · Data: 2026 (pure formula, no embedded tables)` |
 | 11 | Export order: Markdown FIRST, Policy Mandate SECOND | ✅ PASS | `⬇ Markdown` before `⬇ Policy Mandate Record` in `.results-export-row` |
 | 12 | Policy Mandate validate before download | ✅ PASS | `AP2Schema.validate(payload)` called before `URL.createObjectURL` |

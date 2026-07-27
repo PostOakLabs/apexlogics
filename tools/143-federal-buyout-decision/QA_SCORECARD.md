@@ -21,7 +21,7 @@
 | 9 | AP2Schema.validate() called before URL.createObjectURL() | ✅ PASS |
 | 10 | `_lastResult = null` guard on export buttons | ✅ PASS |
 | 11 | Nav: single `← All Tools` pill → `../../index.html` | ✅ PASS |
-| 12 | No ApexAdvisory / AINumbers nav pills | ✅ PASS |
+| 12 | No Post Oak Labs / AINumbers nav pills | ✅ PASS |
 | 13 | Footer: `About · CC BY 4.0 · AL-150 · Data: FERS/OPM 2026` | ✅ PASS |
 | 14 | Footer: no partner links | ✅ PASS |
 | 15 | Logo amber #E8A838 on "Apex" wordmark | ✅ PASS |

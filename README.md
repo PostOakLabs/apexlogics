@@ -8,7 +8,7 @@
 [![Client-side only](https://img.shields.io/badge/execution-client--side%20only-blue.svg)](#architecture)
 
 > Deterministic, rule-based, browser-only engines for career ROI, education finance, compensation analysis, licensing, immigration, and workforce development. Sister suite: [AINumbers.co](https://ainumbers.co) (markets & institutions).  
-> Built by [Post Oak Labs](https://postoaklabs.com) · [Apex Advisory](https://apexadvisory.site) · Live at [apexlogics.org](https://apexlogics.org)
+> Built by [Post Oak Labs](https://postoaklabs.com) · [Post Oak Labs](https://postoaklabs.com) · Live at [apexlogics.org](https://apexlogics.org)
 
 ---
 
@@ -123,7 +123,7 @@ Required GitHub Secrets: `DH_SSH_KEY`, `DH_SSH_USER`, `DH_SSH_HOST`, `DH_WEB_ROO
 
 - [Live Suite](https://apexlogics.org)
 - [Post Oak Labs](https://postoaklabs.com)
-- [Apex Advisory](https://apexadvisory.site)
+- [Post Oak Labs](https://postoaklabs.com)
 - [Sister suite: AINumbers.co](https://ainumbers.co)
 
 ---

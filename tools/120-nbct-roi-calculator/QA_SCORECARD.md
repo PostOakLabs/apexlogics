@@ -14,7 +14,7 @@
 | 6 | No lang-bar / multilanguage toggle | ✅ PASS | English-only |
 | 7 | PII banner exact text | ✅ PASS | Exact match |
 | 8 | Nav: single `← All Tools` pill, `../../index.html` | ✅ PASS | Correct |
-| 9 | No ApexAdvisory/AINumbers nav pills | ✅ PASS | None |
+| 9 | No Post Oak Labs/AINumbers nav pills | ✅ PASS | None |
 | 10 | Footer: `About · CC BY 4.0 · AL-127 · Data: ...` | ✅ PASS | `Data: 2026 (NBCT fee default ~$1,900 — nbpts.org, labeled and user-overridable)` |
 | 11 | Export order: Markdown FIRST, Policy Mandate SECOND | ✅ PASS | Correct |
 | 12 | Policy Mandate validate before download | ✅ PASS | Validated |
