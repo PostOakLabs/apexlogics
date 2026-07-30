@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
 <title>Veteran Transition — ApexLogics OpenChainGraph</title>
 <meta name="description" content="Policy-Mandate-verified 3-step chain: maximize GI Bill benefits → SkillBridge credential ROI → income bridge. Each step's output feeds the next as a verified artifact hash.">
 <link rel="canonical" href="https://apexlogics.org/chaingraph/veteran.html">
@@ -228,19 +229,33 @@ function exportAP2(){
 }
 function adv(i){
   if(!S[i]){alert('Run this step first.');return;}
-  sessionStorage.setItem('_ap2LastMandate',JSON.stringify(S[i]));window._ap2LastMandate=JSON.stringify(S[i]);
-  window.open('../tools/advisor-prompt-composer/','_blank');
+  openAdvisor(S[i]);
 }
 function advFull(){
   const art=buildArtifact();if(!art.steps.length){alert('Run at least one step first.');return;}
-  sessionStorage.setItem('_ap2LastMandate',JSON.stringify(art));window._ap2LastMandate=JSON.stringify(art);
-  window.open('../tools/advisor-prompt-composer/','_blank');
+  openAdvisor(art);
 }
 const MANIFEST={al_id:'CG-27',type:'chaingraph',persona:PERSONA,journey:JOURNEY,ap2_version:'2.1.0',steps:STEPS_META,url:'https://apexlogics.org/chaingraph/veteran.html'};
 function toggleMfst(){
   const body=document.getElementById('mfstBody'),btn=document.getElementById('mfstBtn');
   if(body.classList.toggle('open')){document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);btn.textContent='▼ MCP / Manifest';}
   else btn.textContent='▶ MCP / Manifest';
+}
+
+// AP2 mandate handoff — CONTRACT CG-10/§6.3-6.4 (?ap2= URL param, no sessionStorage — CG-26)
+function openAdvisor(mandate){
+  const json=JSON.stringify(mandate);
+  const encoded=encodeURIComponent(json);
+  if(encoded.length<2000){
+    window.open('../tools/advisor-prompt-composer/?ap2='+encoded,'_blank','noopener');
+  } else {
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));
+    a.download='mandate-'+Date.now()+'.json';
+    a.click();
+    alert('This artifact is large — downloaded as JSON. Paste its contents into the Advisor Composer’s paste box.');
+    window.open('../tools/advisor-prompt-composer/','_blank','noopener');
+  }
 }
 </script>
 </body>

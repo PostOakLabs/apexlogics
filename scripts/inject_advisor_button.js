@@ -6,8 +6,8 @@
 //   2. If an advisor button is already present, skip.
 //   3. Insert button HTML after the AP2 export button (looks for 'ap2.json' in onclick).
 //   4. Insert openAdvisorComposer() helper function near end of <script> block.
-//   5. Patch the existing AP2 export function to save to sessionStorage as _ap2LastMandate
-//      (so the Composer can auto-load when opened from a tool page).
+//   5. Patch the existing AP2 export function to pass its mandate to the Composer
+//      via the ?ap2= URL param (CONTRACT CG-10/§6.3-6.4) — NOT sessionStorage (CG-26).
 //
 // Run: cd repo && node scripts/inject_advisor_button.js [--dry-run]
 // Dry-run: prints diffs, writes nothing.
@@ -21,11 +21,11 @@ const path = require('path');
 const ROOT      = path.resolve(__dirname, '..');
 const TOOLS_DIR = path.join(ROOT, 'tools');
 const DRY_RUN   = process.argv.includes('--dry-run');
-const COMPOSER_RELATIVE_PATH = '../../tools/ap2-advisor-prompt-composer/index.html';
+const COMPOSER_RELATIVE_PATH = '../../tools/advisor-prompt-composer/index.html';
 
 // ── Patterns ──────────────────────────────────────────────────────────────────
 // Skip the composer itself and any non-tool dirs
-const SKIP_DIRS = new Set(['ap2-advisor-prompt-composer']);
+const SKIP_DIRS = new Set(['advisor-prompt-composer']);
 
 // The button HTML we inject (must be unique; check before injecting)
 const ADVISOR_BTN_SENTINEL = 'class="advisor-composer-btn"';
@@ -38,25 +38,37 @@ const AP2_BTN_PATTERN = /(<button[^>]*(?:exportAP2|downloadAP2|ap2ExportBtn|ap2\
 const ADVISOR_BTN_HTML = `<button class="export-btn advisor-composer-btn" id="advisorComposerBtn" onclick="openAdvisorComposer()" title="Open AP2 Advisor Prompt Composer">🤝 Advisor Prompt</button>`;
 
 // Helper function to inject into the tool's <script> block (before closing </script>)
-// Uses sessionStorage so the Composer can auto-read it on load.
+// Hands the mandate off via the ?ap2= URL param (CONTRACT CG-10/§6.3-6.4) — no
+// sessionStorage/localStorage/cookies (CG-26). Falls back to download+paste for
+// oversized payloads (2000-char encoded threshold, conservative cross-browser URL bar).
 const ADVISOR_FUNCTION = `
-// AL-153 Advisor Prompt Composer integration (CG-27)
+// AL-153 Advisor Prompt Composer integration (CG-27, CG-26-compliant handoff)
 function openAdvisorComposer() {
-  // Try to read the last-generated AP2 mandate from sessionStorage
   var mandate = window._ap2LastMandate || null;
   var composerUrl = '${COMPOSER_RELATIVE_PATH}';
   if (mandate) {
+    var json = typeof mandate === 'string' ? mandate : JSON.stringify(mandate);
+    var encoded = encodeURIComponent(json);
+    if (encoded.length < 2000) {
+      window.open(composerUrl + '?ap2=' + encoded, '_blank', 'noopener');
+      return;
+    }
     try {
-      sessionStorage.setItem('_ap2LastMandate', typeof mandate === 'string' ? mandate : JSON.stringify(mandate));
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([json], {type: 'application/json'}));
+      a.download = 'mandate-' + Date.now() + '.json';
+      a.click();
+      alert('This artifact is large — downloaded as JSON. Paste its contents into the Advisor Composer\\u2019s paste box.');
     } catch(e) {}
   }
   window.open(composerUrl, '_blank', 'noopener');
 }`;
 
-// ── Session-storage patch: add window._ap2LastMandate = ... to AP2 export fn ──
+// ── In-memory mandate capture: set window._ap2LastMandate before the export blob ──
 // Looks for the pattern: URL.createObjectURL(new Blob([JSON.stringify(
 // and prepends: window._ap2LastMandate = JSON.stringify(mandate);
 // where `mandate` is whatever variable name is used just before the createObjectURL call.
+// In-memory window property only — never persisted to storage (CG-26).
 //
 // Safe heuristic: match the line that builds the blob JSON and insert BEFORE it.
 // This is a comment-annotation injection — does not alter brace structure.
