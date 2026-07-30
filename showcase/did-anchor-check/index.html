@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DID Anchor Check · ApexLogics</title>
+  <meta name="description" content="Checks a decentralized identifier against W3C DID Core syntax rules, derives an anchor key, and compares it to a recorded anchor to detect mutation. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/showcase/did-anchor-check/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], input[type="text"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">OCG-Industries Showcase · Cluster ⑨ Digital Identity and Credentials</p>
+  <h1 class="tool-title">DID Anchor Check</h1>
+  <p class="tool-desc">A verifier who is offline cannot call the issuer, so the identifier and its anchor have to stand on their own. Enter a decentralized identifier and the credential it anchors, and this tool checks the identifier against the published syntax rule, derives the anchor key, and compares it to the anchor you were given. Re-running the same identifier reproduces the same anchor and the same hash.</p>
+  <p class="tool-vintage">Data: W3C DID Core 1.0 identifier syntax · no external data</p>
+
+  <div class="card">
+    <div class="card-title">Inputs <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="didString">Decentralized Identifier</label>
+        <input type="text" id="didString" value="did:example:123456abcdef" />
+        <span class="field-hint">For example did:example:123456abcdef</span>
+      </div>
+      <div class="field">
+        <label for="credentialId">Credential ID</label>
+        <input type="text" id="credentialId" value="CRED-2026-0042" />
+        <span class="field-hint">The credential this identifier anchors</span>
+      </div>
+      <div class="field">
+        <label for="recordedAnchor">Recorded Anchor (optional)</label>
+        <input type="text" id="recordedAnchor" value="" />
+        <span class="field-hint">The anchor key you were given, if any. Leave blank if none.</span>
+      </div>
+      <div class="field">
+        <label for="anchorDayIndex">Anchor Day Index</label>
+        <input type="number" id="anchorDayIndex" value="0" min="0" max="999999" step="1" />
+        <span class="field-hint">Whole number of days since the identifier was anchored</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Check DID Anchor →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">DID Syntax</div>
+        <div class="metric-val accent" id="rSyntax">--</div>
+        <div class="metric-note">Checked against W3C DID Core 1.0</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Anchor Status</div>
+        <div class="metric-val amber" id="rAnchor">--</div>
+        <div class="metric-note">Recomputed anchor vs. the one you entered</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Offline Checkable</div>
+        <div class="metric-val amber" id="rOffline">--</div>
+        <div class="metric-note">Valid syntax and an intact anchor</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">DID method</span><span class="row-val" id="dMethod">--</span></div>
+      <div class="row"><span class="row-label">Structural parts</span><span class="row-val" id="dPartCount">--</span></div>
+      <div class="row"><span class="row-label">Method-specific ID length</span><span class="row-val" id="dMsiLength">--</span></div>
+      <div class="row"><span class="row-label">Credential ID</span><span class="row-val" id="dCredential">--</span></div>
+      <div class="row"><span class="row-label">Anchor day index</span><span class="row-val" id="dAnchorDay">--</span></div>
+      <div class="row"><span class="row-label">Derived anchor key</span><span class="row-val" id="dAnchorKey">--</span></div>
+      <div class="row"><span class="row-label">Recorded anchor</span><span class="row-val" id="dRecorded">--</span></div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · SC-53 · Data: W3C DID Core 1.0 identifier syntax · no external data
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+/* KEEP VERBATIM: helpers */
+const $   = id => document.getElementById(id);
+
+/* Bundle-wide fingerprint helper (mutation detector, not a cryptographic digest) */
+function fingerprint(str){ var h=5381,s=String(str).toUpperCase(); for(var i=0;i<s.length;i++) h=((Math.imul(h,33)+s.charCodeAt(i))&0x7fffffff); return h; }
+
+/* ── CORE LOGIC (W3C DID Core syntax, structural only) ───────────────────────── */
+function calculate() {
+  const didString      = String($('didString').value == null ? '' : $('didString').value).trim();
+  const credentialId   = String($('credentialId').value == null ? '' : $('credentialId').value).trim();
+  const recordedAnchor = String($('recordedAnchor').value == null ? '' : $('recordedAnchor').value).trim();
+  let anchorDayIndex   = parseInt($('anchorDayIndex').value, 10);
+  if (!Number.isFinite(anchorDayIndex)) anchorDayIndex = 0;
+  anchorDayIndex = Math.max(0, Math.min(999999, anchorDayIndex));
+
+  const parts     = didString.split(':');
+  const partCount = parts.length;
+  const schemeOk  = parts[0] === 'did';
+  const method    = parts[1] || 'none';
+  const methodOk  = /^[a-z0-9]+$/.test(method);
+  const msi       = parts.slice(2).join(':');
+  const msiOk     = msi.length > 0 && /^[A-Za-z0-9._%:-]+$/.test(msi);
+  const syntaxOk  = partCount >= 3 && schemeOk && methodOk && msiOk;
+
+  const anchorKey = fingerprint(didString + '|' + credentialId + '|' + anchorDayIndex);
+
+  const hasRecorded = recordedAnchor.length > 0;
+  let recordedInt = -1;
+  if (hasRecorded) {
+    const parsed = parseInt(recordedAnchor, 10);
+    recordedInt = Number.isFinite(parsed) ? parsed : -1;
+  }
+  let matchState;
+  if (!hasRecorded) matchState = 'unrecorded';
+  else if (recordedInt === anchorKey) matchState = 'intact';
+  else matchState = 'mutated';
+
+  const offlineCheckable = syntaxOk && matchState === 'intact';
+
+  _lastResults = {
+    did_method: method,
+    msi_length: msi.length,
+    part_count: partCount,
+    scheme_ok: schemeOk,
+    method_ok: methodOk,
+    msi_ok: msiOk,
+    syntax_ok: syntaxOk,
+    credential_id: credentialId,
+    anchor_day_index: anchorDayIndex,
+    anchor_key: anchorKey,
+    recorded_int: recordedInt,
+    has_recorded: hasRecorded,
+    match_state: matchState,
+    offline_checkable: offlineCheckable
+  };
+  _lastInputs = {
+    did_string: didString,
+    credential_id: credentialId,
+    recorded_anchor: recordedAnchor,
+    anchor_day_index: anchorDayIndex
+  };
+
+  render();
+}
+
+function render() {
+  const r = _lastResults;
+
+  $('rSyntax').textContent = r.syntax_ok ? 'Valid' : 'Invalid';
+  $('rSyntax').className   = 'metric-val ' + (r.syntax_ok ? 'green' : 'red');
+
+  let anchorLabel, anchorClass;
+  if (r.match_state === 'unrecorded') { anchorLabel = 'Unrecorded'; anchorClass = 'amber'; }
+  else if (r.match_state === 'intact') { anchorLabel = 'Intact'; anchorClass = 'green'; }
+  else { anchorLabel = 'Mutated'; anchorClass = 'red'; }
+  $('rAnchor').textContent = anchorLabel;
+  $('rAnchor').className   = 'metric-val ' + anchorClass;
+
+  $('rOffline').textContent = r.offline_checkable ? 'Yes' : 'No';
+  $('rOffline').className   = 'metric-val ' + (r.offline_checkable ? 'green' : 'red');
+
+  $('dMethod').textContent    = r.did_method;
+  $('dPartCount').textContent = r.part_count;
+  $('dMsiLength').textContent = r.msi_length + ' chars';
+  $('dCredential').textContent = r.credential_id || '(none)';
+  $('dAnchorDay').textContent = r.anchor_day_index;
+  $('dAnchorKey').textContent = r.anchor_key;
+  $('dRecorded').textContent  = r.has_recorded ? r.recorded_int : '(not provided)';
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastResults) return;
+  const r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# DID Anchor Check Results',
+    `\n_Generated ${d} · SC-53 · apexlogics.org_\n`,
+    '## Inputs',
+    '| Field | Value |', '|---|---|',
+    `| Credential ID | ${r.credential_id || '(none)'} |`,
+    `| Anchor day index | ${r.anchor_day_index} |`,
+    `| Recorded anchor | ${r.has_recorded ? r.recorded_int : '(not provided)'} |`,
+    '\n## Results',
+    `- **DID method:** ${r.did_method}`,
+    `- **Syntax valid:** ${r.syntax_ok ? 'Yes' : 'No'}`,
+    `- **Derived anchor key:** ${r.anchor_key}`,
+    `- **Match state:** ${r.match_state}`,
+    `- **Offline checkable:** ${r.offline_checkable ? 'Yes' : 'No'}`,
+    '\n---',
+    '_Source: W3C DID Core 1.0 identifier syntax. No external data. This checks syntax and recomputes an anchor; it resolves no identifier, verifies no signature, and contacts no ledger._'
+  ];
+  dlFile('did-anchor-check.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  /* STEP 1, domain payload */
+  const payload = {
+    mandate_type: "did_anchor_check_record",
+    generated_at: new Date().toISOString(),
+    al_id: "SC-53",
+    tool_id: "sc53-did-anchor-check",
+    tool_name: "DID Anchor Check",
+    inputs: {
+      did_string: i.did_string,
+      credential_id: i.credential_id,
+      recorded_anchor: i.recorded_anchor,
+      anchor_day_index: i.anchor_day_index
+    },
+    outputs: {
+      did_method: r.did_method,
+      msi_length: r.msi_length,
+      part_count: r.part_count,
+      scheme_ok: r.scheme_ok,
+      method_ok: r.method_ok,
+      msi_ok: r.msi_ok,
+      syntax_ok: r.syntax_ok,
+      credential_id: r.credential_id,
+      anchor_day_index: r.anchor_day_index,
+      anchor_key: r.anchor_key,
+      recorded_int: r.recorded_int,
+      has_recorded: r.has_recorded,
+      match_state: r.match_state,
+      offline_checkable: r.offline_checkable
+    },
+    downstream_handoff_candidates: ["sc55-credential-revocation-audit"],
+    data_sources: [
+      "W3C DID Core 1.0 identifier syntax"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  /* STEP 2, KEEP VERBATIM: OpenChainGraph L1 + L2 (parent capture via ?ap2=) */
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/did_anchor_check";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "SC-53";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  /* STEP 3, KEEP VERBATIM: build _cgDomain by excluding envelope keys */
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "integer_checksum", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  /* STEP 4, KEEP VERBATIM: canonical execution hash */
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  /* STEP 5, KEEP VERBATIM: OCG v0.4 envelope fields (hash-excluded, additive) */
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* STEP 6, SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  /* STEP 7, KEEP VERBATIM: relocate non-allowed keys into hash-excluded apex_meta */
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  /* STEP 8, validate the SNAPSHOT */
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['did_anchor_check_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`SC-53_did-anchor-check_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, CHAINGRAPH §6 EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* MANIFEST, must match manifest.json in substance */
+const MANIFEST = {
+  "tool_id": "sc53-did-anchor-check",
+  "al_id": "SC-53",
+  "version": "1.0.0",
+  "title": "DID Anchor Check",
+  "description": "Checks a decentralized identifier against W3C DID Core syntax rules, derives an anchor key from the identifier, credential ID and day index, and compares it against a recorded anchor to detect mutation. Deterministic, zero external data. Policy Mandate v2.0: did_anchor_check_record.",
+  "category": "digital-identity",
+  "journeys": [],
+  "personas": ["identity-verifier"],
+  "tags": ["did","digital-identity","credentials","verifiable-credentials","w3c"],
+  "status": "live",
+  "maintenance": "zero",
+  "data_vintage": "W3C DID Core 1.0 identifier syntax",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["did_anchor_check_record"],
+  "downstream_handoff_candidates": ["sc55-credential-revocation-audit"],
+  "regulatory_citations": [
+    "W3C Decentralized Identifiers (DIDs) v1.0 Core Architecture, Data Model, and Representations"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "did_string": { "type": "string" },
+      "credential_id": { "type": "string" },
+      "recorded_anchor": { "type": "string" },
+      "anchor_day_index": { "type": "integer" }
+    },
+    "required": ["did_string","credential_id"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "did_method": { "type": "string" },
+      "msi_length": { "type": "integer" },
+      "part_count": { "type": "integer" },
+      "scheme_ok": { "type": "boolean" },
+      "method_ok": { "type": "boolean" },
+      "msi_ok": { "type": "boolean" },
+      "syntax_ok": { "type": "boolean" },
+      "credential_id": { "type": "string" },
+      "anchor_day_index": { "type": "integer" },
+      "anchor_key": { "type": "integer" },
+      "recorded_int": { "type": "integer" },
+      "has_recorded": { "type": "boolean" },
+      "match_state": { "type": "string" },
+      "offline_checkable": { "type": "boolean" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "did_anchor_check",
+    "description": "Checks a decentralized identifier against W3C DID Core syntax rules, derives an anchor key, and compares it against a recorded anchor to detect mutation. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "did_string": { "type": "string" },
+        "credential_id": { "type": "string" },
+        "recorded_anchor": { "type": "string" },
+        "anchor_day_index": { "type": "integer" }
+      },
+      "required": ["did_string","credential_id"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://postoaklabs.com",
+  "license": "CC-BY-4.0"
+};
+
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

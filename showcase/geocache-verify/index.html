@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geocache Fragment Verification · ApexLogics Showcase</title>
+  <meta name="description" content="Enter the fragments a solver has collected for a split-secret hunt. This tool checks the set is complete and combines it into a single reveal key in a fixed order, so anyone holding the same fragments gets the same key." />
+  <link rel="canonical" href="https://apexlogics.org/showcase/geocache-verify/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <!-- KEEP VERBATIM: Google Fonts link -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* KEEP VERBATIM: design tokens (CONTRACT Appendix A). */
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    /* KEEP VERBATIM: nav chrome ─────────────────────────────────────────── */
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    /* KEEP VERBATIM: page shell + PII banner */
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    /* Hero */
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    /* Accuracy callout (mandatory scope copy, repeated near result) */
+    .accuracy-note { background: rgba(248,113,113,.06); border: 1px solid rgba(248,113,113,.35); border-left: 3px solid var(--red); border-radius: 6px; padding: .8rem 1rem; font-size: .82rem; color: var(--text-muted); margin: 0 0 20px; }
+    .accuracy-note strong { color: var(--text); }
+
+    /* Cards + fields */
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], input[type="text"], select, textarea { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    textarea { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; min-height: 110px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    /* Results */
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+
+    .verdict { border-radius: 12px; border: 1px solid var(--border); padding: 20px 24px; margin-bottom: 16px; }
+    .verdict.ok { border-color: rgba(52,211,153,.45); background: rgba(52,211,153,.06); }
+    .verdict.no { border-color: rgba(248,113,113,.45); background: rgba(248,113,113,.06); }
+    .verdict-big { font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 600; margin-bottom: 6px; }
+    .verdict.ok .verdict-big { color: var(--green); }
+    .verdict.no .verdict-big { color: var(--red); }
+    .verdict-sub { color: var(--text-muted); font-size: 0.9rem; }
+
+    .hash-line { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); word-break: break-all; margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--border); }
+    .gate-note { font-size: 0.82rem; color: var(--text-muted); margin-top: 10px; }
+
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+
+    /* KEEP VERBATIM: export row (Markdown FIRST, Policy Mandate SECOND) */
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    /* KEEP VERBATIM: footer */
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+
+    /* KEEP VERBATIM: mfst disclosure */
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<!-- ══ KEEP VERBATIM: NAV, do not edit anything between here and </nav> ══ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+      <a href="../index.html" class="nav-pill">&#x2190; Showcase Gallery</a>
+    </div>
+  </div>
+</nav>
+<!-- ══ END NAV ══ -->
+
+<div class="tool-wrapper">
+
+  <!-- KEEP VERBATIM: PII banner. -->
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">OCG-Industries Showcase · Cluster ⑤ Physical Installations and Civic Infrastructure</p>
+  <h1 class="tool-title">Geocache Fragment<br>Verification</h1>
+  <p class="tool-desc">A split-secret hunt only works if the final combination cannot be faked and cannot be opened early. This tool takes the fragments a solver has collected, checks that the full set is present, and combines them into a single reveal key in a fixed order. The same fragments always produce the same key, so a "who solved it first" claim can be checked by anyone holding the fragments.</p>
+
+  <div class="accuracy-note">
+    <strong>Scope.</strong> This page ships the verification half only. It does not claim a deployed physical geocache, and no physical placement, hardware, or field deployment exists behind it. What runs here is the client-side fragment check.
+  </div>
+
+  <p class="tool-vintage">Data: no external data</p>
+
+  <div class="card">
+    <div class="card-title">Inputs <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="cacheId">Cache identifier</label>
+        <input type="text" id="cacheId" value="RIDGELINE-04" />
+      </div>
+      <div class="field">
+        <label for="requiredCount">Fragments required</label>
+        <input type="number" id="requiredCount" value="4" min="0" step="1" />
+      </div>
+    </div>
+    <div class="form-grid" style="margin-top:14px;">
+      <div class="field">
+        <label for="fragments">Fragments collected, one per line</label>
+        <textarea id="fragments">north-14
+south-88
+east-27
+west-51</textarea>
+        <span class="field-hint">One fragment per line, in any order. Blank lines are ignored.</span>
+      </div>
+      <div class="field">
+        <label for="expectedReveal">Expected reveal key (optional)</label>
+        <input type="text" id="expectedReveal" value="" />
+        <span class="field-hint">Paste the published reveal key to confirm your fragment set is the right one. Leave blank to skip.</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Verify Fragment Set →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="verdict" id="verdict">
+      <div class="verdict-big" id="verdictBig">--</div>
+      <div class="verdict-sub" id="verdictSub">--</div>
+      <div class="gate-note" id="gateNote">--</div>
+      <div class="hash-line" id="hashLine">execution_hash: --</div>
+    </div>
+
+    <div class="accuracy-note">
+      <strong>Scope.</strong> This page ships the verification half only. It does not claim a deployed physical geocache, and no physical placement, hardware, or field deployment exists behind it. What runs here is the client-side fragment check. Hash-verifiable only: this does not prove where a solver was standing, when they solved it, or that they held a physical object. It proves a fragment set combines to a known key.
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">Cache identifier</span><span class="row-val" id="dCacheId">--</span></div>
+      <div class="row"><span class="row-label">Fragments required</span><span class="row-val" id="dRequired">--</span></div>
+      <div class="row"><span class="row-label">Fragments collected</span><span class="row-val" id="dCollected">--</span></div>
+      <div class="row"><span class="row-label">Missing count</span><span class="row-val" id="dMissing">--</span></div>
+      <div class="row"><span class="row-label">Set complete</span><span class="row-val" id="dComplete">--</span></div>
+      <div class="row"><span class="row-label">Expected reveal match</span><span class="row-val" id="dRevealMatch">--</span></div>
+      <div class="row"><span class="row-label">Gate status</span><span class="row-val" id="dGateStatus">--</span></div>
+      <div class="row"><span class="row-label">Revealed key</span><span class="row-val" id="dRevealedKey">--</span></div>
+
+      <!-- KEEP VERBATIM: export row. Markdown FIRST, Policy Mandate SECOND. -->
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- KEEP VERBATIM: mfst disclosure block -->
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · SC-23 · Data: no external data
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+/* KEEP VERBATIM: helpers */
+const $ = id => document.getElementById(id);
+
+/* Bundle-wide fingerprint helper (mutation detector, NOT a cryptographic digest) */
+function fingerprint(str){ var h=5381,s=String(str).toUpperCase(); for(var i=0;i<s.length;i++) h=((Math.imul(h,33)+s.charCodeAt(i))&0x7fffffff); return h; }
+
+/* ── CORE LOGIC: geocache fragment verification ───────────────────────────── */
+function calculate() {
+  const cache_id = String($('cacheId').value == null ? '' : $('cacheId').value).trim();
+
+  let required_count = parseInt($('requiredCount').value, 10);
+  if (!Number.isFinite(required_count)) required_count = 4;
+  if (required_count < 0) required_count = 0;
+
+  const expected_reveal_raw = String($('expectedReveal').value == null ? '' : $('expectedReveal').value).trim();
+
+  // Split fragments on newlines, trim, drop empties, uppercase, dedupe (keep first occurrence)
+  const rawLines = String($('fragments').value == null ? '' : $('fragments').value).split('\n');
+  const seen = {};
+  const frags = [];
+  for (let i = 0; i < rawLines.length; i++) {
+    const t = rawLines[i].trim();
+    if (t.length === 0) continue;
+    const u = t.toUpperCase();
+    if (seen[u]) continue;
+    seen[u] = true;
+    frags.push(u);
+  }
+  const collected_count = frags.length;
+
+  // Plain lexicographic sort so collection order does not change the key (order-independent).
+  frags.sort();
+
+  // Fold cache_id and sorted fragments into a single reveal key.
+  let acc = fingerprint(cache_id);
+  for (let i = 0; i < frags.length; i++) {
+    acc = fingerprint(acc + '|' + frags[i]);
+  }
+  const reveal_key = acc;
+
+  const complete = (collected_count >= required_count);
+  const missing_count = complete ? 0 : (required_count - collected_count);
+
+  let reveal_match;
+  if (expected_reveal_raw === '') {
+    reveal_match = 'not_checked';
+  } else if (String(reveal_key) === expected_reveal_raw) {
+    reveal_match = 'match';
+  } else {
+    reveal_match = 'mismatch';
+  }
+
+  const gate_status = (complete && reveal_match !== 'mismatch') ? 'unlocked' : 'locked';
+  const revealed_key = (gate_status === 'unlocked') ? reveal_key : 0;
+
+  const outputs = {
+    cache_id: cache_id,
+    required_count: required_count,
+    collected_count: collected_count,
+    missing_count: missing_count,
+    complete: complete,
+    reveal_match: reveal_match,
+    gate_status: gate_status,
+    revealed_key: revealed_key
+  };
+
+  _lastInputs  = { cache_id, required_count, fragments_sorted: frags, expected_reveal: expected_reveal_raw };
+  _lastResults = outputs;
+
+  render();
+}
+
+/* Render results into the DOM, then compute and display execution_hash. */
+async function render() {
+  const o = _lastResults;
+
+  const verdictEl = $('verdict');
+  const unlocked = (o.gate_status === 'unlocked');
+  verdictEl.className = 'verdict ' + (unlocked ? 'ok' : 'no');
+  $('verdictBig').textContent = unlocked ? '✓ Fragment set complete' : '✗ Still locked';
+
+  if (unlocked) {
+    $('verdictSub').textContent = 'All required fragments are present and the combination matches, so the reveal key is shown below.';
+  } else {
+    let reason = '';
+    if (o.missing_count > 0) {
+      reason = o.missing_count + ' fragment' + (o.missing_count === 1 ? '' : 's') + ' still missing.';
+    }
+    if (o.reveal_match === 'mismatch') {
+      reason = (reason ? reason + ' ' : '') + 'The combination did not match the expected reveal key.';
+    }
+    $('verdictSub').textContent = reason || 'The fragment set is not yet complete.';
+  }
+
+  $('gateNote').textContent = 'This page ships the verification half only, with no physical geocache behind it. Remove a fragment above and re-run to watch the result relock.';
+
+  $('dCacheId').textContent = o.cache_id || '(none)';
+  $('dRequired').textContent = o.required_count;
+  $('dCollected').textContent = o.collected_count;
+  $('dMissing').textContent = o.missing_count;
+  $('dComplete').textContent = o.complete ? 'Yes' : 'No';
+  $('dRevealMatch').textContent = o.reveal_match;
+  $('dGateStatus').textContent = o.gate_status;
+  $('dRevealedKey').textContent = o.gate_status === 'unlocked' ? o.revealed_key : '(locked)';
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    const pp = { execution_backend: 'js', hash_precision: 'integer_checksum', inputs: _lastInputs };
+    const h = await apexHash(pp, o);
+    $('hashLine').textContent = 'execution_hash: ' + h;
+  } catch (_e) {
+    $('hashLine').textContent = 'execution_hash: (unavailable in this browser)';
+  }
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastResults) return;
+  const o = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Geocache Fragment Verification Results',
+    `\n_Generated ${d} · SC-23 · apexlogics.org_\n`,
+    'This page ships the verification half only. It does not claim a deployed physical geocache.\n',
+    '## Result',
+    '| Field | Value |', '|---|---|',
+    `| Cache identifier | ${o.cache_id || '(none)'} |`,
+    `| Fragments required | ${o.required_count} |`,
+    `| Fragments collected | ${o.collected_count} |`,
+    `| Missing count | ${o.missing_count} |`,
+    `| Set complete | ${o.complete ? 'Yes' : 'No'} |`,
+    `| Expected reveal match | ${o.reveal_match} |`,
+    `| Gate status | ${o.gate_status} |`,
+    `| Revealed key | ${o.gate_status === 'unlocked' ? o.revealed_key : '(locked)'} |`,
+    '\n---',
+    '_Source: no external data. Hash-verifiable client-side check only. ApexLogics Showcase · apexlogics.org_'
+  ];
+  dlFile('geocache-verify.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+/* The ORDER of the steps below is non-negotiable. Edit field VALUES only. */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, o = _lastResults;
+
+  /* STEP 1: domain payload */
+  const payload = {
+    mandate_type: "geocache_verify_record",
+    generated_at: new Date().toISOString(),
+    al_id: "SC-23",
+    tool_id: "sc23-geocache-verify",
+    tool_name: "Geocache Fragment Verification",
+    inputs: {
+      cache_id: i.cache_id,
+      required_count: i.required_count,
+      fragments_sorted: i.fragments_sorted,
+      expected_reveal: i.expected_reveal
+    },
+    outputs: {
+      cache_id: o.cache_id,
+      required_count: o.required_count,
+      collected_count: o.collected_count,
+      missing_count: o.missing_count,
+      complete: o.complete,
+      reveal_match: o.reveal_match,
+      gate_status: o.gate_status,
+      revealed_key: o.revealed_key
+    },
+    downstream_handoff_candidates: ["sc23-geocache-verify"],
+    data_sources: [
+      "No external data. All values are entered by the reader."
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  /* STEP 2, KEEP VERBATIM: OpenChainGraph L1 + L2 (parent capture via ?ap2=) */
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/geocache_verify";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "SC-23";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  /* STEP 3, KEEP VERBATIM: build _cgDomain by excluding envelope keys */
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "integer_checksum", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  /* STEP 4, KEEP VERBATIM: canonical execution hash */
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  /* STEP 5, KEEP VERBATIM: OCG v0.4 envelope fields (hash-excluded, additive) */
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* STEP 6, SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  /* STEP 7, KEEP VERBATIM: relocate non-allowed keys into hash-excluded apex_meta */
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  /* STEP 8, validate the SNAPSHOT, then and only then create the object URL. */
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['geocache_verify_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`SC-23_geocache-verify_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, CHAINGRAPH §6 EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* MANIFEST, mirrors manifest.json in substance */
+const MANIFEST = {
+  "_canonical_filename": "SC-23_geocache-verify.manifest.json",
+  "tool_id": "sc23-geocache-verify",
+  "al_id": "SC-23",
+  "version": "1.0.0",
+  "title": "Geocache Fragment Verification",
+  "description": "Given a set of collected fragments and a required count, checks the fragment set for completeness and folds the sorted set into a single reveal key. Order-independent by design. Deterministic, zero external data. Policy Mandate v2.0: geocache_verify_record.",
+  "category": "showcase",
+  "cluster": "physical-installations",
+  "journeys": [],
+  "personas": ["puzzle hunt designer", "solver community organizer"],
+  "tags": ["showcase","geocaching","fragment-verification","hash-verifiable"],
+  "status": "showcase",
+  "maintenance": "zero",
+  "data_vintage": "no external data",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["geocache_verify_record"],
+  "downstream_handoff_candidates": ["sc23-geocache-verify"],
+  "regulatory_citations": ["no external data"],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "cache_id":         { "type": "string" },
+      "required_count":   { "type": "integer" },
+      "fragments":        { "type": "string" },
+      "expected_reveal":  { "type": "string" }
+    },
+    "required": ["cache_id","required_count","fragments"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "cache_id":         { "type": "string" },
+      "required_count":   { "type": "integer" },
+      "collected_count":  { "type": "integer" },
+      "missing_count":    { "type": "integer" },
+      "complete":         { "type": "boolean" },
+      "reveal_match":      { "type": "string", "enum": ["not_checked","match","mismatch"] },
+      "gate_status":       { "type": "string", "enum": ["locked","unlocked"] },
+      "revealed_key":      { "type": "integer" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "geocache_verify",
+    "description": "Given a cache identifier, a required fragment count, a list of collected fragments, and an optional expected reveal key, checks completeness and folds the sorted fragment set into a reveal key. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "cache_id":        { "type": "string" },
+        "required_count":  { "type": "integer" },
+        "fragments":       { "type": "string" },
+        "expected_reveal": { "type": "string" }
+      },
+      "required": ["cache_id","required_count","fragments"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://postoaklabs.com",
+  "license": "CC-BY-4.0"
+};
+
+/* KEEP VERBATIM: MCP / MANIFEST TOGGLE */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

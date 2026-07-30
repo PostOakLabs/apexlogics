@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<!--
+  ══════════════════════════════════════════════════════════════════════════════
+  APEX LOGICS TOOL — built from SSOT-TEMPLATE.html
+  AL-160 · 146-crypto-tax-loss-harvesting
+  ══════════════════════════════════════════════════════════════════════════════
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crypto Tax-Loss Harvesting Calculator · ApexLogics AL-160</title>
+  <meta name="description" content="Work out how much of your unrealized crypto loss you can use this year. Applies capital loss netting order, the ordinary income offset cap, and shows carryforwards. Zero PII, browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/tools/146-crypto-tax-loss-harvesting/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <!-- KEEP VERBATIM: Google Fonts link -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* KEEP VERBATIM: design tokens (CONTRACT Appendix A). */
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    /* KEEP VERBATIM: nav chrome ─────────────────────────────────────────── */
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    /* KEEP VERBATIM: page shell + PII banner */
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    /* Hero */
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    /* Cards + fields */
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], input[type="text"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    /* Lot table (tool-specific addition, within REPLACE scope for input fields) */
+    .lots-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+    .lots-table th { text-align: left; font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); padding: 6px 6px; border-bottom: 1px solid var(--border); }
+    .lots-table td { padding: 6px 6px; vertical-align: top; }
+    .lots-table input, .lots-table select { font-size: 0.82rem; padding: 7px 8px; }
+    .lots-table input[type="number"] { min-width: 90px; }
+    .lots-table input.asset-input { min-width: 70px; }
+    .chk-cell { text-align: center; }
+    .chk-cell input { width: auto; }
+    .remove-row-btn { background: none; border: 1px solid var(--border); color: var(--red); border-radius: 6px; padding: 6px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; cursor: pointer; }
+    .remove-row-btn:hover { border-color: var(--red); }
+    .add-row-btn { background: none; border: 1px dashed var(--border); color: var(--accent); border-radius: 6px; padding: 8px 14px; font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; cursor: pointer; }
+    .add-row-btn:hover { border-color: var(--accent); }
+    .row-count-note { font-size: 0.68rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; margin-top: 8px; }
+    .checkbox-field { display: flex; align-items: center; gap: 8px; }
+    .checkbox-field input { width: auto; }
+    .field-error { background: rgba(248,113,113,.08); border: 1px solid var(--red); border-left: 3px solid var(--red); border-radius: 6px; padding: .7rem 1rem; font-size: .78rem; color: var(--red); margin-bottom: 16px; display: none; }
+    .field-error.visible { display: block; }
+    .field-note { background: rgba(251,191,36,.08); border: 1px solid var(--amber); border-left: 3px solid var(--amber); border-radius: 6px; padding: .6rem 1rem; font-size: .74rem; color: var(--amber); margin: 8px 0 0; display: none; }
+    .field-note.visible { display: block; }
+    .wash-copy { font-size: 0.82rem; color: var(--text-muted); margin-top: 10px; padding-top: 12px; border-top: 1px solid rgba(167,139,250,0.1); }
+
+    /* Results */
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+
+    .disclaimer { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid var(--amber); border-radius: 6px; padding: .8rem 1rem; font-size: .78rem; color: var(--text-muted); margin-top: 16px; }
+
+    /* KEEP VERBATIM: export row (Markdown FIRST, Policy Mandate SECOND) */
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    /* KEEP VERBATIM: footer */
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+      .lots-table { display: block; overflow-x: auto; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    /* KEEP VERBATIM: mfst disclosure */
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<!-- ══ KEEP VERBATIM: NAV, do not edit anything between here and </nav> ══ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+    </div>
+  </div>
+</nav>
+<!-- ══ END NAV ══ -->
+
+<div class="tool-wrapper">
+
+  <!-- KEEP VERBATIM: PII banner. -->
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">Digital Assets · Tax Planning</p>
+  <h1 class="tool-title">Crypto Tax-Loss<br>Harvesting Calculator</h1>
+  <p class="tool-desc">Work out how much of your unrealized crypto loss you can actually use this year. Enter your lots, your gains so far, and your bracket, and the calculator applies the capital loss netting rules in order, caps the ordinary income offset, and shows what carries forward. Digital assets are treated as property, so the wash sale rule in section 1091 does not currently reach most tokens, but that posture can change and the tool lets you model it either way.</p>
+  <p class="tool-vintage">Data: 2026 (Rev. Proc. 2025-32 brackets; IRS digital asset guidance as of 2026-07)</p>
+
+  <div class="field-error" id="fieldError"></div>
+
+  <!-- Lot table -->
+  <div class="card">
+    <div class="card-title">Crypto Lots <span class="badge">STEP 1</span></div>
+    <table class="lots-table" id="lotsTable">
+      <thead>
+        <tr>
+          <th>Asset</th>
+          <th>Units held</th>
+          <th>Cost basis ($)</th>
+          <th>Current value ($)</th>
+          <th>Holding term</th>
+          <th>Repurch. ≤30d</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="lotsBody"></tbody>
+    </table>
+    <button type="button" class="add-row-btn" onclick="addLotRow()">+ Add Lot</button>
+    <div class="row-count-note">Up to 25 lots. Cost basis includes acquisition fees.</div>
+  </div>
+
+  <!-- Position and tax context -->
+  <div class="card">
+    <div class="card-title">Position &amp; Tax Context <span class="badge">STEP 2</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="filingStatus">Filing status</label>
+        <select id="filingStatus">
+          <option value="Single" selected>Single</option>
+          <option value="MFJ">Married Filing Jointly</option>
+          <option value="HoH">Head of Household</option>
+          <option value="MFS">Married Filing Separately</option>
+        </select>
+        <span class="field-hint">Sets brackets and the ordinary offset cap</span>
+      </div>
+      <div class="field">
+        <label for="ordinaryTaxableIncome">Ordinary taxable income ($, after deductions)</label>
+        <input type="number" id="ordinaryTaxableIncome" value="95000" min="0" step="100" />
+        <span class="field-hint">Sets your marginal rate</span>
+      </div>
+      <div class="field">
+        <label for="realizedST">Short-term gains realized this year ($)</label>
+        <input type="number" id="realizedST" value="0" min="0" step="100" />
+        <span class="field-hint">Net short-term gains from any asset class</span>
+      </div>
+      <div class="field">
+        <label for="realizedLT">Long-term gains realized this year ($)</label>
+        <input type="number" id="realizedLT" value="0" min="0" step="100" />
+        <span class="field-hint">Net long-term gains from any asset class</span>
+      </div>
+      <div class="field">
+        <label for="carryforwardST">Capital loss carryforward, short-term ($)</label>
+        <input type="number" id="carryforwardST" value="0" min="0" step="100" />
+        <span class="field-hint">Enter as a positive number</span>
+      </div>
+      <div class="field">
+        <label for="carryforwardLT">Capital loss carryforward, long-term ($)</label>
+        <input type="number" id="carryforwardLT" value="0" min="0" step="100" />
+        <span class="field-hint">Enter as a positive number</span>
+      </div>
+      <div class="field">
+        <label for="stateRate">State or local capital gains rate (%)</label>
+        <input type="number" id="stateRate" value="0" min="0" max="25" step="0.01" />
+        <span class="field-hint">Flat approximation, enter 0 if none</span>
+      </div>
+      <div class="field">
+        <div class="checkbox-field" style="margin-top:22px;">
+          <input type="checkbox" id="applyWashSale" />
+          <label for="applyWashSale" style="font-size:0.86rem;">Apply wash sale treatment to digital assets</label>
+        </div>
+        <span class="field-hint">Leave off for ordinary tokens. Turn on for tokenized securities, or to stress test a future rule change.</span>
+      </div>
+    </div>
+    <div class="wash-copy">
+      As of the vintage stamped on this page, digital assets are treated as property rather than securities, so the section 1091 wash sale rule does not reach most tokens and a repurchase inside 30 days does not by itself disallow the loss. Tokenized securities are a different matter, and Congress has repeatedly proposed extending the rule. Turn the toggle on to see what your result looks like under wash sale treatment.
+      <span class="tool-vintage" style="margin-top:8px;">Data vintage: <span id="dataVersionLabel">2026.07</span></span>
+    </div>
+    <div class="field-note" id="clampNote"></div>
+  </div>
+
+  <!-- Constants panel (editable, labeled) -->
+  <div class="card">
+    <div class="card-title">2026 Constants <span class="badge">EDITABLE</span></div>
+    <div class="form-grid three">
+      <div class="field">
+        <label for="cOrdCap">Ordinary offset cap ($)</label>
+        <input type="number" id="cOrdCap" value="3000" min="0" step="1" />
+        <span class="field-hint">IRC 1211(b), not indexed</span>
+      </div>
+      <div class="field">
+        <label for="cOrdCapMFS">Ordinary offset cap, MFS ($)</label>
+        <input type="number" id="cOrdCapMFS" value="1500" min="0" step="1" />
+        <span class="field-hint">Same cap, married filing separately</span>
+      </div>
+      <div class="field">
+        <label for="cNiitRate">NIIT rate (%)</label>
+        <input type="number" id="cNiitRate" value="3.8" min="0" step="0.1" />
+        <span class="field-hint">IRC 1411</span>
+      </div>
+      <div class="field">
+        <label for="cNiitSingle">NIIT MAGI threshold, single ($)</label>
+        <input type="number" id="cNiitSingle" value="200000" min="0" step="1000" />
+        <span class="field-hint">IRC 1411, not indexed</span>
+      </div>
+      <div class="field">
+        <label for="cNiitMFJ">NIIT MAGI threshold, MFJ ($)</label>
+        <input type="number" id="cNiitMFJ" value="250000" min="0" step="1000" />
+        <span class="field-hint">IRC 1411, not indexed</span>
+      </div>
+      <div class="field">
+        <label for="cLtcg0Single">0% LTCG ceiling, single ($)</label>
+        <input type="number" id="cLtcg0Single" value="49450" min="0" step="50" />
+        <span class="field-hint">2026 top of 0% LTCG bracket, Rev. Proc. 2025-32</span>
+      </div>
+      <div class="field">
+        <label for="cLtcg0MFJ">0% LTCG ceiling, MFJ ($)</label>
+        <input type="number" id="cLtcg0MFJ" value="98900" min="0" step="50" />
+        <span class="field-hint">Rev. Proc. 2025-32</span>
+      </div>
+      <div class="field">
+        <label for="cLtcg0HoH">0% LTCG ceiling, head of household ($)</label>
+        <input type="number" id="cLtcg0HoH" value="66200" min="0" step="50" />
+        <span class="field-hint">Rev. Proc. 2025-32</span>
+      </div>
+      <div class="field">
+        <label for="cLtcg15Single">15% LTCG ceiling, single ($)</label>
+        <input type="number" id="cLtcg15Single" value="545500" min="0" step="50" />
+        <span class="field-hint">Rev. Proc. 2025-32</span>
+      </div>
+      <div class="field">
+        <label for="cLtcg15MFJ">15% LTCG ceiling, MFJ ($)</label>
+        <input type="number" id="cLtcg15MFJ" value="613700" min="0" step="50" />
+        <span class="field-hint">Rev. Proc. 2025-32</span>
+      </div>
+      <div class="field">
+        <label for="cLtcg15HoH">15% LTCG ceiling, head of household ($)</label>
+        <input type="number" id="cLtcg15HoH" value="579600" min="0" step="50" />
+        <span class="field-hint">Rev. Proc. 2025-32</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Calculate Harvestable Loss →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Est. Tax Saved</div>
+        <div class="metric-val green" id="rTotalSaved">--</div>
+        <div class="metric-note">Federal plus state, this tax year</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Loss Used This Year</div>
+        <div class="metric-val accent" id="rLossUsed">--</div>
+        <div class="metric-note">Applied against gains and ordinary income</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Carried Forward</div>
+        <div class="metric-val amber" id="rCarryForward">--</div>
+        <div class="metric-note">Short-term plus long-term, into next year</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">Total unrealized loss identified</span><span class="row-val" id="dTotalUnrealized">--</span></div>
+      <div class="row"><span class="row-label">Loss disallowed by wash sale screen</span><span class="row-val" id="dDisallowed">--</span></div>
+      <div class="row"><span class="row-label">Harvestable short-term loss</span><span class="row-val" id="dHarvestST">--</span></div>
+      <div class="row"><span class="row-label">Harvestable long-term loss</span><span class="row-val" id="dHarvestLT">--</span></div>
+      <div class="row"><span class="row-label">Short-term gain offset</span><span class="row-val" id="dStOffset">--</span></div>
+      <div class="row"><span class="row-label">Long-term gain offset</span><span class="row-val" id="dLtOffset">--</span></div>
+      <div class="row"><span class="row-label">Cross-character offset (ST loss vs LT gain)</span><span class="row-val" id="dCrossA">--</span></div>
+      <div class="row"><span class="row-label">Cross-character offset (LT loss vs ST gain)</span><span class="row-val" id="dCrossB">--</span></div>
+      <div class="row"><span class="row-label">Ordinary income offset applied</span><span class="row-val" id="dOrdOffset">--</span></div>
+      <div class="row"><span class="row-label">Capital loss carried forward, short-term</span><span class="row-val" id="dCarryOutST">--</span></div>
+      <div class="row"><span class="row-label">Capital loss carried forward, long-term</span><span class="row-val" id="dCarryOutLT">--</span></div>
+      <div class="row"><span class="row-label">Marginal ordinary rate</span><span class="row-val" id="dMargRate">--</span></div>
+      <div class="row"><span class="row-label">Long-term capital gains rate applied</span><span class="row-val" id="dLtcgRate">--</span></div>
+      <div class="row"><span class="row-label">NIIT applied</span><span class="row-val" id="dNiit">--</span></div>
+      <div class="row"><span class="row-label">Federal tax saved</span><span class="row-val" id="dFederalSaved">--</span></div>
+      <div class="row"><span class="row-label">State tax saved</span><span class="row-val" id="dStateSaved">--</span></div>
+      <div class="row"><span class="row-label">Total estimated tax saved</span><span class="row-val" id="dTotalSavedCents">--</span></div>
+      <div class="row"><span class="row-label">Effective benefit rate</span><span class="row-val" id="dBenefitBps">--</span></div>
+
+      <div class="disclaimer">This is an illustrative estimate, not tax advice. Treatment depends on your full facts and on current IRS guidance, which can change. Consult a CPA or tax attorney.</div>
+
+      <!-- KEEP VERBATIM: export row. Markdown FIRST, Policy Mandate SECOND. -->
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- KEEP VERBATIM: mfst disclosure block, immediately before the footer -->
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · AL-160 · Data: IRC §1091, §1211, §1411; Rev. Proc. 2025-32 (2026 brackets)
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+let _lotCounter   = 0;
+const MAX_LOTS = 25;
+
+/* KEEP VERBATIM: helpers */
+const $     = id => document.getElementById(id);
+const fmt   = n => (n < 0 ? '-' : '') + '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
+const money = n => Math.round(n * 100) / 100;   /* whole cents */
+
+/* ── LOT ROWS ──────────────────────────────────────────────────────────────── */
+function lotRowHTML(id, asset, units, basis, value, term, repurchased) {
+  return '<tr data-id="' + id + '">' +
+    '<td><input type="text" class="asset-input" id="lot-asset-' + id + '" value="' + asset + '" maxlength="20" /></td>' +
+    '<td><input type="number" id="lot-units-' + id + '" value="' + units + '" min="0" step="0.00000001" /></td>' +
+    '<td><input type="number" id="lot-basis-' + id + '" value="' + basis + '" min="0" step="1" /></td>' +
+    '<td><input type="number" id="lot-value-' + id + '" value="' + value + '" min="0" step="1" /></td>' +
+    '<td><select id="lot-term-' + id + '">' +
+      '<option value="Short"' + (term === 'Short' ? ' selected' : '') + '>Short (1 yr or less)</option>' +
+      '<option value="Long"' + (term === 'Long' ? ' selected' : '') + '>Long (more than 1 yr)</option>' +
+    '</select></td>' +
+    '<td class="chk-cell"><input type="checkbox" id="lot-repurchased-' + id + '"' + (repurchased ? ' checked' : '') + ' /></td>' +
+    '<td><button type="button" class="remove-row-btn" onclick="removeLotRow(' + id + ')">✕</button></td>' +
+  '</tr>';
+}
+
+function addLotRow(asset, units, basis, value, term, repurchased) {
+  const body = $('lotsBody');
+  if (body.children.length >= MAX_LOTS) { alert('Maximum of 25 lots.'); return; }
+  const id = _lotCounter++;
+  body.insertAdjacentHTML('beforeend', lotRowHTML(
+    id,
+    asset === undefined ? 'BTC' : asset,
+    units === undefined ? 1 : units,
+    basis === undefined ? 40000 : basis,
+    value === undefined ? 32000 : value,
+    term === undefined ? 'Long' : term,
+    repurchased === undefined ? false : repurchased
+  ));
+}
+
+function removeLotRow(id) {
+  const body = $('lotsBody');
+  if (body.children.length <= 1) { alert('At least one lot is required.'); return; }
+  const tr = body.querySelector('tr[data-id="' + id + '"]');
+  if (tr) tr.remove();
+}
+
+function readLots() {
+  const rows = Array.from($('lotsBody').querySelectorAll('tr'));
+  return rows.map(tr => {
+    const id = tr.getAttribute('data-id');
+    return {
+      asset: String($('lot-asset-' + id).value || '').trim(),
+      units: parseFloat($('lot-units-' + id).value),
+      basis: parseFloat($('lot-basis-' + id).value),
+      value: parseFloat($('lot-value-' + id).value),
+      term: $('lot-term-' + id).value === 'Short' ? 'Short' : 'Long',
+      repurchased: $('lot-repurchased-' + id).checked
+    };
+  });
+}
+
+/* ── BRACKET WALK, KEEP VERBATIM (SR-1) ───────────────────────────────────── */
+function taxOn(taxableUSD, brackets) {
+  let t = 0;
+  for (let i = 0; i < brackets.length; i++) {
+    const lo = brackets[i][0];
+    const hi = (i + 1 < brackets.length) ? brackets[i + 1][0] : Infinity;
+    if (taxableUSD > lo) t += (Math.min(taxableUSD, hi) - lo) * brackets[i][1];
+  }
+  return Math.round(t * 100) / 100;
+}
+
+/* Marginal rate = rate of the bracket whose lower bound is the highest one
+   the income has reached. Works even for the MFS table below, whose top two
+   edges are halved per spec and are therefore not in strictly ascending order. */
+function marginalRate(income, brackets) {
+  let rate = brackets[0][1], bestLo = brackets[0][0];
+  for (const b of brackets) {
+    if (income >= b[0] && b[0] >= bestLo) { bestLo = b[0]; rate = b[1]; }
+  }
+  return rate;
+}
+
+const BR_SINGLE = [[0,0.10],[12400,0.12],[50400,0.22],[105700,0.24],[201775,0.32],[256225,0.35],[640600,0.37]];
+const BR_MFJ    = [[0,0.10],[24800,0.12],[100800,0.22],[211400,0.24],[403550,0.32],[512450,0.35],[768700,0.37]];
+const BR_HOH    = [[0,0.10],[17700,0.12],[67450,0.22],[105700,0.24],[201775,0.32],[256225,0.35],[640600,0.37]];
+/* MFS per spec: "single bracket table with the 35%/37% edges halved" */
+const BR_MFS    = [[0,0.10],[12400,0.12],[50400,0.22],[105700,0.24],[201775,0.32],[128112.5,0.35],[320300,0.37]];
+
+function bracketsFor(status) {
+  if (status === 'MFJ') return BR_MFJ;
+  if (status === 'HoH') return BR_HOH;
+  if (status === 'MFS') return BR_MFS;
+  return BR_SINGLE;
+}
+
+/* ── CORE MATH ─────────────────────────────────────────────────────────────── */
+function calculate() {
+  $('fieldError').classList.remove('visible');
+  $('clampNote').classList.remove('visible');
+  const notes = [];
+
+  const lots = readLots();
+
+  /* Edge case: reject negative units/basis/value, do not compute */
+  const badLot = lots.some(l => !Number.isFinite(l.units) || l.units < 0 ||
+                                 !Number.isFinite(l.basis) || l.basis < 0 ||
+                                 !Number.isFinite(l.value) || l.value < 0);
+  if (badLot) {
+    $('fieldError').textContent = 'Units held, cost basis, and current market value cannot be negative. Fix the highlighted lot and recalculate.';
+    $('fieldError').classList.add('visible');
+    return;
+  }
+
+  const filingStatus = $('filingStatus').value;
+  const applyWashSale = $('applyWashSale').checked;
+  let ordinaryTaxableIncome = parseFloat($('ordinaryTaxableIncome').value);
+  if (!Number.isFinite(ordinaryTaxableIncome) || ordinaryTaxableIncome < 0) ordinaryTaxableIncome = 0;
+
+  let realizedST = parseFloat($('realizedST').value); if (!Number.isFinite(realizedST)) realizedST = 0;
+  let realizedLT = parseFloat($('realizedLT').value); if (!Number.isFinite(realizedLT)) realizedLT = 0;
+  if (realizedST < 0) { realizedST = 0; notes.push('Short-term realized gains entered as negative were clamped to 0. Enter net gains only.'); }
+  if (realizedLT < 0) { realizedLT = 0; notes.push('Long-term realized gains entered as negative were clamped to 0. Enter net gains only.'); }
+
+  let carryforwardST = parseFloat($('carryforwardST').value); if (!Number.isFinite(carryforwardST) || carryforwardST < 0) carryforwardST = 0;
+  let carryforwardLT = parseFloat($('carryforwardLT').value); if (!Number.isFinite(carryforwardLT) || carryforwardLT < 0) carryforwardLT = 0;
+
+  let stateRate = parseFloat($('stateRate').value);
+  if (!Number.isFinite(stateRate)) stateRate = 0;
+  if (stateRate < 0 || stateRate > 25) {
+    stateRate = Math.min(Math.max(stateRate, 0), 25);
+    notes.push('State rate was out of the [0, 25] range and was clamped to ' + stateRate + '%.');
+  }
+
+  /* Constants (editable) */
+  const ordinaryOffsetCapStd = parseFloat($('cOrdCap').value) || 3000;
+  const ordinaryOffsetCapMFS = parseFloat($('cOrdCapMFS').value) || 1500;
+  const niitRate = (parseFloat($('cNiitRate').value) || 3.8) / 100;
+  const niitThresholdSingle = parseFloat($('cNiitSingle').value) || 200000;
+  const niitThresholdMFJ    = parseFloat($('cNiitMFJ').value) || 250000;
+  /* Not exposed as editable inputs: spec gives only single/MFJ NIIT thresholds
+     and only single/MFJ/HoH LTCG thresholds. HoH NIIT and MFS NIIT/LTCG
+     fallbacks below are conservative real-world statutory values, flagged
+     in FLAGS since the spec is silent on them. */
+  const niitThresholdHoH = niitThresholdSingle;
+  const niitThresholdMFS = 125000;
+  const ltcg0Single = parseFloat($('cLtcg0Single').value) || 49450;
+  const ltcg0MFJ    = parseFloat($('cLtcg0MFJ').value) || 98900;
+  const ltcg0HoH    = parseFloat($('cLtcg0HoH').value) || 66200;
+  const ltcg15Single= parseFloat($('cLtcg15Single').value) || 545500;
+  const ltcg15MFJ   = parseFloat($('cLtcg15MFJ').value) || 613700;
+  const ltcg15HoH   = parseFloat($('cLtcg15HoH').value) || 579600;
+  const ltcg0MFS  = ltcg0MFJ / 2;
+  const ltcg15MFS = ltcg15MFJ / 2;
+
+  /* Step 1-2: per-lot P/L and wash sale screen */
+  let totalUnrealizedLoss = 0, lossDisallowed = 0;
+  let harvestST = 0, harvestLT = 0;
+  lots.forEach(l => {
+    const lotPL = money(l.value - l.basis);
+    if (lotPL < 0) totalUnrealizedLoss += Math.abs(lotPL);
+    let disallowed = 0, usableLoss = 0;
+    if (lotPL < 0) {
+      if (applyWashSale && l.repurchased) {
+        disallowed = Math.abs(lotPL);
+        usableLoss = 0;
+      } else {
+        disallowed = 0;
+        usableLoss = Math.abs(lotPL);
+      }
+    }
+    lossDisallowed += disallowed;
+    if (l.term === 'Short') harvestST += usableLoss; else harvestLT += usableLoss;
+  });
+  totalUnrealizedLoss = money(totalUnrealizedLoss);
+  lossDisallowed = money(lossDisallowed);
+  harvestST = money(harvestST);
+  harvestLT = money(harvestLT);
+
+  /* Step 4: add carryforwards */
+  const poolST = money(harvestST + carryforwardST);
+  const poolLT = money(harvestLT + carryforwardLT);
+
+  /* Step 5: same-character netting */
+  const stOffset = money(Math.min(poolST, realizedST));
+  let netSTGain = money(realizedST - stOffset);
+  let stRemaining = money(poolST - stOffset);
+
+  const ltOffset = money(Math.min(poolLT, realizedLT));
+  let netLTGain = money(realizedLT - ltOffset);
+  let ltRemaining = money(poolLT - ltOffset);
+
+  /* Step 6: cross netting */
+  const crossA = money(Math.min(stRemaining, netLTGain));
+  netLTGain = money(netLTGain - crossA);
+  stRemaining = money(stRemaining - crossA);
+
+  const crossB = money(Math.min(ltRemaining, netSTGain));
+  netSTGain = money(netSTGain - crossB);
+  ltRemaining = money(ltRemaining - crossB);
+
+  /* Step 7: ordinary income offset cap */
+  const excessLoss = money(stRemaining + ltRemaining);
+  const ordinaryCap = (filingStatus === 'MFS') ? ordinaryOffsetCapMFS : ordinaryOffsetCapStd;
+  const ordinaryOffset = money(Math.min(excessLoss, ordinaryCap));
+  const ordFromST = money(Math.min(stRemaining, ordinaryCap));
+  const ordFromLT = money(Math.min(ltRemaining, Math.max(ordinaryCap - ordFromST, 0)));
+
+  /* Step 8: carryforward out */
+  const carryOutST = money(stRemaining - ordFromST);
+  const carryOutLT = money(ltRemaining - ordFromLT);
+
+  /* Step 9: marginal ordinary rate */
+  const brackets = bracketsFor(filingStatus);
+  const marginalOrdinaryRate = marginalRate(ordinaryTaxableIncome, brackets);
+
+  /* Step 10: long-term rate */
+  let c0, c15;
+  if (filingStatus === 'MFJ') { c0 = ltcg0MFJ; c15 = ltcg15MFJ; }
+  else if (filingStatus === 'HoH') { c0 = ltcg0HoH; c15 = ltcg15HoH; }
+  else if (filingStatus === 'MFS') { c0 = ltcg0MFS; c15 = ltcg15MFS; }
+  else { c0 = ltcg0Single; c15 = ltcg15Single; }
+  const ltGainStack = ordinaryTaxableIncome + netLTGain;
+  let ltRate;
+  if (ltGainStack <= c0) ltRate = 0;
+  else if (ltGainStack <= c15) ltRate = 0.15;
+  else ltRate = 0.20;
+
+  /* Step 11: NIIT applicability */
+  let niitThreshold;
+  if (filingStatus === 'MFJ') niitThreshold = niitThresholdMFJ;
+  else if (filingStatus === 'MFS') niitThreshold = niitThresholdMFS;
+  else if (filingStatus === 'HoH') niitThreshold = niitThresholdHoH;
+  else niitThreshold = niitThresholdSingle;
+  const niitBase = ordinaryTaxableIncome + realizedST + realizedLT;
+  const niitApplies = niitBase > niitThreshold;
+  const niitRateApplied = niitApplies ? niitRate : 0;
+
+  /* Step 12: federal tax saved */
+  const saveST = money(stOffset * (marginalOrdinaryRate + niitRateApplied));
+  const saveLT = money((ltOffset + crossA) * (ltRate + niitRateApplied));
+  const saveCrossB = money(crossB * (marginalOrdinaryRate + niitRateApplied));
+  const saveOrdinary = money(ordinaryOffset * marginalOrdinaryRate);
+  const federalSaved = money(saveST + saveLT + saveCrossB + saveOrdinary);
+
+  /* Step 13: state tax saved */
+  const stateSaved = money((stOffset + ltOffset + crossA + crossB + ordinaryOffset) * stateRate / 100);
+
+  /* Step 14: total */
+  const totalSaved = money(federalSaved + stateSaved);
+
+  /* Step 15: effective benefit rate in bps */
+  const totalLossUsed = money(stOffset + ltOffset + crossA + crossB + ordinaryOffset);
+  const benefitBps = totalLossUsed === 0 ? 0 : Math.round(totalSaved / Math.max(totalLossUsed, 0.01) * 10000);
+
+  _lastInputs = {
+    lots, filingStatus, applyWashSale, ordinaryTaxableIncome, realizedST, realizedLT,
+    carryforwardST, carryforwardLT, stateRate,
+    dataVersion: '2026.07'
+  };
+  _lastResults = {
+    totalUnrealizedLoss, lossDisallowed, harvestST, harvestLT,
+    stOffset, ltOffset, crossA, crossB, ordinaryOffset,
+    carryOutST, carryOutLT,
+    marginalOrdinaryRate, ltRate, niitApplies,
+    federalSaved, stateSaved, totalSaved, benefitBps, totalLossUsed
+  };
+
+  if (notes.length) {
+    $('clampNote').textContent = notes.join(' ');
+    $('clampNote').classList.add('visible');
+  }
+
+  render();
+}
+
+function bpsStr(rate) { return Math.round(rate * 10000) + ' bps (' + (rate * 100).toFixed(1) + '%)'; }
+
+function render() {
+  const r = _lastResults;
+
+  $('rTotalSaved').textContent = fmt(r.totalSaved);
+  $('rLossUsed').textContent = fmt(r.totalLossUsed);
+  $('rCarryForward').textContent = fmt(r.carryOutST + r.carryOutLT);
+
+  $('dTotalUnrealized').textContent = fmt(r.totalUnrealizedLoss);
+  $('dDisallowed').textContent = fmt(r.lossDisallowed);
+  $('dHarvestST').textContent = fmt(r.harvestST);
+  $('dHarvestLT').textContent = fmt(r.harvestLT);
+  $('dStOffset').textContent = fmt(r.stOffset);
+  $('dLtOffset').textContent = fmt(r.ltOffset);
+  $('dCrossA').textContent = fmt(r.crossA);
+  $('dCrossB').textContent = fmt(r.crossB);
+  $('dOrdOffset').textContent = fmt(r.ordinaryOffset);
+  $('dCarryOutST').textContent = fmt(r.carryOutST);
+  $('dCarryOutLT').textContent = fmt(r.carryOutLT);
+  $('dMargRate').textContent = bpsStr(r.marginalOrdinaryRate);
+  $('dLtcgRate').textContent = bpsStr(r.ltRate);
+  $('dNiit').textContent = r.niitApplies ? 'Yes' : 'No';
+  $('dFederalSaved').textContent = fmt(r.federalSaved);
+  $('dStateSaved').textContent = fmt(r.stateSaved);
+  $('dTotalSavedCents').textContent = '$' + r.totalSaved.toFixed(2);
+  $('dBenefitBps').textContent = r.benefitBps + ' bps';
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Crypto Tax-Loss Harvesting Calculator Results',
+    `\n_Generated ${d} · AL-160 · apexlogics.org_\n`,
+    '## Inputs',
+    '| Field | Value |', '|---|---|',
+    `| Filing status | ${i.filingStatus} |`,
+    `| Ordinary taxable income | ${fmt(i.ordinaryTaxableIncome)} |`,
+    `| Realized short-term gains | ${fmt(i.realizedST)} |`,
+    `| Realized long-term gains | ${fmt(i.realizedLT)} |`,
+    `| Carryforward, short-term | ${fmt(i.carryforwardST)} |`,
+    `| Carryforward, long-term | ${fmt(i.carryforwardLT)} |`,
+    `| State rate | ${i.stateRate}% |`,
+    `| Wash sale treatment applied | ${i.applyWashSale ? 'Yes' : 'No'} |`,
+    `| Lots entered | ${i.lots.length} |`,
+    '\n## Results',
+    `- **Total unrealized loss identified:** ${fmt(r.totalUnrealizedLoss)}`,
+    `- **Loss disallowed by wash sale screen:** ${fmt(r.lossDisallowed)}`,
+    `- **Harvestable short-term loss:** ${fmt(r.harvestST)}`,
+    `- **Harvestable long-term loss:** ${fmt(r.harvestLT)}`,
+    `- **Short-term gain offset:** ${fmt(r.stOffset)}`,
+    `- **Long-term gain offset:** ${fmt(r.ltOffset)}`,
+    `- **Cross-character offset (ST loss vs LT gain):** ${fmt(r.crossA)}`,
+    `- **Cross-character offset (LT loss vs ST gain):** ${fmt(r.crossB)}`,
+    `- **Ordinary income offset applied:** ${fmt(r.ordinaryOffset)}`,
+    `- **Carried forward, short-term:** ${fmt(r.carryOutST)}`,
+    `- **Carried forward, long-term:** ${fmt(r.carryOutLT)}`,
+    `- **Marginal ordinary rate:** ${(r.marginalOrdinaryRate*100).toFixed(1)}%`,
+    `- **Long-term capital gains rate applied:** ${(r.ltRate*100).toFixed(1)}%`,
+    `- **NIIT applied:** ${r.niitApplies ? 'Yes' : 'No'}`,
+    `- **Federal tax saved:** ${fmt(r.federalSaved)}`,
+    `- **State tax saved:** ${fmt(r.stateSaved)}`,
+    `- **Total estimated tax saved:** ${fmt(r.totalSaved)}`,
+    `- **Effective benefit rate:** ${r.benefitBps} bps`,
+    '\n---',
+    '_This is an illustrative estimate, not tax advice. Treatment depends on your full facts and on current IRS guidance, which can change. Consult a CPA or tax attorney. Source: IRC §1091, §1211, §1411; Rev. Proc. 2025-32._'
+  ];
+  dlFile('crypto-tax-loss-harvesting.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  const payload = {
+    mandate_type: "crypto_tax_loss_harvesting_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-160",
+    tool_id: "146-crypto-tax-loss-harvesting",
+    tool_name: "Crypto Tax-Loss Harvesting Calculator",
+    inputs: {
+      lots: i.lots.map(l => ({ asset: l.asset, units: l.units, cost_basis: money(l.basis), current_value: money(l.value), term: l.term, repurchased_30d: l.repurchased })),
+      filing_status: i.filingStatus,
+      apply_wash_sale: i.applyWashSale,
+      ordinary_taxable_income: money(i.ordinaryTaxableIncome),
+      realized_st_gain: money(i.realizedST),
+      realized_lt_gain: money(i.realizedLT),
+      carryforward_st: money(i.carryforwardST),
+      carryforward_lt: money(i.carryforwardLT),
+      state_rate_pct: i.stateRate,
+      data_version: i.dataVersion
+    },
+    outputs: {
+      total_unrealized_loss: r.totalUnrealizedLoss,
+      loss_disallowed_wash_sale: r.lossDisallowed,
+      harvestable_st_loss: r.harvestST,
+      harvestable_lt_loss: r.harvestLT,
+      st_gain_offset: r.stOffset,
+      lt_gain_offset: r.ltOffset,
+      cross_offset_st_vs_lt: r.crossA,
+      cross_offset_lt_vs_st: r.crossB,
+      ordinary_income_offset: r.ordinaryOffset,
+      carry_forward_st: r.carryOutST,
+      carry_forward_lt: r.carryOutLT,
+      marginal_ordinary_rate_bps: Math.round(r.marginalOrdinaryRate * 10000),
+      ltcg_rate_applied_bps: Math.round(r.ltRate * 10000),
+      niit_applied: r.niitApplies,
+      federal_tax_saved: r.federalSaved,
+      state_tax_saved: r.stateSaved,
+      total_tax_saved: r.totalSaved,
+      effective_benefit_rate_bps: r.benefitBps
+    },
+    downstream_handoff_candidates: [],
+    data_sources: [
+      "IRC §1091 (wash sale)", "IRC §1211(b) (ordinary offset cap)", "IRC §1411 (NIIT)",
+      "Rev. Proc. 2025-32 (2026 brackets and LTCG thresholds)"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/tax_projection";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-160";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* SNAPSHOT BEFORE RELOCATION. Validate this, not the relocated payload. */
+  const _cgPreval = Object.assign({}, payload);
+
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['crypto_tax_loss_harvesting_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-160_crypto-tax-loss-harvesting_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash ───────────────────────────────────────────────── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+const MANIFEST = {
+  "tool_id": "146-crypto-tax-loss-harvesting",
+  "al_id": "AL-160",
+  "version": "1.0.0",
+  "title": "Crypto Tax-Loss Harvesting Calculator",
+  "description": "Given crypto lots with cost basis and current value, realized gains, carryforwards, filing status, and bracket, applies the capital loss netting order, the ordinary income offset cap, and an optional wash sale screen, returning harvestable loss, offsets, carryforwards, and estimated federal and state tax saved. Deterministic, zero external data. Policy Mandate v2.0: crypto_tax_loss_harvesting_record.",
+  "category": "digital_assets",
+  "journeys": ["year-end tax planning","portfolio rebalancing","crypto tax prep"],
+  "personas": ["retail crypto investor","active trader","tax preparer","self-filer"],
+  "tags": ["crypto","capital gains","tax loss harvesting","cost basis","wash sale","1099-DA"],
+  "status": "active",
+  "maintenance": "annual (dated tax constants)",
+  "data_vintage": "2026 (Rev. Proc. 2025-32 brackets; IRS digital asset guidance as of 2026-07)",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["crypto_tax_loss_harvesting_record"],
+  "downstream_handoff_candidates": [],
+  "regulatory_citations": ["IRC §1091", "IRC §1211(b)", "IRC §1411", "Rev. Proc. 2025-32"],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "lots": { "type": "array" },
+      "filing_status": { "type": "string" },
+      "apply_wash_sale": { "type": "boolean" },
+      "ordinary_taxable_income": { "type": "number" },
+      "realized_st_gain": { "type": "number" },
+      "realized_lt_gain": { "type": "number" },
+      "carryforward_st": { "type": "number" },
+      "carryforward_lt": { "type": "number" },
+      "state_rate_pct": { "type": "number" }
+    },
+    "required": ["lots","filing_status","ordinary_taxable_income"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "total_unrealized_loss": { "type": "number" },
+      "loss_disallowed_wash_sale": { "type": "number" },
+      "harvestable_st_loss": { "type": "number" },
+      "harvestable_lt_loss": { "type": "number" },
+      "st_gain_offset": { "type": "number" },
+      "lt_gain_offset": { "type": "number" },
+      "cross_offset_st_vs_lt": { "type": "number" },
+      "cross_offset_lt_vs_st": { "type": "number" },
+      "ordinary_income_offset": { "type": "number" },
+      "carry_forward_st": { "type": "number" },
+      "carry_forward_lt": { "type": "number" },
+      "marginal_ordinary_rate_bps": { "type": "integer" },
+      "ltcg_rate_applied_bps": { "type": "integer" },
+      "niit_applied": { "type": "boolean" },
+      "federal_tax_saved": { "type": "number" },
+      "state_tax_saved": { "type": "number" },
+      "total_tax_saved": { "type": "number" },
+      "effective_benefit_rate_bps": { "type": "integer" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "crypto_tax_loss_harvesting",
+    "description": "Given crypto lots, realized gains, carryforwards, filing status, and bracket, returns harvestable loss, gain offsets, carryforwards, and estimated federal and state tax saved. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "lots": { "type": "array" },
+        "filing_status": { "type": "string" },
+        "ordinary_taxable_income": { "type": "number" }
+      },
+      "required": ["lots","filing_status","ordinary_taxable_income"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://postoaklabs.com",
+  "license": "CC-BY-4.0"
+};
+
+/* KEEP VERBATIM: MCP / MANIFEST TOGGLE */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+
+/* Seed one example lot matching the spec default */
+addLotRow('BTC', 1, 40000, 32000, 'Long', false);
+</script>
+</body>
+</html>

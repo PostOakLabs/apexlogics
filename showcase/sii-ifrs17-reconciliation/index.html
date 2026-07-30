@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solvency II to IFRS 17 Reconciliation · ApexLogics</title>
+  <meta name="description" content="Bridge Solvency II own funds to IFRS 17 equity across five reconciling items, and see whether the bridge closes within your tolerance. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/showcase/sii-ifrs17-reconciliation/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 500; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.red   { color: var(--red); }
+    .metric-val.accent{ color: var(--accent); }
+    .metric-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; text-align: right; max-width: 60%; }
+
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+      <a href="../index.html" class="nav-pill">&#x2190; Showcase Gallery</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">OCG-Industries Showcase &middot; Cluster &#9351; Insurance and Prudential Reporting</p>
+  <h1 class="tool-title">Solvency II to IFRS 17<br>Reconciliation</h1>
+  <p class="tool-desc">Enter your Solvency II own funds starting point, five bridging items, and the IFRS 17 equity you are reconciling to. This tool adds the bridge, compares it against the target within a tolerance you set, and flags the largest reconciling item, so the bridge can be re-run instead of re-explained.</p>
+  <p class="tool-vintage">Data: IFRS 17 Insurance Contracts &middot; Directive 2009/138/EC (Solvency II) Art.77</p>
+
+  <div class="card">
+    <div class="card-title">Starting Point and Target <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="siiOwnFunds">Solvency II Own Funds ($)</label>
+        <input type="number" id="siiOwnFunds" value="180000000" min="-1000000000000" max="1000000000000" step="1" />
+        <span class="field-hint">The prudential-basis starting point of the bridge</span>
+      </div>
+      <div class="field">
+        <label for="ifrs17Equity">IFRS 17 Equity Target ($)</label>
+        <input type="number" id="ifrs17Equity" value="176500000" min="-1000000000000" max="1000000000000" step="1" />
+        <span class="field-hint">The accounting-basis figure the bridge should reach</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Bridging Items <span class="badge">STEP 2</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="riskMarginToRa">Risk Margin to Risk Adjustment ($)</label>
+        <input type="number" id="riskMarginToRa" value="-4200000" step="1" />
+        <span class="field-hint">Signed. Enter negative if this reduces IFRS 17 equity</span>
+      </div>
+      <div class="field">
+        <label for="csm">Contractual Service Margin ($)</label>
+        <input type="number" id="csm" value="-8500000" step="1" />
+        <span class="field-hint">Signed</span>
+      </div>
+      <div class="field">
+        <label for="discountRateDiff">Discount Rate Difference ($)</label>
+        <input type="number" id="discountRateDiff" value="3100000" step="1" />
+        <span class="field-hint">Signed</span>
+      </div>
+      <div class="field">
+        <label for="contractBoundaryDiff">Contract Boundary Difference ($)</label>
+        <input type="number" id="contractBoundaryDiff" value="1600000" step="1" />
+        <span class="field-hint">Signed</span>
+      </div>
+      <div class="field">
+        <label for="otherReconciling">Other Reconciling Items ($)</label>
+        <input type="number" id="otherReconciling" value="4500000" step="1" />
+        <span class="field-hint">Signed. Catch-all for remaining bridge items</span>
+      </div>
+      <div class="field">
+        <label for="toleranceAmount">Tolerance ($)</label>
+        <input type="number" id="toleranceAmount" value="0" min="0" step="1" />
+        <span class="field-hint">Maximum acceptable absolute residual</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Run Reconciliation &#8594;</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Bridge Sum</div>
+        <div class="metric-val accent" id="rBridgeSum">--</div>
+        <div class="metric-note">Own funds plus the five bridging items</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Residual</div>
+        <div class="metric-val amber" id="rResidual">--</div>
+        <div class="metric-note">Target minus the bridge sum</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Reconciles?</div>
+        <div class="metric-val green" id="rReconciles">--</div>
+        <div class="metric-note">Residual within tolerance</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">SII own funds</span><span class="row-val" id="dOwnFunds">--</span></div>
+      <div class="row"><span class="row-label">Bridge sum</span><span class="row-val" id="dBridgeSum">--</span></div>
+      <div class="row"><span class="row-label">IFRS 17 equity target</span><span class="row-val" id="dTarget">--</span></div>
+      <div class="row"><span class="row-label">Residual</span><span class="row-val" id="dResidual">--</span></div>
+      <div class="row"><span class="row-label">Tolerance</span><span class="row-val" id="dTolerance">--</span></div>
+      <div class="row"><span class="row-label">Largest item</span><span class="row-val" id="dLargestItem">--</span></div>
+      <div class="row"><span class="row-label">Nonzero items</span><span class="row-val" id="dNonzero">--</span></div>
+      <div class="row"><span class="row-label">Status</span><span class="row-val" id="dStatus">--</span></div>
+
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 &middot; <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> &middot; CC BY 4.0 &middot; SC-88 &middot; Data: IFRS 17 Insurance Contracts &middot; Directive 2009/138/EC (Solvency II) Art.77
+  </footer>
+
+</div>
+
+<script>
+let _lastInputs  = null;
+let _lastResults = null;
+
+const $ = id => document.getElementById(id);
+const fmt = n => (n < 0 ? '-$' : '$') + Math.round(Math.abs(n)).toLocaleString('en-US');
+
+function toCents(raw, dflt) {
+  let n = parseFloat(raw);
+  if (!Number.isFinite(n)) n = dflt;
+  return Math.round(n * 100);
+}
+
+function calculate() {
+  const siiOwnFundsCents = toCents($('siiOwnFunds').value, 0);
+  const ifrs17EquityCents = toCents($('ifrs17Equity').value, 0);
+  const toleranceCents = Math.max(0, toCents($('toleranceAmount').value, 0));
+
+  const items = [
+    { name: 'risk_margin_to_risk_adjustment', cents: toCents($('riskMarginToRa').value, 0) },
+    { name: 'contractual_service_margin', cents: toCents($('csm').value, 0) },
+    { name: 'discount_rate_difference', cents: toCents($('discountRateDiff').value, 0) },
+    { name: 'contract_boundary_difference', cents: toCents($('contractBoundaryDiff').value, 0) },
+    { name: 'other_reconciling_items', cents: toCents($('otherReconciling').value, 0) }
+  ];
+
+  let bridgeSumCents = siiOwnFundsCents;
+  let itemCountNonzero = 0;
+  let largestItemName = 'none';
+  let largestItemAbsCents = 0;
+  for (const it of items) {
+    bridgeSumCents += it.cents;
+    if (it.cents !== 0) itemCountNonzero++;
+    if (Math.abs(it.cents) > largestItemAbsCents) {
+      largestItemAbsCents = Math.abs(it.cents);
+      largestItemName = it.name;
+    }
+  }
+
+  const residualCents = ifrs17EquityCents - bridgeSumCents;
+  const reconciles = Math.abs(residualCents) <= toleranceCents;
+  const status = reconciles ? 'reconciled' : 'unexplained-residual';
+
+  _lastInputs = {
+    siiOwnFundsCents, ifrs17EquityCents, toleranceCents,
+    riskMarginToRaCents: items[0].cents,
+    csmCents: items[1].cents,
+    discountRateDiffCents: items[2].cents,
+    contractBoundaryDiffCents: items[3].cents,
+    otherReconcilingCents: items[4].cents
+  };
+  _lastResults = {
+    siiOwnFundsCents, bridgeSumCents, ifrs17EquityCents, residualCents, toleranceCents,
+    reconciles, largestItemName, largestItemAbsCents, itemCountNonzero, status
+  };
+
+  render();
+}
+
+function render() {
+  const i = _lastInputs, r = _lastResults;
+
+  $('rBridgeSum').textContent = fmt(r.bridgeSumCents / 100);
+  $('rResidual').textContent = fmt(r.residualCents / 100);
+  $('rResidual').className = 'metric-val ' + (r.reconciles ? 'green' : 'red');
+  $('rReconciles').textContent = r.reconciles ? 'Yes' : 'No';
+  $('rReconciles').className = 'metric-val ' + (r.reconciles ? 'green' : 'red');
+
+  $('dOwnFunds').textContent = fmt(i.siiOwnFundsCents / 100);
+  $('dBridgeSum').textContent = fmt(r.bridgeSumCents / 100);
+  $('dTarget').textContent = fmt(i.ifrs17EquityCents / 100);
+  $('dResidual').textContent = fmt(r.residualCents / 100);
+  $('dTolerance').textContent = fmt(i.toleranceCents / 100);
+  $('dLargestItem').textContent = r.largestItemName + ' (' + fmt(r.largestItemAbsCents / 100) + ')';
+  $('dNonzero').textContent = r.itemCountNonzero + ' of 5';
+  $('dStatus').textContent = r.status;
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function exportMarkdown() {
+  if (!_lastInputs) return;
+  const i = _lastInputs, r = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Solvency II to IFRS 17 Reconciliation',
+    `\n_Generated ${d} \u00b7 SC-88 \u00b7 apexlogics.org_\n`,
+    '## Inputs',
+    '| Field | Value |', '|---|---|',
+    `| Solvency II own funds | ${fmt(i.siiOwnFundsCents/100)} |`,
+    `| Risk margin to risk adjustment | ${fmt(i.riskMarginToRaCents/100)} |`,
+    `| Contractual service margin | ${fmt(i.csmCents/100)} |`,
+    `| Discount rate difference | ${fmt(i.discountRateDiffCents/100)} |`,
+    `| Contract boundary difference | ${fmt(i.contractBoundaryDiffCents/100)} |`,
+    `| Other reconciling items | ${fmt(i.otherReconcilingCents/100)} |`,
+    `| IFRS 17 equity target | ${fmt(i.ifrs17EquityCents/100)} |`,
+    `| Tolerance | ${fmt(i.toleranceCents/100)} |`,
+    '\n## Results',
+    `- **Bridge sum:** ${fmt(r.bridgeSumCents/100)}`,
+    `- **Residual:** ${fmt(r.residualCents/100)}`,
+    `- **Reconciles:** ${r.reconciles ? 'Yes' : 'No'}`,
+    `- **Largest item:** ${r.largestItemName} (${fmt(r.largestItemAbsCents/100)})`,
+    `- **Nonzero items:** ${r.itemCountNonzero} of 5`,
+    `- **Status:** ${r.status}`,
+    '\n---',
+    '_Source: IFRS 17 Insurance Contracts \u00b7 Directive 2009/138/EC (Solvency II) Art.77. The bridge adds what you enter; it does not derive any bridging item._'
+  ];
+  dlFile('sii-ifrs17-reconciliation.md', lines.join('\n'), 'text/markdown');
+}
+
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, r = _lastResults;
+
+  const payload = {
+    mandate_type: "sii_ifrs17_reconciliation_record",
+    generated_at: new Date().toISOString(),
+    al_id: "SC-88",
+    tool_id: "sc88-sii-ifrs17-reconciliation",
+    tool_name: "Solvency II to IFRS 17 Reconciliation",
+    inputs: {
+      sii_own_funds_cents: i.siiOwnFundsCents,
+      risk_margin_to_risk_adjustment_cents: i.riskMarginToRaCents,
+      contractual_service_margin_cents: i.csmCents,
+      discount_rate_difference_cents: i.discountRateDiffCents,
+      contract_boundary_difference_cents: i.contractBoundaryDiffCents,
+      other_reconciling_items_cents: i.otherReconcilingCents,
+      ifrs17_equity_cents: i.ifrs17EquityCents,
+      tolerance_cents: i.toleranceCents
+    },
+    outputs: {
+      sii_own_funds_cents: r.siiOwnFundsCents,
+      bridge_sum_cents: r.bridgeSumCents,
+      ifrs17_equity_cents: r.ifrs17EquityCents,
+      residual_cents: r.residualCents,
+      tolerance_cents: r.toleranceCents,
+      reconciles: r.reconciles,
+      largest_item_name: r.largestItemName,
+      largest_item_abs_cents: r.largestItemAbsCents,
+      item_count_nonzero: r.itemCountNonzero,
+      status: r.status
+    },
+    downstream_handoff_candidates: [],
+    data_sources: [
+      "IFRS 17 Insurance Contracts",
+      "Directive 2009/138/EC (Solvency II) Art.77"
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/sii_ifrs17_reconciliation";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "SC-88";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_cents:integer", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  const _cgPreval = Object.assign({}, payload);
+
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['sii_ifrs17_reconciliation_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`SC-88_sii-ifrs17-reconciliation_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+const MANIFEST = {
+  "_canonical_filename": "SC-88_sii-ifrs17-reconciliation.manifest.json",
+  "al_id": "SC-88",
+  "tool_id": "sc88-sii-ifrs17-reconciliation",
+  "version": "1.0.0",
+  "title": "Solvency II to IFRS 17 Reconciliation",
+  "description": "Bridges Solvency II own funds to IFRS 17 equity across five signed reconciling items, computing the bridge sum, the residual against the target, and whether the bridge reconciles within an entered tolerance. Deterministic, zero external data lookup. Policy Mandate: sii_ifrs17_reconciliation_record.",
+  "category": "showcase",
+  "cluster": "insurance-prudential-reporting",
+  "chain": "showcase-sii-ifrs17-reconciliation",
+  "journeys": [],
+  "personas": ["finance-lead", "actuary"],
+  "tags": ["solvency-ii", "ifrs17", "reconciliation", "insurance", "showcase", "prudential-reporting"],
+  "status": "live",
+  "maintenance": "zero",
+  "data_vintage": "2026",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["sii_ifrs17_reconciliation_record"],
+  "downstream_handoff_candidates": [],
+  "regulatory_citations": [
+    "IFRS 17 Insurance Contracts",
+    "Directive 2009/138/EC (Solvency II) Art.77"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "sii_own_funds_cents": { "type": "integer" },
+      "risk_margin_to_risk_adjustment_cents": { "type": "integer" },
+      "contractual_service_margin_cents": { "type": "integer" },
+      "discount_rate_difference_cents": { "type": "integer" },
+      "contract_boundary_difference_cents": { "type": "integer" },
+      "other_reconciling_items_cents": { "type": "integer" },
+      "ifrs17_equity_cents": { "type": "integer" },
+      "tolerance_cents": { "type": "integer" }
+    },
+    "required": ["sii_own_funds_cents", "ifrs17_equity_cents"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "sii_own_funds_cents": { "type": "integer" },
+      "bridge_sum_cents": { "type": "integer" },
+      "ifrs17_equity_cents": { "type": "integer" },
+      "residual_cents": { "type": "integer" },
+      "tolerance_cents": { "type": "integer" },
+      "reconciles": { "type": "boolean" },
+      "largest_item_name": { "type": "string" },
+      "largest_item_abs_cents": { "type": "integer" },
+      "item_count_nonzero": { "type": "integer" },
+      "status": { "type": "string" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "reconcile_sii_ifrs17",
+    "description": "Given a Solvency II own funds figure, five signed bridging items, an IFRS 17 equity target, and a tolerance, returns the bridge sum, the residual, and whether the bridge reconciles.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sii_own_funds_cents": { "type": "integer" },
+        "risk_margin_to_risk_adjustment_cents": { "type": "integer" },
+        "contractual_service_margin_cents": { "type": "integer" },
+        "discount_rate_difference_cents": { "type": "integer" },
+        "contract_boundary_difference_cents": { "type": "integer" },
+        "other_reconciling_items_cents": { "type": "integer" },
+        "ifrs17_equity_cents": { "type": "integer" },
+        "tolerance_cents": { "type": "integer" }
+      },
+      "required": ["sii_own_funds_cents", "ifrs17_equity_cents"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://postoaklabs.com",
+  "license": "CC-BY-4.0",
+  "source_card": "https://ainumbers.co/chaingraph/ocg-industries.html#c17-3"
+};
+
+function getManifest(){ return MANIFEST; }
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>

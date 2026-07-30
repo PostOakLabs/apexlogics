@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sensor Reading Plausibility · ApexLogics Showcase</title>
+  <meta name="description" content="Enter a set of sensor readings in integer milliunits. This tool recomputes the mean in integer arithmetic, counts readings outside the sensor's valid range, and checks the recomputed figure against a published mean." />
+  <link rel="canonical" href="https://apexlogics.org/showcase/sensor-reading-plausibility/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <!-- KEEP VERBATIM: Google Fonts link -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* KEEP VERBATIM: design tokens (CONTRACT Appendix A). */
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #A78BFA; --accent-dim: rgba(167,139,250,0.18); --accent-low: rgba(167,139,250,0.08);
+      --border: rgba(167,139,250,0.18); --border-focus: #A78BFA;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    /* KEEP VERBATIM: nav chrome ─────────────────────────────────────────── */
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text,var(--heading)); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color:var(--text-dim,var(--muted)); font-size:.8rem; }
+    .logo-tag { font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim,var(--muted)); font-family:'JetBrains Mono',monospace; line-height:1; }
+    .nav-spacer { flex: 1; }
+    .nav-pill { background:none; border:1px solid var(--border-2,var(--border)); border-radius:6px; color:var(--body,var(--text-muted)); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+    .nav-pill:hover { border-color:#E8A838; color:var(--heading,var(--text)); }
+    .nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+    .nav-right { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    @media (max-width: 560px) { .nav-right { flex-direction: column; align-items: flex-end; gap: 5px; } }
+
+    /* KEEP VERBATIM: page shell + PII banner */
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 40px 24px 80px; }
+    .pii-banner { max-width: 1024px; margin: 1.25rem auto 0; padding: 0; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted, var(--muted)); display: flex; gap: .5rem; align-items: flex-start; }
+
+    /* Hero */
+    .tool-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #E8A838; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 16px; }
+    .tool-desc { color: var(--text-muted); font-size: 0.97rem; max-width: 760px; margin-bottom: 10px; }
+    .tool-vintage { display: inline-flex; align-items: center; gap: .4rem; background: rgba(232,168,56,.1); border: 1px solid #E8A838; border-radius: 6px; padding: .3rem .7rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: #E8A838; margin-bottom: 1.25rem; }
+
+    /* Scope callout (required scope note, exploratory-slice cards) */
+    .scope-note { background: rgba(167,139,250,.06); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; padding: .8rem 1rem; font-size: .82rem; color: var(--text-muted); margin: 0 0 20px; }
+    .scope-note strong { color: var(--text); }
+
+    /* Cards + fields */
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+    .card-title { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--accent-dim); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 0.66rem; }
+    .form-grid { display: grid; gap: 14px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    input[type="number"], input[type="text"], select, textarea { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 0.9rem; width: 100%; transition: border-color 0.2s; }
+    textarea { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; min-height: 130px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--border-focus); }
+    .field-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+    .run-btn { background: var(--accent); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 1rem; font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0 24px; transition: opacity 0.2s; }
+    .run-btn:hover { opacity: 0.88; }
+
+    /* Results */
+    .results-section { display: none; }
+    .results-section.visible { display: block; }
+
+    .verdict { border-radius: 12px; border: 1px solid var(--border); padding: 20px 24px; margin-bottom: 16px; }
+    .verdict.ok { border-color: rgba(52,211,153,.45); background: rgba(52,211,153,.06); }
+    .verdict.no { border-color: rgba(248,113,113,.45); background: rgba(248,113,113,.06); }
+    .verdict-big { font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 600; margin-bottom: 6px; }
+    .verdict.ok .verdict-big { color: var(--green); }
+    .verdict.no .verdict-big { color: var(--red); }
+    .verdict-sub { color: var(--text-muted); font-size: 0.9rem; }
+
+    .hash-line { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); word-break: break-all; margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--border); }
+    .gate-note { font-size: 0.82rem; color: var(--text-muted); margin-top: 10px; }
+
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(167,139,250,0.07); font-size: 0.86rem; }
+    .row:last-child { border-bottom: none; }
+    .row .row-label { color: var(--text-muted); }
+    .row .row-val { font-family: 'JetBrains Mono', monospace; }
+    .row .row-val.green { color: var(--green); }
+    .row .row-val.red { color: var(--red); }
+
+    /* KEEP VERBATIM: export row (Markdown FIRST, Policy Mandate SECOND) */
+    .results-export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .export-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2 { border-color: var(--accent); color: var(--accent); }
+    .ap2-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); align-self: center; }
+    .ap2-hint a { color: var(--text-dim); text-decoration: none; }
+
+    /* KEEP VERBATIM: footer */
+    .tool-footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted, var(--muted)); text-align: center; }
+    .tool-footer a { color: var(--text-muted, var(--muted)); text-decoration: none; }
+    .tool-footer a:hover { color: var(--text, var(--body)); }
+
+    @media (max-width: 768px) {
+      .form-grid.two { grid-template-columns: 1fr; }
+      .tool-title { font-size: 1.8rem; }
+      .results-export-row { flex-direction: column; }
+    }
+
+    /* KEEP VERBATIM: mfst disclosure */
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<!-- ══ KEEP VERBATIM: NAV, do not edit anything between here and </nav> ══ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../index.html" class="nav-pill accent">&#x2190; All Tools</a>
+      <a href="../index.html" class="nav-pill">&#x2190; Showcase Gallery</a>
+    </div>
+  </div>
+</nav>
+<!-- ══ END NAV ══ -->
+
+<div class="tool-wrapper">
+
+  <!-- KEEP VERBATIM: PII banner. -->
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">OCG-Industries Showcase · Cluster ⑤ Physical Installations and Civic Infrastructure</p>
+  <h1 class="tool-title">Sensor Reading Plausibility</h1>
+  <p class="tool-desc">A published environmental figure is an average of readings nobody outside the operator has seen. Enter the readings, and this page recomputes the average in integer arithmetic, counts the readings that sit outside the sensor's stated range, and checks the recomputed figure against the one that was published. If the published number does not fall out of the readings, the page says so.</p>
+
+  <div class="scope-note">
+    <strong>Scope.</strong> This checks arithmetic and range, nothing else. It cannot tell you whether a sensor was calibrated, whether readings were dropped before they reached you, or whether the device reporting them is the device it claims to be.
+  </div>
+
+  <p class="tool-vintage">Data: readings entered as integer milliunits · no external data</p>
+
+  <div class="card">
+    <div class="card-title">Inputs <span class="badge">STEP 1</span></div>
+    <div class="form-grid two">
+      <div class="field">
+        <label for="stationId">Monitoring station identifier</label>
+        <input type="text" id="stationId" value="STATION-14-RIVERSIDE" />
+      </div>
+      <div class="field">
+        <label for="metricLabel">Metric</label>
+        <input type="text" id="metricLabel" value="pm25-ugm3" />
+      </div>
+    </div>
+    <div class="form-grid" style="margin-top:14px;">
+      <div class="field">
+        <label for="readings">Readings in integer milliunits, one per line</label>
+        <textarea id="readings">12400
+13100
+11900
+520000
+12750
+malformed-line
+12300</textarea>
+        <span class="field-hint">One integer per line in thousandths of the unit. A reading of 12.4 is 12400. Non-numeric lines are counted as malformed.</span>
+      </div>
+    </div>
+    <div class="form-grid two" style="margin-top:14px;">
+      <div class="field">
+        <label for="rangeMin">Sensor valid range minimum, milliunits</label>
+        <input type="number" id="rangeMin" value="0" step="1" />
+      </div>
+      <div class="field">
+        <label for="rangeMax">Sensor valid range maximum, milliunits</label>
+        <input type="number" id="rangeMax" value="500000" step="1" />
+      </div>
+    </div>
+    <div class="form-grid two" style="margin-top:14px;">
+      <div class="field">
+        <label for="publishedMean">Published mean, milliunits</label>
+        <input type="number" id="publishedMean" value="12400" step="1" />
+      </div>
+      <div class="field">
+        <label for="toleranceMilli">Acceptable variance, milliunits</label>
+        <input type="number" id="toleranceMilli" value="100" min="0" step="1" />
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="calculate()">Check Plausibility →</button>
+
+  <div class="results-section" id="resultsSection">
+
+    <div class="verdict" id="verdict">
+      <div class="verdict-big" id="verdictBig">--</div>
+      <div class="verdict-sub" id="verdictSub">--</div>
+      <div class="gate-note" id="gateNote">--</div>
+      <div class="hash-line" id="hashLine">execution_hash: --</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detail</div>
+      <div class="row"><span class="row-label">Station identifier</span><span class="row-val" id="dStationId">--</span></div>
+      <div class="row"><span class="row-label">Metric</span><span class="row-val" id="dMetric">--</span></div>
+      <div class="row"><span class="row-label">Readings entered</span><span class="row-val" id="dReadingCount">--</span></div>
+      <div class="row"><span class="row-label">Malformed lines</span><span class="row-val" id="dMalformed">--</span></div>
+      <div class="row"><span class="row-label">In-range readings</span><span class="row-val" id="dInRange">--</span></div>
+      <div class="row"><span class="row-label">Out-of-range readings</span><span class="row-val" id="dOutOfRange">--</span></div>
+      <div class="row"><span class="row-label">Min reading (in-range)</span><span class="row-val" id="dMinReading">--</span></div>
+      <div class="row"><span class="row-label">Max reading (in-range)</span><span class="row-val" id="dMaxReading">--</span></div>
+      <div class="row"><span class="row-label">Computed mean</span><span class="row-val" id="dComputedMean">--</span></div>
+      <div class="row"><span class="row-label">Published mean</span><span class="row-val" id="dPublishedMean">--</span></div>
+      <div class="row"><span class="row-label">Mean delta</span><span class="row-val" id="dMeanDelta">--</span></div>
+      <div class="row"><span class="row-label">Tolerance</span><span class="row-val" id="dTolerance">--</span></div>
+      <div class="row"><span class="row-label">Mean matches</span><span class="row-val" id="dMeanMatches">--</span></div>
+      <div class="row"><span class="row-label">Has usable readings</span><span class="row-val" id="dHasUsable">--</span></div>
+      <div class="row"><span class="row-label">Plausibility status</span><span class="row-val" id="dPlausibility">--</span></div>
+      <div class="row"><span class="row-label">Flags</span><span class="row-val" id="dFlags">--</span></div>
+      <div class="row"><span class="row-label">Reading set key</span><span class="row-val" id="dReadingSetKey">--</span></div>
+
+      <!-- KEEP VERBATIM: export row. Markdown FIRST, Policy Mandate SECOND. -->
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+        <span class="ap2-hint">Policy Mandate v2.0 · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">what is this?</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- KEEP VERBATIM: mfst disclosure block -->
+  <button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+    <a href="../../about.html">About</a> · CC BY 4.0 · SC-26 · Data: readings entered as integer milliunits · no external data
+  </footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastInputs  = null;
+let _lastResults = null;
+
+/* KEEP VERBATIM: helpers */
+const $ = id => document.getElementById(id);
+
+/* Bundle-wide fingerprint helper (mutation detector, NOT a cryptographic digest) */
+function fingerprint(str){ var h=5381,s=String(str).toUpperCase(); for(var i=0;i<s.length;i++) h=((Math.imul(h,33)+s.charCodeAt(i))&0x7fffffff); return h; }
+
+/* ── CORE LOGIC: sensor reading plausibility ──────────────────────────────── */
+function calculate() {
+  const station_id = String($('stationId').value == null ? '' : $('stationId').value).trim();
+  const metric_label = String($('metricLabel').value == null ? '' : $('metricLabel').value).trim();
+
+  function intField(id, def) {
+    let n = parseInt($(id).value, 10);
+    if (!Number.isFinite(n)) n = def;
+    return n;
+  }
+
+  const range_min_milli = intField('rangeMin', 0);
+  const range_max_milli = intField('rangeMax', 500000);
+  const published_mean_milli = intField('publishedMean', 0);
+  let tolerance_milli = intField('toleranceMilli', 100);
+  if (tolerance_milli < 0) tolerance_milli = 0;
+
+  // Split readings on newlines, trim, drop empties; parse each with parseInt.
+  const rawLines = String($('readings').value == null ? '' : $('readings').value).split('\n');
+  const parsed = []; // numeric readings only
+  let malformed_count = 0;
+  for (let i = 0; i < rawLines.length; i++) {
+    const t = rawLines[i].trim();
+    if (t.length === 0) continue;
+    const v = parseInt(t, 10);
+    if (!Number.isFinite(v)) { malformed_count++; continue; }
+    parsed.push(v);
+  }
+
+  const reading_count = parsed.length;
+
+  const in_range = parsed.filter(function(v){ return v >= range_min_milli && v <= range_max_milli; });
+  const in_range_count = in_range.length;
+  const out_of_range_count = reading_count - in_range_count;
+
+  let sum_milli = 0;
+  for (let i = 0; i < in_range.length; i++) sum_milli += in_range[i];
+
+  const computed_mean_milli = in_range_count > 0 ? Math.floor(sum_milli / in_range_count) : 0;
+  const mean_delta_milli = published_mean_milli - computed_mean_milli;
+  const mean_matches = Math.abs(mean_delta_milli) <= tolerance_milli;
+
+  let min_reading_milli = 0, max_reading_milli = 0;
+  if (in_range_count > 0) {
+    min_reading_milli = in_range[0]; max_reading_milli = in_range[0];
+    for (let i = 1; i < in_range.length; i++) {
+      if (in_range[i] < min_reading_milli) min_reading_milli = in_range[i];
+      if (in_range[i] > max_reading_milli) max_reading_milli = in_range[i];
+    }
+  }
+
+  const has_usable_readings = (in_range_count > 0);
+  const plausibility_status = (has_usable_readings && mean_matches && out_of_range_count === 0 && malformed_count === 0)
+    ? 'plausible' : 'questionable';
+
+  let acc = fingerprint(station_id + '|' + metric_label);
+  for (let i = 0; i < parsed.length; i++) {
+    acc = fingerprint(acc + '|' + i + '|' + parsed[i]);
+  }
+  const reading_set_key = acc;
+
+  const flagList = [];
+  if (out_of_range_count > 0) flagList.push('out_of_range');
+  if (malformed_count > 0) flagList.push('malformed');
+  if (!mean_matches) flagList.push('mean_mismatch');
+  if (!has_usable_readings) flagList.push('no_readings');
+  const flags = flagList.length ? flagList.join(',') : 'none';
+
+  const outputs = {
+    station_id: station_id,
+    metric_label: metric_label,
+    reading_count: reading_count,
+    malformed_count: malformed_count,
+    in_range_count: in_range_count,
+    out_of_range_count: out_of_range_count,
+    min_reading_milli: min_reading_milli,
+    max_reading_milli: max_reading_milli,
+    computed_mean_milli: computed_mean_milli,
+    published_mean_milli: published_mean_milli,
+    mean_delta_milli: mean_delta_milli,
+    tolerance_milli: tolerance_milli,
+    mean_matches: mean_matches,
+    has_usable_readings: has_usable_readings,
+    plausibility_status: plausibility_status,
+    flags: flags,
+    reading_set_key: reading_set_key
+  };
+
+  _lastInputs  = { station_id, metric_label, range_min_milli, range_max_milli, published_mean_milli, tolerance_milli, parsed_readings: parsed };
+  _lastResults = outputs;
+
+  render();
+}
+
+/* Render results into the DOM, then compute and display execution_hash. */
+async function render() {
+  const o = _lastResults;
+
+  const verdictEl = $('verdict');
+  const plausible = (o.plausibility_status === 'plausible');
+  verdictEl.className = 'verdict ' + (plausible ? 'ok' : 'no');
+  $('verdictBig').textContent = plausible ? '✓ Published figure reproduces' : '✗ Published figure questionable';
+
+  const dispPublished = (o.published_mean_milli / 1000).toFixed(3);
+  const dispComputed = (o.computed_mean_milli / 1000).toFixed(3);
+
+  if (plausible) {
+    $('verdictSub').textContent = 'Published mean ' + dispPublished + ' vs. recomputed mean ' + dispComputed + ' (same display units) — within tolerance.';
+  } else {
+    const parts = [];
+    if (o.flags.indexOf('no_readings') !== -1) parts.push('no in-range readings to average');
+    if (o.flags.indexOf('out_of_range') !== -1) parts.push(o.out_of_range_count + ' reading(s) outside the sensor\'s valid range');
+    if (o.flags.indexOf('malformed') !== -1) parts.push(o.malformed_count + ' malformed line(s)');
+    if (o.flags.indexOf('mean_mismatch') !== -1) parts.push('published mean ' + dispPublished + ' vs. recomputed ' + dispComputed + ' exceeds tolerance');
+    $('verdictSub').textContent = parts.join('; ') + '.';
+  }
+
+  $('gateNote').textContent = 'Add one reading far outside the range and re-run: watch the out-of-range count and the status change while the in-range mean holds.';
+
+  $('dStationId').textContent = o.station_id || '(none)';
+  $('dMetric').textContent = o.metric_label || '(none)';
+  $('dReadingCount').textContent = o.reading_count;
+  $('dMalformed').textContent = o.malformed_count;
+  $('dInRange').textContent = o.in_range_count;
+  const oor = $('dOutOfRange'); oor.textContent = o.out_of_range_count; oor.className = 'row-val ' + (o.out_of_range_count === 0 ? 'green' : 'red');
+  $('dMinReading').textContent = o.min_reading_milli;
+  $('dMaxReading').textContent = o.max_reading_milli;
+  $('dComputedMean').textContent = o.computed_mean_milli + ' (' + dispComputed + ')';
+  $('dPublishedMean').textContent = o.published_mean_milli + ' (' + dispPublished + ')';
+  $('dMeanDelta').textContent = o.mean_delta_milli;
+  $('dTolerance').textContent = o.tolerance_milli;
+  const mm = $('dMeanMatches'); mm.textContent = o.mean_matches ? 'Yes' : 'No'; mm.className = 'row-val ' + (o.mean_matches ? 'green' : 'red');
+  const hu = $('dHasUsable'); hu.textContent = o.has_usable_readings ? 'Yes' : 'No'; hu.className = 'row-val ' + (o.has_usable_readings ? 'green' : 'red');
+  $('dPlausibility').textContent = o.plausibility_status;
+  $('dFlags').textContent = o.flags;
+  $('dReadingSetKey').textContent = o.reading_set_key;
+
+  $('resultsSection').classList.add('visible');
+  $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    const pp = { execution_backend: 'js', hash_precision: 'integer_checksum', inputs: _lastInputs };
+    const h = await apexHash(pp, o);
+    $('hashLine').textContent = 'execution_hash: ' + h;
+  } catch (_e) {
+    $('hashLine').textContent = 'execution_hash: (unavailable in this browser)';
+  }
+}
+
+/* ── EXPORT: MARKDOWN ──────────────────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastResults) return;
+  const o = _lastResults;
+  const d = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines = [
+    '# Sensor Reading Plausibility Results',
+    `\n_Generated ${d} · SC-26 · apexlogics.org_\n`,
+    '## Result',
+    '| Field | Value |', '|---|---|',
+    `| Station identifier | ${o.station_id || '(none)'} |`,
+    `| Metric | ${o.metric_label || '(none)'} |`,
+    `| Readings entered | ${o.reading_count} |`,
+    `| Malformed lines | ${o.malformed_count} |`,
+    `| In-range readings | ${o.in_range_count} |`,
+    `| Out-of-range readings | ${o.out_of_range_count} |`,
+    `| Min reading (milliunits) | ${o.min_reading_milli} |`,
+    `| Max reading (milliunits) | ${o.max_reading_milli} |`,
+    `| Computed mean (milliunits) | ${o.computed_mean_milli} |`,
+    `| Published mean (milliunits) | ${o.published_mean_milli} |`,
+    `| Mean delta (milliunits) | ${o.mean_delta_milli} |`,
+    `| Tolerance (milliunits) | ${o.tolerance_milli} |`,
+    `| Mean matches | ${o.mean_matches ? 'Yes' : 'No'} |`,
+    `| Has usable readings | ${o.has_usable_readings ? 'Yes' : 'No'} |`,
+    `| Plausibility status | ${o.plausibility_status} |`,
+    `| Flags | ${o.flags} |`,
+    `| Reading set key | ${o.reading_set_key} |`,
+    '\n---',
+    '_Source: readings entered as integer milliunits, no external data. Checks arithmetic and range only. ApexLogics Showcase · apexlogics.org_'
+  ];
+  dlFile('sensor-reading-plausibility.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────────── */
+/* The ORDER of the steps below is non-negotiable. Edit field VALUES only. */
+async function exportAP2() {
+  if (!_lastInputs || !_lastResults) return;
+  const i = _lastInputs, o = _lastResults;
+
+  /* STEP 1: domain payload */
+  const payload = {
+    mandate_type: "sensor_reading_plausibility_record",
+    generated_at: new Date().toISOString(),
+    al_id: "SC-26",
+    tool_id: "sc26-sensor-reading-plausibility",
+    tool_name: "Sensor Reading Plausibility",
+    inputs: {
+      station_id: i.station_id,
+      metric_label: i.metric_label,
+      range_min_milli: i.range_min_milli,
+      range_max_milli: i.range_max_milli,
+      published_mean_milli: i.published_mean_milli,
+      tolerance_milli: i.tolerance_milli,
+      parsed_readings: i.parsed_readings
+    },
+    outputs: {
+      station_id: o.station_id,
+      metric_label: o.metric_label,
+      reading_count: o.reading_count,
+      malformed_count: o.malformed_count,
+      in_range_count: o.in_range_count,
+      out_of_range_count: o.out_of_range_count,
+      min_reading_milli: o.min_reading_milli,
+      max_reading_milli: o.max_reading_milli,
+      computed_mean_milli: o.computed_mean_milli,
+      published_mean_milli: o.published_mean_milli,
+      mean_delta_milli: o.mean_delta_milli,
+      tolerance_milli: o.tolerance_milli,
+      mean_matches: o.mean_matches,
+      has_usable_readings: o.has_usable_readings,
+      plausibility_status: o.plausibility_status,
+      flags: o.flags,
+      reading_set_key: o.reading_set_key
+    },
+    downstream_handoff_candidates: ["sc26-sensor-reading-plausibility"],
+    data_sources: [
+      "Readings entered as integer milliunits. No external data."
+    ],
+    license: "CC-BY-4.0"
+  };
+
+  /* STEP 2, KEEP VERBATIM: OpenChainGraph L1 + L2 (parent capture via ?ap2=) */
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/sensor_reading_plausibility";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "SC-26";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  /* STEP 3, KEEP VERBATIM: build _cgDomain by excluding envelope keys */
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "integer_checksum", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  /* STEP 4, KEEP VERBATIM: canonical execution hash */
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  /* STEP 5, KEEP VERBATIM: OCG v0.4 envelope fields (hash-excluded, additive) */
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* STEP 6, SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  /* STEP 7, KEEP VERBATIM: relocate non-allowed keys into hash-excluded apex_meta */
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  /* STEP 8, validate the SNAPSHOT, then and only then create the object URL. */
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  const valid = ['sensor_reading_plausibility_record'];
+  if (!valid.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`SC-26_sensor-reading-plausibility_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+/* ── KEEP VERBATIM: apexHash, CHAINGRAPH §6 EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* MANIFEST, mirrors manifest.json in substance */
+const MANIFEST = {
+  "_canonical_filename": "SC-26_sensor-reading-plausibility.manifest.json",
+  "tool_id": "sc26-sensor-reading-plausibility",
+  "al_id": "SC-26",
+  "version": "1.0.0",
+  "title": "Sensor Reading Plausibility",
+  "description": "Given a set of sensor readings in integer milliunits, a valid range, a published mean, and a tolerance, recomputes the mean over in-range readings, counts out-of-range and malformed entries, and checks the published figure against the recomputation. Deterministic, zero external data. Policy Mandate v2.0: sensor_reading_plausibility_record.",
+  "category": "showcase",
+  "cluster": "physical-installations",
+  "journeys": [],
+  "personas": ["municipal environmental team", "resident advocate"],
+  "tags": ["showcase","environmental","sensor-data","plausibility-check","hash-verifiable"],
+  "status": "showcase",
+  "maintenance": "zero",
+  "data_vintage": "readings entered as integer milliunits · no external data",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["sensor_reading_plausibility_record"],
+  "downstream_handoff_candidates": ["sc26-sensor-reading-plausibility"],
+  "regulatory_citations": ["no external data"],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "station_id":           { "type": "string" },
+      "metric_label":         { "type": "string" },
+      "readings":             { "type": "string" },
+      "range_min_milli":      { "type": "integer" },
+      "range_max_milli":      { "type": "integer" },
+      "published_mean_milli": { "type": "integer" },
+      "tolerance_milli":      { "type": "integer" }
+    },
+    "required": ["station_id","metric_label","readings"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "station_id":            { "type": "string" },
+      "metric_label":          { "type": "string" },
+      "reading_count":         { "type": "integer" },
+      "malformed_count":       { "type": "integer" },
+      "in_range_count":        { "type": "integer" },
+      "out_of_range_count":    { "type": "integer" },
+      "min_reading_milli":     { "type": "integer" },
+      "max_reading_milli":     { "type": "integer" },
+      "computed_mean_milli":   { "type": "integer" },
+      "published_mean_milli":  { "type": "integer" },
+      "mean_delta_milli":      { "type": "integer" },
+      "tolerance_milli":       { "type": "integer" },
+      "mean_matches":          { "type": "boolean" },
+      "has_usable_readings":   { "type": "boolean" },
+      "plausibility_status":   { "type": "string", "enum": ["plausible","questionable"] },
+      "flags":                 { "type": "string" },
+      "reading_set_key":       { "type": "integer" }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "sensor_reading_plausibility",
+    "description": "Given sensor readings in integer milliunits, a valid range, a published mean, and a tolerance, recomputes the in-range mean, counts out-of-range and malformed readings, and checks the published figure against it. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "station_id":           { "type": "string" },
+        "metric_label":         { "type": "string" },
+        "readings":             { "type": "string" },
+        "range_min_milli":      { "type": "integer" },
+        "range_max_milli":      { "type": "integer" },
+        "published_mean_milli": { "type": "integer" },
+        "tolerance_milli":      { "type": "integer" }
+      },
+      "required": ["station_id","metric_label","readings"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://postoaklabs.com",
+  "license": "CC-BY-4.0"
+};
+
+/* KEEP VERBATIM: MCP / MANIFEST TOGGLE */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+</script>
+</body>
+</html>
