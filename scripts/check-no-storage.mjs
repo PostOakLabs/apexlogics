@@ -22,14 +22,15 @@
  * Usage: node scripts/check-no-storage.mjs
  * Exit 0 = clean. Exit 1 = one or more violations (path:line + matched API printed).
  */
-import { readFileSync } from 'fs';
-import { resolve, dirname, relative } from 'path';
+import { readFileSync, readdirSync, statSync } from 'fs';
+import { resolve, dirname, relative, join } from 'path';
 import { fileURLToPath } from 'url';
-import { globSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
+// fs.globSync is Node 22+; CI pins Node 20 (see .github/workflows/deploy.yml), so these
+// simple one-level patterns are matched by hand instead of relying on that API.
 const GLOBS = [
   'tools/*/index.html',
   'showcase/*/index.html',
@@ -38,6 +39,48 @@ const GLOBS = [
   'guides/*/index.html',
   '*.html',
 ];
+
+function expandGlob(pattern) {
+  const [dirPart, filePart] = pattern.includes('/')
+    ? [pattern.slice(0, pattern.lastIndexOf('/')), pattern.slice(pattern.lastIndexOf('/') + 1)]
+    : ['', pattern];
+
+  if (dirPart.includes('*')) {
+    // 'tools/*/index.html' — dirPart is 'tools/*', enumerate subdirectories
+    const baseDir = dirPart.slice(0, dirPart.indexOf('*'));
+    const baseAbs = resolve(ROOT, baseDir);
+    let entries;
+    try {
+      entries = readdirSync(baseAbs);
+    } catch {
+      return [];
+    }
+    return entries
+      .filter(name => statSync(join(baseAbs, name)).isDirectory())
+      .map(name => join(baseDir, name, filePart))
+      .filter(p => {
+        try {
+          return statSync(resolve(ROOT, p)).isFile();
+        } catch {
+          return false;
+        }
+      });
+  }
+
+  // 'chaingraph/*.html' or '*.html' — dirPart has no wildcard, filePart is '*.html'
+  const baseAbs = resolve(ROOT, dirPart || '.');
+  let entries;
+  try {
+    entries = readdirSync(baseAbs);
+  } catch {
+    return [];
+  }
+  const suffix = filePart.replace('*', '');
+  return entries
+    .filter(name => name.endsWith(suffix) && name !== suffix)
+    .filter(name => statSync(join(baseAbs, name)).isFile())
+    .map(name => join(dirPart, name));
+}
 
 // Requires property/bracket/call access, not a bare word — "no sessionStorage" in a privacy
 // disclosure sentence, or `storage:"sessionStorage:ain_lang only"` in a manifest string, must
@@ -119,7 +162,7 @@ function scanFile(absPath) {
 
 let allHits = [];
 for (const pattern of GLOBS) {
-  const files = globSync(pattern, { cwd: ROOT });
+  const files = expandGlob(pattern);
   for (const f of files) {
     allHits.push(...scanFile(resolve(ROOT, f)));
   }
