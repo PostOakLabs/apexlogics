@@ -8,7 +8,7 @@
 [![Client-side only](https://img.shields.io/badge/execution-client--side%20only-blue.svg)](#architecture)
 
 > Deterministic, rule-based, browser-only engines for career ROI, education finance, compensation analysis, licensing, immigration, and workforce development. Sister suite: [AINumbers.co](https://ainumbers.co) (markets & institutions).  
-> Built by [Post Oak Labs](https://postoaklabs.com) · [Post Oak Labs](https://postoaklabs.com) · Live at [apexlogics.org](https://apexlogics.org)
+> Built by [Post Oak Labs](https://postoaklabs.com) · Live at [apexlogics.org](https://apexlogics.org)
 
 ---
 
@@ -83,6 +83,16 @@ Server source: [`apexlogics-mcp-worker`](https://github.com/PostOakLabs/apexlogi
 
 ---
 
+## Verifiable artifacts
+
+Deterministic isn't a claim you have to take on trust here. Every tool emits a typed Policy Mandate carrying a verifiable `execution_hash` and a chain block, indexed in [`chaingraph/chaingraph.json`](chaingraph/chaingraph.json) — 151 tool nodes, 42 chains, and 13 persona journeys with verified artifact pass-through. Recompute the hash from the same inputs and you get the same value, or you learn the answer moved.
+
+**17 of those nodes go further and carry real zero-knowledge compute proofs** (risc0, `groth16-bn254` receipts), which prove the calculation itself ran as specified rather than merely hashing whatever it produced. A further 12 are proof-ready and awaiting a prover pass.
+
+The artifact format is [OpenChainGraph](https://github.com/PostOakLabs/chaingraph), the open standard shared with [AINumbers.co](https://github.com/PostOakLabs/ainumbers) and [OmegaCentauri.me](https://github.com/PostOakLabs/OCS). Receipts verify in your own CI with [`ocg-verify-action`](https://github.com/PostOakLabs/ocg-verify-action) — zero dependencies, no call back to us. Browse the graph at [`chaingraph/chaingraph-hub.html`](chaingraph/chaingraph-hub.html).
+
+---
+
 ## Technical Specifications
 
 | Item | Detail |
@@ -123,8 +133,8 @@ Required GitHub Secrets: `DH_SSH_KEY`, `DH_SSH_USER`, `DH_SSH_HOST`, `DH_WEB_ROO
 
 - [Live Suite](https://apexlogics.org)
 - [Post Oak Labs](https://postoaklabs.com)
-- [Post Oak Labs](https://postoaklabs.com)
 - [Sister suite: AINumbers.co](https://ainumbers.co)
+- [OpenChainGraph standard](https://github.com/PostOakLabs/chaingraph)
 
 ---
 
