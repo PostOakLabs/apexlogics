@@ -26,6 +26,36 @@ import re
 import sys
 import argparse
 
+# --- Windows console safety (AL-RECORDFIX, 2026-08-22) -----------------------
+# This script prints U+2713 / U+2717 / U+26A0 status marks. On a Windows console
+# stdout defaults to cp1252, which cannot encode them, so every clean run died
+# with UnicodeEncodeError *after* doing all its work. CI (UTF-8) never saw it.
+# Force UTF-8 where the runtime allows it; degrade to ASCII marks where it does
+# not. Either way the script must never crash on its own output.
+_ASCII_FALLBACK = False
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except (AttributeError, ValueError, OSError):  # pragma: no cover
+    _ASCII_FALLBACK = True
+
+
+def _mark(glyph, plain):
+    """Return glyph if the active stdout encoding can render it, else plain."""
+    if _ASCII_FALLBACK:
+        return plain
+    try:
+        glyph.encode(sys.stdout.encoding or "utf-8")
+    except (UnicodeEncodeError, LookupError):
+        return plain
+    return glyph
+
+
+OK_MARK = _mark("✓", "OK")
+BAD_MARK = _mark("✗", "X")
+WARN_MARK = _mark("⚠", "!")
+DASH = _mark("—", "--")
+
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOLS_DIR = os.path.join(REPO_ROOT, "tools")
 INDEX_PATH = os.path.join(REPO_ROOT, "tools.html")
@@ -52,7 +82,7 @@ def main():
         for v in ["ANSI_RED", "ANSI_GREEN", "ANSI_YELLOW", "ANSI_BOLD", "ANSI_RESET"]:
             globals()[v] = ""
 
-    print(f"{ANSI_BOLD}Apex Logics — tools.html sync check{ANSI_RESET}")
+    print(f"{ANSI_BOLD}Apex Logics {DASH} tools.html sync check{ANSI_RESET}")
     print(f"Tools dir : {TOOLS_DIR}")
     print(f"Index file: {INDEX_PATH}\n")
 
@@ -90,23 +120,23 @@ def main():
     print(f"  Cards in index  : {len(referenced_hrefs)}")
 
     if dead_links:
-        print(f"\n{ANSI_RED}{ANSI_BOLD}  ✗ Dead links in index.html ({len(dead_links)}) — dir not on disk:{ANSI_RESET}")
+        print(f"\n{ANSI_RED}{ANSI_BOLD}  {BAD_MARK} Dead links in index.html ({len(dead_links)}) — dir not on disk:{ANSI_RESET}")
         for s in dead_links:
             print(f"    tools/{s}/index.html")
     else:
-        print(f"\n{ANSI_GREEN}  ✓ No dead links in index.html{ANSI_RESET}")
+        print(f"\n{ANSI_GREEN}  {OK_MARK} No dead links in index.html{ANSI_RESET}")
 
     if unintentional:
-        print(f"\n{ANSI_RED}{ANSI_BOLD}  ✗ Tools missing from index.html ({len(unintentional)}):{ANSI_RESET}")
+        print(f"\n{ANSI_RED}{ANSI_BOLD}  {BAD_MARK} Tools missing from index.html ({len(unintentional)}):{ANSI_RESET}")
         for s in unintentional:
             print(f"    tools/{s}/index.html")
         print(f"\n  Add a card for each missing tool, or add its slug to")
         print(f"  INTENTIONAL_OMISSIONS in scripts/check_index_sync.py.")
     else:
-        print(f"{ANSI_GREEN}  ✓ All tools are represented on the homepage{ANSI_RESET}")
+        print(f"{ANSI_GREEN}  {OK_MARK} All tools are represented on the homepage{ANSI_RESET}")
 
     if intentional:
-        print(f"\n{ANSI_YELLOW}  ⚠ Intentionally omitted ({len(intentional)}):{ANSI_RESET}")
+        print(f"\n{ANSI_YELLOW}  {WARN_MARK} Intentionally omitted ({len(intentional)}):{ANSI_RESET}")
         for s in intentional:
             print(f"    tools/{s}/index.html")
 
