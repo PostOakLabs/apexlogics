@@ -178,6 +178,29 @@ jobs:
 
           echo "✅ rsync completed successfully."
 
+      - name: 🧹 Purge Cloudflare edge cache (AL-CDNPURGE)
+        # Without this, CF serves stale edge copies for up to Cache-Control
+        # max-age (4h) after every deploy — real users see old pages, and a
+        # cached HIT can also mask a broken deploy behind old-but-fine content.
+        # Requires CF_API_TOKEN + CF_ZONE_ID repo secrets (not yet provisioned
+        # as of 2026-08-22 — flagged to Tim, AL-CDNPURGE). Skips gracefully
+        # (non-blocking) until they exist so this lands without a red gate.
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
+        run: |
+          if [ -z "$CF_API_TOKEN" ] || [ -z "$CF_ZONE_ID" ]; then
+            echo "::warning::CF_API_TOKEN/CF_ZONE_ID not set — edge cache NOT purged. Real users may see stale pages until Cache-Control max-age expires (AL-CDNPURGE, needs Cloudflare API token from Tim)."
+            exit 0
+          fi
+          RESP=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
+            -H "Authorization: Bearer $CF_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}')
+          echo "$RESP"
+          echo "$RESP" | grep -q '"success":true' || { echo "::error::Cloudflare purge failed: $RESP"; exit 1; }
+          echo "✅ Cloudflare edge cache purged."
+
       - name: 🌐 Smoke test — homepage responds
         # A lightweight check that the site root returns HTTP 200 after deploy.
         # Set DH_SITE_URL secret to your domain: https://apexlogics.org
