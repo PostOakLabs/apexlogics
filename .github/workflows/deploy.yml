@@ -155,14 +155,32 @@ jobs:
           fetch-depth: 1
 
       - name: 🔐 Setup SSH Key & Host
+        # AL-DEPLOY-HARDEN (P2-7): host-key pinning is opt-in via the
+        # DH_HOST_KEY secret (paste the output of
+        # `ssh-keyscan -H <DH_SSH_HOST>` run from a trusted machine).
+        # Until Tim provisions it, this falls back to trust-on-first-use
+        # (StrictHostKeyChecking=no) exactly as before — MITM-exposed but
+        # not a regression. Once the secret exists, verification flips to
+        # strict automatically, no code change needed.
         env:
           SSH_PRIVATE_KEY: ${{ secrets.DH_SSH_KEY }}
+          DH_HOST_KEY: ${{ secrets.DH_HOST_KEY }}
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
           # Write key via env var (preserves newlines reliably)
           printf '%s\n' "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.DH_SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          if [ -n "$DH_HOST_KEY" ]; then
+            printf '%s\n' "$DH_HOST_KEY" >> ~/.ssh/known_hosts
+            echo "STRICT_HOST_KEY_CHECKING=yes" >> "$GITHUB_ENV"
+            echo "🔒 DH_HOST_KEY present — StrictHostKeyChecking=yes"
+          else
+            ssh-keyscan -H ${{ secrets.DH_SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+            echo "STRICT_HOST_KEY_CHECKING=no" >> "$GITHUB_ENV"
+            echo "::warning::DH_HOST_KEY secret not set — using trust-on-first-use (no MITM protection). See AL-DEPLOY-HARDEN for the value to paste."
+          fi
 
           # Verification (safe — does not expose key content)
           echo "Key header : $(head -1 ~/.ssh/deploy_key)"
@@ -175,10 +193,11 @@ jobs:
         # briefly unreachable (connection timeout). Hard-fails only if all
         # attempts exhaust, preventing rsync --delete against a bad target.
         run: |
+          set -euo pipefail
           for attempt in 1 2 3; do
             if ssh -i ~/.ssh/deploy_key \
                 -o IdentitiesOnly=yes \
-                -o StrictHostKeyChecking=no \
+                -o StrictHostKeyChecking=$STRICT_HOST_KEY_CHECKING \
                 -o BatchMode=yes \
                 -o ConnectTimeout=15 \
                 ${{ secrets.DH_SSH_USER }}@${{ secrets.DH_SSH_HOST }} "echo '✅ SSH connection confirmed'"; then
@@ -194,8 +213,9 @@ jobs:
 
       - name: 🔍 Dry-run rsync (shows what will change — no writes)
         run: |
+          set -euo pipefail
           rsync -avz --delete --dry-run --omit-dir-times \
-            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o ConnectTimeout=15" \
+            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=$STRICT_HOST_KEY_CHECKING -o ConnectTimeout=15" \
             --exclude='.git/' \
             --exclude='.github/' \
             --exclude='.gitattributes' \
@@ -210,8 +230,9 @@ jobs:
 
       - name: 🚀 Sync to DreamHost via rsync
         run: |
+          set -euo pipefail
           rsync -avz --delete --omit-dir-times \
-            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o ConnectTimeout=15" \
+            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=$STRICT_HOST_KEY_CHECKING -o ConnectTimeout=15" \
             --exclude='.git/' \
             --exclude='.github/' \
             --exclude='.gitattributes' \
@@ -250,20 +271,24 @@ jobs:
           echo "✅ Cloudflare edge cache purged."
 
       - name: 🌐 Smoke test — homepage responds
-        # A lightweight check that the site root returns HTTP 200 after deploy.
+        # Blocking the moment DH_SITE_URL exists (AL-DEPLOY-HARDEN, ORCH
+        # correction 2026-08-29 confirmed the secret IS set). Follows
+        # redirects (-L) and requires the FINAL response to be 200 — a bare
+        # 301/302 used to pass even when it pointed at a parked/error page.
         # Set DH_SITE_URL secret to your domain: https://apexlogics.org
         run: |
+          set -euo pipefail
           if [ -z "${{ secrets.DH_SITE_URL }}" ]; then
             echo "ℹ️  DH_SITE_URL secret not set — skipping smoke test"
             echo "   Add it in GitHub → Settings → Secrets → Actions"
             exit 0
           fi
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+          HTTP_CODE=$(curl -sL -o /dev/null -w "%{http_code}" \
             --max-time 15 "${{ secrets.DH_SITE_URL }}")
-          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
-            echo "✅ Site responded with HTTP $HTTP_CODE"
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Site responded with HTTP $HTTP_CODE (following redirects)"
           else
-            echo "❌ Site returned HTTP $HTTP_CODE — deploy may have failed"
+            echo "❌ Site returned final HTTP $HTTP_CODE after redirects — deploy may have failed"
             exit 1
           fi
 
