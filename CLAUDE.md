@@ -56,7 +56,7 @@ git push -u origin <branch>    # then open PR; CI auto-merges + deploys
 ```
 repo/
 ├── index.html              # Curated landing page (hero, topic tiles, 8 featured cards) — NOT the catalog (AL-HOMESPLIT)
-├── tools.html              # Full tool catalog — all 167 cards, filter/search/persona UI. "Hub cards" for CG-23 means this file now.
+├── tools.html              # Full tool catalog — all 168 cards, filter/search/persona UI. "Hub cards" for CG-23 means this file now.
 ├── suite-registry.json     # MCP registry — authoritative tool/count source; grep don't read whole
 ├── llms.txt                # Agent index — tools, workflows, guides, mandate types
 ├── sitemap.xml             # All URLs
