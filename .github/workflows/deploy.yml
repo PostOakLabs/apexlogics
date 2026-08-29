@@ -19,7 +19,10 @@ jobs:
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          # Full history (not shallow) — the sitemap lastmod gate below runs
+          # `git log` per file and needs real commit dates, not the shallow
+          # boundary commit (AL-SITEMAP-LASTMOD).
+          fetch-depth: 0
 
       - name: 🟢 Setup Node
         uses: actions/setup-node@v4
@@ -97,6 +100,15 @@ jobs:
         # repo's live raw file so the two can't silently re-split again.
         # Skips (non-blocking) if the worker repo can't be fetched.
         run: node scripts/check-chaingraph-parity.mjs
+
+      - name: 🗺️ Sitemap lastmod gate (AL-SITEMAP-LASTMOD — blocking)
+        # Fails the build if sitemap.xml's <lastmod> values don't match each
+        # URL's mapped file's real last-commit date. No baseline, no exception
+        # list. Run with --fix locally to self-heal. Needs full git history
+        # (see fetch-depth: 0 above) — a shallow clone would silently produce
+        # wrong dates rather than failing loudly, so the script itself checks
+        # for .git/shallow and errors out instead of trusting bad input.
+        run: node scripts/gen-sitemap.mjs
 
       - name: 🔍 Index sync — verify all tools are in the catalog
         # Fails the build if any tool subdir in tools/ has no card in tools.html
