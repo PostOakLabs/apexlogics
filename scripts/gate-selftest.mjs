@@ -90,6 +90,33 @@ const tmp = mkdtempSync(join(tmpdir(), 'apex-gate-selftest-'));
   assertRed('hash-freeze (tampered golden execution_hash)', wentRed(join(work, 'scripts', 'hash-freeze.mjs')));
 }
 
+// ── 5. check-constants-vintage: SSOT mismatch AND declared-vs-embedded vintage mismatch ──
+{
+  const work = join(tmp, 'vintage');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'data'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-ssot-mismatch'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-vintage-mismatch'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-constants-vintage.mjs'), join(work, 'scripts', 'check-constants-vintage.mjs'));
+  cpSync(join(REPO, 'data', 'apex-constants-2026.js'), join(work, 'data', 'apex-constants-2026.js'));
+
+  // (a) SSOT mismatch: SS_WAGE_BASE stale at the 2024 value, declared vintage says 2026.
+  writeFileSync(join(work, 'tools', 'zz-ssot-mismatch', 'index.html'),
+    '<script>\nconst SS_WAGE_BASE = 168600; // stale\n</script>\n');
+  writeFileSync(join(work, 'tools', 'zz-ssot-mismatch', 'manifest.json'),
+    JSON.stringify({ data_vintage: 'SSA 2026 wage base $184,500' }));
+
+  // (b) declared-vs-embedded vintage mismatch: standard deduction is a real 2026 value, but
+  // the declaration names 2024/2025 — same shape as the AL-CI-VINTAGE `08` defect.
+  writeFileSync(join(work, 'tools', 'zz-vintage-mismatch', 'index.html'),
+    '<script>\nconst STD_DEDUCTION = { single: 16100, mfj: 32200, hoh: 24150 };\n</script>\n');
+  writeFileSync(join(work, 'tools', 'zz-vintage-mismatch', 'manifest.json'),
+    JSON.stringify({ data_vintage: 'IRS Rev. Proc. 2025-32 (2024 standard deduction)' }));
+
+  assertRed('check-constants-vintage (SSOT + declared-vintage mismatch fixtures)',
+    wentRed(join(work, 'scripts', 'check-constants-vintage.mjs')));
+}
+
 rmSync(tmp, { recursive: true, force: true });
 
 console.log(fails ? `\n✗ gate-selftest: ${fails} gate(s) have no teeth.` : '\n✓ gate-selftest: every gate goes red on a broken fixture.');
