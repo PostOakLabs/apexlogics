@@ -77,6 +77,51 @@ const tmp = mkdtempSync(join(tmpdir(), 'apex-gate-selftest-'));
   assertRed('hash-lint (planted array-replacer + sha256: prefix)', wentRed(join(work, 'scripts', 'hash-lint.mjs')));
 }
 
+// ── 3b. hash-domain-lint: plant a clock-derived value inside the hash domain ────
+{
+  const work = join(tmp, 'domainlint');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-tamper'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'hash-domain-lint.mjs'), join(work, 'scripts', 'hash-domain-lint.mjs'));
+  // Same shape as the real A-1/A-2 defect: a value derived from new Date().getFullYear()
+  // lands on a key that is NOT in the _cgDomain exclusion list.
+  writeFileSync(join(work, 'tools', 'zz-tamper', 'index.html'), `<script>
+const currentYear = new Date().getFullYear();
+const forgiveYear = currentYear + 5;
+function build() {
+  const payload = {};
+  payload.tool_id = "zz";
+  payload.generated_at = new Date().toISOString();
+  payload.pslf_forgive_year = forgiveYear;
+  const _cgDomain = {}; for (const _k in payload) { if (["generated_at","tool_id"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.execution_hash = "x";
+}
+</script>\n`);
+  assertRed('hash-domain-lint (planted clock-derived hash-domain key)', wentRed(join(work, 'scripts', 'hash-domain-lint.mjs')));
+}
+
+// ── 3c. chain-coherence-check: two chained tools disagree on a shared constant ──
+{
+  const work = join(tmp, 'chaincoh');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'chaingraph'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-aa'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-bb'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'chain-coherence-check.mjs'), join(work, 'scripts', 'chain-coherence-check.mjs'));
+  writeFileSync(join(work, 'suite-registry.json'), JSON.stringify({
+    tools: [{ al_id: 'AL-01', tool_id: 'zz-aa' }, { al_id: 'AL-02', tool_id: 'zz-bb' }],
+  }));
+  writeFileSync(join(work, 'chaingraph', 'chaingraph.json'), JSON.stringify({
+    journeys: [{ id: 'zz-chain', nodes: ['AL-01', 'AL-02'] }],
+  }));
+  writeFileSync(join(work, 'tools', 'zz-aa', 'index.html'),
+    '<script>const STD_DEDUCTION = { single: 16100, mfj: 32200 };</script>\n');
+  writeFileSync(join(work, 'tools', 'zz-bb', 'index.html'),
+    '<script>const STD_DEDUCTION = { single: 14600, mfj: 29200 };</script>\n'); // stale 2024 value
+  assertRed('chain-coherence-check (two chained tools disagree on STD_DEDUCTION)',
+    wentRed(join(work, 'scripts', 'chain-coherence-check.mjs')));
+}
+
 // ── 4. hash-freeze: tamper a golden's execution_hash ────────────────────────
 {
   const work = join(tmp, 'freeze');

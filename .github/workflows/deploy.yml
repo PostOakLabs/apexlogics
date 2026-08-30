@@ -44,6 +44,23 @@ jobs:
       - name: 🔗 CG gate — tool-level hash-freeze (golden hashes recompute vs SSOT canon)
         run: node scripts/hash-freeze.mjs
 
+      - name: 🔗 CG gate — hash-domain determinism (G1, AL-CI-HASHDOMAIN — blocking)
+        # Fails the build if any key entering a tool's hash preimage (either the
+        # `_cgDomain` subtraction pattern or the explicit apexHash(argA, argB) pattern)
+        # traces to new Date()/Date.now()/Math.random()/crypto.randomUUID()/performance.now().
+        # Root-caused by 101-rap-vs-standard-decision-engine and
+        # 22-student-loan-repayment-optimizer both hashing a PSLF forgiveness year derived
+        # from the live clock — same inputs, different execution_hash across every Jan-1
+        # boundary. No baseline, no exception list.
+        run: node scripts/hash-domain-lint.mjs
+
+      - name: 🔗 CG gate — chain coherence (G3, AL-CI-HASHDOMAIN — blocking)
+        # Fails the build if two tools in the same chaingraph chain both embed the same
+        # numeric shared constant (a tax bracket, SS wage base, AMT exemption, etc.) at
+        # disagreeing values — a chain whose step 2 computes on one year's numbers and
+        # step 4 on another's, silently. No baseline, no exception list.
+        run: node scripts/chain-coherence-check.mjs
+
       - name: 🔗 CG gate — selftest (each gate must go red on a broken fixture)
         run: node scripts/gate-selftest.mjs
 
