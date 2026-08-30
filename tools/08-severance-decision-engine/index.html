@@ -1302,22 +1302,22 @@ function updatePreview() {
    TAX ENGINE
    ============================================================
 
-   2024 IRS Publication 15-T Standard Withholding Method.
-   Standard deduction equivalents (2024):
-     Single: $14,600
-     MFJ:    $29,200
-     HOH:    $21,900
+   2026 IRS Publication 15-T Standard Withholding Method.
+   Standard deduction equivalents (2026, IRS Rev. Proc. 2025-32):
+     Single: $16,100
+     MFJ:    $32,200
+     HOH:    $24,150
 
-   Bracket tables:
-     Single / HOH — same brackets per IRS Pub 15-T 2024 Percentage Method
+   Bracket tables (2026, IRS Rev. Proc. 2025-32; apex-constants-2026.js FED_BRACKETS):
+     Single / HOH — same brackets per IRS Pub 15-T Percentage Method
      MFJ           — see below
    ============================================================ */
 
-/* Standard deductions 2024 — IRS Pub 15-T, Table for Percentage Method */
-const STD_DEDUCTION = { single: 14600, mfj: 29200, hoh: 21900 };
+/* Standard deductions 2026 — IRS Rev. Proc. 2025-32 (apex-constants-2026.js STD_DEDUCTION) */
+const STD_DEDUCTION = { single: 16100, mfj: 32200, hoh: 24150 };
 
 /**
- * Compute federal income tax via 2024 IRS Pub 15-T bracket table.
+ * Compute federal income tax via 2026 IRS Pub 15-T bracket table.
  * Used only for SALARY CONTINUATION path (regular wage withholding).
  *
  * @param {number} annualTaxable — taxable income (gross minus std deduction)
@@ -1327,37 +1327,38 @@ const STD_DEDUCTION = { single: 14600, mfj: 29200, hoh: 21900 };
 function computeBracketTax(annualTaxable, status) {
   if (annualTaxable <= 0) return 0;
 
-  /* 2024 IRS Pub 15-T — Annual Payroll Period Percentage Method Tables */
+  /* 2026 IRS Pub 15-T — Annual Payroll Period Percentage Method Tables
+     (derived from apex-constants-2026.js FED_BRACKETS, Rev. Proc. 2025-32) */
   /* Each entry: [bracket floor, marginal rate, cumulative tax at floor] */
   const brackets = {
-    /* Single and Head of Household use the same bracket table (2024) */
+    /* Single and Head of Household use the same bracket table (2026) */
     single: [
       [0,          0.10,  0],
-      [11600,      0.12,  1160],
-      [47150,      0.22,  5426],
-      [100525,     0.24,  17168.50],
-      [191950,     0.32,  39110.50],
-      [243700,     0.35,  55678.50],
-      [609350,     0.37,  183647.25]
+      [12400,      0.12,  1240.00],
+      [50400,      0.22,  5800.00],
+      [105700,     0.24,  17966.00],
+      [201775,     0.32,  41024.00],
+      [256225,     0.35,  58448.00],
+      [640600,     0.37,  192979.25]
     ],
     hoh: [
       [0,          0.10,  0],
-      [11600,      0.12,  1160],
-      [47150,      0.22,  5426],
-      [100525,     0.24,  17168.50],
-      [191950,     0.32,  39110.50],
-      [243700,     0.35,  55678.50],
-      [609350,     0.37,  183647.25]
+      [12400,      0.12,  1240.00],
+      [50400,      0.22,  5800.00],
+      [105700,     0.24,  17966.00],
+      [201775,     0.32,  41024.00],
+      [256225,     0.35,  58448.00],
+      [640600,     0.37,  192979.25]
     ],
-    /* Married Filing Jointly — 2024 IRS Pub 15-T */
+    /* Married Filing Jointly — 2026 IRS Rev. Proc. 2025-32 */
     mfj: [
       [0,          0.10,  0],
-      [23200,      0.12,  2320],
-      [94300,      0.22,  10852],
-      [201050,     0.24,  34337],
-      [383900,     0.32,  78221],
-      [487450,     0.35,  111357],
-      [731200,     0.37,  196669.50]
+      [24800,      0.12,  2480.00],
+      [100800,     0.22,  11600.00],
+      [211400,     0.24,  35932.00],
+      [403550,     0.32,  82048.00],
+      [512450,     0.35,  116896.00],
+      [768700,     0.37,  206583.50]
     ]
   };
 
@@ -1465,13 +1466,13 @@ function calculate() {
        Salary continuation is treated as regular wages paid over time.
        Because we model the ENTIRE package as one annualized taxable
        event (the full payout is the taxable gross), we:
-         1. Subtract the 2024 standard deduction equivalent
-         2. Apply the 2024 annual bracket table
+         1. Subtract the 2026 standard deduction equivalent
+         2. Apply the 2026 annual bracket table
          3. The result = federal income tax on the package
        FICA applies because salary continuation IS wages.
        ================================================================ */
 
-    /* Step 1: Subtract standard deduction — IRS Pub 15-T Table 1 (2024) */
+    /* Step 1: Subtract standard deduction — IRS Pub 15-T Table 1 (2026, Rev. Proc. 2025-32) */
     const stdDed = STD_DEDUCTION[filingStatus] || STD_DEDUCTION.single;
     const taxableAnnualized = Math.max(0, grossPackage - stdDed);
 
@@ -1480,13 +1481,13 @@ function calculate() {
 
     rows.push({
       component: 'Federal Tax (Salary Continuation)',
-      method: `IRS Pub 15-T Percentage Method 2024 — Annualized gross ${fmt(grossPackage)} minus std. deduction ${fmt(stdDed)} = taxable ${fmt(taxableAnnualized)}; bracket applied for ${filingStatus.toUpperCase()}`,
+      method: `IRS Pub 15-T Percentage Method 2026 — Annualized gross ${fmt(grossPackage)} minus std. deduction ${fmt(stdDed)} = taxable ${fmt(taxableAnnualized)}; bracket applied for ${filingStatus.toUpperCase()}`,
       amount: federalTax
     });
 
     /* Step 3: FICA — applies to salary continuation (regular wages)
        IRC §3101 & §3111 — employee/employer FICA
-       Social Security: 6.2% up to 2024 wage base $168,600
+       Social Security: 6.2% up to 2026 wage base $184,500
          Prior wages assumed = 0 (conservative / worst-case estimate)
          Note shown to user: actual SS may be lower if prior wages exist
        Medicare: 1.45% — no cap (IRC §3101(b))
@@ -1746,7 +1747,7 @@ function exportMarkdown() {
   });
   md += `\n---\n\n`;
   md += `> **Disclaimer:** This tool provides estimates for planning purposes only and does not constitute legal, tax, or financial advice. Consult an employment attorney and a tax professional before accepting any separation agreement.\n`;
-  md += `>\n> Tax model: IRS Publication 15-T (2024) · IRS Pub 15-T, IRC §3402, IRS Rev. Rul. 90-72\n`;
+  md += `>\n> Tax model: IRS Rev. Proc. 2025-32 (2026) · IRS Pub 15-T, IRC §3402, IRS Rev. Rul. 90-72\n`;
   md += `>\n> Built by [Post Oak Labs](https://postoaklabs.com) · Sister suite: [AINumbers.co](https://ainumbers.co) · CC 4.0 BY\n`;
 
   const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
@@ -1827,7 +1828,7 @@ async function buildAP2Mandate() {
     al_id: 'AL-24',
     mandate_type: 'severance_decision_record',
     jurisdiction: ['US'],
-    regulatory_frameworks: ['IRS Publication 15-T (2024)', 'IRC §3402'],
+    regulatory_frameworks: ['IRS Rev. Proc. 2025-32 (2026)', 'IRC §3402'],
     payload: {
       payment_type: r.paymentType,
       gross_package_usd: r.grossPackage,
@@ -1859,8 +1860,8 @@ async function buildAP2Mandate() {
       state_rate_pct: r.stateRate
     },
     regulatory_citations: [
-      'IRS Publication 15-T, Federal Income Tax Withholding Methods (2024)',
-      'IRS Revenue Procedure 2023-34 — 2024 tax brackets',
+      'IRS Publication 15-T, Federal Income Tax Withholding Methods',
+      'IRS Revenue Procedure 2025-32 — 2026 tax brackets',
       'IRC §3402 — Income Tax Collected at Source',
       'IRS Revenue Ruling 90-72 — FICA treatment of separation pay',
       'IRC §3121(a)(13) — FICA exclusion for certain separation payments'
@@ -1997,7 +1998,7 @@ function toggleMCP() {
   "al_id": "AL-24",
   "version": "1.1.0",
   "title": "Separation Package Analyzer",
-  "description": "Models the after-tax take-home value of a separation package offer. Handles lump-sum (IRS supplemental 22%/37% flat rate, no FICA) and salary-continuation (2024 IRS Pub 15-T brackets, FICA applicable) payment structures. User-entered state income tax rate. Optional runway estimate (net take-home \u00f7 monthly expenses). Inline legal disclaimer. Policy Mandate export with downstream handoff to AL-08+14.",
+  "description": "Models the after-tax take-home value of a separation package offer. Handles lump-sum (IRS supplemental 22%/37% flat rate, no FICA) and salary-continuation (2026 IRS Pub 15-T brackets, FICA applicable) payment structures. User-entered state income tax rate. Optional runway estimate (net take-home \u00f7 monthly expenses). Inline legal disclaimer. Policy Mandate export with downstream handoff to AL-08+14.",
   "category": "career_transition_mobility",
   "journeys": [
     "career_navigation",
@@ -2036,7 +2037,7 @@ function toggleMCP() {
   "mcp_tool_definition": {
     "name": "analyze_separation_package",
     "tool_number": "AL-24",
-    "description": "Given a separation package amount, payment type (lump sum vs. salary continuation), filing status, and state tax rate, returns after-tax net take-home using IRS Publication 15-T 2024 withholding rules. Optionally computes runway months if monthly expenses provided. Returns Policy Mandate severance_decision_record mandate.",
+    "description": "Given a separation package amount, payment type (lump sum vs. salary continuation), filing status, and state tax rate, returns after-tax net take-home using IRS Publication 15-T 2026 withholding rules. Optionally computes runway months if monthly expenses provided. Returns Policy Mandate severance_decision_record mandate.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2079,7 +2080,7 @@ function toggleMCP() {
         },
         "prior_year_ss_wages_usd": {
           "type": "number",
-          "description": "Prior-year SS wages to compute remaining FICA-subject headroom under $168,600 wage base (optional)"
+          "description": "Prior-year SS wages to compute remaining FICA-subject headroom under $184,500 wage base (optional)"
         }
       },
       "required": [
@@ -2099,7 +2100,7 @@ const MANIFEST = {
   "al_id": "AL-24",
   "version": "1.1.0",
   "title": "Separation Package Analyzer",
-  "description": "Models the after-tax take-home value of a separation package offer. Handles lump-sum (IRS supplemental 22%/37% flat rate, no FICA) and salary-continuation (2024 IRS Pub 15-T brackets, FICA applicable) payment structures. User-entered state income tax rate. Optional runway estimate (net take-home ÷ monthly expenses). Inline legal disclaimer. Policy Mandate export with downstream handoff to AL-08+14.",
+  "description": "Models the after-tax take-home value of a separation package offer. Handles lump-sum (IRS supplemental 22%/37% flat rate, no FICA) and salary-continuation (2026 IRS Pub 15-T brackets, FICA applicable) payment structures. User-entered state income tax rate. Optional runway estimate (net take-home ÷ monthly expenses). Inline legal disclaimer. Policy Mandate export with downstream handoff to AL-08+14.",
   "category": "career_transition_mobility",
   "journeys": [
     "career_navigation",
@@ -2169,7 +2170,7 @@ const MANIFEST = {
       },
       "prior_year_ss_wages_usd": {
         "type": "number",
-        "description": "Prior-year Social Security wages; used to compute remaining FICA-subject headroom under the $168,600 wage base (optional)"
+        "description": "Prior-year Social Security wages; used to compute remaining FICA-subject headroom under the $184,500 wage base (optional)"
       }
     },
     "required": [
@@ -2210,7 +2211,7 @@ const MANIFEST = {
   "mcp_tool_definition": {
     "name": "analyze_separation_package",
     "tool_number": "AL-24",
-    "description": "Given a separation package amount, payment type (lump sum vs. salary continuation), filing status, and state tax rate, returns after-tax net take-home using IRS Publication 15-T 2024 withholding rules. Optionally computes runway months if monthly expenses provided. Returns Policy Mandate severance_decision_record mandate.",
+    "description": "Given a separation package amount, payment type (lump sum vs. salary continuation), filing status, and state tax rate, returns after-tax net take-home using IRS Publication 15-T 2026 withholding rules. Optionally computes runway months if monthly expenses provided. Returns Policy Mandate severance_decision_record mandate.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2253,7 +2254,7 @@ const MANIFEST = {
         },
         "prior_year_ss_wages_usd": {
           "type": "number",
-          "description": "Prior-year SS wages to compute remaining FICA-subject headroom under $168,600 wage base (optional)"
+          "description": "Prior-year SS wages to compute remaining FICA-subject headroom under $184,500 wage base (optional)"
         }
       },
       "required": [
@@ -2278,8 +2279,8 @@ const MANIFEST = {
     "AL-08+14"
   ],
   "regulatory_citations": [
-    "IRS Publication 15-T, Federal Income Tax Withholding Methods (2024)",
-    "IRS Revenue Procedure 2023-34 — 2024 income tax brackets",
+    "IRS Publication 15-T, Federal Income Tax Withholding Methods",
+    "IRS Revenue Procedure 2025-32 — 2026 income tax brackets",
     "IRC §3402 — Income Tax Collected at Source",
     "IRC §3121(a) — FICA wage definition (salary continuation vs. lump-sum treatment)"
   ],
