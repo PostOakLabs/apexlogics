@@ -50,6 +50,15 @@ jobs:
       - name: 🧪 JS syntax gate (CONTRACT §7.2 / CG-25 — blocking)
         run: node scripts/check_tools.js
 
+      - name: 🧾 AP2 validator-call gate (AL-TOOLS-FIX-2 — blocking)
+        # check_tools.js only parses JS syntax — it never resolved AP2Schema.<member>
+        # against the schema literal, which is how tools 84–88 shipped a call to a
+        # method that does not exist and silently broke Export. Fails the build on
+        # any undeclared AP2Schema member, any dead/tripping validation guard, or
+        # any validator whose return shape can't be classified. No baseline, no
+        # exception list.
+        run: node scripts/check-ap2-validate.mjs
+
       - name: 🔢 Count-drift gate (CONTRACT §7.2 / CG-32 — blocking)
         # index.html / tools.html carry hand-typed suite/showcase/workflow/guide
         # counts; this fails the build the moment any of them drift from
