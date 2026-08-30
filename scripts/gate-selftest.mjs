@@ -28,8 +28,39 @@ function assertRed(name, red) {
   if (red) console.log(`✓ ${name} goes RED on a broken fixture`);
   else { console.error(`✗ ${name} STAYED GREEN on a broken fixture — gate has no teeth`); fails++; }
 }
+// Python gates (check_index_sync.py) run under `python`, matching deploy.yml's own
+// invocation — not NODE.
+function wentRedPy(scriptPath, args, { cwd = REPO } = {}) {
+  try {
+    execFileSync('python', [scriptPath, ...args], { cwd, stdio: 'pipe' });
+    return false;
+  } catch {
+    return true;
+  }
+}
 
 const tmp = mkdtempSync(join(tmpdir(), 'apex-gate-selftest-'));
+
+// ── coverage bookkeeping (AL-GATE-SELFTEST-ALL) ─────────────────────────────
+// deploy.yml invokes 18 gates besides this one. Every claim below registers the
+// gate name it proves, so the closing message states real coverage instead of
+// repeating the "every gate" overclaim gate-selftest itself was found to have
+// made (AL-AUDIT-GATE-INTEGRITY §B1) while covering a fraction of them.
+const DEPLOY_GATES = [
+  'check-vendor-fresh.mjs', 'schema-validate.mjs', 'hash-lint.mjs', 'hash-domain-lint.mjs',
+  'chain-coherence-check.mjs', 'hash-freeze.mjs', 'check_tools.js', 'check-ap2-validate.mjs',
+  'verify-counts.mjs', 'check-registry-self.mjs', 'check-constants-vintage.mjs',
+  'check-no-storage.mjs', 'check-links.mjs', 'check-brand-titles.mjs', 'check-seo-meta.mjs',
+  'check-chaingraph-parity.mjs', 'gen-sitemap.mjs', 'check_index_sync.py',
+];
+let claims = 0;
+const covered = new Set();
+const untestable = new Set();
+function claim(gateFile, name, red) {
+  claims++;
+  covered.add(gateFile);
+  assertRed(name, red);
+}
 
 // ── 1. check-vendor-fresh: corrupt the vendored _hash.mjs body ──────────────
 {
@@ -43,7 +74,7 @@ const tmp = mkdtempSync(join(tmpdir(), 'apex-gate-selftest-'));
   // corrupt: append a stray statement to the hash body
   const hash = readFileSync(join(REPO, 'chaingraph', 'kernels', '_hash.mjs'), 'utf8');
   writeFileSync(join(work, 'chaingraph', 'kernels', '_hash.mjs'), hash + '\nvar TAMPERED = 1;\n');
-  assertRed('check-vendor-fresh (tampered _hash.mjs body)', wentRed(join(work, 'scripts', 'check-vendor-fresh.mjs')));
+  claim('check-vendor-fresh.mjs', 'check-vendor-fresh (tampered _hash.mjs body)', wentRed(join(work, 'scripts', 'check-vendor-fresh.mjs')));
 }
 
 // ── 2. schema-validate: corrupt a golden fixture (drop a required field) ─────
@@ -59,7 +90,7 @@ const tmp = mkdtempSync(join(tmpdir(), 'apex-gate-selftest-'));
   const g = JSON.parse(readFileSync(join(REPO, 'chaingraph', 'kernels', 'fixtures', '40-gig-income-optimizer.golden.json'), 'utf8'));
   g.execution_hash = 'not-a-valid-sha256-digest'; g.bogus_extra = true;
   writeFileSync(join(work, 'chaingraph', 'kernels', 'fixtures', 'broken.golden.json'), JSON.stringify(g, null, 2));
-  assertRed('schema-validate (fixture invalid execution_hash + extra prop)',
+  claim('schema-validate.mjs', 'schema-validate (fixture invalid execution_hash + extra prop)',
     wentRed(join(work, 'chaingraph', 'standard', 'schema-validate.mjs'),
       { env: { CHAINGRAPH: join(work, 'chaingraph', 'chaingraph.json'),
                SCHEMA: join(work, 'chaingraph', 'standard', 'openchain-graph-v0.4.schema.json'),
@@ -74,7 +105,7 @@ const tmp = mkdtempSync(join(tmpdir(), 'apex-gate-selftest-'));
   cpSync(join(REPO, 'scripts', 'hash-lint.mjs'), join(work, 'scripts', 'hash-lint.mjs'));
   writeFileSync(join(work, 'tools', 'zz-tamper', 'index.html'),
     '<script>const h = JSON.stringify(obj, ["a","b"]); execution_hash = "sha256:" + h;</script>\n');
-  assertRed('hash-lint (planted array-replacer + sha256: prefix)', wentRed(join(work, 'scripts', 'hash-lint.mjs')));
+  claim('hash-lint.mjs', 'hash-lint (planted array-replacer + sha256: prefix)', wentRed(join(work, 'scripts', 'hash-lint.mjs')));
 }
 
 // ── 3b. hash-domain-lint: plant a clock-derived value inside the hash domain ────
@@ -97,7 +128,7 @@ function build() {
   payload.execution_hash = "x";
 }
 </script>\n`);
-  assertRed('hash-domain-lint (planted clock-derived hash-domain key)', wentRed(join(work, 'scripts', 'hash-domain-lint.mjs')));
+  claim('hash-domain-lint.mjs', 'hash-domain-lint (planted clock-derived hash-domain key)', wentRed(join(work, 'scripts', 'hash-domain-lint.mjs')));
 }
 
 // ── 3c. chain-coherence-check: two chained tools disagree on a shared constant ──
@@ -123,7 +154,7 @@ function build() {
     '<script>const STD_DEDUCTION = { single: 16100, mfj: 32200 };</script>\n');
   writeFileSync(join(work, 'tools', 'zz-bb', 'index.html'),
     '<script>const STD_DEDUCTION = { single: 14600, mfj: 29200 };</script>\n'); // stale 2024 value — same keys, different values
-  assertRed('chain-coherence-check (two chained tools disagree on a shared STD_DEDUCTION key)',
+  claim('chain-coherence-check.mjs', 'chain-coherence-check (two chained tools disagree on a shared STD_DEDUCTION key)',
     wentRed(join(work, 'scripts', 'chain-coherence-check.mjs'), { env: { ROOT: work } }));
 }
 {
@@ -143,6 +174,7 @@ function build() {
   writeFileSync(join(work, 'tools', 'zz-dd', 'index.html'),
     '<script>const TIER_VALUE = { m7: 650000, t15: 480000, t50: 220000 };</script>\n'); // extra key, shared keys agree
   const red = wentRed(join(work, 'scripts', 'chain-coherence-check.mjs'), { env: { ROOT: work } });
+  claims++; covered.add('chain-coherence-check.mjs');
   if (!red) console.log('✓ chain-coherence-check stays GREEN on a scope-only difference (no shared-key disagreement)');
   else { console.error('✗ chain-coherence-check FALSE-POSITIVED on a scope-only difference — has too many teeth'); fails++; }
 }
@@ -157,7 +189,7 @@ function build() {
   const g = JSON.parse(readFileSync(join(REPO, 'chaingraph', 'kernels', 'fixtures', '40-gig-income-optimizer.golden.json'), 'utf8'));
   g.execution_hash = 'f'.repeat(64); // valid shape, wrong digest
   writeFileSync(join(work, 'chaingraph', 'kernels', 'fixtures', 'broken.golden.json'), JSON.stringify(g, null, 2));
-  assertRed('hash-freeze (tampered golden execution_hash)', wentRed(join(work, 'scripts', 'hash-freeze.mjs')));
+  claim('hash-freeze.mjs', 'hash-freeze (tampered golden execution_hash)', wentRed(join(work, 'scripts', 'hash-freeze.mjs')));
 }
 
 // ── 5. check-constants-vintage: (a) SSOT mismatch, (b) declared-vs-embedded vintage
@@ -180,7 +212,7 @@ function build() {
       '<script>\nconst SS_WAGE_BASE = 168600; // stale\n</script>\n');
     writeFileSync(join(work, 'tools', 'zz-ssot-mismatch', 'manifest.json'),
       JSON.stringify({ data_vintage: 'SSA 2026 wage base $184,500' }));
-    assertRed('check-constants-vintage (a: SSOT mismatch fixture)',
+    claim('check-constants-vintage.mjs', 'check-constants-vintage (a: SSOT mismatch fixture)',
       wentRed(join(work, 'scripts', 'check-constants-vintage.mjs')));
   }
 
@@ -198,7 +230,7 @@ function build() {
       '<script>\nconst STD_DEDUCTION = { single: 16100, mfj: 32200, hoh: 24150 };\n</script>\n');
     writeFileSync(join(work, 'tools', 'zz-vintage-mismatch', 'manifest.json'),
       JSON.stringify({ data_vintage: 'IRS Rev. Proc. 2023-34 (2024 standard deduction)' }));
-    assertRed('check-constants-vintage (b: declared-vs-embedded vintage mismatch fixture)',
+    claim('check-constants-vintage.mjs', 'check-constants-vintage (b: declared-vs-embedded vintage mismatch fixture)',
       wentRed(join(work, 'scripts', 'check-constants-vintage.mjs')));
   }
 
@@ -215,12 +247,173 @@ function build() {
       '<script>\nconst CURRENT_YEAR = 2025; // stale — SSOT says 2026\n</script>\n');
     writeFileSync(join(work, 'tools', 'zz-year-mismatch', 'manifest.json'),
       JSON.stringify({ data_vintage: '2026' }));
-    assertRed('check-constants-vintage (c: CURRENT_YEAR SSOT mismatch fixture)',
+    claim('check-constants-vintage.mjs', 'check-constants-vintage (c: CURRENT_YEAR SSOT mismatch fixture)',
       wentRed(join(work, 'scripts', 'check-constants-vintage.mjs')));
   }
 }
 
+// ── 6. check_tools.js: inject a JS syntax error ─────────────────────────────
+{
+  const work = join(tmp, 'jsgate');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-syntax'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check_tools.js'), join(work, 'scripts', 'check_tools.js'));
+  writeFileSync(join(work, 'tools', 'zz-syntax', 'index.html'),
+    '<!doctype html><html><head><title>probe</title></head><body><script>const x = ;</script></body></html>\n');
+  claim('check_tools.js', 'check_tools.js (injected JS syntax error)', wentRed(join(work, 'scripts', 'check_tools.js')));
+}
+
+// ── 7. check-ap2-validate: 6 distinct claims (A1–A6), each a synthetic tool ──
+{
+  function mkAp2Probe(label, slug, body, name) {
+    const work = join(tmp, 'ap2-' + slug);
+    mkdirSync(join(work, 'scripts'), { recursive: true });
+    mkdirSync(join(work, 'tools', slug), { recursive: true });
+    cpSync(join(REPO, 'scripts', 'check-ap2-validate.mjs'), join(work, 'scripts', 'check-ap2-validate.mjs'));
+    writeFileSync(join(work, 'tools', slug, 'index.html'),
+      `<!doctype html><html><head><title>probe</title></head><body>${body}</body></html>\n`);
+    claim('check-ap2-validate.mjs', name, wentRed(join(work, 'scripts', 'check-ap2-validate.mjs')));
+  }
+  mkAp2Probe('A1', 'zz-ap2-a1',
+    `<script>const AP2Schema = { validate(m){ return []; } }; const x = AP2Schema.totallyBogusMember(y);</script>`,
+    'check-ap2-validate A1 (undeclared member call)');
+  mkAp2Probe('A2', 'zz-ap2-a2',
+    `<script>const AP2Schema = { validate(m){ return { valid: m.ok }; } }; const res = AP2Schema.validate(y); if (res) {}</script>`,
+    'check-ap2-validate A2 (dead guard — OBJECT tested truthy)');
+  mkAp2Probe('A3', 'zz-ap2-a3',
+    `<script>const AP2Schema = { validate(m){ return []; } }; const res = AP2Schema.validate(y); if (!res.valid) {}</script>`,
+    'check-ap2-validate A3 (tripping guard — ARRAY read .valid)');
+  mkAp2Probe('A4', 'zz-ap2-a4',
+    `<script>const AP2Schema = { validate(m){ console.log(m); } }; AP2Schema.validate(y);</script>`,
+    'check-ap2-validate A4 (unclassifiable return shape)');
+  mkAp2Probe('A5', 'zz-ap2-a5',
+    `<script>const AP2Schema = { validate(m){ return []; } };</script>`,
+    'check-ap2-validate A5 (declared validator never referenced)');
+  mkAp2Probe('A6', 'zz-ap2-a6',
+    `<script>function exportAP2(){ const blob = new Blob([JSON.stringify({})], {type:'application/json'}); }</script>`,
+    'check-ap2-validate A6 (no AP2Schema + json download + no signal)');
+}
+
+// ── 8. verify-counts: drift a count sentinel (real files — the ATTR_RULES
+//      hard-code prose from index.html/tools.html/mcp.json/mcp.html/llms.txt,
+//      so this copies the REAL current files rather than fabricating text
+//      that would have to match every regex) ──────────────────────────────
+{
+  const work = join(tmp, 'verifycounts');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, '.well-known'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'verify-counts.mjs'), join(work, 'scripts', 'verify-counts.mjs'));
+  cpSync(join(REPO, 'scripts', 'counts.mjs'), join(work, 'scripts', 'counts.mjs'));
+  cpSync(join(REPO, 'suite-registry.json'), join(work, 'suite-registry.json'));
+  cpSync(join(REPO, 'index.html'), join(work, 'index.html'));
+  cpSync(join(REPO, 'tools.html'), join(work, 'tools.html'));
+  cpSync(join(REPO, 'mcp.html'), join(work, 'mcp.html'));
+  cpSync(join(REPO, 'llms.txt'), join(work, 'llms.txt'));
+  cpSync(join(REPO, '.well-known', 'mcp.json'), join(work, '.well-known', 'mcp.json'));
+  cpSync(join(REPO, '.well-known', 'agent-card.json'), join(work, '.well-known', 'agent-card.json'));
+  cpSync(join(REPO, 'workflows'), join(work, 'workflows'), { recursive: true });
+  cpSync(join(REPO, 'guides'), join(work, 'guides'), { recursive: true });
+  const idx = readFileSync(join(work, 'index.html'), 'utf8');
+  const bumped = idx.replace(/<!--COUNT:tools-->(\d+)<!--\/COUNT-->/, (m, v) => `<!--COUNT:tools-->${Number(v) + 1}<!--/COUNT-->`);
+  writeFileSync(join(work, 'index.html'), bumped);
+  claim('verify-counts.mjs', 'verify-counts (drifted tools sentinel in index.html)', wentRed(join(work, 'scripts', 'verify-counts.mjs')));
+}
+
+// ── 9. check-registry-self: drift registry_version vs itself ────────────────
+{
+  const work = join(tmp, 'regself');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-registry-self.mjs'), join(work, 'scripts', 'check-registry-self.mjs'));
+  const raw = readFileSync(join(REPO, 'suite-registry.json'), 'utf8').replace(/\x00+$/, '');
+  const reg = JSON.parse(raw);
+  reg.tools_count_shipped = -1; // drifted vs the derived count of tools[]
+  writeFileSync(join(work, 'suite-registry.json'), JSON.stringify(reg, null, 2));
+  claim('check-registry-self.mjs', 'check-registry-self (tools_count_shipped drifted from tools[] derived count)', wentRed(join(work, 'scripts', 'check-registry-self.mjs')));
+}
+
+// ── 10. check-no-storage: inject a localStorage write ───────────────────────
+{
+  const work = join(tmp, 'nostorage');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-storage'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-no-storage.mjs'), join(work, 'scripts', 'check-no-storage.mjs'));
+  writeFileSync(join(work, 'tools', 'zz-storage', 'index.html'),
+    '<!doctype html><html><head><title>probe</title></head><body><script>localStorage.setItem("x",1)</script></body></html>\n');
+  claim('check-no-storage.mjs', 'check-no-storage (injected localStorage.setItem)', wentRed(join(work, 'scripts', 'check-no-storage.mjs')));
+}
+
+// ── 11. check-links: create a dead internal href ────────────────────────────
+{
+  const work = join(tmp, 'links');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-links'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-links.mjs'), join(work, 'scripts', 'check-links.mjs'));
+  writeFileSync(join(work, 'tools', 'zz-links', 'index.html'),
+    '<!doctype html><html><head><title>probe</title></head><body><a href="/tools/this-slug-does-not-exist-xyz/index.html">x</a></body></html>\n');
+  claim('check-links.mjs', 'check-links (dead internal href)', wentRed(join(work, 'scripts', 'check-links.mjs')));
+}
+
+// ── 12. check-brand-titles: two claims in one fixture (spaced brand + missing
+//       attribution) — matches the two assertions the gate itself documents ──
+{
+  const work = join(tmp, 'brandtitles');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-brand'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-brand-titles.mjs'), join(work, 'scripts', 'check-brand-titles.mjs'));
+  writeFileSync(join(work, 'tools', 'zz-brand', 'index.html'),
+    '<!doctype html><html><head><title>Apex Logics — bad</title></head><body>no attribution here</body></html>\n');
+  claim('check-brand-titles.mjs', 'check-brand-titles (spaced brand token + missing apexlogics.org attribution)', wentRed(join(work, 'scripts', 'check-brand-titles.mjs')));
+}
+
+// ── 13. check-seo-meta: page missing og:image ───────────────────────────────
+{
+  const work = join(tmp, 'seometa');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-seo-meta.mjs'), join(work, 'scripts', 'check-seo-meta.mjs'));
+  writeFileSync(join(work, 'probe.html'), `<!doctype html><html><head>
+    <title>probe</title>
+    <meta name="description" content="probe">
+    <link rel="canonical" href="https://apexlogics.org/probe.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="ApexLogics">
+    <meta property="og:title" content="probe">
+    <meta property="og:description" content="probe">
+    <meta property="og:url" content="https://apexlogics.org/probe.html">
+    <meta name="twitter:card" content="summary">
+    </head><body>probe</body></html>\n`);
+  claim('check-seo-meta.mjs', 'check-seo-meta (page missing og:image)', wentRed(join(work, 'scripts', 'check-seo-meta.mjs')));
+}
+
+// ── 14. check_index_sync.py: remove a tool card from tools.html ─────────────
+{
+  const work = join(tmp, 'idxsync');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-idx'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check_index_sync.py'), join(work, 'scripts', 'check_index_sync.py'));
+  writeFileSync(join(work, 'tools', 'zz-idx', 'index.html'), '<!doctype html><html><body>probe</body></html>\n');
+  writeFileSync(join(work, 'tools.html'), '<!doctype html><html><body>no card for zz-idx</body></html>\n');
+  claim('check_index_sync.py', 'check_index_sync.py (tool on disk has no card in tools.html)',
+    wentRedPy(join(work, 'scripts', 'check_index_sync.py'), ['--strict', '--no-color'], { cwd: work }));
+}
+
+// ── untestable gates — named honestly rather than silently dropped from the
+//    coverage claim (AL-AUDIT-GATE-INTEGRITY §C: gen-sitemap needs full git
+//    history, check-chaingraph-parity needs live network; neither is
+//    reproducible via filesystem defect injection in this harness) ─────────
+untestable.add('gen-sitemap.mjs');
+untestable.add('check-chaingraph-parity.mjs');
+console.log('⚠ gen-sitemap.mjs: UNTESTABLE by this harness — needs full git history (fetch-depth: 0), not exercisable via filesystem injection.');
+console.log('⚠ check-chaingraph-parity.mjs: UNTESTABLE by this harness — needs live network (GitHub raw fetch), not exercisable via filesystem injection.');
+
 rmSync(tmp, { recursive: true, force: true });
 
-console.log(fails ? `\n✗ gate-selftest: ${fails} gate(s) have no teeth.` : '\n✓ gate-selftest: every gate goes red on a broken fixture.');
+const missing = DEPLOY_GATES.filter(g => !covered.has(g) && !untestable.has(g));
+if (missing.length) {
+  console.error(`\n✗ gate-selftest: ${missing.length} CI-invoked gate(s) have no assertRed at all: ${missing.join(', ')}`);
+  fails++;
+}
+
+console.log(fails
+  ? `\n✗ gate-selftest: ${fails} gate(s)/claim(s) have no teeth.`
+  : `\n✓ gate-selftest: ${covered.size} of ${DEPLOY_GATES.length} CI-invoked gates proven red across ${claims} distinct claims; ${untestable.size} named untestable (${[...untestable].join(', ')}).`);
 process.exit(fails ? 1 : 0);
