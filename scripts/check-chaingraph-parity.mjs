@@ -51,7 +51,13 @@ async function main() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     workerDoc = await res.json();
   } catch (err) {
-    console.warn(`check-chaingraph-parity: could not fetch worker copy (${err.message}) — skipping (non-blocking).`);
+    // Non-blocking by design (a GitHub outage shouldn't block deploy), but a
+    // skip must never read the same as a pass — AL-GATE-HONESTY found this
+    // catch printing a message indistinguishable from the real "OK" line.
+    // ::warning:: is a GitHub Actions annotation — it marks the step with a
+    // visible warning badge instead of a plain green check, even on exit 0.
+    console.log(`::warning::check-chaingraph-parity: SKIPPED — could not fetch worker copy (${err.message}). Site-vs-worker chaingraph drift was NOT checked this run.`);
+    console.log(`check-chaingraph-parity: SKIPPED (network) — not a pass, not a fail. See warning above.`);
     process.exit(0);
   }
 

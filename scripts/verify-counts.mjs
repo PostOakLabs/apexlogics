@@ -21,8 +21,9 @@
  *      render literally (rawtext elements like <title>).
  *
  * Exit 1 on any mismatch in --check mode. Not auto-fixable drift (a declared
- * rule whose regex matches nothing) also fails — a count that can't be
- * located can't be verified.
+ * rule whose regex matches nothing, or a sentinel/rule naming a key not in
+ * deriveCounts()) also fails — a count that can't be located, or can't be
+ * resolved to an expected value, can't be verified as correct.
  */
 import { readFileSync, writeFileSync } from 'fs';
 import { resolve, dirname } from 'path';
@@ -50,7 +51,8 @@ function checkHtmlSentinels(rel) {
   html = html.replace(SENTINEL_RE, (match, key, valStr) => {
     const expected = C[key];
     if (expected === undefined) {
-      console.warn(`UNKNOWN-KEY  ${rel}  key="${key}" not in deriveCounts() — skipping`);
+      console.error(`UNKNOWN-KEY  ${rel}  key="${key}" not in deriveCounts() — FAIL (a site names a key this gate can't verify; add it to deriveCounts() or remove the sentinel)`);
+      drifted++;
       return match;
     }
     const got = parseInt(valStr, 10);
@@ -192,7 +194,8 @@ function checkAttrRules() {
     for (const { key, label, regex } of rules) {
       const expected = C[key];
       if (expected === undefined) {
-        console.warn(`UNKNOWN-KEY  ${file}  key="${key}" — skipping`);
+        console.error(`UNKNOWN-KEY  ${file}  key="${key}" — FAIL (a rule names a key this gate can't verify; add it to deriveCounts() or remove the rule)`);
+        total++;
         continue;
       }
       let matched = false;

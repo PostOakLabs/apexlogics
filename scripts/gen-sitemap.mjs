@@ -2,10 +2,12 @@
 /**
  * scripts/gen-sitemap.mjs — derive sitemap.xml <lastmod> from git history (AL-SITEMAP-LASTMOD).
  *
- * sitemap.xml's <loc> set is trusted as-is (all 352 URLs resolve, per the audit
- * that opened this WU) — this script only rewrites <lastmod>, computed from
- * `git log -1 --format=%cd --date=short -- <path>` for the file each URL maps to.
- * <changefreq>/<priority> are left untouched.
+ * <lastmod> is rewritten, computed from `git log -1 --format=%cd --date=short
+ * -- <path>` for the file each URL maps to. <changefreq>/<priority> are left
+ * untouched. The <loc> set itself is ALSO checked (AL-GATE-HONESTY): any
+ * <loc> mapping to a file absent from disk fails the build — a dead sitemap
+ * URL had no gate covering it (check-links.mjs walks HTML hrefs, not sitemap
+ * XML). All 352 URLs resolved at the time this check was added.
  *
  * Requires full git history (fetch-depth: 0) — on a shallow clone, `git log`
  * silently returns the shallow-boundary commit's date for every file, which
@@ -41,10 +43,21 @@ function locToPath(loc) {
   return p.slice(1); // file URL, e.g. "about.html", "workflows/bar.html"
 }
 
-function gitLastmod(relPath) {
+// AL-GATE-HONESTY: a <loc> mapping to a file absent from disk (deleted or
+// renamed page, sitemap entry never cleaned up) used to just fall through
+// gitLastmod's "no signal, don't touch" branch — the lastmod stayed
+// untouched AND nothing else in this repo checks sitemap <loc> reachability
+// (check-links.mjs walks HTML hrefs, not sitemap XML), so a dead sitemap URL
+// could ship indefinitely under a green gate. A full disk diff at the time
+// this was fixed found 0 dead <loc> entries in the live sitemap, so failing
+// on this from here on costs nothing today and closes a real blind spot.
+const deadLocs = [];
+
+function gitLastmod(relPath, loc) {
   const full = resolve(ROOT, relPath);
   if (!existsSync(full)) {
-    console.warn(`WARN   no local file for ${relPath} — leaving lastmod unchanged`);
+    console.warn(`DEAD   ${loc}  ->  ${relPath} (no file on disk)`);
+    deadLocs.push({ loc, relPath });
     return null;
   }
   try {
@@ -67,7 +80,7 @@ let total = 0;
 const out = xml.replace(URL_BLOCK_RE, (block, loc, oldLastmod) => {
   total++;
   const relPath = locToPath(loc);
-  const newLastmod = gitLastmod(relPath);
+  const newLastmod = gitLastmod(relPath, loc);
   if (newLastmod === null) return block; // no signal — don't touch
   if (newLastmod !== oldLastmod) {
     drift++;
@@ -77,7 +90,14 @@ const out = xml.replace(URL_BLOCK_RE, (block, loc, oldLastmod) => {
   return block;
 });
 
-console.log(`\n${total} URLs checked, ${drift} drifted.`);
+console.log(`\n${total} URLs checked, ${drift} drifted, ${deadLocs.length} dead.`);
+
+if (deadLocs.length) {
+  console.error(`\nFAIL   ${deadLocs.length} sitemap <loc> entr${deadLocs.length === 1 ? 'y maps' : 'ies map'} to no file on disk:`);
+  for (const { loc, relPath } of deadLocs) console.error(`  - ${loc}  (expected ${relPath})`);
+  console.error('\nRemove the stale <url> block from sitemap.xml, or restore/redirect the page (see AL-REDIRECTS).');
+  process.exit(1);
+}
 
 if (drift === 0) {
   console.log('sitemap.xml lastmod values match git history.');
