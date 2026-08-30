@@ -389,6 +389,17 @@ function build() {
   claim('check-a11y-mfst.mjs', 'check-a11y-mfst (b: toggleMfst() never sets aria-expanded)', wentRed(join(work, 'scripts', 'check-a11y-mfst.mjs')));
 }
 
+// ── 10cc. check-contrast: reintroduce a failing --muted value (#3E5675) ─────
+{
+  const work = join(tmp, 'contrast');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-contrast'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-contrast.mjs'), join(work, 'scripts', 'check-contrast.mjs'));
+  writeFileSync(join(work, 'tools', 'zz-contrast', 'index.html'),
+    '<!doctype html><html><head><style>:root{--bg:#070B14;--muted:#3E5675;--text-dim:#64748b;}</style></head><body>probe</body></html>\n');
+  claim('check-contrast.mjs', 'check-contrast (reintroduced #3E5675 --muted, below 3:1 floor on --bg)', wentRed(join(work, 'scripts', 'check-contrast.mjs')));
+}
+
 // ── 10d. check-a11y-keyboard: div onclick with no role and no tabindex ──────
 {
   const work = join(tmp, 'a11ykbd');
