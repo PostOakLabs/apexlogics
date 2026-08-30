@@ -98,6 +98,26 @@ const SENSORS = [
 
 const YEAR_TOKEN_RE = /\b(20[2-3]\d)\b/g;
 
+// IRS Revenue Procedure citations ("Rev. Proc. 2025-32") are dated by the year they were
+// PUBLISHED, not the tax year they govern — that's always publish-year + 1 (2025-32 governs
+// 2026; 2023-34 governs 2024; confirmed against every citation number in this repo). AL-G2-
+// HALFB probe 1: editing only the citation number ("2025-32" → "2023-34") while an adjacent
+// "(2026 ...)" phrase happened to survive the edit left a genuinely stale citation sitting
+// next to a leftover-but-still-literally-true "2026" token in the SAME string — a plain
+// "does this string contain the year 2026 anywhere" scan can't tell that apart from a correct
+// declaration, because both contain the token. The citation number itself doesn't lie: once a
+// Rev Proc citation is present, ITS implied year is authoritative for this check (not the
+// surrounding literal year tokens, which is exactly the "found 2026 elsewhere in the same
+// string" failure mode this was rewritten to close).
+const REV_PROC_RE = /rev\.?\s*proc\.?\s*(\d{4})-\d+/gi;
+function revProcImpliedYears(str) {
+  const years = new Set();
+  let m;
+  REV_PROC_RE.lastIndex = 0;
+  while ((m = REV_PROC_RE.exec(str))) years.add(Number(m[1]) + 1);
+  return years;
+}
+
 // Guards the declared-vs-embedded check against firing on a data_vintage string that is real
 // and dated but is not ABOUT the constant a sensor found — e.g. a tool that embeds the 2026
 // SS wage base incidentally (a payroll cap inside an unrelated calculation) while its declared
@@ -105,11 +125,16 @@ const YEAR_TOKEN_RE = /\b(20[2-3]\d)\b/g;
 // have nothing to do with payroll tax. Mirrors the audit's own method: it read all 13 tools
 // claiming a tax vintage before calling `08` the sole mismatch, rather than pattern-matching
 // blind. Only fire when the declared text is actually talking about this sensor's topic.
+// STD_DEDUCTION_* was widened from a bare `/standard deduction/i` match (AL-G2-HALFB):
+// every real tool that embeds STD_DEDUCTION declares its vintage via a bracket/Rev-Proc
+// citation ("IRS Rev. Proc. 2025-32 (2026 brackets)", "IRS 2026 brackets"), never the
+// literal phrase "standard deduction" — so the narrow regex never matched on any of the
+// 7 tools that carry this sensor, leaving half B permanently inert for this constant.
 const SENSOR_TOPIC_RE = {
   SS_WAGE_BASE: /wage base|social security|\bfica\b|\bss\b/i,
-  STD_DEDUCTION_single: /standard deduction/i,
-  STD_DEDUCTION_mfj: /standard deduction/i,
-  STD_DEDUCTION_hoh: /standard deduction/i,
+  STD_DEDUCTION_single: /standard deduction|\bbrackets?\b|rev\.?\s*proc\.?/i,
+  STD_DEDUCTION_mfj: /standard deduction|\bbrackets?\b|rev\.?\s*proc\.?/i,
+  STD_DEDUCTION_hoh: /standard deduction|\bbrackets?\b|rev\.?\s*proc\.?/i,
   AMT_EXEMPTION_single: /\bamt\b|alternative minimum/i,
   AMT_EXEMPTION_mfj: /\bamt\b|alternative minimum/i,
   AMT_PHASEOUT_single: /\bamt\b|alternative minimum/i,
@@ -127,32 +152,74 @@ function expandToolDirs() {
   return entries.filter((name) => statSync(join(baseAbs, name)).isDirectory());
 }
 
-function declaredVintageInfo(slug, htmlText) {
+function yearsIn(str) {
   const years = new Set();
-  let text = '';
-  const collect = (str) => {
-    text += ' ' + str;
-    let m;
-    YEAR_TOKEN_RE.lastIndex = 0;
-    while ((m = YEAR_TOKEN_RE.exec(str))) years.add(Number(m[1]));
-  };
+  let m;
+  YEAR_TOKEN_RE.lastIndex = 0;
+  while ((m = YEAR_TOKEN_RE.exec(str))) years.add(Number(m[1]));
+  return years;
+}
+
+function lineOf(htmlText, index) {
+  return htmlText.slice(0, index).split('\n').length;
+}
+
+// Returns one entry PER declared-vintage SURFACE — never merged into one blob. AL-G2-HALFB:
+// the original version unioned every surface's text/years into a single set before checking,
+// so one correct surface (or even an unrelated year mentioned in the SAME string, e.g. "SSA
+// 2026 wage base" sitting next to a stale std-deduction citation) masked every other surface
+// being wrong. Each surface below is checked independently in scanTool().
+function declaredVintageEntries(slug, htmlText) {
+  const entries = [];
 
   // manifest.json data_vintage
   try {
     const manifestPath = resolve(ROOT, 'tools', slug, 'manifest.json');
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-    if (typeof manifest.data_vintage === 'string') collect(manifest.data_vintage);
+    if (typeof manifest.data_vintage === 'string') {
+      entries.push({
+        file: `tools/${slug}/manifest.json`,
+        line: null,
+        label: 'manifest.json data_vintage',
+        text: manifest.data_vintage,
+        years: yearsIn(manifest.data_vintage),
+      });
+    }
   } catch {
     /* no manifest.json or unparsable — not this gate's concern */
   }
 
-  // inline data_vintage: '...' / "data_vintage": "..." occurrences in index.html (covers both
-  // the runtime `manifest`/`MANIFEST` JS objects and any AP2 mandate payload literal)
+  // inline data_vintage: '...' / "data_vintage": "..." occurrences in index.html (covers the
+  // runtime `manifest`/`MANIFEST` JS objects and JSON-LD blocks) — one entry per occurrence.
   const inlineRe = /data_vintage['"]?\s*:\s*['"]([^'"]*)['"]/g;
   let m;
-  while ((m = inlineRe.exec(htmlText))) collect(m[1]);
+  while ((m = inlineRe.exec(htmlText))) {
+    entries.push({
+      file: `tools/${slug}/index.html`,
+      line: lineOf(htmlText, m.index),
+      label: 'inline data_vintage',
+      text: m[1],
+      years: yearsIn(m[1]),
+    });
+  }
 
-  return { years, text };
+  // visible tool-vintage-banner — the user-facing claim, previously not scanned at all
+  // (AL-G2-HALFB probe 3). Content may sit directly in the element or inside a nested
+  // <span>/<div> (some tools wrap it for i18n-chrome markup); strip tags before reading.
+  const bannerRe = /class="tool-vintage-banner">([\s\S]*?)<\/(?:div|span)>/g;
+  while ((m = bannerRe.exec(htmlText))) {
+    const raw = m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!raw) continue;
+    entries.push({
+      file: `tools/${slug}/index.html`,
+      line: lineOf(htmlText, m.index),
+      label: 'tool-vintage-banner',
+      text: raw,
+      years: yearsIn(raw),
+    });
+  }
+
+  return entries;
 }
 
 function scanTool(slug) {
@@ -166,7 +233,7 @@ function scanTool(slug) {
   }
 
   const lines = htmlText.split('\n');
-  const { years: declaredYears, text: declaredText } = declaredVintageInfo(slug, htmlText);
+  const declaredEntries = declaredVintageEntries(slug, htmlText);
 
   for (const sensor of SENSORS) {
     const ssotValue = SSOT[sensor.key];
@@ -188,25 +255,31 @@ function scanTool(slug) {
         });
       }
 
-      // (b) declared-vs-embedded vintage — only when the declared text is actually about
-      // this sensor's topic (see SENSOR_TOPIC_RE above); otherwise a tool that embeds a
-      // constant incidentally while its data_vintage describes something unrelated (e.g. a
-      // labor-market survey citation) would false-positive.
+      // (b) declared-vs-embedded vintage — checked PER SURFACE (manifest.json, each inline
+      // data_vintage occurrence, the visible banner), never on a merged union of all of them.
+      // A surface only has to answer for itself: if it's topically about this sensor (see
+      // SENSOR_TOPIC_RE) but doesn't name the year the embedded value actually belongs to,
+      // that surface is flagged — even if some OTHER surface on the same tool got it right.
       const fingerprintYear = YEAR_FINGERPRINTS[sensor.key]?.[found];
       const topicRe = SENSOR_TOPIC_RE[sensor.key];
-      if (
-        fingerprintYear != null &&
-        declaredYears.size > 0 &&
-        topicRe &&
-        topicRe.test(declaredText) &&
-        !declaredYears.has(fingerprintYear)
-      ) {
-        violations.push({
-          file: `tools/${slug}/index.html`,
-          line: i + 1,
-          kind: 'vintage-mismatch',
-          detail: `${sensor.key} = ${found} (tax year ${fingerprintYear}) but declared data_vintage names ${[...declaredYears].sort().join(', ') || '(no year)'}`,
-        });
+      if (fingerprintYear != null && topicRe) {
+        for (const entry of declaredEntries) {
+          if (!topicRe.test(entry.text)) continue; // this surface isn't about this constant
+          const citationYears = revProcImpliedYears(entry.text);
+          // A Rev Proc citation, if present, is authoritative — it overrides any other literal
+          // year token sitting in the same string (see REV_PROC_RE comment above).
+          const declaredOk = citationYears.size > 0
+            ? citationYears.has(fingerprintYear)
+            : entry.years.has(fingerprintYear);
+          if (declaredOk) continue;
+          const namedYears = citationYears.size > 0 ? citationYears : entry.years;
+          violations.push({
+            file: entry.file,
+            line: entry.line ?? 1, // manifest.json has no meaningful line — the embedded-at line is in the detail text
+            kind: 'vintage-mismatch',
+            detail: `${sensor.key} = ${found} (tax year ${fingerprintYear}, embedded at tools/${slug}/index.html:${i + 1}) but ${entry.label} names ${[...namedYears].sort().join(', ') || '(no year)'}${citationYears.size > 0 ? ' (from its Rev. Proc. citation)' : ''}`,
+          });
+        }
       }
     }
   }

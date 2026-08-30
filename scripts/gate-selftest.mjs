@@ -90,31 +90,47 @@ const tmp = mkdtempSync(join(tmpdir(), 'apex-gate-selftest-'));
   assertRed('hash-freeze (tampered golden execution_hash)', wentRed(join(work, 'scripts', 'hash-freeze.mjs')));
 }
 
-// ── 5. check-constants-vintage: SSOT mismatch AND declared-vs-embedded vintage mismatch ──
+// ── 5. check-constants-vintage: (a) SSOT mismatch, (b) declared-vs-embedded vintage
+//      mismatch — asserted SEPARATELY (AL-G2-HALFB). The original version put both fixtures
+//      in one tree and made a single assertRed over the combined run: fixture (a) alone
+//      reddens any run it's in, so that assertion passed whether or not (b) ever fired — and
+//      (b) turned out to be completely inert (see check-constants-vintage.mjs comments). Each
+//      sub-case now gets its own tree and its own assertion so a regression in one can't hide
+//      behind the other.
 {
-  const work = join(tmp, 'vintage');
-  mkdirSync(join(work, 'scripts'), { recursive: true });
-  mkdirSync(join(work, 'data'), { recursive: true });
-  mkdirSync(join(work, 'tools', 'zz-ssot-mismatch'), { recursive: true });
-  mkdirSync(join(work, 'tools', 'zz-vintage-mismatch'), { recursive: true });
-  cpSync(join(REPO, 'scripts', 'check-constants-vintage.mjs'), join(work, 'scripts', 'check-constants-vintage.mjs'));
-  cpSync(join(REPO, 'data', 'apex-constants-2026.js'), join(work, 'data', 'apex-constants-2026.js'));
-
   // (a) SSOT mismatch: SS_WAGE_BASE stale at the 2024 value, declared vintage says 2026.
-  writeFileSync(join(work, 'tools', 'zz-ssot-mismatch', 'index.html'),
-    '<script>\nconst SS_WAGE_BASE = 168600; // stale\n</script>\n');
-  writeFileSync(join(work, 'tools', 'zz-ssot-mismatch', 'manifest.json'),
-    JSON.stringify({ data_vintage: 'SSA 2026 wage base $184,500' }));
+  {
+    const work = join(tmp, 'vintage-a');
+    mkdirSync(join(work, 'scripts'), { recursive: true });
+    mkdirSync(join(work, 'data'), { recursive: true });
+    mkdirSync(join(work, 'tools', 'zz-ssot-mismatch'), { recursive: true });
+    cpSync(join(REPO, 'scripts', 'check-constants-vintage.mjs'), join(work, 'scripts', 'check-constants-vintage.mjs'));
+    cpSync(join(REPO, 'data', 'apex-constants-2026.js'), join(work, 'data', 'apex-constants-2026.js'));
+    writeFileSync(join(work, 'tools', 'zz-ssot-mismatch', 'index.html'),
+      '<script>\nconst SS_WAGE_BASE = 168600; // stale\n</script>\n');
+    writeFileSync(join(work, 'tools', 'zz-ssot-mismatch', 'manifest.json'),
+      JSON.stringify({ data_vintage: 'SSA 2026 wage base $184,500' }));
+    assertRed('check-constants-vintage (a: SSOT mismatch fixture)',
+      wentRed(join(work, 'scripts', 'check-constants-vintage.mjs')));
+  }
 
-  // (b) declared-vs-embedded vintage mismatch: standard deduction is a real 2026 value, but
-  // the declaration names 2024/2025 — same shape as the AL-CI-VINTAGE `08` defect.
-  writeFileSync(join(work, 'tools', 'zz-vintage-mismatch', 'index.html'),
-    '<script>\nconst STD_DEDUCTION = { single: 16100, mfj: 32200, hoh: 24150 };\n</script>\n');
-  writeFileSync(join(work, 'tools', 'zz-vintage-mismatch', 'manifest.json'),
-    JSON.stringify({ data_vintage: 'IRS Rev. Proc. 2025-32 (2024 standard deduction)' }));
-
-  assertRed('check-constants-vintage (SSOT + declared-vintage mismatch fixtures)',
-    wentRed(join(work, 'scripts', 'check-constants-vintage.mjs')));
+  // (b) declared-vs-embedded vintage mismatch: standard deduction is a real 2026 value (matches
+  // SSOT, so (a) is silent), but the manifest declares 2024 via a stale Rev. Proc. citation —
+  // same shape as the AL-CI-VINTAGE `08` defect, and the exact shape (a) cannot catch on its own.
+  {
+    const work = join(tmp, 'vintage-b');
+    mkdirSync(join(work, 'scripts'), { recursive: true });
+    mkdirSync(join(work, 'data'), { recursive: true });
+    mkdirSync(join(work, 'tools', 'zz-vintage-mismatch'), { recursive: true });
+    cpSync(join(REPO, 'scripts', 'check-constants-vintage.mjs'), join(work, 'scripts', 'check-constants-vintage.mjs'));
+    cpSync(join(REPO, 'data', 'apex-constants-2026.js'), join(work, 'data', 'apex-constants-2026.js'));
+    writeFileSync(join(work, 'tools', 'zz-vintage-mismatch', 'index.html'),
+      '<script>\nconst STD_DEDUCTION = { single: 16100, mfj: 32200, hoh: 24150 };\n</script>\n');
+    writeFileSync(join(work, 'tools', 'zz-vintage-mismatch', 'manifest.json'),
+      JSON.stringify({ data_vintage: 'IRS Rev. Proc. 2023-34 (2024 standard deduction)' }));
+    assertRed('check-constants-vintage (b: declared-vs-embedded vintage mismatch fixture)',
+      wentRed(join(work, 'scripts', 'check-constants-vintage.mjs')));
+  }
 }
 
 rmSync(tmp, { recursive: true, force: true });
