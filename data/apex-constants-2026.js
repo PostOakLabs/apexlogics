@@ -17,6 +17,9 @@
 
 const APEX_2026 = {
 
+  /* --- Rollover anchor -------------------------------------------------- */
+  CURRENT_YEAR: 2026,               // [S] vintage anchor, not read from the clock (AL-CI-HASHDOMAIN) — bump same day as every other value in this file at annual rollover; enforced by check-constants-vintage.mjs
+
   /* --- Social Security / FICA / SE tax --------------------------------- */
   SS_WAGE_BASE: 184500,            // [V] SSA 2026 (was 176,100 in 2025)
   FICA_SS_RATE: 0.062,             // [S]

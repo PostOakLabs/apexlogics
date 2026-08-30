@@ -101,6 +101,12 @@ function build() {
 }
 
 // ── 3c. chain-coherence-check: two chained tools disagree on a shared constant ──
+// Schema matches the real chaingraph.json (AL-G3-CHAINSHAPE): `chains[].steps[].tool_id`
+// resolved against a top-level `nodes[]` registry keyed by tool_id/al_id with a `url` the
+// gate derives a file path from. Two separate fixtures assert two separate claims:
+// (i) a REAL shared-key disagreement goes RED, (ii) two tools scoping the same constant
+// name to different, non-overlapping subkeys — a scope difference, not drift — stays GREEN
+// (this is the exact shape the pre-fix gate would have false-positived on, per the WU).
 {
   const work = join(tmp, 'chaincoh');
   mkdirSync(join(work, 'scripts'), { recursive: true });
@@ -108,18 +114,37 @@ function build() {
   mkdirSync(join(work, 'tools', 'zz-aa'), { recursive: true });
   mkdirSync(join(work, 'tools', 'zz-bb'), { recursive: true });
   cpSync(join(REPO, 'scripts', 'chain-coherence-check.mjs'), join(work, 'scripts', 'chain-coherence-check.mjs'));
-  writeFileSync(join(work, 'suite-registry.json'), JSON.stringify({
-    tools: [{ al_id: 'AL-01', tool_id: 'zz-aa' }, { al_id: 'AL-02', tool_id: 'zz-bb' }],
-  }));
+  const mkNode = (tool_id, al_id) => ({ tool_id, al_id, url: `https://apexlogics.org/tools/${tool_id}/` });
   writeFileSync(join(work, 'chaingraph', 'chaingraph.json'), JSON.stringify({
-    journeys: [{ id: 'zz-chain', nodes: ['AL-01', 'AL-02'] }],
+    nodes: [mkNode('zz-aa', 'AL-01'), mkNode('zz-bb', 'AL-02')],
+    chains: [{ name: 'zz-chain', steps: [{ tool_id: 'zz-aa' }, { tool_id: 'zz-bb' }] }],
   }));
   writeFileSync(join(work, 'tools', 'zz-aa', 'index.html'),
     '<script>const STD_DEDUCTION = { single: 16100, mfj: 32200 };</script>\n');
   writeFileSync(join(work, 'tools', 'zz-bb', 'index.html'),
-    '<script>const STD_DEDUCTION = { single: 14600, mfj: 29200 };</script>\n'); // stale 2024 value
-  assertRed('chain-coherence-check (two chained tools disagree on STD_DEDUCTION)',
-    wentRed(join(work, 'scripts', 'chain-coherence-check.mjs')));
+    '<script>const STD_DEDUCTION = { single: 14600, mfj: 29200 };</script>\n'); // stale 2024 value — same keys, different values
+  assertRed('chain-coherence-check (two chained tools disagree on a shared STD_DEDUCTION key)',
+    wentRed(join(work, 'scripts', 'chain-coherence-check.mjs'), { env: { ROOT: work } }));
+}
+{
+  const work = join(tmp, 'chaincoh-scope');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'chaingraph'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-cc'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-dd'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'chain-coherence-check.mjs'), join(work, 'scripts', 'chain-coherence-check.mjs'));
+  const mkNode = (tool_id, al_id) => ({ tool_id, al_id, url: `https://apexlogics.org/tools/${tool_id}/` });
+  writeFileSync(join(work, 'chaingraph', 'chaingraph.json'), JSON.stringify({
+    nodes: [mkNode('zz-cc', 'AL-03'), mkNode('zz-dd', 'AL-04')],
+    chains: [{ name: 'zz-chain-2', steps: [{ tool_id: 'zz-cc' }, { tool_id: 'zz-dd' }] }],
+  }));
+  writeFileSync(join(work, 'tools', 'zz-cc', 'index.html'),
+    '<script>const TIER_VALUE = { m7: 650000, t15: 480000 };</script>\n');
+  writeFileSync(join(work, 'tools', 'zz-dd', 'index.html'),
+    '<script>const TIER_VALUE = { m7: 650000, t15: 480000, t50: 220000 };</script>\n'); // extra key, shared keys agree
+  const red = wentRed(join(work, 'scripts', 'chain-coherence-check.mjs'), { env: { ROOT: work } });
+  if (!red) console.log('✓ chain-coherence-check stays GREEN on a scope-only difference (no shared-key disagreement)');
+  else { console.error('✗ chain-coherence-check FALSE-POSITIVED on a scope-only difference — has too many teeth'); fails++; }
 }
 
 // ── 4. hash-freeze: tamper a golden's execution_hash ────────────────────────
@@ -174,6 +199,23 @@ function build() {
     writeFileSync(join(work, 'tools', 'zz-vintage-mismatch', 'manifest.json'),
       JSON.stringify({ data_vintage: 'IRS Rev. Proc. 2023-34 (2024 standard deduction)' }));
     assertRed('check-constants-vintage (b: declared-vs-embedded vintage mismatch fixture)',
+      wentRed(join(work, 'scripts', 'check-constants-vintage.mjs')));
+  }
+
+  // (c) CURRENT_YEAR SSOT mismatch (AL-G3-CHAINSHAPE) — the AL-CI-HASHDOMAIN rollover
+  // anchor now has a sensor; prove it actually reddens on a stale value.
+  {
+    const work = join(tmp, 'vintage-c');
+    mkdirSync(join(work, 'scripts'), { recursive: true });
+    mkdirSync(join(work, 'data'), { recursive: true });
+    mkdirSync(join(work, 'tools', 'zz-year-mismatch'), { recursive: true });
+    cpSync(join(REPO, 'scripts', 'check-constants-vintage.mjs'), join(work, 'scripts', 'check-constants-vintage.mjs'));
+    cpSync(join(REPO, 'data', 'apex-constants-2026.js'), join(work, 'data', 'apex-constants-2026.js'));
+    writeFileSync(join(work, 'tools', 'zz-year-mismatch', 'index.html'),
+      '<script>\nconst CURRENT_YEAR = 2025; // stale — SSOT says 2026\n</script>\n');
+    writeFileSync(join(work, 'tools', 'zz-year-mismatch', 'manifest.json'),
+      JSON.stringify({ data_vintage: '2026' }));
+    assertRed('check-constants-vintage (c: CURRENT_YEAR SSOT mismatch fixture)',
       wentRed(join(work, 'scripts', 'check-constants-vintage.mjs')));
   }
 }
