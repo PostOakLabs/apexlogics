@@ -353,6 +353,53 @@ function build() {
   claim('check-no-storage.mjs', 'check-no-storage (injected localStorage.setItem)', wentRed(join(work, 'scripts', 'check-no-storage.mjs')));
 }
 
+// ── 10b. check-a11y-results: tool with no aria-live/role="status"/"alert" ───
+{
+  const work = join(tmp, 'a11yresults');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-noresults'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-a11y-results.mjs'), join(work, 'scripts', 'check-a11y-results.mjs'));
+  writeFileSync(join(work, 'tools', 'zz-noresults', 'index.html'),
+    '<!doctype html><html><body><div id="results-panel">no live region here</div></body></html>\n');
+  claim('check-a11y-results.mjs', 'check-a11y-results (tool with no aria-live/role status/alert)', wentRed(join(work, 'scripts', 'check-a11y-results.mjs')));
+}
+
+// ── 10c. check-a11y-mfst: two distinct claims — missing button attribute,
+//      and function that never sets aria-expanded (AL-A11Y-ANNOUNCE §C2) ────
+{
+  const work = join(tmp, 'a11ymfst-a');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-mfst-a'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-a11y-mfst.mjs'), join(work, 'scripts', 'check-a11y-mfst.mjs'));
+  writeFileSync(join(work, 'tools', 'zz-mfst-a', 'index.html'), `<!doctype html><html><body>
+    <button class="mfst-btn" onclick="toggleMfst()">MCP / Manifest</button>
+    <script>function toggleMfst(){var b=document.getElementById('mfstBody');b.style.display='block';b.setAttribute('aria-expanded','true');}</script>
+    </body></html>\n`);
+  claim('check-a11y-mfst.mjs', 'check-a11y-mfst (a: button missing aria-expanded attribute)', wentRed(join(work, 'scripts', 'check-a11y-mfst.mjs')));
+}
+{
+  const work = join(tmp, 'a11ymfst-b');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-mfst-b'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-a11y-mfst.mjs'), join(work, 'scripts', 'check-a11y-mfst.mjs'));
+  writeFileSync(join(work, 'tools', 'zz-mfst-b', 'index.html'), `<!doctype html><html><body>
+    <button class="mfst-btn" id="mfstBtn" onclick="toggleMfst()" aria-expanded="false">MCP / Manifest</button>
+    <script>function toggleMfst(){var b=document.getElementById('mfstBody');b.style.display='block';}</script>
+    </body></html>\n`);
+  claim('check-a11y-mfst.mjs', 'check-a11y-mfst (b: toggleMfst() never sets aria-expanded)', wentRed(join(work, 'scripts', 'check-a11y-mfst.mjs')));
+}
+
+// ── 10d. check-a11y-keyboard: div onclick with no role and no tabindex ──────
+{
+  const work = join(tmp, 'a11ykbd');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-kbd'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-a11y-keyboard.mjs'), join(work, 'scripts', 'check-a11y-keyboard.mjs'));
+  writeFileSync(join(work, 'tools', 'zz-kbd', 'index.html'),
+    '<!doctype html><html><body><div class="toggle-header" onclick="toggleSection(\'x\')">Section</div></body></html>\n');
+  claim('check-a11y-keyboard.mjs', 'check-a11y-keyboard (div onclick with no role/tabindex)', wentRed(join(work, 'scripts', 'check-a11y-keyboard.mjs')));
+}
+
 // ── 11. check-links: create a dead internal href ────────────────────────────
 {
   const work = join(tmp, 'links');

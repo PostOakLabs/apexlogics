@@ -358,7 +358,7 @@
 
   <!-- ============ TAB 5: EXPORT ============ -->
   <div class="tab-pane" id="tabPane5">
-    <div id="exportContent">
+    <div id="exportContent" aria-live="polite">
       <p style="color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:0.85rem;padding:40px 0;" id="exportPrompt">
         Complete Tabs 1–4 and click "Build Full Export" to generate your toolkit summary.
       </p>
@@ -373,7 +373,7 @@
 
 <div class="toast" id="toast"></div>
 
-<button class="mfst-btn" onclick="toggleMfst()"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+<button class="mfst-btn" id="mfstBtn" onclick="toggleMfst()" aria-expanded="false"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
 <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
 
 <footer class="tool-footer">
@@ -554,7 +554,7 @@ function renderPolicies() {
   const container = document.getElementById('policiesContainer');
   container.innerHTML = POLICY_TEMPLATES.map(p => `
     <div class="policy-item">
-      <div class="policy-header" onclick="togglePolicy('policy_${p.id}')">
+      <div class="policy-header" onclick="togglePolicy('policy_${p.id}')" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
         <span>${p.label}</span>
         <span class="toggle" id="toggle_${p.id}">▶</span>
       </div>
@@ -568,7 +568,11 @@ function togglePolicy(id) {
   const body = document.getElementById(id);
   const toggle = document.getElementById('toggle_' + id.replace('policy_', ''));
   body.classList.toggle('open');
-  if (toggle) toggle.textContent = body.classList.contains('open') ? '▼' : '▶';
+  if (toggle) {
+    toggle.textContent = body.classList.contains('open') ? '▼' : '▶';
+    const header = toggle.closest('.policy-header');
+    if (header) header.setAttribute('aria-expanded', body.classList.contains('open'));
+  }
 }
 
 // ── Grade Categories ───────────────────────────────────────────────────────
@@ -1068,7 +1072,7 @@ const MANIFEST = {
 };
 
 /* ── MCP / MANIFEST TOGGLE (standardized, additive) ── */
-function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';}}
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstBtn').setAttribute('aria-expanded','true');document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';document.getElementById('mfstBtn').setAttribute('aria-expanded','false');}}
 </script>
 
 </body>
