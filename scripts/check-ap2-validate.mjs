@@ -32,6 +32,17 @@
  *                           `undefined` on an array/plain boolean, so `!res.valid` is
  *                           always true and Export is blocked for every user, always.
  *
+ *   A4 UNRECOGNISED-SHAPE   The validator's return shape can't be classified into any
+ *                           of OBJECT / ARRAY / THROWS / BOOL. Recognised BOOL forms
+ *                           include an explicit `return true/false`, an explicit
+ *                           `return <expr>;` (error-string-or-null, `a && b && c`
+ *                           chains, ternaries — anything only sensibly tested for
+ *                           truthiness), and the implicit return of a brace-less
+ *                           concise arrow (`validate: p => p.chaingraph_version && ...`).
+ *                           A file that still trips this is a real gap in the gate, not
+ *                           evidence of a tool defect — fix the gate, don't touch the
+ *                           tool on an A4 alone.
+ *
  * Deliberately NOT flagged (see the AL-TOOLS-FIX-2 retraction — do not "fix" these):
  *
  *   - A THROWING validator is never flagged, whatever the consumption. Ten tools
@@ -42,12 +53,8 @@
  *     it only looked for `return true`. They are not. No shape check is applied to a
  *     validator that throws.
  *
- *   - A validator whose shape cannot be determined statically is reported as a NOTE,
- *     never a failure. An unclassifiable schema is a gap in this gate, not evidence of
- *     a defect in the tool.
- *
  * Usage: node scripts/check-ap2-validate.mjs
- * Exit 0 = clean, exit 1 = one or more A1/A2/A3 violations.
+ * Exit 0 = clean, exit 1 = one or more A1/A2/A3/A4 violations.
  *
  * The page surface is DERIVED by walking the repo root (same rule as check_tools.js
  * after AL-JSGATE-SHOWCASE) rather than hand-naming directories, so a new content
@@ -209,26 +216,33 @@ function memberFnBody(code, fromIdx, name) {
   return null;
 }
 
-/** What a validator returns, and whether it can throw. */
-function classifyShape(body) {
+/**
+ * What a validator returns, and whether it can throw. `isExpr` marks a brace-less
+ * concise arrow (`validate: p => p.chaingraph_version && ...`) whose whole body IS
+ * the return value, with no `return` keyword to match on.
+ */
+function classifyShape(body, isExpr) {
   if (!body) return 'UNKNOWN';
   const throws = /\bthrow\b/.test(body);
   // "return { valid: ... }" — tolerate a nested brace or two before the key.
   const returnsObjWithValid = /return\s*\{[^}]*\b(?:valid|ok)\s*:/.test(body);
   const returnsArrayLike = /return\s*\[/.test(body) || /\b(?:errors|errs|issues|msgs)\s*\.\s*push\s*\(/.test(body);
-  const returnsBool = /return\s+(?:true|false)\s*[;}]/.test(body);
+  // Truthy-return family: an explicit `return <expr>;` that isn't the object/array
+  // shapes above (booleans, error-string-or-null, `a && b && c` chains, ternaries
+  // — anything a caller can only sensibly test for truthiness), OR the implicit
+  // return of a brace-less arrow, which is the same contract with no `return` token.
+  const returnsTruthy = isExpr || /\breturn\s+[^;{}]+[;}]/.test(body);
 
   if (returnsObjWithValid) return 'OBJECT';
   if (returnsArrayLike) return 'ARRAY';
   if (throws) return 'THROWS'; // throws and no object/array return → throw is the channel
-  if (returnsBool) return 'BOOL';
+  if (returnsTruthy) return 'BOOL';
   return 'UNKNOWN';
 }
 
 // ── main scan ───────────────────────────────────────────────────────────────
-const VERBOSE = process.argv.includes('--verbose');
 const findings = [];
-let pages = 0, schemas = 0, calls = 0, unknownShapes = 0;
+let pages = 0, schemas = 0, calls = 0;
 
 for (const [name, file] of listPages()) {
   pages++;
@@ -304,14 +318,12 @@ for (const [name, file] of listPages()) {
 
       // ── shape ───────────────────────────────────────────────────────────
       const fn = memberFnBody(lit.block.masked, lit.openIdx, member);
-      const shape = classifyShape(fn ? lit.block.masked.slice(fn.start, fn.end + 1) : null);
+      const fnBody = fn ? lit.block.masked.slice(fn.start, fn.end + 1) : null;
+      const shape = classifyShape(fnBody, fn ? fn.isExpr : false);
       if (shape === 'UNKNOWN') {
-        unknownShapes++;
-        if (VERBOSE) {
-          findings.push({ code: 'NOTE', rel, line, member,
-            detail: (fn ? 'shape not recognised in body' : 'could not locate the function body')
-              + (fn ? ' :: ' + lit.block.masked.slice(fn.start, fn.end + 1).replace(/\s+/g, ' ').slice(0, 160) : '') });
-        }
+        findings.push({ code: 'A4', rel, line, member,
+          detail: (fn ? 'validator shape not recognised statically' : 'could not locate the function body')
+            + (fnBody ? ' :: ' + fnBody.replace(/\s+/g, ' ').slice(0, 160) : '') });
         continue;
       }
       if (shape === 'THROWS') continue; // correct by definition — see header
@@ -346,20 +358,13 @@ for (const [name, file] of listPages()) {
   }
 }
 
-const real = findings.filter(f => f.code !== 'NOTE');
-if (VERBOSE) {
-  for (const f of findings.filter(f => f.code === 'NOTE')) {
-    console.error(`  · NOTE ${f.rel}:${f.line} — AP2Schema.${f.member} — ${f.detail}`);
-  }
-}
-if (real.length) {
-  console.error(`\ncheck-ap2-validate: ${real.length} violation(s):\n`);
-  for (const f of real) {
+if (findings.length) {
+  console.error(`\ncheck-ap2-validate: ${findings.length} violation(s):\n`);
+  for (const f of findings) {
     console.error(`  ✗ ${f.code} ${f.rel}:${f.line} — AP2Schema.${f.member} — ${f.detail}`);
   }
   console.error('\nNo baseline, no exception list (AL-TOOLS-FIX-2). Fix the call site or the schema.');
   process.exit(1);
 }
-console.log(`✓ check-ap2-validate: ${pages} pages, ${schemas} AP2Schema literals, ${calls} member references — clean.`
-  + (unknownShapes ? ` (${unknownShapes} validator(s) of unclassifiable shape — NOTE only, not a failure)` : ''));
+console.log(`✓ check-ap2-validate: ${pages} pages, ${schemas} AP2Schema literals, ${calls} member references — clean.`);
 process.exit(0);
