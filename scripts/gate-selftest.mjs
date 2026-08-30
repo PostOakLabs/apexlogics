@@ -400,6 +400,41 @@ function build() {
   claim('check-a11y-keyboard.mjs', 'check-a11y-keyboard (div onclick with no role/tabindex)', wentRed(join(work, 'scripts', 'check-a11y-keyboard.mjs')));
 }
 
+// ── 10e. check-a11y-names: two claims — stripped for= goes RED, a correctly-
+//      wrapped toggle label (text inside <label>, no for=) stays GREEN. The
+//      audit found true wrapping labels are a real, already-used naming
+//      mechanism here (59 toggles) — a gate that flags those has no teeth
+//      within a week (AL-A11Y-NAMES row note). Both claims share one fixture
+//      tree so the wrapping case is proven not to trip the same run that
+//      proves the stripped case does.
+{
+  const work = join(tmp, 'a11ynames');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-names'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-a11y-names.mjs'), join(work, 'scripts', 'check-a11y-names.mjs'));
+  writeFileSync(join(work, 'tools', 'zz-names', 'index.html'), `<!doctype html><html><body>
+    <div class="field">
+      <label>Annual Salary ($)</label>
+      <input type="number" id="salary" value="50000" />
+    </div>
+    <label class="toggle">Enable soft costs<input type="checkbox" id="softCosts" checked><span class="slider"></span></label>
+    </body></html>\n`);
+  claim('check-a11y-names.mjs', 'check-a11y-names (stripped sibling label with no for= goes RED)',
+    wentRed(join(work, 'scripts', 'check-a11y-names.mjs')));
+  // Isolate the wrapping toggle in its own tree to prove it alone does NOT trip the gate.
+  const workGood = join(tmp, 'a11ynames-wrap-only');
+  mkdirSync(join(workGood, 'scripts'), { recursive: true });
+  mkdirSync(join(workGood, 'tools', 'zz-wrap'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-a11y-names.mjs'), join(workGood, 'scripts', 'check-a11y-names.mjs'));
+  writeFileSync(join(workGood, 'tools', 'zz-wrap', 'index.html'), `<!doctype html><html><body>
+    <label class="toggle">Enable soft costs<input type="checkbox" id="softCosts" checked><span class="slider"></span></label>
+    </body></html>\n`);
+  const wrapRed = wentRed(join(workGood, 'scripts', 'check-a11y-names.mjs'));
+  claims++; covered.add('check-a11y-names.mjs');
+  if (!wrapRed) console.log('✓ check-a11y-names stays GREEN on a correctly-wrapped toggle label (checkbox excluded from scope; text-bearing wrap not flagged)');
+  else { console.error('✗ check-a11y-names FALSE-POSITIVED on a correctly-wrapped toggle label — has too many teeth'); fails++; }
+}
+
 // ── 11. check-links: create a dead internal href ────────────────────────────
 {
   const work = join(tmp, 'links');
