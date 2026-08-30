@@ -43,6 +43,51 @@
  *                           evidence of a tool defect — fix the gate, don't touch the
  *                           tool on an A4 alone.
  *
+ *   A5 UNREFERENCED-VALIDATOR   A `tools/`/`showcase/` file declares an `AP2Schema`
+ *                           member matching `/valid/i` that is never referenced
+ *                           ANYWHERE in the file (0 occurrences of `AP2Schema.<member>`
+ *                           at all, so it never even reaches A1's checks). This is the
+ *                           exact 03/12/14/16 defect: a schema copy-pasted from a
+ *                           working tool's template, correct in shape, never wired to
+ *                           a call site — dead code guarding nothing.
+ *
+ *   A6 NO-SCHEMA-NO-GUARD   A `tools/`/`showcase/` file declares NO `AP2Schema` at all,
+ *                           writes a Policy Mandate `application/json` download, and
+ *                           has no validation signal — no `errs`/`_ap2errs` guard, no
+ *                           `.valid` check, no mandate-shape-field `if()`, no
+ *                           `validat*()` call — anywhere in the file. The
+ *                           advisor-prompt-composer defect shape.
+ *
+ *                           A5 and A6 are the AL-TOOLS-FIX-2 / AL-AP2-UNVALIDATED blind
+ *                           spot: A1–A4 only ever fire on a file that references
+ *                           `AP2Schema.<member>` at all, so a file that never calls a
+ *                           validator of any shape sails through clean. Both are
+ *                           deliberately WHOLE-FILE scoped, not per-function: this
+ *                           suite legitimately builds a mandate in one function and
+ *                           consumes it in another (`buildAP2Mandate()` validates and
+ *                           returns `null` on failure; `exportAP2()` just checks
+ *                           `if (!mandate) return`), so scoping to the export
+ *                           function's own body false-positives on every tool using
+ *                           that — very common — split. A6's guard-signal check also
+ *                           skips (does not flag) any `<script>` block where mask()'s
+ *                           quote/comment state machine didn't end back in `'code'`
+ *                           (see `endsInCode()`) — a run of adjacent template literals
+ *                           with `${}` interpolations has been observed to desync it on
+ *                           at least one real file, and a block we can't trust the
+ *                           tokenization of must not be treated as evidence either way.
+ *
+ *                           Scoped to `tools/` + `showcase/` only (AL-TOOLS-FIX-2's
+ *                           67-file signal was tools/-only). `chaingraph/*.html` exports
+ *                           a distinct, non-mandate `chaingraph_journey_bundle` artifact
+ *                           (no `ap2_mandate_type`) — out of scope by construction.
+ *                           `workflows/*.html` DOES emit real named-mandate-type Policy
+ *                           Mandates via a `buildAP2()`/`dl()` pattern with no validator
+ *                           anywhere in several files — a genuine same-shape defect,
+ *                           confirmed while building this gate, but out of
+ *                           AL-AP2-UNVALIDATED's scope (5 tool dirs) and left for its own
+ *                           WU rather than silently widening this row or reddening CI on
+ *                           files this row never touched.
+ *
  * Deliberately NOT flagged (see the AL-TOOLS-FIX-2 retraction — do not "fix" these):
  *
  *   - A THROWING validator is never flagged, whatever the consumption. Ten tools
@@ -54,7 +99,7 @@
  *     validator that throws.
  *
  * Usage: node scripts/check-ap2-validate.mjs
- * Exit 0 = clean, exit 1 = one or more A1/A2/A3/A4 violations.
+ * Exit 0 = clean, exit 1 = one or more A1–A6 violations.
  *
  * The page surface is DERIVED by walking the repo root (same rule as check_tools.js
  * after AL-JSGATE-SHOWCASE) rather than hand-naming directories, so a new content
@@ -133,6 +178,37 @@ function mask(src) {
     i++;
   }
   return out.join('');
+}
+
+/**
+ * Whether mask() plausibly tokenized `src` correctly: does its quote/comment state
+ * machine end back in 'code'? A run of several adjacent template literals containing
+ * `${...}` interpolations with their own nested quotes (mask() treats a whole backtick
+ * span as opaque content, so it can't track `${}` as code) has been observed to desync
+ * the tracked state on at least one real file in this suite, ending mid-string and
+ * blanking everything after — silently, since mask() has no other output. Used only to
+ * gate the A5 check (below), which is new and depends on scanning specific code past
+ * where a desync could occur; A1–A4 predate this and are left as they are.
+ */
+function endsInCode(src) {
+  const n = src.length;
+  let i = 0, state = 'code';
+  while (i < n) {
+    const c = src[i], d = src[i + 1];
+    if (state === 'code') {
+      if (c === '/' && d === '/') { state = 'line'; i += 2; continue; }
+      if (c === '/' && d === '*') { state = 'block'; i += 2; continue; }
+      if (c === '"' || c === "'" || c === '`') { state = c; i++; continue; }
+      i++; continue;
+    }
+    if (state === 'line') { if (c === '\n') state = 'code'; i++; continue; }
+    if (state === 'block') { if (c === '*' && d === '/') { state = 'code'; i += 2; continue; } i++; continue; }
+    if (c === '\\') { i += 2; continue; }
+    if (c === state) { state = 'code'; i++; continue; }
+    if (c === '\n' && state !== '`') { state = 'code'; i++; continue; }
+    i++;
+  }
+  return state === 'code';
 }
 
 // ── brace / extent helpers (all run on masked code: no strings, no comments) ─
@@ -260,7 +336,7 @@ for (const [name, file] of listPages()) {
     if (!JS_TYPES.includes(tm ? tm[1].toLowerCase() : '')) continue;
     if (!body.trim()) continue;
     const bodyStart = m.index + m[0].length - body.length; // absolute offset in html
-    blocks.push({ body, masked: mask(body), bodyStart, html });
+    blocks.push({ body, masked: mask(body), trusted: endsInCode(body), bodyStart, html });
   }
   if (!blocks.length) continue;
 
@@ -290,6 +366,7 @@ for (const [name, file] of listPages()) {
   }
 
   // 3. every `AP2Schema.<member>` reference
+  const referencedMembers = new Set();
   for (const b of blocks) {
     const callRe = /\bAP2Schema\s*\.\s*([A-Za-z_$][\w$]*)/g;
     let cm;
@@ -299,6 +376,7 @@ for (const [name, file] of listPages()) {
       const abs = b.bodyStart + offset;
       const line = lineOf(abs);
       calls++;
+      referencedMembers.add(member);
       const isCall = /^\s*\(/.test(b.masked.slice(offset + cm[0].length));
 
       // ── A1: undeclared member ────────────────────────────────────────────
@@ -353,6 +431,74 @@ for (const [name, file] of listPages()) {
         findings.push({ code: 'A3', rel, line, member,
           detail: `validator returns ${shape === 'ARRAY' ? 'an array' : 'a boolean'}, but the call site reads `
             + `\`${v}.valid\`/\`.error\` — undefined, so \`!${v}.valid\` is always true and Export is blocked for everyone` });
+      }
+    }
+  }
+
+  // ── A5: tools/showcase file declares an AP2Schema validator member that is never
+  //        referenced anywhere — the exact 03/12/14/16 defect shape (dead code
+  //        guarding nothing, wherever in the file the export actually happens; this
+  //        is deliberately NOT function-scoped to the export call, because this
+  //        suite legitimately builds the mandate in one function and consumes it in
+  //        another — e.g. `buildAP2Mandate()` validates and returns null on failure,
+  //        `exportAP2()` just checks `if (!mandate) return`, and that split is
+  //        correct as long as the builder really calls validate somewhere) ──
+  const inScopeForA5 = rel.startsWith('tools/') || rel.startsWith('showcase/');
+  if (inScopeForA5 && lit) {
+    for (const member of lit.members) {
+      // the VALIDATOR function member only (`validate`), not data members that
+      // happen to contain "valid" too (`validMandateTypes`/`VALID_MANDATE_TYPES`),
+      // which are legitimately referenced only via `this.<member>` from inside
+      // `validate()` itself, never as `AP2Schema.<member>` — that isn't dead code
+      if (!/^validate\w*$/i.test(member)) continue;
+      if (!referencedMembers.has(member)) {
+        findings.push({ code: 'A5', rel, line: lineOf(lit.block.bodyStart + lit.openIdx), member,
+          detail: `AP2Schema.${member} is declared but never referenced anywhere in the file — `
+            + 'dead code guarding nothing' });
+      }
+    }
+  }
+
+  // ── A6: tools/showcase file has NO AP2Schema at all, writes a Policy Mandate JSON
+  //        download, but has no validation signal anywhere in the file. Whole-file
+  //        (not per-function) scoped for the same reason as A5. The
+  //        advisor-prompt-composer defect shape. ──
+  if (inScopeForA5 && !lit) {
+    const hasJsonExport = blocks.some(b => {
+      const exportRe = /application\/json/gi;
+      let em;
+      while ((em = exportRe.exec(b.body))) {
+        const nearby = b.body.slice(Math.max(0, em.index - 400), em.index + 200);
+        if (/\b(?:createObjectURL|Blob\s*\(|\bdl\s*\(|downloadFile\s*\(|download\s*\()/.test(nearby)) return true;
+      }
+      return false;
+    });
+    if (hasJsonExport) {
+      // signals mirroring AL-TOOLS-FIX-2's classifier, scanned across the WHOLE file
+      // (all blocks) rather than one function — see the A5/A6 header note above
+      const validated = blocks.some(b => {
+        if (!b.trusted) return true; // mask() desync (see endsInCode()) — don't guess, don't flag
+        const code = b.masked;
+        if (/\bvalidat\w*\s*\(/i.test(code)) return true;
+        if (/\bif\s*\([^)]*\.\s*valid\b/i.test(code)) return true;
+        if (/\bif\s*\([^)]*\b(?:errs?|errors?|_ap2errs)\b[^)]*\)/i.test(code)) return true;
+        // mandate-shape-field if() is the loosest signal — a tool can legitimately
+        // check `if (!item.mandate_type)` for something UNRELATED to export gating
+        // (e.g. warning on a pasted artifact, then continuing anyway). Only count it
+        // when the guarded branch actually exits — `return`/`alert(...)return` within
+        // the next ~200 chars — the way every real export guard in this suite does.
+        const mreRe = /\bif\s*\([^)]*\b(?:chaingraph_version|ap2_mandate_type|mandate_type)\b[^)]*\)/gi;
+        let mm;
+        while ((mm = mreRe.exec(code))) {
+          if (/\breturn\b/.test(code.slice(mm.index, mm.index + 400))) return true;
+        }
+        return false;
+      });
+      if (!validated) {
+        findings.push({ code: 'A6', rel, line: 1, member: '(none)',
+          detail: 'file writes a Policy Mandate application/json download but declares no AP2Schema '
+            + 'and has no validation signal (errs/_ap2errs guard, .valid check, mandate-shape-field if(), '
+            + 'or a validat*() call) anywhere in the file' });
       }
     }
   }

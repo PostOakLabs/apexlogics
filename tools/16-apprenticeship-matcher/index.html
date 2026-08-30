@@ -1338,9 +1338,8 @@ function exportMarkdown() {
    ───────────────────────────────────────────────────────────────── */
 const AP2Schema = {
   required: [
-    'chaingraph_version','mandate_id','issued_at','issued_by',
-    'tool_id','tool_version','al_id','mandate_type',
-    'payload','summary','audit_metadata'
+    'chaingraph_version','tool_id','tool_version','al_id',
+    'mandate_type','audit_signature'
   ],
   validMandateTypes: [
     'credential_roi_evaluation','human_capital_assessment',
@@ -1368,10 +1367,10 @@ const AP2Schema = {
       errors.push('unrecognized mandate_type: ' + mandate.ap2_mandate_type);
     if (mandate.al_id && !/^AL-\d{1,2}(\+\d{1,2})?$/.test(mandate.al_id))
       errors.push('al_id format invalid: ' + mandate.al_id);
-    if (mandate.audit_metadata) {
-      if (mandate.audit_metadata.client_side_executed !== true) errors.push('client_side_executed must be true');
-      if (mandate.audit_metadata.zero_pii_verified !== true)    errors.push('zero_pii_verified must be true');
-      if (mandate.audit_metadata.deterministic_run !== true)    errors.push('deterministic_run must be true');
+    if (mandate.audit_signature) {
+      if (mandate.audit_signature.client_side_executed !== true) errors.push('client_side_executed must be true');
+      if (mandate.audit_signature.zero_pii_verified !== true)    errors.push('zero_pii_verified must be true');
+      if (mandate.audit_signature.deterministic_run !== true)    errors.push('deterministic_run must be true');
     }
     return { valid: errors.length === 0, errors };
   }
@@ -1555,7 +1554,9 @@ async function apexHash(policy_parameters, output_payload) {
 async function exportAP2() {
   if (!lastResult) { showToast('Run the analysis first.', 'error'); return; }
   const mandate = await buildAP2Mandate();
-  if (!mandate) { showToast('Policy Mandate validation failed — check console.', 'error'); return; }
+  if (!mandate) { showToast('Run the analysis first.', 'error'); return; }
+  const _v = AP2Schema.validate(mandate);
+  if (!_v.valid) { showToast('Policy Mandate validation failed: ' + _v.errors.join('; '), 'error'); return; }
   const json = JSON.stringify(mandate, null, 2);
   download(json, `AL-11_apprenticeship-matcher_${tsCompact()}.ap2.json`, 'application/json');
   showToast('Policy Mandate exported.', 'success');

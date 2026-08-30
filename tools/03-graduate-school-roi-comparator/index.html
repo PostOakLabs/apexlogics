@@ -505,7 +505,7 @@ const MBA_BENCHMARKS = {
    §2  Policy Mandate SCHEMA VALIDATOR (CONTRACT Appendix F — exact reference impl)
    ═══════════════════════════════════════════════════════════════════════════ */
 const AP2Schema = {
-  required: ['mandate_id','issued_at','issued_by','tool_id','tool_version','al_id','mandate_type','payload','summary','audit_metadata','chaingraph_version'],
+  required: ['tool_id','tool_version','al_id','mandate_type','audit_signature','chaingraph_version'],
   validMandateTypes: [
     'credential_roi_evaluation','human_capital_assessment','automation_exposure_score',
     'career_resilience_score','workforce_program_roi','career_pivot_assessment',
@@ -527,10 +527,10 @@ const AP2Schema = {
       errors.push(`mandate_type "${mandate.ap2_mandate_type}" is not a recognized ApexLogics value`);
     if (mandate.al_id && !/^AL-\d{1,2}(\+\d{1,2})?$/.test(mandate.al_id))
       errors.push(`al_id "${mandate.al_id}" must match /^AL-\\d{1,2}(\\+\\d{1,2})?$/`);
-    if (mandate.audit_metadata) {
-      if (mandate.audit_metadata.client_side_executed !== true) errors.push('audit_metadata.client_side_executed must be true');
-      if (mandate.audit_metadata.zero_pii_verified !== true) errors.push('audit_metadata.zero_pii_verified must be true');
-      if (mandate.audit_metadata.deterministic_run !== true) errors.push('audit_metadata.deterministic_run must be true');
+    if (mandate.audit_signature) {
+      if (mandate.audit_signature.client_side_executed !== true) errors.push('audit_signature.client_side_executed must be true');
+      if (mandate.audit_signature.zero_pii_verified !== true) errors.push('audit_signature.zero_pii_verified must be true');
+      if (mandate.audit_signature.deterministic_run !== true) errors.push('audit_signature.deterministic_run must be true');
     }
     return { valid: errors.length === 0, errors };
   }
@@ -1238,6 +1238,8 @@ async function apexHash(policy_parameters, output_payload) {
 async function exportAP2() {
   const mandate = await buildAP2Mandate();
   if (!mandate) { showToast('Run a comparison first', 'error'); return; }
+  const _v = AP2Schema.validate(mandate);
+  if (!_v.valid) { showToast('Policy Mandate validation failed: ' + _v.errors.join('; '), 'error'); return; }
   const blob = new Blob([JSON.stringify(mandate, null, 2)], { type:'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
