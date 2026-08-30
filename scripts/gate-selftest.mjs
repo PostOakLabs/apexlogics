@@ -41,18 +41,29 @@ function wentRedPy(scriptPath, args, { cwd = REPO } = {}) {
 
 const tmp = mkdtempSync(join(tmpdir(), 'apex-gate-selftest-'));
 
-// ── coverage bookkeeping (AL-GATE-SELFTEST-ALL) ─────────────────────────────
-// deploy.yml invokes 18 gates besides this one. Every claim below registers the
-// gate name it proves, so the closing message states real coverage instead of
-// repeating the "every gate" overclaim gate-selftest itself was found to have
-// made (AL-AUDIT-GATE-INTEGRITY §B1) while covering a fraction of them.
-const DEPLOY_GATES = [
-  'check-vendor-fresh.mjs', 'schema-validate.mjs', 'hash-lint.mjs', 'hash-domain-lint.mjs',
-  'chain-coherence-check.mjs', 'hash-freeze.mjs', 'check_tools.js', 'check-ap2-validate.mjs',
-  'verify-counts.mjs', 'check-registry-self.mjs', 'check-constants-vintage.mjs',
-  'check-no-storage.mjs', 'check-links.mjs', 'check-brand-titles.mjs', 'check-seo-meta.mjs',
-  'check-chaingraph-parity.mjs', 'gen-sitemap.mjs', 'check_index_sync.py',
-];
+// ── coverage bookkeeping (AL-GATE-SELFTEST-ALL, AL-GATE-HONESTY) ────────────
+// Every claim below registers the gate name it proves, so the closing message
+// states real coverage instead of repeating the "every gate" overclaim
+// gate-selftest itself was found to have made (AL-AUDIT-GATE-INTEGRITY §B1)
+// while covering a fraction of them.
+//
+// DEPLOY_GATES used to be a hand-maintained array here — the exact
+// "hand-maintained-surface-list" defect class check_tools.js hit twice
+// (AL-JSGATE-SCOPE missed workflows/+chaingraph/, AL-JSGATE-SHOWCASE missed
+// showcase/) and was fixed both times by deriving the list instead of
+// maintaining it. A gate added to deploy.yml and never added to a hardcoded
+// array here would escape this meta-guard silently, so the list is now
+// parsed straight out of deploy.yml's own `run:` lines instead.
+function deployGatesFromWorkflow() {
+  const yml = readFileSync(join(REPO, '.github', 'workflows', 'deploy.yml'), 'utf8');
+  const RUN_RE = /run:\s*(?:node|python)\s+(?:scripts\/|chaingraph\/standard\/)([\w.-]+\.(?:mjs|js|py))/g;
+  const found = new Set();
+  let m;
+  while ((m = RUN_RE.exec(yml))) found.add(m[1]);
+  found.delete('gate-selftest.mjs'); // this script — not a claim on itself
+  return [...found].sort();
+}
+const DEPLOY_GATES = deployGatesFromWorkflow();
 let claims = 0;
 const covered = new Set();
 const untestable = new Set();
@@ -353,16 +364,33 @@ function build() {
   claim('check-links.mjs', 'check-links (dead internal href)', wentRed(join(work, 'scripts', 'check-links.mjs')));
 }
 
-// ── 12. check-brand-titles: two claims in one fixture (spaced brand + missing
-//       attribution) — matches the two assertions the gate itself documents ──
+// ── 12. check-brand-titles: two INDEPENDENT fixtures, one assertion each
+//       (AL-GATE-HONESTY). The original single fixture broke both rules at
+//       once ("two claims in one fixture", per its own comment) — if the
+//       attribution check ever regressed, the spaced-brand violation in the
+//       same title would keep the one assertion green (AL-G2-HALFB shape).
+//       Each half now gets a clean fixture that trips ONLY that rule.
 {
-  const work = join(tmp, 'brandtitles');
+  // (a) spaced brand token, title otherwise canonical, attribution present —
+  // isolates the title-token rule from the attribution rule.
+  const work = join(tmp, 'brandtitles-a');
   mkdirSync(join(work, 'scripts'), { recursive: true });
-  mkdirSync(join(work, 'tools', 'zz-brand'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-brand-a'), { recursive: true });
   cpSync(join(REPO, 'scripts', 'check-brand-titles.mjs'), join(work, 'scripts', 'check-brand-titles.mjs'));
-  writeFileSync(join(work, 'tools', 'zz-brand', 'index.html'),
-    '<!doctype html><html><head><title>Apex Logics — bad</title></head><body>no attribution here</body></html>\n');
-  claim('check-brand-titles.mjs', 'check-brand-titles (spaced brand token + missing apexlogics.org attribution)', wentRed(join(work, 'scripts', 'check-brand-titles.mjs')));
+  writeFileSync(join(work, 'tools', 'zz-brand-a', 'index.html'),
+    '<!doctype html><html><head><title>Apex Logics · Probe Tool</title></head><body>apexlogics.org</body></html>\n');
+  claim('check-brand-titles.mjs', 'check-brand-titles (a: spaced brand token, attribution present)', wentRed(join(work, 'scripts', 'check-brand-titles.mjs')));
+}
+{
+  // (b) compact brand token, canonical separator, attribution MISSING —
+  // isolates the attribution rule from the title-token rule.
+  const work = join(tmp, 'brandtitles-b');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-brand-b'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-brand-titles.mjs'), join(work, 'scripts', 'check-brand-titles.mjs'));
+  writeFileSync(join(work, 'tools', 'zz-brand-b', 'index.html'),
+    '<!doctype html><html><head><title>ApexLogics · Probe Tool</title></head><body>no attribution here</body></html>\n');
+  claim('check-brand-titles.mjs', 'check-brand-titles (b: canonical title, missing apexlogics.org attribution)', wentRed(join(work, 'scripts', 'check-brand-titles.mjs')));
 }
 
 // ── 13. check-seo-meta: page missing og:image ───────────────────────────────
