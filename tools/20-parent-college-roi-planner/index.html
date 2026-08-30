@@ -643,6 +643,13 @@ const PELL_MAX = 7395;   // 2024-25 maximum
 const PELL_PHASE_OUT_SAI = 6500; // approx SAI at which Pell reaches $0
 const PLUS_ORIG_FEE = 0.04228; // origination fee 4.228%
 
+/* ── VINTAGE ANCHOR: fixed real-world "now" for the start-year/years-until-enroll math;
+   bump at next annual rollover, not read from the clock. Reading the live clock here made
+   years_until_enroll (and everything compounded off it — projected COA, 529 balance, loan
+   amount) drift across every Jan-1 boundary for otherwise-unchanged inputs, breaking
+   execution_hash reproducibility (AL-CI-HASHDOMAIN). ── */
+const CURRENT_YEAR = 2026;
+
 // NCES IPEDS 2023-24 average total COA (tuition + fees + room & board + other)
 const SCHOOL_TIERS = {
   community:  { label:'Community College',        tuition:3900,  fees:900,  room_board:0,     other:2200,  note:'NCES 2023-24 avg · commuter' },
@@ -837,7 +844,7 @@ function autoCalcPell() {
 // ════════════════════════════════════════════════════════════
 function updateStartYear() {
   const age = parseInt(document.getElementById('childAge').value) || 0;
-  const startYear = new Date().getFullYear() + Math.max(0, 18 - age);
+  const startYear = CURRENT_YEAR + Math.max(0, 18 - age);
   document.getElementById('startYear').value = startYear;
 }
 
@@ -904,7 +911,7 @@ function runAnalysis() {
 
   const tier = SCHOOL_TIERS[tierKey];
   const baseCOA = tier.tuition + tier.fees + tier.room_board + tier.other;
-  const yearsUntilEnroll = Math.max(0, startYear - new Date().getFullYear());
+  const yearsUntilEnroll = Math.max(0, startYear - CURRENT_YEAR);
   const proj529 = calc529(bal529, monthly529, return529, yearsUntilEnroll);
 
   // Per-year breakdown
@@ -1090,7 +1097,7 @@ function runComparison() {
   const loanTerm    = parseInt(document.getElementById('loanTerm').value) || 10;
   const inflation   = parseFloat(document.getElementById('inflationRate').value) || 3.5;
 
-  const yearsUntilEnroll = Math.max(0, startYear - new Date().getFullYear());
+  const yearsUntilEnroll = Math.max(0, startYear - CURRENT_YEAR);
   const proj529 = calc529(bal529, monthly529, return529, yearsUntilEnroll);
 
   const keys = [

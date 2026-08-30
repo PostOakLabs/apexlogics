@@ -1101,11 +1101,15 @@ async function buildAP2Mandate() {
   mandate.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
   try { const _cgIn = new URLSearchParams(location.search).get("ap2"); if (_cgIn) { const _cgP = JSON.parse(_cgIn); if (_cgP && _cgP.execution_hash) { mandate.chain = { parent_hashes:[_cgP.execution_hash], parent_tool_ids:[_cgP.tool_id||_cgP.al_id||null], chain_depth:((_cgP.chain&&_cgP.chain.chain_depth)||0)+1 }; } } } catch(_e){}
   const _cgDomain = {}; for (const _k in mandate) { if (["chaingraph_version","ap2_mandate_type","mandate_type","record_type","type","mandate_id","issued_at","issued_by","generated_at","valid_from","valid_until","last_reviewed","schema_version","tool_id","tool_version","tool_name","al_id","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = mandate[_k]; }
+  // Determinism: exclude clock-dependent payload.days_remaining from the hash preimage only
+  // (deadline minus today — genuinely varies day to day; stays live in the visible export).
+  const _cgHashDomain = JSON.parse(JSON.stringify(_cgDomain));
+  if (_cgHashDomain.payload) delete _cgHashDomain.payload.days_remaining;
   mandate.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
   mandate.output_payload = _cgDomain;
   mandate.compliance_flags = [];
   mandate.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
-  mandate.execution_hash = await apexHash(mandate.policy_parameters, mandate.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  mandate.execution_hash = await apexHash({ execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgHashDomain }, _cgHashDomain);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
   mandate.chaingraph_version = "0.4.0";
   mandate['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
   mandate.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';

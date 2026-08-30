@@ -1379,14 +1379,12 @@ const AP2Schema = {
 /* ─────────────────────────────────────────────────────────────────
    DETERMINISTIC UUID GENERATOR
    Produces a UUID-shaped string from a hash of the key inputs.
-   Does NOT use Math.random() — deterministic per CONTRACT §0.
-   Same occupation + state + income in the same minute → same ID,
+   Does NOT use Math.random() and does NOT read the clock —
+   same occupation + state + income → same ID every time,
    enabling idempotent Policy Mandate records in agent pipelines.
    ───────────────────────────────────────────────────────────────── */
 function deterministicUUID(occ, state, income) {
-  // Round timestamp to current minute for determinism within a session
-  const minuteTs = Math.floor(Date.now() / 60000) * 60000;
-  const seed = `${occ}|${state}|${income}|${minuteTs}`;
+  const seed = `${occ}|${state}|${income}`;
   // Simple FNV-1a 32-bit hash → repeated to fill UUID shape
   let h = 2166136261;
   for (let i = 0; i < seed.length; i++) {
