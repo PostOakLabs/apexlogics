@@ -13,8 +13,8 @@
  *
  * Two independent checks, run per tool:
  *
- *   (a) SSOT match — for each named constant this gate knows how to find (SS_WAGE_BASE,
- *       STD_DEDUCTION single/mfj/hoh, AMT exemption/phaseout single/mfj), does the value
+ *   (a) SSOT match — for each named constant this gate knows how to find (CURRENT_YEAR,
+ *       SS_WAGE_BASE, STD_DEDUCTION single/mfj/hoh, AMT exemption/phaseout single/mfj), does the value
  *       embedded in the tool match the current apex-constants-2026.js value? A tool is free
  *       to not embed a constant at all (not every tool does payroll tax); this only fires
  *       when a recognized constant name IS present with a stale value.
@@ -54,6 +54,7 @@ function extractSsot(text) {
     return m ? Number(m[1]) : null;
   };
   return {
+    CURRENT_YEAR: num(/CURRENT_YEAR:\s*(\d+)/),
     SS_WAGE_BASE: num(/SS_WAGE_BASE:\s*(\d+)/),
     STD_DEDUCTION_single: num(/STD_DEDUCTION:\s*\{\s*single:\s*(\d+)/),
     STD_DEDUCTION_mfj: num(/STD_DEDUCTION:\s*\{[^}]*mfj:\s*(\d+)/),
@@ -85,7 +86,13 @@ const YEAR_FINGERPRINTS = {
 // Per-sensor: find a JS identifier co-occurring with a field name on the same line and pull
 // its numeric value. Line-based (not a full parser) — matches this codebase's one-line style:
 // `const STD_DEDUCTION = { single: 16100, mfj: 32200, hoh: 24150 };`
+// CURRENT_YEAR has no YEAR_FINGERPRINTS/SENSOR_TOPIC_RE entry — it's the rollover anchor
+// itself (AL-CI-HASHDOMAIN's `new Date().getFullYear()` replacement), not a dollar-value
+// fact with distinguishable per-year values to fingerprint. Only the (a) SSOT-match check
+// applies to it; the (b) declared-vs-embedded check below no-ops for any sensor missing a
+// fingerprint table, which is exactly what's wanted here.
 const SENSORS = [
+  { key: 'CURRENT_YEAR',         re: /\bCURRENT_YEAR\s*=\s*(\d+)/ },
   { key: 'SS_WAGE_BASE',         re: /\bSS_WAGE_BASE\s*[:=]\s*(\d+)/ },
   { key: 'STD_DEDUCTION_single', re: /\b(?:STD_DEDUCTION|STD_DED)\b[^\n]*?\bsingle\s*:\s*(\d+)/ },
   { key: 'STD_DEDUCTION_mfj',    re: /\b(?:STD_DEDUCTION|STD_DED)\b[^\n]*?\bmfj\s*:\s*(\d+)/ },
