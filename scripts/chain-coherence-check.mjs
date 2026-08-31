@@ -218,9 +218,13 @@ function checkGroup(entries) {
 checkGroup(realChains);
 checkGroup(subJourneys);
 
+if (unresolved) {
+  console.error(`\n✗ chain-coherence-check: ${unresolved} unresolved ref(s) (reported above) — a dead tool_id/AL-id in chains[].steps[] or journeys[].sub_journeys[].nodes[] is a hard error, not a warning. Fix before commit.`);
+  process.exit(1);
+}
 if (hits) {
   console.error(`\n✗ chain-coherence-check: ${hits} constant-disagreement(s) across ${realChains.length} chains + ${subJourneys.length} sub-journeys (${coLocations} co-locations checked). Fix before commit.`);
   process.exit(1);
 }
-console.log(`✓ chain-coherence-check: ${realChains.length} chains + ${subJourneys.length} sub-journeys walked (chains[].steps[].tool_id + journeys[].sub_journeys[].nodes[], both resolved via nodes[] registry), ${sharedConstFiles.size} tool files define a chain-visible constant, ${coLocations} co-location(s) checked, 0 disagreements${unresolved ? `, ${unresolved} unresolved ref(s) skipped (reported above)` : ''}.`);
+console.log(`✓ chain-coherence-check: ${realChains.length} chains + ${subJourneys.length} sub-journeys walked (chains[].steps[].tool_id + journeys[].sub_journeys[].nodes[], both resolved via nodes[] registry), ${sharedConstFiles.size} tool files define a chain-visible constant, ${coLocations} co-location(s) checked, 0 disagreements, 0 unresolved refs.`);
 process.exit(0);

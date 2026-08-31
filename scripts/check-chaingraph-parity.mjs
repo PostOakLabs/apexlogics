@@ -16,7 +16,12 @@
  *
  * Not full-file parity: unrelated fields (e.g. an already-renamed tool slug
  * that hasn't been back-ported to the worker copy yet) are out of scope —
- * only the "does an agent get the same journey" surface is checked.
+ * only the "does an agent get the same journey" surface is checked. That
+ * surface is now TWO structures, not one: chains[].steps[].tool_id AND
+ * journeys[].sub_journeys[].nodes[] (AL-SUBJOURNEY-REFS, 2026-08-30 — the
+ * same 7-dead-ref defect recurred a third time specifically because the
+ * first two fixes only ever covered chains[], never sub_journeys[]).
+ * Both are compared below.
  *
  * Network-dependent: skips (warns, exit 0) rather than fails if the worker
  * repo's raw file can't be fetched, so a GitHub outage doesn't block deploy.
@@ -39,11 +44,30 @@ function chainStepMap(doc) {
   return map;
 }
 
+// Walks journeys[].themes[].sub_journeys[] and journeys[].sub_journeys[]
+// (both shapes appear — some journeys group sub_journeys under themes,
+// others list them flat) and maps sub_journey id -> its nodes[] array.
+function subJourneyNodeMap(doc) {
+  const map = {};
+  const walk = (o) => {
+    if (Array.isArray(o)) { o.forEach(walk); return; }
+    if (o && typeof o === 'object') {
+      if (Array.isArray(o.nodes) && o.nodes.every(x => typeof x === 'string') && typeof o.id === 'string') {
+        map[o.id] = o.nodes;
+      }
+      for (const k of Object.keys(o)) walk(o[k]);
+    }
+  };
+  walk(doc.journeys ?? []);
+  return map;
+}
+
 async function main() {
   const site = JSON.parse(
     readFileSync(resolve(ROOT, 'chaingraph/chaingraph.json'), 'utf8')
   );
   const siteMap = chainStepMap(site);
+  const siteSubJourneyMap = subJourneyNodeMap(site);
 
   let workerDoc;
   try {
@@ -62,27 +86,39 @@ async function main() {
   }
 
   const workerMap = chainStepMap(workerDoc);
+  const workerSubJourneyMap = subJourneyNodeMap(workerDoc);
   const names = new Set([...Object.keys(siteMap), ...Object.keys(workerMap)]);
+  const subJourneyIds = new Set([...Object.keys(siteSubJourneyMap), ...Object.keys(workerSubJourneyMap)]);
   const mismatches = [];
 
   for (const name of names) {
     const a = siteMap[name];
     const b = workerMap[name];
-    if (!a) { mismatches.push(`${name}: present in worker copy only`); continue; }
-    if (!b) { mismatches.push(`${name}: present in site copy only`); continue; }
+    if (!a) { mismatches.push(`chain "${name}": present in worker copy only`); continue; }
+    if (!b) { mismatches.push(`chain "${name}": present in site copy only`); continue; }
     if (JSON.stringify(a) !== JSON.stringify(b)) {
-      mismatches.push(`${name}: site=[${a.join(', ')}] worker=[${b.join(', ')}]`);
+      mismatches.push(`chain "${name}": site=[${a.join(', ')}] worker=[${b.join(', ')}]`);
+    }
+  }
+
+  for (const id of subJourneyIds) {
+    const a = siteSubJourneyMap[id];
+    const b = workerSubJourneyMap[id];
+    if (!a) { mismatches.push(`sub_journey "${id}": present in worker copy only`); continue; }
+    if (!b) { mismatches.push(`sub_journey "${id}": present in site copy only`); continue; }
+    if (JSON.stringify(a) !== JSON.stringify(b)) {
+      mismatches.push(`sub_journey "${id}": site=[${a.join(', ')}] worker=[${b.join(', ')}]`);
     }
   }
 
   if (mismatches.length) {
-    console.error(`check-chaingraph-parity: ${mismatches.length} chain(s) disagree between site and worker copies:`);
+    console.error(`check-chaingraph-parity: ${mismatches.length} chain(s)/sub-journey(s) disagree between site and worker copies:`);
     for (const m of mismatches) console.error(`  - ${m}`);
     console.error('\nSite copy (repo/chaingraph/chaingraph.json) is canonical — port fixes to the worker copy (apexlogics-mcp-worker/data/chaingraph/chaingraph.json) to resolve.');
     process.exit(1);
   }
 
-  console.log(`check-chaingraph-parity: OK — ${names.size} chains agree between site and worker copies.`);
+  console.log(`check-chaingraph-parity: OK — ${names.size} chains + ${subJourneyIds.size} sub-journeys agree between site and worker copies.`);
 }
 
 main();
