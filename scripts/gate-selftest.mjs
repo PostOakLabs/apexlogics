@@ -305,6 +305,30 @@ function build() {
     'check-ap2-validate A6 (no AP2Schema + json download + no signal)');
 }
 
+// ── 7b. check-dangling-dom: unguarded getElementById('X') with no id="X" ────
+{
+  const work = join(tmp, 'dangling');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-dangling'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-dangling-dom.mjs'), join(work, 'scripts', 'check-dangling-dom.mjs'));
+  writeFileSync(join(work, 'tools', 'zz-dangling', 'index.html'),
+    "<!doctype html><html><body><script>document.getElementById('missingThing').textContent='x';</script></body></html>\n");
+  claim('check-dangling-dom.mjs', 'check-dangling-dom (unguarded getElementById with no matching id=)',
+    wentRed(join(work, 'scripts', 'check-dangling-dom.mjs')));
+  // and prove it stays GREEN when the id genuinely resolves — a gate with no
+  // negative-control fixture can't be trusted not to flag every real page too.
+  const workGood = join(tmp, 'dangling-ok');
+  mkdirSync(join(workGood, 'scripts'), { recursive: true });
+  mkdirSync(join(workGood, 'tools', 'zz-ok'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-dangling-dom.mjs'), join(workGood, 'scripts', 'check-dangling-dom.mjs'));
+  writeFileSync(join(workGood, 'tools', 'zz-ok', 'index.html'),
+    "<!doctype html><html><body><div id=\"realThing\"></div><script>document.getElementById('realThing').textContent='x';</script></body></html>\n");
+  const stayedGreen = !wentRed(join(workGood, 'scripts', 'check-dangling-dom.mjs'));
+  claims++; covered.add('check-dangling-dom.mjs');
+  if (stayedGreen) console.log('✓ check-dangling-dom stays GREEN when the id genuinely resolves');
+  else { console.error('✗ check-dangling-dom FALSE-POSITIVED on a resolved id — has too many teeth'); fails++; }
+}
+
 // ── 8. verify-counts: drift a count sentinel (real files — the ATTR_RULES
 //      hard-code prose from index.html/tools.html/mcp.json/mcp.html/llms.txt,
 //      so this copies the REAL current files rather than fabricating text
