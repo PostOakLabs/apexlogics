@@ -37,7 +37,6 @@ const files = walk(ROOT, []).map((p) => path.relative(ROOT, p).split(path.sep).j
 let filesFixed = 0;
 let tagsFixed = 0;
 for (const rel of files) {
-  if (rel === 'assets/logo_candidates.html') continue;
   const abs = path.join(ROOT, rel);
   let html = fs.readFileSync(abs, 'utf8');
   const re = /(href|content)="(https:\/\/apexlogics\.org\/[^"]*)\/index\.html"/g;

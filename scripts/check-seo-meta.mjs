@@ -10,8 +10,6 @@
  * 91 missing/inconsistent canonical) from silently creeping back in on
  * newly built pages.
  *
- * `assets/logo_candidates.html` is a non-shipped scratch page, excluded.
- *
  * Usage: node scripts/check-seo-meta.mjs   (exit 0 = clean, exit 1 = violations)
  */
 import fs from 'node:fs';
@@ -20,7 +18,6 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
-const EXCLUDE = new Set(['assets/logo_candidates.html']);
 
 const REQUIRED = [
   ['<title>', /<title>[\s\S]*?<\/title>/i],
@@ -46,8 +43,7 @@ function walk(dir, out) {
 }
 
 const files = walk(ROOT, [])
-  .map((p) => path.relative(ROOT, p).split(path.sep).join('/'))
-  .filter((rel) => !EXCLUDE.has(rel));
+  .map((p) => path.relative(ROOT, p).split(path.sep).join('/'));
 
 let violations = 0;
 for (const rel of files) {
