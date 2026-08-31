@@ -11,9 +11,16 @@
  * `<span class="slider">`, no text and no aria-label).
  *
  * This gate holds that state: every `<input>`/`<select>`/`<textarea>` in
- * tools/*\/index.html (excluding hidden/button/submit/reset/image/radio/
- * checkbox/file, per the audit's own scope) must resolve an accessible name
- * through the real ACCNAME computation order:
+ * tools/*\/index.html (excluding hidden/button/submit/reset/image/file)
+ * must resolve an accessible name through the real ACCNAME computation
+ * order:
+ *
+ * checkbox/radio were excluded from the original AL-A11Y-NAMES scope and
+ * widened into it by AL-A11Y-CHECKBOX: 51 unnamed checkbox/radio inputs
+ * across 11 tool files (5 JS-templated, given aria-label with the row's own
+ * interpolated data; the rest static, given aria-label or a real for=/id
+ * label). An unnamed checkbox reads "checkbox, checked" with no indication
+ * of what it toggles — exactly as unusable as the text-input case above.
  *   aria-label > aria-labelledby (referenced text) > label[for=id] >
  *   wrapping <label> (ancestor) with text content > title
  * placeholder is NOT a name.
@@ -42,7 +49,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
-const SKIP_INPUT = new Set(['hidden', 'button', 'submit', 'reset', 'image', 'radio', 'checkbox', 'file']);
+const SKIP_INPUT = new Set(['hidden', 'button', 'submit', 'reset', 'image', 'file']);
 
 function tokenize(html) {
   const tags = [];

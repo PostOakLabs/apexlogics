@@ -442,8 +442,27 @@ function build() {
     </body></html>\n`);
   const wrapRed = wentRed(join(workGood, 'scripts', 'check-a11y-names.mjs'));
   claims++; covered.add('check-a11y-names.mjs');
-  if (!wrapRed) console.log('✓ check-a11y-names stays GREEN on a correctly-wrapped toggle label (checkbox excluded from scope; text-bearing wrap not flagged)');
+  if (!wrapRed) console.log('✓ check-a11y-names stays GREEN on a correctly-wrapped toggle label (text-bearing wrap resolves the name; not flagged)');
   else { console.error('✗ check-a11y-names FALSE-POSITIVED on a correctly-wrapped toggle label — has too many teeth'); fails++; }
+}
+
+// ── 10f. check-a11y-names: bare checkbox/radio with no name at all goes RED
+//      (AL-A11Y-CHECKBOX — widened SKIP_INPUT to stop excluding checkbox/
+//      radio). A bare checkbox with no label, aria-label, or wrap is exactly
+//      as unusable to a screen reader as a bare text input was.
+{
+  const work = join(tmp, 'a11ynames-checkbox');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-checkbox'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-a11y-names.mjs'), join(work, 'scripts', 'check-a11y-names.mjs'));
+  writeFileSync(join(work, 'tools', 'zz-checkbox', 'index.html'), `<!doctype html><html><body>
+    <div class="ded-row">
+      <input type="checkbox" id="ded_bare">
+      <div class="ded-name">Home Office</div>
+    </div>
+    </body></html>\n`);
+  claim('check-a11y-names.mjs', 'check-a11y-names (bare unnamed checkbox goes RED)',
+    wentRed(join(work, 'scripts', 'check-a11y-names.mjs')));
 }
 
 // ── 11. check-links: create a dead internal href ────────────────────────────
