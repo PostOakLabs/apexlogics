@@ -27,8 +27,7 @@ function walk(dir, out) {
 }
 
 const allFiles = walk(ROOT, [])
-  .map((p) => path.relative(ROOT, p).split(path.sep).join('/'))
-  .filter((p) => p !== 'assets/logo_candidates.html');
+  .map((p) => path.relative(ROOT, p).split(path.sep).join('/'));
 
 // --- sitemap.xml -> canonical URL map -------------------------------------
 const sitemapXml = fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8');
