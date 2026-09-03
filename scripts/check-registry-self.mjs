@@ -19,6 +19,14 @@ const ROOT = resolve(__dirname, '..');
 
 const raw = readFileSync(join(ROOT, 'suite-registry.json'), 'utf8').replace(/\x00+$/, '');
 const reg = JSON.parse(raw);
+const mcp = JSON.parse(readFileSync(join(ROOT, '.well-known', 'mcp.json'), 'utf8'));
+
+// The live CONTRACT (apexlogics_CONTRACT.md) is internal-only, never pushed to this
+// repo — CI cannot read it directly. This constant is the hand-maintained mirror of
+// its header version (`# ... Unified Build Contract vX.Y.Z`), bumped by whoever lands
+// the CONTRACT amendment, same discipline as repo/CLAUDE.md's own hand-typed CONTRACT
+// line (AL-REG-FRESH, 2026-09-03).
+const EXPECTED_CONTRACT_VERSION = '1.12.0';
 
 let failures = 0;
 const fail = msg => { console.log(`FAIL  ${msg}`); failures++; };
@@ -56,6 +64,22 @@ else fail(`${badUrl.length} tools[] entries have missing/relative url: ${badUrl.
 const badPath = tools.filter(t => !t.file_path || !existsSync(join(ROOT, t.file_path)));
 if (badPath.length === 0) ok(`all ${tools.length} tools[].file_path resolve on disk`);
 else fail(`${badPath.length} tools[] entries have a missing/unresolvable file_path: ${badPath.slice(0, 5).map(t => t.al_id).join(', ')}${badPath.length > 5 ? ', ...' : ''}`);
+
+// ── 5. contract_version parity — registry + mcp.json vs live CONTRACT header ─
+if (reg.contract_version === EXPECTED_CONTRACT_VERSION) ok(`registry contract_version === live CONTRACT ${EXPECTED_CONTRACT_VERSION}`);
+else fail(`registry contract_version=${reg.contract_version} disagrees with live CONTRACT ${EXPECTED_CONTRACT_VERSION}`);
+
+if (mcp.contract_version === EXPECTED_CONTRACT_VERSION) ok(`mcp.json contract_version === live CONTRACT ${EXPECTED_CONTRACT_VERSION}`);
+else fail(`mcp.json contract_version=${mcp.contract_version} disagrees with live CONTRACT ${EXPECTED_CONTRACT_VERSION}`);
+
+// ── 6. tool_id non-null on every AL row (AL-53+ era shipped slug-only, 54/168 found 2026-09-03) ─
+const nullToolId = tools.filter(t => (t.al_id || '').startsWith('AL-') && !t.tool_id);
+if (nullToolId.length === 0) ok(`all ${tools.length} tools[] rows carry a non-null tool_id`);
+else fail(`${nullToolId.length} AL rows have a null/missing tool_id: ${nullToolId.slice(0, 5).map(t => t.al_id).join(', ')}${nullToolId.length > 5 ? ', ...' : ''}`);
+
+// ── 7. mcp.json last_updated not older than registry's ──────────────────────
+if (mcp.last_updated >= reg.last_updated) ok(`mcp.json last_updated (${mcp.last_updated}) not older than registry (${reg.last_updated})`);
+else fail(`mcp.json last_updated=${mcp.last_updated} is older than registry last_updated=${reg.last_updated}`);
 
 // ── result ────────────────────────────────────────────────────────────────
 if (failures === 0) {
