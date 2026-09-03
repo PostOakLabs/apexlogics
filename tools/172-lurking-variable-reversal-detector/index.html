@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lurking-Variable Reversal Detector · #172 · AL-186 · ApexLogics</title>
+<link rel="canonical" href="https://apexlogics.org/tools/172-lurking-variable-reversal-detector/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ApexLogics">
+<meta property="og:title" content="Lurking-Variable Reversal Detector · #172 · AL-186 · ApexLogics">
+<meta property="og:description" content="Paste your own stratified 2×2×2 table and get per-stratum odds ratios, a crude pooled odds ratio, the Mantel–Haenszel adjusted odds ratio, and a reversal flag when the aggregate and stratified stories disagree — the Berkeley 1973 admissions table ships as a worked example.">
+<meta property="og:url" content="https://apexlogics.org/tools/172-lurking-variable-reversal-detector/">
+<meta property="og:image" content="https://apexlogics.org/assets/og-default.png">
+<meta name="twitter:card" content="summary">
+<meta name="description" content="Paste your own stratified 2x2 table (any number of strata) and get per-stratum odds ratios, a crude pooled OR, a Mantel-Haenszel pooled OR (1959), and a Simpson's-paradox reversal flag. Berkeley 1973 admissions data ships built in as a worked example.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#070B14;--bg2:#0d1321;--bg3:#111827;--bg4:#1a2233;
+  --body:#c8d0e0;--dim:#7a8499;--border:#1e2d45;
+  --accent:#2563eb;--accent2:#1d4ed8;--accent3:#1e3a6e;
+  --amber:#E8A838;--red:#ef4444;--green:#22c55e;--purple:#a855f7;
+  --font-serif:'DM Serif Display',serif;--font-sans:'Sora',sans-serif;--font-mono:'JetBrains Mono',monospace;
+  --radius:6px;--radius-lg:10px;--radius-sm:6px;
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--body);font-family:var(--font-sans);font-size:.8203125rem;line-height:1.6;min-height:100vh}
+a{color:var(--accent)}button{font-family:var(--font-sans);cursor:pointer}input,select{font-family:var(--font-sans)}
+nav{position:sticky;top:0;z-index:100;background:rgba(7,11,20,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:1120px;margin:0 auto;padding:.6rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.logo{display:flex;align-items:center;gap:.55rem;text-decoration:none}
+.logo-mark{width:32px;height:32px;flex-shrink:0}.logo-mark svg{width:100%;height:100%}
+.logo-text{display:flex;flex-direction:column;line-height:1.1}
+.logo-name{font-family:var(--font-mono);font-size:.95rem;color:var(--body)}.logo-name .apex{color:#E8A838}.logo-name .org{color:var(--dim)}
+.logo-tag{font-family:var(--font-mono);font-size:.5rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+.nav-pill{background:none;border:1px solid var(--border);border-radius:6px;color:var(--body);font-size:.62rem;padding:.3rem .65rem;font-family:var(--font-mono);letter-spacing:.04em;text-decoration:none;transition:border-color .15s}
+.nav-pill.accent{border-color:rgba(232,168,56,.5);color:var(--amber)}
+.container{max-width:1120px;margin:0 auto;padding:2rem 1.5rem 4rem}
+.pii-banner{background:rgba(255,255,255,.03);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:var(--radius-sm);padding:.7rem 1rem;font-size:.76rem;color:var(--dim);display:flex;gap:.5rem;align-items:flex-start;margin-bottom:1.5rem}
+.eyebrow{font-family:var(--font-mono);font-size:.62rem;letter-spacing:.1em;color:var(--purple);margin-bottom:.5rem}
+.tool-title{font-family:var(--font-serif);font-size:2rem;color:#e8edf5;margin-bottom:.4rem;line-height:1.2}
+.tool-desc{color:var(--dim);font-size:.85rem;max-width:760px;margin-bottom:.5rem}
+.vintage-banner{display:inline-flex;align-items:center;gap:.4rem;font-family:var(--font-mono);font-size:.6rem;letter-spacing:.06em;color:var(--dim);background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:.2rem .55rem;margin-bottom:1.5rem}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem;margin-bottom:1rem}
+.card-title{font-family:var(--font-mono);font-size:.65rem;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-bottom:.7rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+.labels-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+@media(max-width:700px){.labels-row{grid-template-columns:1fr}}
+.field label{display:block;font-size:.7rem;color:var(--dim);margin-bottom:.28rem;font-family:var(--font-mono);letter-spacing:.03em}
+.field input[type="text"],.field input[type="number"]{width:100%;padding:.42rem .6rem;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--body);font-size:.8rem}
+.field input:focus{outline:none;border-color:var(--accent)}
+.strata-wrap{overflow-x:auto}
+table.strata-table{width:100%;border-collapse:collapse;font-size:.76rem;min-width:640px}
+table.strata-table th{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.05em;color:var(--dim);text-transform:uppercase;padding:.5rem .5rem;border-bottom:1px solid var(--border);text-align:center}
+table.strata-table th:first-child{text-align:left}
+table.strata-table td{padding:.35rem .4rem;border-bottom:1px solid rgba(30,45,69,.4);text-align:center}
+table.strata-table td:first-child{text-align:left}
+table.strata-table input[type="text"]{width:100%;min-width:100px;padding:.32rem .4rem;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--body);font-size:.75rem}
+table.strata-table input[type="number"]{width:72px;padding:.32rem .3rem;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--body);font-size:.75rem;text-align:right}
+.row-del{background:none;border:1px solid var(--border);border-radius:4px;color:var(--red);font-size:.7rem;padding:.25rem .5rem;cursor:pointer}
+.row-del:hover{border-color:var(--red)}
+.strata-actions{display:flex;gap:.6rem;margin-top:.8rem;flex-wrap:wrap}
+.mini-btn{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--body);font-size:.68rem;padding:.4rem .75rem;font-family:var(--font-mono);cursor:pointer;transition:border-color .15s}
+.mini-btn:hover{border-color:var(--accent)}
+.mini-btn.load{border-color:rgba(168,85,247,.5);color:var(--purple)}
+.run-row{margin-top:1.2rem}
+.run-btn{width:100%;padding:.75rem;background:var(--accent);border:none;border-radius:var(--radius-sm);color:#fff;font-family:var(--font-mono);font-size:.8rem;letter-spacing:.08em;cursor:pointer;transition:background .15s}
+.run-btn:hover{background:var(--accent2)}
+.results-section{display:none;margin-top:2rem}
+.detail-table{width:100%;border-collapse:collapse;font-size:.77rem;margin-top:.5rem}
+.detail-table th{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.06em;color:var(--dim);text-transform:uppercase;padding:.5rem .6rem;border-bottom:1px solid var(--border);text-align:right}
+.detail-table th:first-child{text-align:left}
+.detail-table td{padding:.45rem .6rem;border-bottom:1px solid rgba(30,45,69,.4);text-align:right;font-family:var(--font-mono)}
+.detail-table td:first-child{text-align:left;color:var(--body);font-family:var(--font-sans)}
+.cell-g{color:var(--green)}.cell-r{color:var(--red)}.cell-a{color:var(--amber)}
+.verdict-box{border-radius:var(--radius);padding:1.1rem 1.25rem;margin-top:1rem;border:1px solid var(--border)}
+.verdict-box.reversal{background:rgba(168,85,247,.07);border-color:rgba(168,85,247,.5)}
+.verdict-box.no-reversal{background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.4)}
+.verdict-title{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5rem}
+.verdict-box.reversal .verdict-title{color:var(--purple)}
+.verdict-box.no-reversal .verdict-title{color:var(--green)}
+.verdict-text{font-size:.84rem;color:var(--body);line-height:1.65}
+.board-para{background:linear-gradient(135deg,var(--bg2) 0%,rgba(37,99,235,.06) 100%);border:1px solid var(--accent3);border-radius:var(--radius);padding:1.25rem;margin-top:1.25rem}
+.board-para-title{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:.6rem}
+.board-para-text{font-size:.83rem;color:var(--body);line-height:1.7}
+.results-export-row{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border)}
+.export-btn{font-family:var(--font-mono);font-size:.65rem;padding:.35rem .75rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--dim);letter-spacing:.05em;cursor:pointer;transition:all .15s}
+.export-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tool-footer{background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,255,.08);padding:2.2rem 0 1.9rem;margin-top:3rem}
+.tool-footer-inner{max-width:1120px;margin:0 auto;padding:0 1.5rem;display:flex;flex-wrap:wrap;align-items:flex-start;gap:1.9rem 2.4rem}
+.tool-footer-brand{flex:1 1 210px;min-width:190px;display:flex;flex-direction:column;gap:.3rem}
+.tool-footer-meta{font-size:.65rem;opacity:.55;line-height:1.5}
+.tool-footer-cols{flex:3 1 520px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.4rem}
+.tool-footer-h{font-family:'JetBrains Mono',monospace;font-size:.57rem;font-weight:500;letter-spacing:.11em;text-transform:uppercase;opacity:.42;margin:0 0 .55rem}
+.tool-footer-col ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.34rem}
+.tool-footer-col li{margin:0;padding:0}
+.tool-footer-col a{font-size:.7rem;opacity:.68;line-height:1.35}
+.tool-footer-col a:hover{opacity:1}
+.tool-footer a{color:inherit;text-decoration:none}
+@media(max-width:860px){.tool-footer-cols{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.tool-footer-cols{grid-template-columns:1fr}}
+.mfst-btn{width:100%;max-width:1120px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+.mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+.mfst-body{display:none;max-width:1120px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+.mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <span class="logo-mark"><svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="7" fill="#0d1321"/><path d="M7 24L13 8l6 10 4-6 2 4" stroke="#E8A838" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="22" r="2.5" fill="#E8A838" opacity=".7"/></svg></span>
+      <span class="logo-text">
+        <span class="logo-name"><span class="apex">Apex</span> <span class="org">Logics.org</span></span>
+        <span class="logo-tag">Career &amp; Education Tools</span>
+      </span>
+    </a>
+    <a href="../../tools.html" class="nav-pill accent">&#x2190; All Tools</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="pii-banner" role="note">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    <span>&#x1F512; All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+  </div>
+
+  <div class="eyebrow">SELECTED STUDIES &middot; METHODS &middot; AL-186 &middot; #172</div>
+  <h1 class="tool-title">Lurking-Variable Reversal Detector</h1>
+  <p class="tool-desc">Every fixed-dataset Simpson's-paradox demo makes the same point once and stops. Paste your own stratified 2&times;2 table &mdash; any number of strata, your own group and outcome labels &mdash; and get the crude pooled odds ratio, the Mantel&ndash;Haenszel adjusted odds ratio (1959, a fixed closed-form pooling formula), a per-stratum breakdown, and an explicit reversal flag when the aggregate story and the stratified story point different directions.</p>
+  <div class="vintage-banner">
+    <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3.5l2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    Method: crude pooled OR vs Mantel&ndash;Haenszel (1959) pooled OR, closed-form arithmetic on your entered counts. Built-in example: Bickel, Hammel &amp; O'Connell, <em>Science</em> 187(4175):398&ndash;404 (1975) &mdash; UC Berkeley Fall 1973 graduate admissions, six largest departments. data_vintage: static 1973 historical dataset, never refreshed.
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <span>Table Setup</span>
+    </div>
+    <div class="labels-row">
+      <div class="field"><label for="groupALabel">Group A Label</label><input type="text" id="groupALabel" value="Men"></div>
+      <div class="field"><label for="groupBLabel">Group B Label</label><input type="text" id="groupBLabel" value="Women"></div>
+      <div class="field"><label for="outcomeLabel">Positive-Outcome Label</label><input type="text" id="outcomeLabel" value="Admitted"></div>
+      <div class="field"><label for="strataLabel">Stratum Label</label><input type="text" id="strataLabel" value="Department"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <span id="strataTitle">Stratified 2&times;2 Table</span>
+    </div>
+    <div class="strata-wrap">
+      <table class="strata-table" id="strataTable"></table>
+    </div>
+    <div class="strata-actions">
+      <button class="mini-btn" onclick="addRow()">&#43; Add Stratum</button>
+      <button class="mini-btn load" onclick="loadBerkeley()">&#x21BB; Load Berkeley 1973 Example</button>
+      <button class="mini-btn" onclick="clearRows()">&#x2715; Clear All</button>
+    </div>
+  </div>
+
+  <div class="run-row">
+    <button class="run-btn" onclick="calcReversal()">&#9654; Compute Pooled &amp; Stratified Odds Ratios</button>
+  </div>
+
+  <div class="results-section" id="results" aria-live="polite">
+    <div class="card">
+      <div class="card-title">Per-Stratum Odds Ratios</div>
+      <div style="overflow-x:auto">
+        <table class="detail-table" id="stratumOrTable"></table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Crude vs. Mantel&ndash;Haenszel Pooled</div>
+      <div style="overflow-x:auto">
+        <table class="detail-table" id="pooledTable"></table>
+      </div>
+    </div>
+
+    <div class="verdict-box" id="verdictBox">
+      <div class="verdict-title" id="verdictTitle"></div>
+      <p class="verdict-text" id="verdictText"></p>
+    </div>
+
+    <div class="board-para">
+      <div class="board-para-title">&#9654; Plain-English Summary</div>
+      <p class="board-para-text" id="boardPara"></p>
+    </div>
+
+    <div class="results-export-row">
+      <button class="export-btn" onclick="exportMarkdown()">&#8595; Markdown</button>
+      <button class="export-btn" onclick="exportAP2()">&#8595; Policy Mandate (JSON)</button>
+    </div>
+  </div>
+</div>
+
+<button class="mfst-btn" id="mfstBtn" onclick="toggleMfst()" aria-expanded="false"><span>&#128230;&nbsp; manifest.json &middot; MCP tool definition &middot; Policy Mandate schema</span><span id="mfstArr">&#9660;</span></button>
+<div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+<footer class="tool-footer">
+  <div class="tool-footer-inner">
+    <div class="tool-footer-brand">
+      <div class="tool-footer-meta">CC BY 4.0 &middot; Zero PII &middot; Client-side only</div>
+      <div class="tool-footer-meta">apexlogics.org</div>
+    </div>
+    <div class="tool-footer-cols">
+      <div class="tool-footer-col">
+        <div class="tool-footer-h">Platform</div>
+        <ul>
+          <li><a href="../../tools.html">All Tools</a></li>
+          <li><a href="../../workflows/index.html">Workflows</a></li>
+          <li><a href="../../showcase/index.html">Showcase</a></li>
+          <li><a href="../../mcp.html">MCP Docs</a></li>
+        </ul>
+      </div>
+      <div class="tool-footer-col">
+        <div class="tool-footer-h">Guides</div>
+        <ul>
+          <li><a href="../../guides/student-finance-hub.html">Student Finance</a></li>
+          <li><a href="../../guides/student-loans-2026.html">Student Loans 2026</a></li>
+          <li><a href="../../guides/education-path-hub.html">Education Path</a></li>
+          <li><a href="../../guides/career-transition-hub.html">Career Transition</a></li>
+          <li><a href="../../guides/compensation-offers-hub.html">Compensation &amp; Offers</a></li>
+          <li><a href="../../guides/licensing-credentials-hub.html">Licensing &amp; Credentials</a></li>
+          <li><a href="../../guides/immigration-visa-hub.html">Immigration &amp; Visa</a></li>
+          <li><a href="../../guides/workforce-development-hub.html">Workforce Development</a></li>
+          <li><a href="../../guides/teaching-instruction-hub.html">Teaching &amp; Instruction</a></li>
+          <li><a href="../../guides/index.html">All Guides</a></li>
+        </ul>
+      </div>
+      <div class="tool-footer-col">
+        <div class="tool-footer-h">Data &amp; Artifacts</div>
+        <ul>
+          <li><a href="../../suite-registry.json">suite-registry.json</a></li>
+          <li><a href="../../chaingraph/chaingraph.json">chaingraph.json</a></li>
+          <li><a href="../../llms.txt">llms.txt</a></li>
+          <li><a href="../../.well-known/mcp.json">.well-known/mcp.json</a></li>
+          <li><a href="../../.well-known/agent-card.json">agent-card.json</a></li>
+          <li><a href="../../sitemap.xml">sitemap.xml</a></li>
+          <li><a href="../../sitemap.html">Sitemap</a></li>
+        </ul>
+      </div>
+      <div class="tool-footer-col">
+        <div class="tool-footer-h">Company</div>
+        <ul>
+          <li><a href="../../about.html">About</a></li>
+          <li><a href="../../contact.html">Contact</a></li>
+          <li><a href="https://postoaklabs.com" target="_blank" rel="noopener">PostOakLabs.com &#8599;</a></li>
+          <li><a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co &#8599;</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+let strata = [];
+let rowId = 0;
+let lastResult = null;
+
+function newRow(label, a, b, c, d) {
+  rowId += 1;
+  return { id: rowId, label: label, a: a, b: b, c: c, d: d };
+}
+
+function berkeleyRows() {
+  // Bickel, Hammel & O'Connell (1975), Science 187(4175):398-404 — UC Berkeley Fall 1973
+  // graduate admissions, six largest departments. a/b = men admitted/rejected, c/d = women admitted/rejected.
+  return [
+    newRow('Dept. A', 512, 313, 89, 19),
+    newRow('Dept. B', 353, 207, 17, 8),
+    newRow('Dept. C', 120, 205, 202, 391),
+    newRow('Dept. D', 138, 279, 131, 244),
+    newRow('Dept. E', 53, 138, 94, 299),
+    newRow('Dept. F', 22, 351, 24, 317)
+  ];
+}
+
+function loadBerkeley() {
+  document.getElementById('groupALabel').value = 'Men';
+  document.getElementById('groupBLabel').value = 'Women';
+  document.getElementById('outcomeLabel').value = 'Admitted';
+  document.getElementById('strataLabel').value = 'Department';
+  strata = berkeleyRows();
+  renderStrata();
+  document.getElementById('results').style.display = 'none';
+}
+
+function addRow() {
+  strata.push(newRow('Stratum ' + (strata.length + 1), 0, 0, 0, 0));
+  renderStrata();
+}
+
+function clearRows() {
+  strata = [];
+  renderStrata();
+  document.getElementById('results').style.display = 'none';
+}
+
+function removeRow(id) {
+  strata = strata.filter(r => r.id !== id);
+  renderStrata();
+}
+
+function readLabels() {
+  return {
+    groupA: document.getElementById('groupALabel').value || 'Group A',
+    groupB: document.getElementById('groupBLabel').value || 'Group B',
+    outcome: document.getElementById('outcomeLabel').value || 'Positive Outcome',
+    stratumWord: document.getElementById('strataLabel').value || 'Stratum'
+  };
+}
+
+function renderStrata() {
+  const L = readLabels();
+  document.getElementById('strataTitle').textContent = 'Stratified 2×2 Table by ' + L.stratumWord;
+  const outNeg = 'Not ' + L.outcome;
+  let html = '<thead><tr>' +
+    '<th>' + L.stratumWord + '</th>' +
+    '<th>' + L.groupA + ' &mdash; ' + L.outcome + ' (a)</th>' +
+    '<th>' + L.groupA + ' &mdash; ' + outNeg + ' (b)</th>' +
+    '<th>' + L.groupB + ' &mdash; ' + L.outcome + ' (c)</th>' +
+    '<th>' + L.groupB + ' &mdash; ' + outNeg + ' (d)</th>' +
+    '<th></th></tr></thead><tbody>';
+  strata.forEach(r => {
+    html += '<tr>' +
+      '<td><input type="text" value="' + escAttr(r.label) + '" oninput="updateField(' + r.id + ',\'label\',this.value)"></td>' +
+      '<td><input type="number" min="0" step="1" value="' + r.a + '" oninput="updateField(' + r.id + ',\'a\',this.value)"></td>' +
+      '<td><input type="number" min="0" step="1" value="' + r.b + '" oninput="updateField(' + r.id + ',\'b\',this.value)"></td>' +
+      '<td><input type="number" min="0" step="1" value="' + r.c + '" oninput="updateField(' + r.id + ',\'c\',this.value)"></td>' +
+      '<td><input type="number" min="0" step="1" value="' + r.d + '" oninput="updateField(' + r.id + ',\'d\',this.value)"></td>' +
+      '<td><button class="row-del" onclick="removeRow(' + r.id + ')">&#10005;</button></td>' +
+      '</tr>';
+  });
+  html += '</tbody>';
+  document.getElementById('strataTable').innerHTML = html;
+}
+
+function escAttr(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;'); }
+
+function updateField(id, field, value) {
+  const row = strata.find(r => r.id === id);
+  if (!row) return;
+  row[field] = (field === 'label') ? value : (parseFloat(value) || 0);
+}
+
+function orFor(a, b, c, d, correct) {
+  let A = a, B = b, C = c, D = d;
+  if (correct && (B === 0 || C === 0 || A === 0 || D === 0)) { A += 0.5; B += 0.5; C += 0.5; D += 0.5; }
+  if (B === 0 || C === 0) return null;
+  return (A * D) / (B * C);
+}
+
+function calcReversal() {
+  const L = readLabels();
+  const rows = strata.filter(r => (r.a + r.b + r.c + r.d) > 0);
+  if (rows.length < 2) { alert('Enter at least two strata with non-zero counts.'); return; }
+
+  let sumA = 0, sumB = 0, sumC = 0, sumD = 0;
+  let mhR = 0, mhS = 0;
+  const perStratum = [];
+
+  rows.forEach(r => {
+    const a = r.a, b = r.b, c = r.c, d = r.d;
+    const n = a + b + c + d;
+    sumA += a; sumB += b; sumC += c; sumD += d;
+    if (n > 0) { mhR += (a * d) / n; mhS += (b * c) / n; }
+    const rateA = (a + b) > 0 ? a / (a + b) : null;
+    const rateB = (c + d) > 0 ? c / (c + d) : null;
+    const orRaw = orFor(a, b, c, d, false);
+    const orDisp = orFor(a, b, c, d, true);
+    perStratum.push({ label: r.label, a, b, c, d, n, rateA, rateB, orRaw, orDisp });
+  });
+
+  const crudeOR = orFor(sumA, sumB, sumC, sumD, true);
+  const mhOR = mhS > 0 ? mhR / mhS : null;
+  const crudeRateA = (sumA + sumB) > 0 ? sumA / (sumA + sumB) : null;
+  const crudeRateB = (sumC + sumD) > 0 ? sumC / (sumC + sumD) : null;
+
+  const dirOf = or => or === null ? 0 : (or > 1 ? 1 : (or < 1 ? -1 : 0));
+  const crudeDir = dirOf(crudeOR);
+  const mhDir = dirOf(mhOR);
+  const isReversal = (crudeDir !== 0 && mhDir !== 0 && crudeDir !== mhDir);
+
+  let stratAgreeCrude = 0, stratAgreeMh = 0, stratCounted = 0;
+  perStratum.forEach(s => {
+    const d2 = dirOf(s.orDisp);
+    if (d2 === 0) return;
+    stratCounted++;
+    if (d2 === crudeDir) stratAgreeCrude++;
+    if (d2 === mhDir) stratAgreeMh++;
+  });
+
+  const fmtOR = v => v === null ? '&mdash;' : v.toFixed(3);
+  const fmtPct = v => v === null ? '&mdash;' : (v * 100).toFixed(1) + '%';
+
+  let sTbl = '<thead><tr><th style="text-align:left">' + L.stratumWord + '</th>' +
+    '<th>' + L.groupA + ' Rate</th><th>' + L.groupB + ' Rate</th><th>Odds Ratio (' + L.groupA + ' vs ' + L.groupB + ')</th><th>Direction</th></tr></thead><tbody>';
+  perStratum.forEach(s => {
+    const dir = dirOf(s.orDisp);
+    const dirTxt = dir === 1 ? '<span class="cell-g">' + L.groupA + ' favored</span>' : (dir === -1 ? '<span class="cell-r">' + L.groupB + ' favored</span>' : '&mdash;');
+    sTbl += '<tr><td>' + escAttr(s.label) + '</td><td>' + fmtPct(s.rateA) + '</td><td>' + fmtPct(s.rateB) + '</td><td>' + fmtOR(s.orDisp) + '</td><td>' + dirTxt + '</td></tr>';
+  });
+  sTbl += '</tbody>';
+  document.getElementById('stratumOrTable').innerHTML = sTbl;
+
+  const crudeDirTxt = crudeDir === 1 ? L.groupA + ' favored' : (crudeDir === -1 ? L.groupB + ' favored' : 'no association');
+  const mhDirTxt = mhDir === 1 ? L.groupA + ' favored' : (mhDir === -1 ? L.groupB + ' favored' : 'no association');
+
+  let pTbl = '<thead><tr><th style="text-align:left">Method</th><th>' + L.groupA + ' Rate</th><th>' + L.groupB + ' Rate</th><th>Odds Ratio</th><th>Direction</th></tr></thead><tbody>';
+  pTbl += '<tr><td>Crude (pooled, ignoring ' + L.stratumWord.toLowerCase() + ')</td><td>' + fmtPct(crudeRateA) + '</td><td>' + fmtPct(crudeRateB) + '</td><td class="cell-a">' + fmtOR(crudeOR) + '</td><td>' + crudeDirTxt + '</td></tr>';
+  pTbl += '<tr><td>Mantel&ndash;Haenszel (adjusted for ' + L.stratumWord.toLowerCase() + ')</td><td>&mdash;</td><td>&mdash;</td><td class="cell-a">' + fmtOR(mhOR) + '</td><td>' + mhDirTxt + '</td></tr>';
+  pTbl += '</tbody>';
+  document.getElementById('pooledTable').innerHTML = pTbl;
+
+  const verdictBox = document.getElementById('verdictBox');
+  const verdictTitle = document.getElementById('verdictTitle');
+  const verdictText = document.getElementById('verdictText');
+  if (isReversal) {
+    verdictBox.className = 'verdict-box reversal';
+    verdictTitle.textContent = '⚠ REVERSAL DETECTED — Simpson\'s Paradox Pattern';
+    verdictText.textContent = 'The crude pooled odds ratio (' + fmtOR(crudeOR).replace('&mdash;','—') + ') points toward ' + crudeDirTxt + ', but the Mantel–Haenszel odds ratio adjusted for ' + L.stratumWord.toLowerCase() + ' (' + fmtOR(mhOR).replace('&mdash;','—') + ') points toward ' + mhDirTxt + '. The aggregate and the stratified analysis disagree in direction — a lurking variable (' + L.stratumWord.toLowerCase() + ') is confounding the pooled comparison. Report the adjusted figure, not the crude one, and name ' + L.stratumWord.toLowerCase() + ' explicitly as the confound.';
+  } else {
+    verdictBox.className = 'verdict-box no-reversal';
+    verdictTitle.textContent = '✓ No Reversal — Directions Agree';
+    verdictText.textContent = 'The crude odds ratio (' + fmtOR(crudeOR).replace('&mdash;','—') + ') and the Mantel–Haenszel adjusted odds ratio (' + fmtOR(mhOR).replace('&mdash;','—') + ') point the same direction (' + crudeDirTxt + '). ' + L.stratumWord + ' does not reverse the association here, though the adjusted OR is still the more defensible figure to report since it controls for the stratifying variable.';
+  }
+
+  const boardText = 'Pooling all ' + rows.length + ' ' + L.stratumWord.toLowerCase() + ' strata, ' + L.groupA + ' ' + L.outcome.toLowerCase() + ' at ' + fmtPct(crudeRateA).replace('&mdash;','—') + ' vs ' + L.groupB + ' at ' + fmtPct(crudeRateB).replace('&mdash;','—') + ' (crude OR ' + fmtOR(crudeOR).replace('&mdash;','—') + '). Adjusting for ' + L.stratumWord.toLowerCase() + ' via Mantel–Haenszel pooling gives an OR of ' + fmtOR(mhOR).replace('&mdash;','—') + '. ' + (stratCounted ? (stratAgreeMh + ' of ' + stratCounted + ' individual strata point the same direction as the adjusted estimate') : 'Individual strata directions were not comparable') + '. ' + (isReversal ? 'This is a reversal: the crude and adjusted estimates disagree, the textbook Simpson\'s-paradox signature.' : 'The crude and adjusted estimates agree in direction; no reversal detected.');
+  document.getElementById('boardPara').textContent = boardText;
+
+  lastResult = {
+    labels: L, rows: perStratum, crudeOR, mhOR, crudeRateA, crudeRateB,
+    crudeDir, mhDir, isReversal, stratCounted, stratAgreeCrude, stratAgreeMh,
+    timestamp: new Date().toISOString()
+  };
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function exportMarkdown() {
+  if (!lastResult) return;
+  const r = lastResult, L = r.labels;
+  const fmtOR = v => v === null ? '—' : v.toFixed(3);
+  const fmtPct = v => v === null ? '—' : (v * 100).toFixed(1) + '%';
+  let md = '# Lurking-Variable Reversal Detector\n**Generated:** ' + r.timestamp + '\n\n';
+  md += '## Setup\n- Group A: ' + L.groupA + '\n- Group B: ' + L.groupB + '\n- Outcome: ' + L.outcome + '\n- Stratum: ' + L.stratumWord + '\n\n';
+  md += '## Per-Stratum\n| ' + L.stratumWord + ' | ' + L.groupA + ' Rate | ' + L.groupB + ' Rate | Odds Ratio |\n|---|---|---|---|\n';
+  r.rows.forEach(s => { md += '| ' + s.label + ' | ' + fmtPct(s.rateA) + ' | ' + fmtPct(s.rateB) + ' | ' + fmtOR(s.orDisp) + ' |\n'; });
+  md += '\n## Pooled\n| Method | Odds Ratio |\n|---|---|\n| Crude (pooled) | ' + fmtOR(r.crudeOR) + ' |\n| Mantel–Haenszel (adjusted) | ' + fmtOR(r.mhOR) + ' |\n\n';
+  md += '## Verdict\n' + (r.isReversal ? 'REVERSAL DETECTED — crude and adjusted odds ratios point opposite directions (Simpson\'s paradox pattern).' : 'No reversal — crude and adjusted odds ratios agree in direction.') + '\n\n';
+  md += '---\n*Method: Mantel–Haenszel (1959) pooled odds ratio vs crude pooled odds ratio, closed-form arithmetic · ApexLogics.org AL-186*\n';
+  dlFile(md, 'lurking_variable_reversal_detector.md', 'text/markdown');
+}
+
+async function exportAP2() {
+  if (!lastResult) return;
+  const r = lastResult;
+  const mandate = {
+    mandate_type: 'reversal_detector_record', generated_at: r.timestamp, al_id: 'AL-186',
+    inputs: { labels: r.labels, strata: r.rows.map(s => ({ label: s.label, a: s.a, b: s.b, c: s.c, d: s.d })) },
+    summary: {
+      crude_or: r.crudeOR, mh_or: r.mhOR,
+      crude_rate_group_a: r.crudeRateA, crude_rate_group_b: r.crudeRateB,
+      reversal_detected: r.isReversal,
+      strata_agreeing_with_adjusted: r.stratAgreeMh, strata_counted: r.stratCounted
+    },
+    downstream_handoff_candidates: ['81-survey-study-designer']
+  };
+  // ── OpenChainGraph L1 + L2 ──
+  const payload = mandate;
+  payload.chaingraph_version = "0.1.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/career_mobility";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-186";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  payload.chaingraph_version = "0.4.0";
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+  // ── OCG v0.4 strict envelope: relocate legacy fields into hash-excluded apex_meta ──
+  payload.tool_id = "172-lurking-variable-reversal-detector";
+  payload.audit_signature = payload.audit_signature || {};
+  const _cgPreval = Object.assign({}, payload);
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const errs = [];
+  if (!mandate.chaingraph_version) errs.push('missing chaingraph_version');
+  if (_cgPreval.ap2_mandate_type !== 'reversal_detector_record') errs.push('wrong ap2_mandate_type');
+  if (!mandate.generated_at) errs.push('missing generated_at');
+  if (!mandate.inputs) errs.push('missing inputs');
+  if (errs.length) { alert('Policy Mandate error: ' + errs.join('; ')); return; }
+  const blob = new Blob([JSON.stringify(mandate, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'reversal_detector_record.ap2.json'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  // OCG Standard §4 canonical execution hash. RFC 8785 JCS-equivalent
+  // (recursive key sort + JSON.stringify) over {policy_parameters,
+  // output_payload}, SHA-256, BARE lowercase hex (no "sha256:" prefix — matches
+  // AINumbers/OCS for cross-vendor verify). I-JSON guard rejects non-finite /
+  // unsafe-integer values so a non-canonical value can never silently produce an
+  // unstable hash. Mirrors vendored chaingraph/kernels/_hash.mjs. Cutover 2026-07-04.
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function dlFile(c, n, t) {
+  const b = new Blob([c], { type: t }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = n; a.click(); URL.revokeObjectURL(a.href);
+}
+
+function getManifest() { return {"tool_id":"172-lurking-variable-reversal-detector","al_id":"AL-186","version":"1.0.0","title":"Lurking-Variable Reversal Detector","category":"selected_studies_methods","status":"shipped","maintenance":"none","data_vintage":"Built-in worked example is a static 1973 historical dataset (Bickel, Hammel & O'Connell 1975, Science 187:398-404), never refreshed. Primary use is user-pasted tables; no live data.","ap2_export":true,"ap2_mandate_types":["reversal_detector_record"],"ap2_inbound_mandate_types":[],"downstream_handoff_candidates":["81-survey-study-designer"],"sister_suite":"https://ainumbers.co","consulting_site":"https://postoaklabs.com","license":"CC-BY-4.0","mcp_annotations":{"readOnlyHint":true,"idempotentHint":true}}; }
+
+/* ── MCP / MANIFEST TOGGLE (standardized, additive) ── */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstBtn').setAttribute('aria-expanded','true');document.getElementById('mfstCode').textContent=JSON.stringify(getManifest(),null,2);}else{b.style.display='none';if(a)a.textContent='▼';document.getElementById('mfstBtn').setAttribute('aria-expanded','false');}}
+
+loadBerkeley();
+</script>
+</body>
+</html>
