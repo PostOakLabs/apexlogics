@@ -646,6 +646,21 @@ function build() {
     wentRedPy(join(work, 'scripts', 'check_index_sync.py'), ['--strict', '--no-color'], { cwd: work }));
 }
 
+// ── 10b. check-chaingraph-validity: dangle a chain step tool_id ─────────────
+{
+  const work = join(tmp, 'cgvalidity');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'chaingraph'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-chaingraph-validity.mjs'), join(work, 'scripts', 'check-chaingraph-validity.mjs'));
+  cpSync(join(REPO, 'suite-registry.json'), join(work, 'suite-registry.json'));
+  const cg = JSON.parse(readFileSync(join(REPO, 'chaingraph', 'chaingraph.json'), 'utf8'));
+  // Same defect class as the real AL-CG-VALIDITY finding: a chain step
+  // tool_id with no registry row and no disk dir.
+  cg.chains[0].steps[0].tool_id = 'zz-phantom-tool-id';
+  writeFileSync(join(work, 'chaingraph', 'chaingraph.json'), JSON.stringify(cg));
+  claim('check-chaingraph-validity.mjs', 'check-chaingraph-validity (dangling chain-step tool_id)', wentRed(join(work, 'scripts', 'check-chaingraph-validity.mjs'), { cwd: work }));
+}
+
 // ── untestable gates — named honestly rather than silently dropped from the
 //    coverage claim (AL-AUDIT-GATE-INTEGRITY §C: gen-sitemap needs full git
 //    history, check-chaingraph-parity needs live network; neither is
