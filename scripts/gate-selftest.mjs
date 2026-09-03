@@ -358,12 +358,69 @@ function build() {
 {
   const work = join(tmp, 'regself');
   mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, '.well-known'), { recursive: true });
   cpSync(join(REPO, 'scripts', 'check-registry-self.mjs'), join(work, 'scripts', 'check-registry-self.mjs'));
+  cpSync(join(REPO, '.well-known', 'mcp.json'), join(work, '.well-known', 'mcp.json'));
   const raw = readFileSync(join(REPO, 'suite-registry.json'), 'utf8').replace(/\x00+$/, '');
   const reg = JSON.parse(raw);
   reg.tools_count_shipped = -1; // drifted vs the derived count of tools[]
   writeFileSync(join(work, 'suite-registry.json'), JSON.stringify(reg, null, 2));
   claim('check-registry-self.mjs', 'check-registry-self (tools_count_shipped drifted from tools[] derived count)', wentRed(join(work, 'scripts', 'check-registry-self.mjs')));
+}
+
+// ── 9a. check-registry-self: registry contract_version drifted from live CONTRACT ──
+{
+  const work = join(tmp, 'regself-contract');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, '.well-known'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-registry-self.mjs'), join(work, 'scripts', 'check-registry-self.mjs'));
+  cpSync(join(REPO, '.well-known', 'mcp.json'), join(work, '.well-known', 'mcp.json'));
+  const raw = readFileSync(join(REPO, 'suite-registry.json'), 'utf8').replace(/\x00+$/, '');
+  const reg = JSON.parse(raw);
+  reg.contract_version = '0.0.1'; // stale vs live CONTRACT
+  writeFileSync(join(work, 'suite-registry.json'), JSON.stringify(reg, null, 2));
+  claim('check-registry-self.mjs', 'check-registry-self (registry contract_version stale vs live CONTRACT)', wentRed(join(work, 'scripts', 'check-registry-self.mjs')));
+}
+
+// ── 9b. check-registry-self: mcp.json contract_version drifted from live CONTRACT ──
+{
+  const work = join(tmp, 'regself-mcpcontract');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, '.well-known'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-registry-self.mjs'), join(work, 'scripts', 'check-registry-self.mjs'));
+  cpSync(join(REPO, 'suite-registry.json'), join(work, 'suite-registry.json'));
+  const mcp = JSON.parse(readFileSync(join(REPO, '.well-known', 'mcp.json'), 'utf8'));
+  mcp.contract_version = '0.0.1'; // stale vs live CONTRACT
+  writeFileSync(join(work, '.well-known', 'mcp.json'), JSON.stringify(mcp, null, 2));
+  claim('check-registry-self.mjs', 'check-registry-self (mcp.json contract_version stale vs live CONTRACT)', wentRed(join(work, 'scripts', 'check-registry-self.mjs')));
+}
+
+// ── 9c. check-registry-self: an AL row's tool_id nulled out ─────────────────
+{
+  const work = join(tmp, 'regself-toolid');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, '.well-known'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-registry-self.mjs'), join(work, 'scripts', 'check-registry-self.mjs'));
+  cpSync(join(REPO, '.well-known', 'mcp.json'), join(work, '.well-known', 'mcp.json'));
+  const raw = readFileSync(join(REPO, 'suite-registry.json'), 'utf8').replace(/\x00+$/, '');
+  const reg = JSON.parse(raw);
+  const alRow = reg.tools.find(t => (t.al_id || '').startsWith('AL-'));
+  alRow.tool_id = null;
+  writeFileSync(join(work, 'suite-registry.json'), JSON.stringify(reg, null, 2));
+  claim('check-registry-self.mjs', 'check-registry-self (an AL row tool_id nulled out)', wentRed(join(work, 'scripts', 'check-registry-self.mjs')));
+}
+
+// ── 9d. check-registry-self: mcp.json last_updated older than registry's ────
+{
+  const work = join(tmp, 'regself-lastupdated');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, '.well-known'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-registry-self.mjs'), join(work, 'scripts', 'check-registry-self.mjs'));
+  cpSync(join(REPO, 'suite-registry.json'), join(work, 'suite-registry.json'));
+  const mcp = JSON.parse(readFileSync(join(REPO, '.well-known', 'mcp.json'), 'utf8'));
+  mcp.last_updated = '2000-01-01'; // stale vs registry's last_updated
+  writeFileSync(join(work, '.well-known', 'mcp.json'), JSON.stringify(mcp, null, 2));
+  claim('check-registry-self.mjs', 'check-registry-self (mcp.json last_updated older than registry)', wentRed(join(work, 'scripts', 'check-registry-self.mjs')));
 }
 
 // ── 10. check-no-storage: inject a localStorage write ───────────────────────
