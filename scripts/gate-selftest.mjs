@@ -562,6 +562,21 @@ function build() {
   claim('check-seo-meta.mjs', 'check-seo-meta (page missing og:image)', wentRed(join(work, 'scripts', 'check-seo-meta.mjs')));
 }
 
+// ── 13a. check-llms-entries: delete one shipped tool's llms.txt entry ───────
+{
+  const work = join(tmp, 'llmsentries');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'workflows'), { recursive: true });
+  mkdirSync(join(work, 'guides'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-llms-entries.mjs'), join(work, 'scripts', 'check-llms-entries.mjs'));
+  cpSync(join(REPO, 'scripts', 'counts.mjs'), join(work, 'scripts', 'counts.mjs'));
+  cpSync(join(REPO, 'suite-registry.json'), join(work, 'suite-registry.json'));
+  const llms = readFileSync(join(REPO, 'llms.txt'), 'utf8');
+  const oneEntry = llms.match(/^### #\S+ · AL-\d+ — .+\n(?:.*\n)*?(?=\n)/m)[0];
+  writeFileSync(join(work, 'llms.txt'), llms.replace(oneEntry, ''));
+  claim('check-llms-entries.mjs', 'check-llms-entries (deleted one shipped AL-ID entry)', wentRed(join(work, 'scripts', 'check-llms-entries.mjs')));
+}
+
 // ── 14. check_index_sync.py: remove a tool card from tools.html ─────────────
 {
   const work = join(tmp, 'idxsync');
