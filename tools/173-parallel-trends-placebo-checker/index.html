@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Parallel-Trends &amp; Placebo Checker &middot; #173 &middot; AL-187 &middot; ApexLogics</title>
+<link rel="canonical" href="https://apexlogics.org/tools/173-parallel-trends-placebo-checker/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ApexLogics">
+<meta property="og:title" content="Parallel-Trends &amp; Placebo Checker &middot; #173 &middot; AL-187 &middot; ApexLogics">
+<meta property="og:description" content="Test the identifying assumption behind a difference-in-differences design instead of asserting it: a pre-trend slope gap with a t-test, a period-by-period event-study table, and an in-time placebo test at a fake treatment date. A classic 2x2 tab ships for completeness only.">
+<meta property="og:url" content="https://apexlogics.org/tools/173-parallel-trends-placebo-checker/">
+<meta property="og:image" content="https://apexlogics.org/assets/og-default.png">
+<meta name="twitter:card" content="summary">
+<meta name="description" content="Enter 3 or more pre-treatment periods for a treatment group and a control group to get a pre-trend slope gap and t-test, a period-by-period event-study table, and an in-time placebo difference-in-differences test at a fake treatment date. Closed-form OLS and a numeric t-distribution, deterministic, client-side only.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#070B14;--bg2:#0d1321;--bg3:#111827;--bg4:#1a2233;
+  --body:#c8d0e0;--dim:#7a8499;--border:#1e2d45;
+  --accent:#2563eb;--accent2:#1d4ed8;--accent3:#1e3a6e;
+  --amber:#E8A838;--red:#ef4444;--green:#22c55e;--purple:#a855f7;
+  --font-serif:'DM Serif Display',serif;--font-sans:'Sora',sans-serif;--font-mono:'JetBrains Mono',monospace;
+  --radius:6px;--radius-lg:10px;--radius-sm:6px;
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--body);font-family:var(--font-sans);font-size:.8203125rem;line-height:1.6;min-height:100vh}
+a{color:var(--accent)}button{font-family:var(--font-sans);cursor:pointer}input,select{font-family:var(--font-sans)}
+nav{position:sticky;top:0;z-index:100;background:rgba(7,11,20,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:1120px;margin:0 auto;padding:.6rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.logo{display:flex;align-items:center;gap:.55rem;text-decoration:none}
+.logo-mark{width:32px;height:32px;flex-shrink:0}.logo-mark svg{width:100%;height:100%}
+.logo-text{display:flex;flex-direction:column;line-height:1.1}
+.logo-name{font-family:var(--font-mono);font-size:.95rem;color:var(--body)}.logo-name .apex{color:#E8A838}.logo-name .org{color:var(--dim)}
+.logo-tag{font-family:var(--font-mono);font-size:.5rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+.nav-pill{background:none;border:1px solid var(--border);border-radius:6px;color:var(--body);font-size:.62rem;padding:.3rem .65rem;font-family:var(--font-mono);letter-spacing:.04em;text-decoration:none;transition:border-color .15s}
+.nav-pill.accent{border-color:rgba(232,168,56,.5);color:var(--amber)}
+.container{max-width:1120px;margin:0 auto;padding:2rem 1.5rem 4rem}
+.pii-banner{background:rgba(255,255,255,.03);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:var(--radius-sm);padding:.7rem 1rem;font-size:.76rem;color:var(--dim);display:flex;gap:.5rem;align-items:flex-start;margin-bottom:1.5rem}
+.eyebrow{font-family:var(--font-mono);font-size:.62rem;letter-spacing:.1em;color:var(--purple);margin-bottom:.5rem}
+.tool-title{font-family:var(--font-serif);font-size:2rem;color:#e8edf5;margin-bottom:.4rem;line-height:1.2}
+.tool-desc{color:var(--dim);font-size:.85rem;max-width:760px;margin-bottom:.5rem}
+.vintage-banner{display:inline-flex;align-items:center;gap:.4rem;font-family:var(--font-mono);font-size:.6rem;letter-spacing:.06em;color:var(--dim);background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:.2rem .55rem;margin-bottom:1.5rem}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem;margin-bottom:1rem}
+.card-title{font-family:var(--font-mono);font-size:.65rem;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-bottom:.7rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+.tab-bar{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.2rem;border-bottom:1px solid var(--border);padding-bottom:.8rem}
+.tab-btn{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--dim);font-size:.7rem;padding:.5rem .9rem;font-family:var(--font-mono);letter-spacing:.03em;cursor:pointer;transition:all .15s}
+.tab-btn:hover{border-color:var(--accent)}
+.tab-btn.active{background:var(--accent3);border-color:var(--accent);color:#e8edf5}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.labels-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+@media(max-width:700px){.labels-row{grid-template-columns:1fr}}
+.field label{display:block;font-size:.7rem;color:var(--dim);margin-bottom:.28rem;font-family:var(--font-mono);letter-spacing:.03em}
+.field input[type="text"],.field input[type="number"],.field select{width:100%;padding:.42rem .6rem;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--body);font-size:.8rem}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent)}
+.panel-wrap{overflow-x:auto}
+table.panel-table{width:100%;border-collapse:collapse;font-size:.76rem;min-width:600px}
+table.panel-table th{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.05em;color:var(--dim);text-transform:uppercase;padding:.5rem .5rem;border-bottom:1px solid var(--border);text-align:center}
+table.panel-table th:first-child{text-align:left}
+table.panel-table td{padding:.35rem .4rem;border-bottom:1px solid rgba(30,45,69,.4);text-align:center}
+table.panel-table td:first-child{text-align:left}
+table.panel-table input[type="text"]{width:100%;min-width:110px;padding:.32rem .4rem;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--body);font-size:.75rem}
+table.panel-table input[type="number"]{width:88px;padding:.32rem .3rem;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--body);font-size:.75rem;text-align:right}
+table.panel-table td.phase-pre{color:var(--dim)}
+table.panel-table td.phase-post{color:var(--amber)}
+.row-del{background:none;border:1px solid var(--border);border-radius:4px;color:var(--red);font-size:.7rem;padding:.25rem .5rem;cursor:pointer}
+.row-del:hover{border-color:var(--red)}
+.panel-actions{display:flex;gap:.6rem;margin-top:.8rem;flex-wrap:wrap}
+.mini-btn{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--body);font-size:.68rem;padding:.4rem .75rem;font-family:var(--font-mono);cursor:pointer;transition:border-color .15s}
+.mini-btn:hover{border-color:var(--accent)}
+.mini-btn.load{border-color:rgba(168,85,247,.5);color:var(--purple)}
+.run-row{margin-top:1.2rem}
+.run-btn{width:100%;padding:.75rem;background:var(--accent);border:none;border-radius:var(--radius-sm);color:#fff;font-family:var(--font-mono);font-size:.8rem;letter-spacing:.08em;cursor:pointer;transition:background .15s}
+.run-btn:hover{background:var(--accent2)}
+.results-section{display:none;margin-top:1.5rem}
+.results-section.show{display:block}
+.detail-table{width:100%;border-collapse:collapse;font-size:.77rem;margin-top:.5rem}
+.detail-table th{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.06em;color:var(--dim);text-transform:uppercase;padding:.5rem .6rem;border-bottom:1px solid var(--border);text-align:right}
+.detail-table th:first-child{text-align:left}
+.detail-table td{padding:.45rem .6rem;border-bottom:1px solid rgba(30,45,69,.4);text-align:right;font-family:var(--font-mono)}
+.detail-table td:first-child{text-align:left;color:var(--body);font-family:var(--font-sans)}
+.cell-g{color:var(--green)}.cell-r{color:var(--red)}.cell-a{color:var(--amber)}
+.verdict-box{border-radius:var(--radius);padding:1.1rem 1.25rem;margin-top:1rem;border:1px solid var(--border)}
+.verdict-box.flag{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.5)}
+.verdict-box.clear{background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.4)}
+.verdict-title{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5rem}
+.verdict-box.flag .verdict-title{color:var(--red)}
+.verdict-box.clear .verdict-title{color:var(--green)}
+.verdict-text{font-size:.84rem;color:var(--body);line-height:1.65}
+.board-para{background:linear-gradient(135deg,var(--bg2) 0%,rgba(37,99,235,.06) 100%);border:1px solid var(--accent3);border-radius:var(--radius);padding:1.25rem;margin-top:1.25rem}
+.board-para-title{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:.6rem}
+.board-para-text{font-size:.83rem;color:var(--body);line-height:1.7}
+.honesty-note{background:rgba(232,168,56,.06);border:1px solid rgba(232,168,56,.4);border-radius:var(--radius-sm);padding:.75rem 1rem;font-size:.76rem;color:var(--dim);margin-bottom:1rem}
+.results-export-row{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border)}
+.export-btn{font-family:var(--font-mono);font-size:.65rem;padding:.35rem .75rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--dim);letter-spacing:.05em;cursor:pointer;transition:all .15s}
+.export-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tool-footer{background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,255,.08);padding:2.2rem 0 1.9rem;margin-top:3rem}
+.tool-footer-inner{max-width:1120px;margin:0 auto;padding:0 1.5rem;display:flex;flex-wrap:wrap;align-items:flex-start;gap:1.9rem 2.4rem}
+.tool-footer-brand{flex:1 1 210px;min-width:190px;display:flex;flex-direction:column;gap:.3rem}
+.tool-footer-meta{font-size:.65rem;opacity:.55;line-height:1.5}
+.tool-footer-cols{flex:3 1 520px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.4rem}
+.tool-footer-h{font-family:'JetBrains Mono',monospace;font-size:.57rem;font-weight:500;letter-spacing:.11em;text-transform:uppercase;opacity:.42;margin:0 0 .55rem}
+.tool-footer-col ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.34rem}
+.tool-footer-col li{margin:0;padding:0}
+.tool-footer-col a{font-size:.7rem;opacity:.68;line-height:1.35}
+.tool-footer-col a:hover{opacity:1}
+.tool-footer a{color:inherit;text-decoration:none}
+@media(max-width:860px){.tool-footer-cols{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.tool-footer-cols{grid-template-columns:1fr}}
+.mfst-btn{width:100%;max-width:1120px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+.mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+.mfst-body{display:none;max-width:1120px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+.mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <span class="logo-mark"><svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="7" fill="#0d1321"/><path d="M7 24L13 8l6 10 4-6 2 4" stroke="#E8A838" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="22" r="2.5" fill="#E8A838" opacity=".7"/></svg></span>
+      <span class="logo-text">
+        <span class="logo-name"><span class="apex">Apex</span> <span class="org">Logics.org</span></span>
+        <span class="logo-tag">Career &amp; Education Tools</span>
+      </span>
+    </a>
+    <a href="../../tools.html" class="nav-pill accent">&#x2190; All Tools</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="pii-banner" role="note">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    <span>&#x1F512; All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+  </div>
+
+  <div class="eyebrow">SELECTED STUDIES &middot; METHODS &middot; AL-187 &middot; #173</div>
+  <h1 class="tool-title">Parallel-Trends &amp; Placebo Checker</h1>
+  <p class="tool-desc">A single pre-period and a single post-period is enough to compute a difference-in-differences estimate, but it is not enough to test the assumption that estimate depends on: that the treatment and control groups would have moved in parallel absent treatment. Enter three or more pre-treatment periods for both groups to get a pre-trend slope gap with a t-test, a period-by-period event-study table, and an in-time placebo test that reruns the estimate at a fake treatment date inside the pre-period. A classic single pre/post 2&times;2 tab ships for completeness only.</p>
+  <div class="vintage-banner">
+    <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3.5l2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    Method: closed-form ordinary least squares on your entered period values, with a numerically implemented t-distribution CDF for the t-tests. No live data. The built-in worked example is an illustrative synthetic panel, not a historical dataset.
+  </div>
+
+  <div class="tab-bar" role="tablist">
+    <button class="tab-btn active" id="tabBtnTrends" onclick="showTab('trends')" role="tab" aria-selected="true" aria-controls="panelTrends">1. Pre-Trend Test</button>
+    <button class="tab-btn" id="tabBtnEvent" onclick="showTab('event')" role="tab" aria-selected="false" aria-controls="panelEvent">2. Event Study</button>
+    <button class="tab-btn" id="tabBtnPlacebo" onclick="showTab('placebo')" role="tab" aria-selected="false" aria-controls="panelPlacebo">3. In-Time Placebo</button>
+    <button class="tab-btn" id="tabBtnTwoByTwo" onclick="showTab('twobytwo')" role="tab" aria-selected="false" aria-controls="panelTwoByTwo">4. Classic 2&times;2</button>
+  </div>
+
+  <div class="tab-panel active" id="panelTrends" role="tabpanel" aria-labelledby="tabBtnTrends">
+    <div class="card">
+      <div class="card-title"><span>Group Labels</span></div>
+      <div class="labels-row">
+        <div class="field"><label for="treatLabel">Treatment Group Label</label><input type="text" id="treatLabel" value="Treatment" oninput="renderPanel()"></div>
+        <div class="field"><label for="controlLabel">Control Group Label</label><input type="text" id="controlLabel" value="Control" oninput="renderPanel()"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>Period Panel</span></div>
+      <div class="panel-wrap">
+        <table class="panel-table" id="panelTable"></table>
+      </div>
+      <div class="panel-actions">
+        <button class="mini-btn" onclick="addRow()">&#43; Add Period</button>
+        <button class="mini-btn load" onclick="loadExample()">&#x21BB; Load Illustrative Example</button>
+        <button class="mini-btn" onclick="clearRows()">&#x2715; Clear All</button>
+      </div>
+      <div class="labels-row" style="margin-top:1rem">
+        <div class="field">
+          <label for="treatmentStartSelect">Treatment Starts At</label>
+          <select id="treatmentStartSelect" onchange="onTreatmentStartChange(this.value)"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="run-row">
+      <button class="run-btn" onclick="runTrends()">&#9654; Run Pre-Trend Test</button>
+    </div>
+
+    <div class="results-section" id="trendsResults" aria-live="polite">
+      <div class="card">
+        <div class="card-title">Pre-Treatment Rates by Period</div>
+        <div style="overflow-x:auto"><table class="detail-table" id="trendsRateTable"></table></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Pre-Trend Slope Gap (Pooled Regression, Group &times; Period Interaction)</div>
+        <div style="overflow-x:auto"><table class="detail-table" id="trendsGapTable"></table></div>
+      </div>
+      <div class="verdict-box" id="trendsVerdictBox">
+        <div class="verdict-title" id="trendsVerdictTitle"></div>
+        <p class="verdict-text" id="trendsVerdictText"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="panelEvent" role="tabpanel" aria-labelledby="tabBtnEvent">
+    <div class="honesty-note">Uses the same period panel entered in the Pre-Trend Test tab. The baseline period is the last pre-treatment period before the treatment-start selection.</div>
+    <div class="run-row">
+      <button class="run-btn" onclick="runEventStudy()">&#9654; Compute Event-Study Coefficients</button>
+    </div>
+    <div class="results-section" id="eventResults" aria-live="polite">
+      <div class="card">
+        <div class="card-title">Period-by-Period Treatment-Minus-Control Difference, Relative to Baseline</div>
+        <div style="overflow-x:auto"><table class="detail-table" id="eventTable"></table></div>
+      </div>
+      <div class="board-para">
+        <div class="board-para-title">&#9654; How to Read This</div>
+        <p class="board-para-text" id="eventBoardPara"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="panelPlacebo" role="tabpanel" aria-labelledby="tabBtnPlacebo">
+    <div class="honesty-note">Uses the pre-treatment periods from the Pre-Trend Test tab only. Pick a period inside the pre-treatment window to treat as a fake treatment date; everything from that period onward inside the pre-window is treated as the fake post-period.</div>
+    <div class="card">
+      <div class="card-title"><span>Fake Treatment Date</span></div>
+      <div class="labels-row">
+        <div class="field">
+          <label for="placeboSelect">Fake Treatment Starts At</label>
+          <select id="placeboSelect"></select>
+        </div>
+      </div>
+    </div>
+    <div class="run-row">
+      <button class="run-btn" onclick="runPlacebo()">&#9654; Run In-Time Placebo Test</button>
+    </div>
+    <div class="results-section" id="placeboResults" aria-live="polite">
+      <div class="card">
+        <div class="card-title">Placebo Difference-in-Differences Estimate</div>
+        <div style="overflow-x:auto"><table class="detail-table" id="placeboTable"></table></div>
+      </div>
+      <div class="verdict-box" id="placeboVerdictBox">
+        <div class="verdict-title" id="placeboVerdictTitle"></div>
+        <p class="verdict-text" id="placeboVerdictText"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="panelTwoByTwo" role="tabpanel" aria-labelledby="tabBtnTwoByTwo">
+    <div class="honesty-note">This tab computes the classic single pre-period, single post-period 2&times;2 difference-in-differences estimate from four group means. It exists only so all four modes live in one file. This design is already served by other difference-in-differences calculators in this suite; the pre-trend, event-study, and placebo tabs above are the actual contribution of this tool. Four means alone carry no variance information, so no standard error or significance test is reported here.</div>
+    <div class="card">
+      <div class="card-title"><span>Group Means</span></div>
+      <div class="labels-row">
+        <div class="field"><label for="twoTreatPre">Treatment Group, Pre-Period Mean</label><input type="number" id="twoTreatPre" value="50" step="any"></div>
+        <div class="field"><label for="twoTreatPost">Treatment Group, Post-Period Mean</label><input type="number" id="twoTreatPost" value="62" step="any"></div>
+        <div class="field"><label for="twoControlPre">Control Group, Pre-Period Mean</label><input type="number" id="twoControlPre" value="48" step="any"></div>
+        <div class="field"><label for="twoControlPost">Control Group, Post-Period Mean</label><input type="number" id="twoControlPost" value="52" step="any"></div>
+      </div>
+    </div>
+    <div class="run-row">
+      <button class="run-btn" onclick="runTwoByTwo()">&#9654; Compute Classic 2&times;2 Difference-in-Differences</button>
+    </div>
+    <div class="results-section" id="twoByTwoResults" aria-live="polite">
+      <div class="card">
+        <div class="card-title">Classic 2&times;2 Result</div>
+        <div style="overflow-x:auto"><table class="detail-table" id="twoByTwoTable"></table></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="results-export-row">
+    <button class="export-btn" onclick="exportMarkdown()">&#8595; Markdown</button>
+    <button class="export-btn" onclick="exportAP2()">&#8595; Policy Mandate (JSON)</button>
+  </div>
+</div>
+
+<button class="mfst-btn" id="mfstBtn" onclick="toggleMfst()" aria-expanded="false"><span>&#128230;&nbsp; manifest.json &middot; MCP tool definition &middot; Policy Mandate schema</span><span id="mfstArr">&#9660;</span></button>
+<div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+<footer class="tool-footer">
+  <div class="tool-footer-inner">
+    <div class="tool-footer-brand">
+      <div class="tool-footer-meta">CC BY 4.0 &middot; Zero PII &middot; Client-side only</div>
+      <div class="tool-footer-meta">apexlogics.org</div>
+    </div>
+    <div class="tool-footer-cols">
+      <div class="tool-footer-col">
+        <div class="tool-footer-h">Platform</div>
+        <ul>
+          <li><a href="../../tools.html">All Tools</a></li>
+          <li><a href="../../workflows/index.html">Workflows</a></li>
+          <li><a href="../../showcase/index.html">Showcase</a></li>
+          <li><a href="../../mcp.html">MCP Docs</a></li>
+        </ul>
+      </div>
+      <div class="tool-footer-col">
+        <div class="tool-footer-h">Guides</div>
+        <ul>
+          <li><a href="../../guides/student-finance-hub.html">Student Finance</a></li>
+          <li><a href="../../guides/student-loans-2026.html">Student Loans 2026</a></li>
+          <li><a href="../../guides/education-path-hub.html">Education Path</a></li>
+          <li><a href="../../guides/career-transition-hub.html">Career Transition</a></li>
+          <li><a href="../../guides/compensation-offers-hub.html">Compensation &amp; Offers</a></li>
+          <li><a href="../../guides/licensing-credentials-hub.html">Licensing &amp; Credentials</a></li>
+          <li><a href="../../guides/immigration-visa-hub.html">Immigration &amp; Visa</a></li>
+          <li><a href="../../guides/workforce-development-hub.html">Workforce Development</a></li>
+          <li><a href="../../guides/teaching-instruction-hub.html">Teaching &amp; Instruction</a></li>
+          <li><a href="../../guides/index.html">All Guides</a></li>
+        </ul>
+      </div>
+      <div class="tool-footer-col">
+        <div class="tool-footer-h">Data &amp; Artifacts</div>
+        <ul>
+          <li><a href="../../suite-registry.json">suite-registry.json</a></li>
+          <li><a href="../../chaingraph/chaingraph.json">chaingraph.json</a></li>
+          <li><a href="../../llms.txt">llms.txt</a></li>
+          <li><a href="../../.well-known/mcp.json">.well-known/mcp.json</a></li>
+          <li><a href="../../.well-known/agent-card.json">agent-card.json</a></li>
+          <li><a href="../../sitemap.xml">sitemap.xml</a></li>
+          <li><a href="../../sitemap.html">Sitemap</a></li>
+        </ul>
+      </div>
+      <div class="tool-footer-col">
+        <div class="tool-footer-h">Company</div>
+        <ul>
+          <li><a href="../../about.html">About</a></li>
+          <li><a href="../../contact.html">Contact</a></li>
+          <li><a href="https://postoaklabs.com" target="_blank" rel="noopener">PostOakLabs.com &#8599;</a></li>
+          <li><a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co &#8599;</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ============ NUMERIC CORE: OLS + t-distribution CDF ============ */
+
+function logGamma(x) {
+  const g = 7;
+  const c = [0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - logGamma(1 - x);
+  x -= 1;
+  let a = c[0];
+  const t = x + g + 0.5;
+  for (let i = 1; i < g + 2; i++) a += c[i] / (x + i);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+
+function betacf(x, a, b) {
+  const MAXIT = 200, EPS = 3e-14, FPMIN = 1e-300;
+  const qab = a + b, qap = a + 1, qam = a - 1;
+  let c = 1, d = 1 - qab * x / qap;
+  if (Math.abs(d) < FPMIN) d = FPMIN;
+  d = 1 / d;
+  let h = d;
+  for (let m = 1; m <= MAXIT; m++) {
+    const m2 = 2 * m;
+    let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+    d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d; h *= d * c;
+    aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+    d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d; const del = d * c; h *= del;
+    if (Math.abs(del - 1) < EPS) break;
+  }
+  return h;
+}
+
+function regIncompleteBeta(x, a, b) {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  const bt = Math.exp(logGamma(a + b) - logGamma(a) - logGamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+  if (x < (a + 1) / (a + b + 2)) return bt * betacf(x, a, b) / a;
+  return 1 - bt * betacf(1 - x, b, a) / b;
+}
+
+// Two-sided p-value for a t-statistic on `df` degrees of freedom, via the
+// regularized incomplete beta function (Numerical Recipes betacf/betai form).
+// Deterministic and stable to double precision; no library dependency.
+function tTwoSidedP(t, df) {
+  if (!isFinite(t) || df <= 0) return NaN;
+  const at = Math.abs(t);
+  const x = df / (df + at * at);
+  const ib = regIncompleteBeta(x, df / 2, 0.5);
+  return ib; // this equals the two-sided tail probability directly
+}
+
+function transpose(M) { return M[0].map((_, j) => M.map(row => row[j])); }
+
+function matMul(A, B) {
+  const out = [];
+  for (let i = 0; i < A.length; i++) {
+    const row = [];
+    for (let j = 0; j < B[0].length; j++) {
+      let s = 0;
+      for (let k = 0; k < B.length; k++) s += A[i][k] * B[k][j];
+      row.push(s);
+    }
+    out.push(row);
+  }
+  return out;
+}
+
+function matInv(M) {
+  const n = M.length;
+  const A = M.map((row, i) => row.concat(row.map((_, j) => (i === j ? 1 : 0))));
+  for (let col = 0; col < n; col++) {
+    let piv = col;
+    for (let r = col + 1; r < n; r++) if (Math.abs(A[r][col]) > Math.abs(A[piv][col])) piv = r;
+    [A[col], A[piv]] = [A[piv], A[col]];
+    const pv = A[col][col] || 1e-12;
+    for (let j = 0; j < 2 * n; j++) A[col][j] /= pv;
+    for (let r = 0; r < n; r++) {
+      if (r === col) continue;
+      const f = A[r][col];
+      for (let j = 0; j < 2 * n; j++) A[r][j] -= f * A[col][j];
+    }
+  }
+  return A.map(row => row.slice(n));
+}
+
+// Closed-form ordinary least squares via normal equations: beta = (X'X)^-1 X'y.
+// Returns coefficient, standard error, t-statistic, and two-sided p-value for
+// each column of the design matrix X.
+function ols(X, y) {
+  const n = X.length, k = X[0].length;
+  const Xt = transpose(X);
+  const XtX = matMul(Xt, X);
+  const XtXinv = matInv(XtX);
+  const Xty = matMul(Xt, y.map(v => [v]));
+  const beta = matMul(XtXinv, Xty).map(r => r[0]);
+  const fitted = X.map(row => row.reduce((s, v, i) => s + v * beta[i], 0));
+  const resid = y.map((v, i) => v - fitted[i]);
+  const SSE = resid.reduce((s, e) => s + e * e, 0);
+  const df = n - k;
+  const sigma2 = df > 0 ? SSE / df : NaN;
+  const se = beta.map((_, j) => Math.sqrt(Math.max(sigma2 * XtXinv[j][j], 0)));
+  const tstat = beta.map((b, j) => (se[j] > 0 ? b / se[j] : NaN));
+  const pval = tstat.map(t => (df > 0 && isFinite(t) ? tTwoSidedP(t, df) : NaN));
+  return { beta, se, tstat, pval, df, n, k };
+}
+
+/* ============ TAB SWITCHING ============ */
+
+function showTab(name) {
+  const tabs = ['trends', 'event', 'placebo', 'twobytwo'];
+  tabs.forEach(t => {
+    document.getElementById('panel' + t.charAt(0).toUpperCase() + t.slice(1).replace('twobytwo','TwoByTwo')).classList.toggle('active', t === name);
+  });
+  document.getElementById('tabBtnTrends').classList.toggle('active', name === 'trends');
+  document.getElementById('tabBtnEvent').classList.toggle('active', name === 'event');
+  document.getElementById('tabBtnPlacebo').classList.toggle('active', name === 'placebo');
+  document.getElementById('tabBtnTwoByTwo').classList.toggle('active', name === 'twobytwo');
+  document.getElementById('tabBtnTrends').setAttribute('aria-selected', String(name === 'trends'));
+  document.getElementById('tabBtnEvent').setAttribute('aria-selected', String(name === 'event'));
+  document.getElementById('tabBtnPlacebo').setAttribute('aria-selected', String(name === 'placebo'));
+  document.getElementById('tabBtnTwoByTwo').setAttribute('aria-selected', String(name === 'twobytwo'));
+  if (name === 'placebo') renderPlaceboSelect();
+}
+
+/* ============ PANEL DATA (shared across Trends / Event Study / Placebo) ============ */
+
+let rows = [];
+let rowId = 0;
+let treatmentStartId = null; // id of first post-treatment row, or null = no post rows yet
+let lastResult = { trends: null, event: null, placebo: null, twobytwo: null };
+
+function newRow(label, treat, control) {
+  rowId += 1;
+  return { id: rowId, label: label, treat: treat, control: control };
+}
+
+function loadExample() {
+  document.getElementById('treatLabel').value = 'Treatment';
+  document.getElementById('controlLabel').value = 'Control';
+  rows = [
+    newRow('Period 1', 40.2, 38.9),
+    newRow('Period 2', 41.8, 40.1),
+    newRow('Period 3', 43.1, 41.6),
+    newRow('Period 4', 44.5, 43.0),
+    newRow('Period 5', 46.0, 44.4),
+    newRow('Period 6', 52.3, 45.9),
+    newRow('Period 7', 57.1, 47.5),
+    newRow('Period 8', 60.4, 49.0)
+  ];
+  treatmentStartId = rows[5].id;
+  renderPanel();
+  hideResults();
+}
+
+function addRow() {
+  rows.push(newRow('Period ' + (rows.length + 1), 0, 0));
+  renderPanel();
+}
+
+function clearRows() {
+  rows = [];
+  treatmentStartId = null;
+  renderPanel();
+  hideResults();
+}
+
+function removeRow(id) {
+  rows = rows.filter(r => r.id !== id);
+  if (treatmentStartId === id) treatmentStartId = null;
+  renderPanel();
+}
+
+function updateField(id, field, value) {
+  const row = rows.find(r => r.id === id);
+  if (!row) return;
+  row[field] = (field === 'label') ? value : (parseFloat(value) || 0);
+  if (field === 'label') renderPanel();
+}
+
+function escAttr(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;'); }
+
+function preRows() {
+  if (treatmentStartId === null) return rows.slice();
+  const idx = rows.findIndex(r => r.id === treatmentStartId);
+  return idx === -1 ? rows.slice() : rows.slice(0, idx);
+}
+
+function postRows() {
+  if (treatmentStartId === null) return [];
+  const idx = rows.findIndex(r => r.id === treatmentStartId);
+  return idx === -1 ? [] : rows.slice(idx);
+}
+
+function renderPanel() {
+  const treatLabel = document.getElementById('treatLabel').value || 'Treatment';
+  const controlLabel = document.getElementById('controlLabel').value || 'Control';
+  const startIdx = treatmentStartId === null ? -1 : rows.findIndex(r => r.id === treatmentStartId);
+  let html = '<thead><tr><th>Period</th><th>' + escAttr(treatLabel) + ' Outcome</th><th>' + escAttr(controlLabel) + ' Outcome</th><th>Phase</th><th></th></tr></thead><tbody>';
+  rows.forEach((r, i) => {
+    const isPost = startIdx !== -1 && i >= startIdx;
+    html += '<tr>' +
+      '<td><input type="text" aria-label="Period label, row ' + r.id + '" value="' + escAttr(r.label) + '" oninput="updateField(' + r.id + ',\'label\',this.value)"></td>' +
+      '<td><input type="number" step="any" aria-label="' + escAttr(r.label) + ', ' + escAttr(treatLabel) + ' outcome" value="' + r.treat + '" oninput="updateField(' + r.id + ',\'treat\',this.value)"></td>' +
+      '<td><input type="number" step="any" aria-label="' + escAttr(r.label) + ', ' + escAttr(controlLabel) + ' outcome" value="' + r.control + '" oninput="updateField(' + r.id + ',\'control\',this.value)"></td>' +
+      '<td class="' + (isPost ? 'phase-post' : 'phase-pre') + '">' + (isPost ? 'Post' : 'Pre') + '</td>' +
+      '<td><button class="row-del" onclick="removeRow(' + r.id + ')" aria-label="Remove ' + escAttr(r.label) + '">&#10005;</button></td>' +
+      '</tr>';
+  });
+  html += '</tbody>';
+  document.getElementById('panelTable').innerHTML = html;
+
+  const sel = document.getElementById('treatmentStartSelect');
+  let optHtml = '<option value="">No post-treatment period yet (pre-trend test only)</option>';
+  rows.forEach((r, i) => {
+    if (i === 0) return; // need at least one pre-period before treatment start
+    optHtml += '<option value="' + r.id + '"' + (r.id === treatmentStartId ? ' selected' : '') + '>' + escAttr(r.label) + '</option>';
+  });
+  sel.innerHTML = optHtml;
+}
+
+function onTreatmentStartChange(val) {
+  treatmentStartId = val ? parseInt(val, 10) : null;
+  renderPanel();
+}
+
+function renderPlaceboSelect() {
+  const pre = preRows();
+  const sel = document.getElementById('placeboSelect');
+  let optHtml = '';
+  pre.forEach((r, i) => {
+    if (i === 0) return; // need at least one period before the fake date
+    optHtml += '<option value="' + r.id + '">' + escAttr(r.label) + '</option>';
+  });
+  sel.innerHTML = optHtml || '<option value="">Add at least 2 pre-treatment periods</option>';
+}
+
+function hideResults() {
+  ['trendsResults', 'eventResults', 'placeboResults', 'twoByTwoResults'].forEach(id => {
+    document.getElementById(id).classList.remove('show');
+  });
+}
+
+const fmtNum = (v, d) => (v === null || v === undefined || !isFinite(v)) ? '&mdash;' : v.toFixed(d === undefined ? 3 : d);
+const fmtP = v => (v === null || v === undefined || !isFinite(v)) ? '&mdash;' : (v < 0.001 ? '< 0.001' : v.toFixed(3));
+
+/* ============ TAB 1: PRE-TREND TEST ============ */
+
+function runTrends() {
+  const pre = preRows();
+  if (pre.length < 3) { alert('Enter at least three pre-treatment periods before running the pre-trend test.'); return; }
+  const treatLabel = document.getElementById('treatLabel').value || 'Treatment';
+  const controlLabel = document.getElementById('controlLabel').value || 'Control';
+
+  const X = [], y = [];
+  pre.forEach((r, i) => {
+    X.push([1, i, 1, i]); y.push(r.treat);
+    X.push([1, i, 0, 0]); y.push(r.control);
+  });
+  const fit = ols(X, y);
+  const controlSlope = fit.beta[1];
+  const treatSlope = fit.beta[1] + fit.beta[3];
+  const gap = fit.beta[3], gapSE = fit.se[3], gapT = fit.tstat[3], gapP = fit.pval[3];
+
+  let rateHtml = '<thead><tr><th style="text-align:left">Period</th><th>' + escAttr(treatLabel) + '</th><th>' + escAttr(controlLabel) + '</th></tr></thead><tbody>';
+  pre.forEach(r => { rateHtml += '<tr><td>' + escAttr(r.label) + '</td><td>' + fmtNum(r.treat, 2) + '</td><td>' + fmtNum(r.control, 2) + '</td></tr>'; });
+  rateHtml += '</tbody>';
+  document.getElementById('trendsRateTable').innerHTML = rateHtml;
+
+  let gapHtml = '<thead><tr><th style="text-align:left">Quantity</th><th>Value</th></tr></thead><tbody>';
+  gapHtml += '<tr><td>' + escAttr(treatLabel) + ' pre-trend slope</td><td>' + fmtNum(treatSlope) + '</td></tr>';
+  gapHtml += '<tr><td>' + escAttr(controlLabel) + ' pre-trend slope</td><td>' + fmtNum(controlSlope) + '</td></tr>';
+  gapHtml += '<tr><td>Slope gap (treatment minus control)</td><td class="cell-a">' + fmtNum(gap) + '</td></tr>';
+  gapHtml += '<tr><td>Standard error of the gap</td><td>' + fmtNum(gapSE) + '</td></tr>';
+  gapHtml += '<tr><td>t-statistic (df = ' + fit.df + ')</td><td>' + fmtNum(gapT, 2) + '</td></tr>';
+  gapHtml += '<tr><td>Two-sided p-value</td><td>' + fmtP(gapP) + '</td></tr>';
+  gapHtml += '</tbody>';
+  document.getElementById('trendsGapTable').innerHTML = gapHtml;
+
+  const flagged = isFinite(gapP) && gapP < 0.05;
+  const box = document.getElementById('trendsVerdictBox');
+  const title = document.getElementById('trendsVerdictTitle');
+  const text = document.getElementById('trendsVerdictText');
+  if (flagged) {
+    box.className = 'verdict-box flag';
+    title.textContent = 'Pre-trend gap is statistically significant';
+    text.textContent = 'The slope gap between ' + treatLabel + ' and ' + controlLabel + ' during the pre-treatment window is ' + fmtNum(gap).replace('&mdash;','—') + ' with p = ' + fmtP(gapP) + '. The two groups were not moving in parallel before treatment, which undermines the parallel-trends assumption a standard difference-in-differences estimate depends on. Report this finding alongside any post-treatment estimate from this design.';
+  } else {
+    box.className = 'verdict-box clear';
+    title.textContent = 'No statistically significant pre-trend gap';
+    text.textContent = 'The slope gap between ' + treatLabel + ' and ' + controlLabel + ' during the pre-treatment window is ' + fmtNum(gap).replace('&mdash;','—') + ' with p = ' + fmtP(gapP) + ', not distinguishable from zero at the 0.05 level. This is consistent with, though it does not prove, the parallel-trends assumption. A small pre-period sample has limited power to detect a real gap, so treat this as supportive rather than conclusive.';
+  }
+
+  lastResult.trends = {
+    treatLabel, controlLabel, preRows: pre.map(r => ({ label: r.label, treat: r.treat, control: r.control })),
+    treatSlope, controlSlope, gap, gapSE, gapT, gapP, df: fit.df, flagged
+  };
+  document.getElementById('trendsResults').classList.add('show');
+}
+
+/* ============ TAB 2: EVENT STUDY ============ */
+
+function runEventStudy() {
+  const pre = preRows();
+  if (pre.length < 1) { alert('Add at least one pre-treatment period first, in the Pre-Trend Test tab.'); return; }
+  const baseline = pre[pre.length - 1];
+  const post = postRows();
+  const others = pre.slice(0, pre.length - 1).concat(post);
+  const treatLabel = document.getElementById('treatLabel').value || 'Treatment';
+  const controlLabel = document.getElementById('controlLabel').value || 'Control';
+
+  let html = '<thead><tr><th style="text-align:left">Period</th><th>Phase</th><th>' + escAttr(treatLabel) + '</th><th>' + escAttr(controlLabel) + '</th><th>Event Coefficient</th></tr></thead><tbody>';
+  html += '<tr><td>' + escAttr(baseline.label) + ' (baseline)</td><td>Pre</td><td>' + fmtNum(baseline.treat, 2) + '</td><td>' + fmtNum(baseline.control, 2) + '</td><td>0.000</td></tr>';
+  const coefRows = [];
+  others.forEach(r => {
+    const isPost = postRows().some(p => p.id === r.id);
+    const coef = (r.treat - baseline.treat) - (r.control - baseline.control);
+    coefRows.push({ label: r.label, isPost, coef });
+    html += '<tr><td>' + escAttr(r.label) + '</td><td class="' + (isPost ? 'phase-post' : 'phase-pre') + '">' + (isPost ? 'Post' : 'Pre') + '</td><td>' + fmtNum(r.treat, 2) + '</td><td>' + fmtNum(r.control, 2) + '</td><td class="' + (isPost ? 'cell-a' : '') + '">' + fmtNum(coef) + '</td></tr>';
+  });
+  html += '</tbody>';
+  document.getElementById('eventTable').innerHTML = html;
+
+  const preCoefs = coefRows.filter(c => !c.isPost).map(c => c.coef);
+  const postCoefs = coefRows.filter(c => c.isPost).map(c => c.coef);
+  const maxPre = preCoefs.length ? Math.max(...preCoefs.map(Math.abs)) : null;
+  const avgPost = postCoefs.length ? postCoefs.reduce((s, v) => s + v, 0) / postCoefs.length : null;
+  let para = 'Each event coefficient is the treatment-minus-control difference at that period, minus the same difference at the baseline period (' + baseline.label + '). ';
+  para += preCoefs.length ? 'Pre-treatment coefficients stay near zero when the parallel-trends assumption holds; the largest pre-treatment coefficient here has magnitude ' + fmtNum(maxPre).replace('&mdash;','—') + '. ' : 'Add more pre-treatment periods to see whether the pre-treatment coefficients flatten to zero. ';
+  para += postCoefs.length ? 'Post-treatment coefficients average ' + fmtNum(avgPost).replace('&mdash;','—') + ', which is the pattern a real treatment effect should produce: a jump after treatment starts, not before.' : 'No post-treatment periods are entered yet, so only the pre-treatment pattern is shown.';
+  document.getElementById('eventBoardPara').textContent = para;
+
+  lastResult.event = { baseline: baseline.label, coefficients: coefRows };
+  document.getElementById('eventResults').classList.add('show');
+}
+
+/* ============ TAB 3: IN-TIME PLACEBO ============ */
+
+function runPlacebo() {
+  const pre = preRows();
+  const fakeId = parseInt(document.getElementById('placeboSelect').value, 10);
+  if (!fakeId || pre.length < 3) { alert('Pick a fake treatment date with at least one pre-treatment period before it and one at or after it.'); return; }
+  const fakeIdx = pre.findIndex(r => r.id === fakeId);
+  if (fakeIdx <= 0) { alert('Pick a fake treatment date that has at least one period before it.'); return; }
+  const treatLabel = document.getElementById('treatLabel').value || 'Treatment';
+  const controlLabel = document.getElementById('controlLabel').value || 'Control';
+
+  const X = [], y = [];
+  pre.forEach((r, i) => {
+    const post = i >= fakeIdx ? 1 : 0;
+    X.push([1, post, 1, post]); y.push(r.treat);
+    X.push([1, post, 0, 0]); y.push(r.control);
+  });
+  const fit = ols(X, y);
+  const placeboDid = fit.beta[3], se = fit.se[3], t = fit.tstat[3], p = fit.pval[3];
+
+  let html = '<thead><tr><th style="text-align:left">Quantity</th><th>Value</th></tr></thead><tbody>';
+  html += '<tr><td>Fake treatment date</td><td>' + escAttr(pre[fakeIdx].label) + '</td></tr>';
+  html += '<tr><td>Placebo difference-in-differences estimate</td><td class="cell-a">' + fmtNum(placeboDid) + '</td></tr>';
+  html += '<tr><td>Standard error</td><td>' + fmtNum(se) + '</td></tr>';
+  html += '<tr><td>t-statistic (df = ' + fit.df + ')</td><td>' + fmtNum(t, 2) + '</td></tr>';
+  html += '<tr><td>Two-sided p-value</td><td>' + fmtP(p) + '</td></tr>';
+  html += '</tbody>';
+  document.getElementById('placeboTable').innerHTML = html;
+
+  const flagged = isFinite(p) && p < 0.05;
+  const box = document.getElementById('placeboVerdictBox');
+  const title = document.getElementById('placeboVerdictTitle');
+  const text = document.getElementById('placeboVerdictText');
+  if (flagged) {
+    box.className = 'verdict-box flag';
+    title.textContent = 'Placebo effect is statistically significant';
+    text.textContent = 'Rerunning the difference-in-differences estimate as if treatment started at ' + pre[fakeIdx].label + ', a period before treatment actually happened, produces an estimate of ' + fmtNum(placeboDid).replace('&mdash;','—') + ' with p = ' + fmtP(p) + '. A significant effect where none should exist is a red flag for this design: something other than the real treatment is producing a jump in ' + treatLabel.toLowerCase() + ' relative to ' + controlLabel.toLowerCase() + ' around that date.';
+  } else {
+    box.className = 'verdict-box clear';
+    title.textContent = 'No statistically significant placebo effect';
+    text.textContent = 'Rerunning the difference-in-differences estimate at the fake treatment date ' + pre[fakeIdx].label + ' produces an estimate of ' + fmtNum(placeboDid).replace('&mdash;','—') + ' with p = ' + fmtP(p) + ', not distinguishable from zero. This supports the design: nothing unusual happens in the data at a date where nothing should happen.';
+  }
+
+  lastResult.placebo = { fakeDateLabel: pre[fakeIdx].label, placeboDid, se, t, p, df: fit.df, flagged };
+  document.getElementById('placeboResults').classList.add('show');
+}
+
+/* ============ TAB 4: CLASSIC 2x2 ============ */
+
+function runTwoByTwo() {
+  const treatPre = parseFloat(document.getElementById('twoTreatPre').value) || 0;
+  const treatPost = parseFloat(document.getElementById('twoTreatPost').value) || 0;
+  const controlPre = parseFloat(document.getElementById('twoControlPre').value) || 0;
+  const controlPost = parseFloat(document.getElementById('twoControlPost').value) || 0;
+  const treatChange = treatPost - treatPre;
+  const controlChange = controlPost - controlPre;
+  const did = treatChange - controlChange;
+
+  let html = '<thead><tr><th style="text-align:left">Quantity</th><th>Value</th></tr></thead><tbody>';
+  html += '<tr><td>Treatment group change (post minus pre)</td><td>' + fmtNum(treatChange, 2) + '</td></tr>';
+  html += '<tr><td>Control group change (post minus pre)</td><td>' + fmtNum(controlChange, 2) + '</td></tr>';
+  html += '<tr><td>Difference-in-differences estimate</td><td class="cell-a">' + fmtNum(did, 2) + '</td></tr>';
+  html += '</tbody>';
+  document.getElementById('twoByTwoTable').innerHTML = html;
+
+  lastResult.twobytwo = { treatPre, treatPost, controlPre, controlPost, treatChange, controlChange, did };
+  document.getElementById('twoByTwoResults').classList.add('show');
+}
+
+/* ============ EXPORT ============ */
+
+function exportMarkdown() {
+  const r = lastResult;
+  if (!r.trends && !r.event && !r.placebo && !r.twobytwo) { alert('Run at least one of the four checks first.'); return; }
+  let md = '# Parallel-Trends & Placebo Checker\n**Generated:** ' + new Date().toISOString() + '\n\n';
+  if (r.trends) {
+    md += '## Pre-Trend Test\n| Period | ' + r.trends.treatLabel + ' | ' + r.trends.controlLabel + ' |\n|---|---|---|\n';
+    r.trends.preRows.forEach(p => { md += '| ' + p.label + ' | ' + p.treat + ' | ' + p.control + ' |\n'; });
+    md += '\nSlope gap: ' + r.trends.gap.toFixed(4) + ', SE ' + r.trends.gapSE.toFixed(4) + ', t = ' + r.trends.gapT.toFixed(3) + ' (df ' + r.trends.df + '), p = ' + r.trends.gapP.toFixed(4) + '.\n\n';
+  }
+  if (r.event) {
+    md += '## Event Study (baseline: ' + r.event.baseline + ')\n| Period | Phase | Event Coefficient |\n|---|---|---|\n';
+    r.event.coefficients.forEach(c => { md += '| ' + c.label + ' | ' + (c.isPost ? 'Post' : 'Pre') + ' | ' + c.coef.toFixed(4) + ' |\n'; });
+    md += '\n';
+  }
+  if (r.placebo) {
+    md += '## In-Time Placebo Test\nFake treatment date: ' + r.placebo.fakeDateLabel + '\nPlacebo DiD estimate: ' + r.placebo.placeboDid.toFixed(4) + ', SE ' + r.placebo.se.toFixed(4) + ', t = ' + r.placebo.t.toFixed(3) + ' (df ' + r.placebo.df + '), p = ' + r.placebo.p.toFixed(4) + '.\n\n';
+  }
+  if (r.twobytwo) {
+    md += '## Classic 2x2 (served for completeness)\nTreatment change: ' + r.twobytwo.treatChange.toFixed(2) + '\nControl change: ' + r.twobytwo.controlChange.toFixed(2) + '\nDifference-in-differences estimate: ' + r.twobytwo.did.toFixed(2) + '\n\n';
+  }
+  md += '---\n*Method: closed-form OLS on entered period values, numeric t-distribution CDF, deterministic client-side arithmetic. ApexLogics.org AL-187*\n';
+  dlFile(md, 'parallel_trends_placebo_checker.md', 'text/markdown');
+}
+
+async function exportAP2() {
+  const r = lastResult;
+  if (!r.trends && !r.event && !r.placebo && !r.twobytwo) { alert('Run at least one of the four checks first.'); return; }
+  const generated_at = new Date().toISOString();
+  const mandate = {
+    mandate_type: 'parallel_trends_record', generated_at, al_id: 'AL-187',
+    inputs: {
+      periods: rows.map(p => ({ label: p.label, treatment_outcome: p.treat, control_outcome: p.control })),
+      treatment_start_label: (() => { const row = rows.find(x => x.id === treatmentStartId); return row ? row.label : null; })(),
+      placebo_period_label: r.placebo ? r.placebo.fakeDateLabel : null,
+      twobytwo_inputs: r.twobytwo ? { treat_pre: r.twobytwo.treatPre, treat_post: r.twobytwo.treatPost, control_pre: r.twobytwo.controlPre, control_post: r.twobytwo.controlPost } : null
+    },
+    summary: {
+      pretrend_gap: r.trends ? r.trends.gap : null,
+      pretrend_gap_se: r.trends ? r.trends.gapSE : null,
+      pretrend_gap_t: r.trends ? r.trends.gapT : null,
+      pretrend_gap_p: r.trends ? r.trends.gapP : null,
+      pretrend_gap_flagged: r.trends ? r.trends.flagged : null,
+      event_coefficients: r.event ? r.event.coefficients : null,
+      placebo_did: r.placebo ? r.placebo.placeboDid : null,
+      placebo_p: r.placebo ? r.placebo.p : null,
+      placebo_flagged: r.placebo ? r.placebo.flagged : null,
+      twobytwo_did: r.twobytwo ? r.twobytwo.did : null
+    },
+    downstream_handoff_candidates: ['81-survey-study-designer', '15-workforce-board-roi-report']
+  };
+  // ── OpenChainGraph L1 + L2 ──
+  const payload = mandate;
+  payload.chaingraph_version = "0.1.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/career_mobility";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-187";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);  // ── OCG v0.4 envelope (post-validate, hash-excluded; CONTRACT additive-only) ──
+  payload.chaingraph_version = "0.4.0";
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+  // ── OCG v0.4 strict envelope: relocate legacy fields into hash-excluded apex_meta ──
+  payload.tool_id = "173-parallel-trends-placebo-checker";
+  payload.audit_signature = payload.audit_signature || {};
+  const _cgPreval = Object.assign({}, payload);
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const errs = [];
+  if (!mandate.chaingraph_version) errs.push('missing chaingraph_version');
+  if (_cgPreval.ap2_mandate_type !== 'parallel_trends_record') errs.push('wrong ap2_mandate_type');
+  if (!mandate.generated_at) errs.push('missing generated_at');
+  if (!mandate.inputs) errs.push('missing inputs');
+  if (errs.length) { alert('Policy Mandate error: ' + errs.join('; ')); return; }
+  const blob = new Blob([JSON.stringify(mandate, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'parallel_trends_record.ap2.json'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ── CHAINGRAPH §6 — EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  // OCG Standard §4 canonical execution hash. RFC 8785 JCS-equivalent
+  // (recursive key sort + JSON.stringify) over {policy_parameters,
+  // output_payload}, SHA-256, BARE lowercase hex (no "sha256:" prefix — matches
+  // AINumbers/OCS for cross-vendor verify). I-JSON guard rejects non-finite /
+  // unsafe-integer values so a non-canonical value can never silently produce an
+  // unstable hash. Mirrors vendored chaingraph/kernels/_hash.mjs. Cutover 2026-07-04.
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function dlFile(c, n, t) {
+  const b = new Blob([c], { type: t }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = n; a.click(); URL.revokeObjectURL(a.href);
+}
+
+function getManifest() { return {"tool_id":"173-parallel-trends-placebo-checker","al_id":"AL-187","version":"1.0.0","title":"Parallel-Trends & Placebo Checker","category":"selected_studies_methods","status":"shipped","maintenance":"none","data_vintage":"No live or refreshable data. The built-in worked example is an illustrative synthetic panel, not a historical dataset.","ap2_export":true,"ap2_mandate_types":["parallel_trends_record"],"ap2_inbound_mandate_types":[],"downstream_handoff_candidates":["81-survey-study-designer","15-workforce-board-roi-report"],"sister_suite":"https://ainumbers.co","consulting_site":"https://postoaklabs.com","license":"CC-BY-4.0","mcp_annotations":{"readOnlyHint":true,"idempotentHint":true}}; }
+
+/* ── MCP / MANIFEST TOGGLE (standardized, additive) ── */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstBtn').setAttribute('aria-expanded','true');document.getElementById('mfstCode').textContent=JSON.stringify(getManifest(),null,2);}else{b.style.display='none';if(a)a.textContent='▼';document.getElementById('mfstBtn').setAttribute('aria-expanded','false');}}
+
+loadExample();
+</script>
+</body>
+</html>
