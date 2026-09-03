@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Extra-Semester Funding Gap Planner · ApexLogics</title>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ApexLogics">
+<meta property="og:title" content="Extra-Semester Funding Gap Planner · ApexLogics">
+<meta property="og:description" content="Models the four cliffs that hit fifth-year and extra-semester students at once: Pell 600% lifetime limit, federal loan aggregates, scholarship semester caps, and SAP 150% maximum timeframe, semester by semester, then ranks the cheapest gap-fill order.">
+<meta property="og:url" content="https://apexlogics.org/tools/169-extra-semester-funding-gap/">
+<meta property="og:image" content="https://apexlogics.org/assets/og-default.png">
+<meta name="twitter:card" content="summary">
+  <meta name="description" content="Model your remaining Pell lifetime eligibility, federal loan aggregate headroom, scholarship semester cap, and SAP 150% maximum timeframe against the semesters you have left, then see the cheapest order to fill any funding gap. Zero PII. Browser-only." />
+  <link rel="canonical" href="https://apexlogics.org/tools/169-extra-semester-funding-gap/" />
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo-favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070B14; --surface: #0D1117; --surface2: #111827;
+      --accent: #0d9488; --accent-dim: rgba(13,148,136,.18); --accent-low: rgba(13,148,136,.08);
+      --border: rgba(13,148,136,.18); --border-focus: #0d9488;
+      --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #8891a8;
+      --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --orange: #f97316;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; line-height: 1.6; min-height: 100vh; }
+    a { color: var(--accent); }
+
+    .nav { background: rgba(7,11,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 64px; height: auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width:32px; height:32px; flex-shrink:0; }
+    .logo-mark svg { width:100%; height:100%; }
+    .logo-text { display:flex; flex-direction:column; gap:2px; }
+    .logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text); letter-spacing:-.02em; line-height:1; }
+    .logo-apex { color:#E8A838; }
+    .logo-org { color: var(--text-dim); }
+    .logo-tag { font-family:'JetBrains Mono',monospace; font-size:.58rem; letter-spacing:.16em; text-transform:uppercase; color:var(--text-dim); }
+    .nav-spacer { flex:1; }
+    .nav-right { display:flex; align-items:center; gap:10px; }
+    .nav-pill { font-family:'JetBrains Mono',monospace; font-size:.68rem; letter-spacing:.05em; padding:.4rem .8rem; border:1px solid var(--border); border-radius:6px; color:var(--text-muted); text-decoration:none; }
+    .nav-pill.accent { border-color:#E8A838; color:#E8A838; }
+    .nav-pill:hover { background: var(--accent-low); }
+
+    .tool-wrapper { max-width: 1024px; margin: 0 auto; padding: 28px 24px 64px; }
+    .pii-banner { margin-bottom: 18px; }
+    .pii-inner { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-left: 3px solid #E8A838; border-radius: 6px; padding: .7rem 1rem; font-size: .76rem; color: var(--text-muted); display: flex; gap: .5rem; align-items: flex-start; }
+
+    .tool-eyebrow { font-family:'JetBrains Mono',monospace; font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; color: var(--accent); margin-bottom: 10px; }
+    .tool-title { font-family:'DM Serif Display',serif; font-size: 2.1rem; line-height: 1.15; margin-bottom: 14px; color: var(--text); }
+    .tool-desc { color: var(--text-muted); font-size: .92rem; max-width: 680px; margin-bottom: 6px; }
+    .tool-vintage { font-family:'JetBrains Mono',monospace; font-size:.68rem; color: var(--text-dim); margin-bottom: 18px; }
+
+    .cliff-banner { background:#0a1a15; border:1px solid #134e4a; border-radius:8px; padding:.85rem 1.1rem; margin-bottom:22px; font-size:.78rem; color:#5fa898; line-height:1.6; }
+    .cliff-banner strong { color: var(--accent); font-size:.72rem; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:.35rem; }
+
+    .tab-bar { display:flex; gap:.35rem; margin-bottom:20px; border-bottom:1px solid var(--border); }
+    .tab-btn { font-family:'JetBrains Mono',monospace; font-size:.72rem; letter-spacing:.06em; padding:.6rem 1.1rem; background:transparent; border:none; border-bottom:2px solid transparent; color:var(--text-dim); transition:all .15s; margin-bottom:-1px; cursor:pointer; }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 18px; }
+    .card-title { font-family:'JetBrains Mono',monospace; font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color: var(--text-dim); margin-bottom: 14px; display:flex; align-items:center; gap:8px; }
+    .badge { font-size:.58rem; padding:.15rem .5rem; border-radius:999px; background: var(--accent-dim); color: var(--accent); letter-spacing:.05em; }
+
+    .form-grid { display:grid; gap:14px; }
+    .form-grid.two { grid-template-columns: repeat(2,1fr); }
+    .form-grid.three { grid-template-columns: repeat(3,1fr); }
+    @media (max-width:720px) { .form-grid.two, .form-grid.three { grid-template-columns:1fr; } }
+
+    .field label { display:block; font-size:.74rem; color: var(--text-muted); margin-bottom:5px; font-family:'JetBrains Mono',monospace; letter-spacing:.02em; }
+    .field input, .field select { width:100%; padding:.55rem .7rem; background: var(--surface); border:1px solid var(--border); border-radius:6px; color: var(--text); font-size:.86rem; }
+    .field input:focus, .field select:focus { outline:none; border-color: var(--border-focus); }
+    .field-hint { display:block; font-size:.68rem; color: var(--text-dim); margin-top:4px; }
+
+    .run-btn { width:100%; padding:.85rem; background: var(--accent); border:none; border-radius:8px; color:#fff; font-family:'JetBrains Mono',monospace; font-size:.82rem; letter-spacing:.08em; font-weight:500; cursor:pointer; margin-top:4px; margin-bottom: 22px; }
+    .run-btn:hover { background:#0f766e; }
+
+    .results-section { display:none; }
+    .results-section.visible { display:block; }
+
+    .disclaimer { font-size:.72rem; color: var(--text-dim); border-left: 3px solid var(--border); padding: .5rem .85rem; margin-bottom: 16px; }
+
+    .metrics-grid { display:grid; grid-template-columns: repeat(4,1fr); gap:12px; margin-bottom:18px; }
+    @media (max-width:760px){ .metrics-grid{ grid-template-columns: repeat(2,1fr); } }
+    .metric-card { background: var(--surface2); border:1px solid var(--border); border-radius:10px; padding:16px; text-align:center; }
+    .metric-label { font-size:.64rem; color: var(--text-dim); font-family:'JetBrains Mono',monospace; letter-spacing:.03em; margin-bottom:8px; }
+    .metric-val { font-family:'JetBrains Mono',monospace; font-size:1.35rem; color: var(--text); }
+    .metric-val.accent { color: var(--accent); }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.orange { color: var(--orange); }
+    .metric-note { font-size:.62rem; color: var(--text-dim); margin-top:6px; }
+
+    .cliff-grid { display:grid; grid-template-columns: repeat(4,1fr); gap:12px; margin-bottom:18px; }
+    @media (max-width:760px){ .cliff-grid{ grid-template-columns: repeat(2,1fr); } }
+    .cliff-card { background: var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px; }
+    .cliff-card.binding { border-color: var(--orange); background: rgba(249,115,22,.06); }
+    .cliff-card-label { font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.06em; text-transform:uppercase; color: var(--text-dim); margin-bottom:8px; }
+    .cliff-card-val { font-family:'JetBrains Mono',monospace; font-size:1.05rem; color: var(--text); }
+    .cliff-card-sub { font-size:.66rem; color: var(--text-dim); margin-top:4px; }
+    .cliff-card.binding .cliff-card-val { color: var(--orange); }
+
+    .detail-wrap { overflow-x:auto; }
+    .detail-table { width:100%; border-collapse:collapse; font-size:.78rem; }
+    .detail-table th { font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.05em; text-transform:uppercase; color: var(--text-dim); padding:.5rem .6rem; border-bottom:1px solid var(--border); text-align:right; }
+    .detail-table th:first-child { text-align:left; }
+    .detail-table td { padding:.5rem .6rem; border-bottom:1px solid rgba(148,163,184,.12); text-align:right; font-family:'JetBrains Mono',monospace; }
+    .detail-table td:first-child { text-align:left; color:var(--text); }
+    .cell-green { color: var(--green); }
+    .cell-red { color: var(--red); }
+    .cell-orange { color: var(--orange); }
+    .cell-dim { color: var(--text-dim); }
+
+    .row { display:flex; justify-content:space-between; gap:12px; padding:.4rem 0; border-bottom:1px solid rgba(148,163,184,.1); font-size:.82rem; }
+    .row:last-child { border-bottom:none; }
+    .row-label { color: var(--text-muted); }
+    .row-val { font-family:'JetBrains Mono',monospace; color: var(--text); }
+
+    .strategy-list { display:flex; flex-direction:column; gap:10px; margin-bottom:18px; }
+    .strategy-item { background: var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; }
+    .strategy-item.exhausted { opacity:.5; }
+    .strategy-rank { font-family:'JetBrains Mono',monospace; font-size:.62rem; color: var(--accent); border:1px solid var(--accent-dim); border-radius:999px; padding:.2rem .55rem; flex-shrink:0; }
+    .strategy-body { flex:1; min-width:220px; }
+    .strategy-name { font-size:.86rem; color: var(--text); margin-bottom:2px; }
+    .strategy-note { font-size:.68rem; color: var(--text-dim); }
+    .strategy-fill { font-family:'JetBrains Mono',monospace; font-size:1rem; color: var(--green); text-align:right; }
+    .strategy-fill .lbl { display:block; font-size:.6rem; color: var(--text-dim); font-family:'Sora',sans-serif; }
+
+    .results-export-row { display:flex; gap:.6rem; flex-wrap:wrap; margin-top:14px; padding-top:14px; border-top:1px solid var(--border); align-items:center; }
+    .export-btn { font-family:'JetBrains Mono',monospace; font-size:.68rem; padding:.4rem .8rem; border-radius:6px; border:1px solid var(--border); background:transparent; color: var(--text-muted); cursor:pointer; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.ap2:hover { border-color: var(--blue); color: var(--blue); }
+    .ap2-hint { font-size:.62rem; color: var(--text-dim); }
+
+    .tool-footer{background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,255,.08);padding:2.2rem 0 1.9rem;margin-top:3rem}
+    .tool-footer-inner{max-width:1024px;margin:0 auto;padding:0 1.5rem;display:flex;flex-wrap:wrap;align-items:flex-start;gap:1.9rem 2.4rem}
+    .tool-footer-brand{flex:1 1 210px;min-width:190px;display:flex;flex-direction:column;gap:.3rem}
+    .tool-footer-meta{font-size:.65rem;opacity:.55;line-height:1.5}
+    .tool-footer-cols{flex:3 1 520px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.4rem}
+    .tool-footer-h{font-family:'JetBrains Mono',monospace;font-size:.57rem;font-weight:500;letter-spacing:.11em;text-transform:uppercase;opacity:.42;margin:0 0 .55rem}
+    .tool-footer-col ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.34rem}
+    .tool-footer-col li{margin:0;padding:0}
+    .tool-footer-col a{font-size:.7rem;opacity:.68;line-height:1.35}
+    .tool-footer-col a:hover{opacity:1}
+    .tool-footer a{color:inherit;text-decoration:none}
+    @media(max-width:860px){.tool-footer-cols{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:520px){.tool-footer-cols{grid-template-columns:1fr}}
+
+    .mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+    .mfst-btn:hover{border-color:var(--accent)}
+    .mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2);border:1px solid var(--border);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+    .mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo" aria-label="ApexLogics home">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 8 L52 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <path d="M32 8 L12 56" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="8" r="3" fill="#E8A838"/>
+          <circle cx="22" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="42" cy="32" r="2.5" fill="#0D1117" stroke="#E8A838" stroke-width="1.5"/>
+          <circle cx="12" cy="56" r="2.5" fill="#E8A838"/>
+          <circle cx="52" cy="56" r="2.5" fill="#E8A838"/>
+          <path d="M22 32 L42 32" stroke="#E8A838" stroke-width="1.5" stroke-dasharray="2 2" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name"><span class="logo-apex">Apex</span> Logics<span class="logo-org">.org</span></div>
+        <div class="logo-tag">EdTech &amp; CareerTech Suite</div>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../tools.html" class="nav-pill accent">&#x2190; All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tool-wrapper">
+
+  <div class="pii-banner">
+    <div class="pii-inner">
+      <span>🔒</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+    </div>
+  </div>
+
+  <p class="tool-eyebrow">Student Finance &amp; Debt · #169</p>
+  <h1 class="tool-title">Extra-Semester<br>Funding Gap Planner</h1>
+  <p class="tool-desc">Under 50% of students finish in four years and only about 63% finish in six. A fifth year or extra semester hits four federal and institutional cliffs at once: the Pell 600% lifetime limit, federal loan aggregate caps, a scholarship semester cutoff, and the SAP 150% maximum timeframe rule. This models which cliff binds first, semester by semester, and ranks the cheapest order to fill whatever gap remains.</p>
+  <p class="tool-vintage">Data: 2025–26 federal aggregate loan limits (dependent $31,000 / independent $57,500 undergraduate); Pell Lifetime Eligibility Used cap 600% (statutory, HEA); SAP 150% maximum timeframe (federal minimum standard). All figures overridable. Check your school's financial aid office and your own award letters for exact numbers.</p>
+
+  <div class="cliff-banner">
+    <strong>&#9650; The Four Cliffs</strong>
+    Pell grants stop once you have used 600% of your Lifetime Eligibility Used (LEU): full-time enrollment typically consumes 50% per semester, so roughly six years of full-time Pell use. Federal loan aggregates cap total borrowing at $31,000 (dependent) or $57,500 (independent) for undergraduates. Most institutional and outside scholarships cap the number of semesters they pay for. And Satisfactory Academic Progress (SAP) cuts off all federal aid, Pell and loans together, once attempted credit hours exceed 150% of your program's published length.
+  </div>
+
+  <div class="tab-bar" role="tablist">
+    <button class="tab-btn active" role="tab" onclick="switchTab('cliffs')">Cliff Calculator</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('fill')">Gap-Fill Order</button>
+  </div>
+
+  <!-- ═══ TAB 1: CLIFF CALCULATOR ═══ -->
+  <div class="tab-panel active" id="tab-cliffs">
+
+    <div class="card">
+      <div class="card-title">Program &amp; Enrollment <span class="badge">STEP 1</span></div>
+      <div class="form-grid three">
+        <div class="field">
+          <label for="dependency">Dependency status (undergraduate loan aggregate)</label>
+          <select id="dependency">
+            <option value="dependent" selected>Dependent</option>
+            <option value="independent">Independent</option>
+          </select>
+          <span class="field-hint">Sets the federal loan aggregate cap used below.</span>
+        </div>
+        <div class="field">
+          <label for="pellIntensity">Typical enrollment intensity per remaining semester</label>
+          <select id="pellIntensity">
+            <option value="50" selected>Full-time (uses ~50% LEU/semester)</option>
+            <option value="37.5">3/4-time (uses ~37.5% LEU/semester)</option>
+            <option value="25">Half-time (uses ~25% LEU/semester)</option>
+          </select>
+          <span class="field-hint">Approximate. Your school's Pell % used can differ slightly by term length.</span>
+        </div>
+        <div class="field">
+          <label for="semestersNeeded">Semesters remaining to finish</label>
+          <input type="number" id="semestersNeeded" value="2" min="1" max="10" step="1" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Pell Lifetime Eligibility Used <span class="badge">STEP 2</span></div>
+      <div class="form-grid three">
+        <div class="field">
+          <label for="pellPctUsed">Pell % of LEU already used</label>
+          <input type="number" id="pellPctUsed" value="450" min="0" max="600" step="5" />
+          <span class="field-hint">On your Student Aid Report / studentaid.gov account. 600% is the statutory maximum.</span>
+        </div>
+        <div class="field">
+          <label for="pellPerSemester">Typical Pell award per semester if eligible ($)</label>
+          <input type="number" id="pellPerSemester" value="3700" min="0" max="20000" step="100" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Federal Loan Aggregate <span class="badge">STEP 3</span></div>
+      <div class="form-grid three">
+        <div class="field">
+          <label for="loanBalance">Federal loan balance drawn so far ($)</label>
+          <input type="number" id="loanBalance" value="22000" min="0" max="200000" step="500" />
+        </div>
+        <div class="field">
+          <label for="annualLoanDraw">Typical annual federal loan draw ($/yr)</label>
+          <input type="number" id="annualLoanDraw" value="7000" min="0" max="60000" step="500" />
+          <span class="field-hint">Split evenly across two semesters below.</span>
+        </div>
+        <div class="field">
+          <label for="aggregateCapDisplay">Aggregate cap (auto)</label>
+          <input type="text" id="aggregateCapDisplay" value="$31,000" disabled />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Scholarship Semester Cap <span class="badge">STEP 4</span></div>
+      <div class="form-grid three">
+        <div class="field">
+          <label for="schoTotal">Scholarship covers this many semesters total</label>
+          <input type="number" id="schoTotal" value="8" min="0" max="20" step="1" />
+        </div>
+        <div class="field">
+          <label for="schoUsed">Semesters already used</label>
+          <input type="number" id="schoUsed" value="6" min="0" max="20" step="1" />
+        </div>
+        <div class="field">
+          <label for="schoPerSemester">Scholarship value per semester ($)</label>
+          <input type="number" id="schoPerSemester" value="5000" min="0" max="40000" step="500" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">SAP 150% Maximum Timeframe <span class="badge">STEP 5</span></div>
+      <div class="form-grid three">
+        <div class="field">
+          <label for="creditsAttempted">Credit hours attempted so far</label>
+          <input type="number" id="creditsAttempted" value="105" min="0" max="400" step="1" />
+        </div>
+        <div class="field">
+          <label for="programLength">Published program length (credits)</label>
+          <input type="number" id="programLength" value="120" min="12" max="200" step="1" />
+          <span class="field-hint">150% max = program length × 1.5, overridable if your school uses a different figure.</span>
+        </div>
+        <div class="field">
+          <label for="creditsPerSemester">Credits taken per remaining semester</label>
+          <input type="number" id="creditsPerSemester" value="15" min="1" max="30" step="1" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Cost of Attendance <span class="badge">STEP 6</span></div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="coaPerSemester">Cost of attendance per remaining semester ($)</label>
+          <input type="number" id="coaPerSemester" value="12000" min="0" max="100000" step="500" />
+          <span class="field-hint">Tuition + fees + living, per semester still owed.</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="run-btn" onclick="calculate()">Model My Funding Cliffs →</button>
+
+    <div class="results-section" id="resultsCliffs" aria-live="polite">
+      <div class="disclaimer">Illustrative estimate, not financial aid advice. Pell %, loan aggregate, scholarship, and SAP figures vary by school and change over time. Confirm exact numbers with your financial aid office and studentaid.gov before making enrollment decisions.</div>
+
+      <div class="cliff-grid" id="cliffGrid"></div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">First Binding Cliff</div>
+          <div class="metric-val orange" id="rBindingCliff">--</div>
+          <div class="metric-note">The funding source that runs out soonest</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Semester Gap First Appears</div>
+          <div class="metric-val amber" id="rGapSemester">--</div>
+          <div class="metric-note">First semester with unmet cost of attendance</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total Funding Gap</div>
+          <div class="metric-val accent" id="rTotalGap">--</div>
+          <div class="metric-note">Summed across all remaining semesters</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">SAP Status</div>
+          <div class="metric-val green" id="rSapStatus">--</div>
+          <div class="metric-note">Gates Pell and federal loans together</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Semester-by-Semester Breakdown</div>
+        <div class="detail-wrap">
+          <table class="detail-table">
+            <thead>
+              <tr>
+                <th style="text-align:left">Semester</th>
+                <th>Pell</th>
+                <th>Federal Loan</th>
+                <th>Scholarship</th>
+                <th>SAP OK</th>
+                <th>Aid Available</th>
+                <th>COA</th>
+                <th>Gap</th>
+              </tr>
+            </thead>
+            <tbody id="semesterTbody"></tbody>
+          </table>
+        </div>
+
+        <div class="results-export-row">
+          <button class="export-btn" onclick="exportMarkdown()">⬇ Download Markdown</button>
+          <button class="export-btn ap2" onclick="exportAP2()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+          <span class="ap2-hint">Policy Mandate v2.0</span>
+        </div>
+      </div>
+    </div>
+  </div><!-- /tab-cliffs -->
+
+  <!-- ═══ TAB 2: GAP-FILL ORDER ═══ -->
+  <div class="tab-panel" id="tab-fill">
+    <div class="card">
+      <div class="card-title">Gap-Fill Inputs <span class="badge">STEP 1</span></div>
+      <div class="form-grid three">
+        <div class="field">
+          <label for="totalGapInput">Total funding gap ($)</label>
+          <input type="number" id="totalGapInput" value="12000" min="0" max="500000" step="500" />
+          <span class="field-hint">Auto-filled from the Cliff Calculator once you run it.</span>
+        </div>
+        <div class="field">
+          <label for="leftoverPellPct">Leftover Pell LEU % after remaining semesters</label>
+          <input type="number" id="leftoverPellPct" value="0" min="0" max="600" step="5" />
+          <span class="field-hint">Auto-filled. Unused headroom can fund a summer term.</span>
+        </div>
+        <div class="field">
+          <label for="pellPerSemester2">Pell award per semester if eligible ($)</label>
+          <input type="number" id="pellPerSemester2" value="3700" min="0" max="20000" step="100" />
+        </div>
+        <div class="field">
+          <label for="flatTuitionHeadroom">Flat-tuition overload credit headroom (credits/semester)</label>
+          <input type="number" id="flatTuitionHeadroom" value="3" min="0" max="12" step="1" />
+          <span class="field-hint">Extra credits your school lets you take at no added tuition, per semester with a gap.</span>
+        </div>
+        <div class="field">
+          <label for="creditValue">Value per credit hour if paid separately ($)</label>
+          <input type="number" id="creditValue" value="450" min="0" max="3000" step="10" />
+        </div>
+        <div class="field">
+          <label for="gapSemesterCount">Semesters with a gap</label>
+          <input type="number" id="gapSemesterCount" value="1" min="0" max="10" step="1" />
+          <span class="field-hint">Auto-filled from the Cliff Calculator.</span>
+        </div>
+        <div class="field">
+          <label for="employerBenefit">Employer tuition assistance available ($/yr)</label>
+          <input type="number" id="employerBenefit" value="0" min="0" max="20000" step="250" />
+          <span class="field-hint">Section 127 covers up to $5,250/yr tax-free. See AL-53 for the true after-tax value.</span>
+        </div>
+        <div class="field">
+          <label for="privRateLo">Private loan rate, low (%)</label>
+          <input type="number" id="privRateLo" value="8.0" min="3" max="20" step="0.25" />
+        </div>
+        <div class="field">
+          <label for="privRateHi">Private loan rate, high (%)</label>
+          <input type="number" id="privRateHi" value="13.5" min="3" max="25" step="0.25" />
+        </div>
+      </div>
+      <button class="run-btn" onclick="calculateFill()">Rank My Gap-Fill Options →</button>
+    </div>
+
+    <div class="results-section" id="resultsFill" aria-live="polite">
+      <div class="metrics-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="metric-card">
+          <div class="metric-label">Gap Before Free/Low-Cost Fills</div>
+          <div class="metric-val orange" id="fGapStart">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Covered by Free/Low-Cost Sources</div>
+          <div class="metric-val green" id="fCoveredFree">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Remaining Gap → Private Loan</div>
+          <div class="metric-val accent" id="fGapRemaining">--</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Gap-Fill Priority Stack, Cheapest First</div>
+        <div class="strategy-list" id="strategyList"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Private Loan Scenarios for the Remaining Gap</div>
+        <div class="detail-wrap">
+          <table class="detail-table">
+            <thead>
+              <tr>
+                <th style="text-align:left">Scenario</th>
+                <th>Rate</th>
+                <th>Monthly Payment (10-yr)</th>
+                <th>Total Paid</th>
+                <th>Total Interest</th>
+              </tr>
+            </thead>
+            <tbody id="loanTbody"></tbody>
+          </table>
+        </div>
+
+        <div class="results-export-row">
+          <button class="export-btn" onclick="exportMarkdownFill()">⬇ Download Markdown</button>
+          <button class="export-btn ap2" onclick="exportAP2Fill()" title="For agent integration · audit trail · scenario handoff">⬇ Download Policy Mandate (JSON)</button>
+          <span class="ap2-hint">Policy Mandate v2.0</span>
+        </div>
+      </div>
+    </div>
+  </div><!-- /tab-fill -->
+
+  <button class="mfst-btn" id="mfstBtn" onclick="toggleMfst()" aria-expanded="false"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+  <div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+  <footer class="tool-footer">
+  <div class="tool-footer-inner">
+    <div class="tool-footer-brand">
+      <div class="tool-footer-meta">CC BY 4.0 · Zero PII · Client-side only</div>
+    </div>
+    <div class="tool-footer-cols">
+      <div class="tool-footer-col">
+        <div class="tool-footer-h">Platform</div>
+        <ul>
+          <li><a href="../../tools.html">All Tools</a></li>
+          <li><a href="../../workflows/index.html">Workflows</a></li>
+          <li><a href="../../showcase/index.html">Showcase</a></li>
+          <li><a href="../../mcp.html">MCP Docs</a></li>
+        </ul>
+      </div>
+      <div class="tool-footer-col">
+        <div class="tool-footer-h">Guides</div>
+        <ul>
+          <li><a href="../../guides/student-finance-hub.html">Student Finance</a></li>
+          <li><a href="../../guides/student-loans-2026.html">Student Loans 2026</a></li>
+          <li><a href="../../guides/education-path-hub.html">Education Path</a></li>
+          <li><a href="../../guides/career-transition-hub.html">Career Transition</a></li>
+          <li><a href="../../guides/compensation-offers-hub.html">Compensation &amp; Offers</a></li>
+          <li><a href="../../guides/licensing-credentials-hub.html">Licensing &amp; Credentials</a></li>
+          <li><a href="../../guides/immigration-visa-hub.html">Immigration &amp; Visa</a></li>
+          <li><a href="../../guides/workforce-development-hub.html">Workforce Development</a></li>
+          <li><a href="../../guides/teaching-instruction-hub.html">Teaching &amp; Instruction</a></li>
+          <li><a href="../../guides/index.html">All Guides</a></li>
+        </ul>
+      </div>
+      <div class="tool-footer-col">
+        <div class="tool-footer-h">Data &amp; Artifacts</div>
+        <ul>
+          <li><a href="../../suite-registry.json">suite-registry.json</a></li>
+          <li><a href="../../chaingraph/chaingraph.json">chaingraph.json</a></li>
+          <li><a href="../../llms.txt">llms.txt</a></li>
+          <li><a href="../../.well-known/mcp.json">.well-known/mcp.json</a></li>
+          <li><a href="../../.well-known/agent-card.json">agent-card.json</a></li>
+          <li><a href="../../sitemap.xml">sitemap.xml</a></li>
+          <li><a href="../../sitemap.html">Sitemap</a></li>
+        </ul>
+      </div>
+      <div class="tool-footer-col">
+        <div class="tool-footer-h">Company</div>
+        <ul>
+          <li><a href="../../about.html">About</a></li>
+          <li><a href="../../contact.html">Contact</a></li>
+          <li><a href="https://postoaklabs.com" target="_blank" rel="noopener">PostOakLabs.com ↗</a></li>
+          <li><a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co ↗</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let _lastCliffInputs  = null;
+let _lastCliffResults = null;
+let _lastFillInputs   = null;
+let _lastFillResults  = null;
+
+/* KEEP VERBATIM: helpers */
+const $   = id => document.getElementById(id);
+const fmt = n => (n < 0 ? '-' : '') + '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
+function numOr(raw, def) { const n = parseFloat(raw); return Number.isFinite(n) ? n : def; }
+
+const LOAN_AGGREGATE = { dependent: 31000, independent: 57500 };
+const SAP_MULTIPLIER = 1.5;
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  $('tab-' + name).classList.add('active');
+  document.querySelectorAll('.tab-btn')[name === 'cliffs' ? 0 : 1].classList.add('active');
+}
+
+function onDependencyChange() {
+  const cap = LOAN_AGGREGATE[$('dependency').value];
+  $('aggregateCapDisplay').value = fmt(cap);
+}
+$('dependency').addEventListener('change', onDependencyChange);
+onDependencyChange();
+
+/* ── CORE MATH: CLIFF CALCULATOR ─────────────────────────────────────────── */
+function calculate() {
+  const dependency = $('dependency').value;
+  const pellIntensity = numOr($('pellIntensity').value, 50);
+  const semestersNeeded = Math.max(1, Math.round(numOr($('semestersNeeded').value, 2)));
+  const pellPctUsed = numOr($('pellPctUsed').value, 450);
+  const pellPerSemester = numOr($('pellPerSemester').value, 3700);
+  const loanBalance = numOr($('loanBalance').value, 22000);
+  const annualLoanDraw = numOr($('annualLoanDraw').value, 7000);
+  const loanPerSemester = annualLoanDraw / 2;
+  const aggregateCap = LOAN_AGGREGATE[dependency];
+  const schoTotal = Math.max(0, Math.round(numOr($('schoTotal').value, 8)));
+  const schoUsed = Math.max(0, Math.round(numOr($('schoUsed').value, 6)));
+  const schoPerSemester = numOr($('schoPerSemester').value, 5000);
+  const creditsAttempted = numOr($('creditsAttempted').value, 105);
+  const programLength = numOr($('programLength').value, 120);
+  const creditsPerSemester = numOr($('creditsPerSemester').value, 15);
+  const coaPerSemester = numOr($('coaPerSemester').value, 12000);
+
+  const sapCreditCap = Math.round(programLength * SAP_MULTIPLIER);
+  const sapCreditsRemaining = Math.max(0, sapCreditCap - creditsAttempted);
+  const sapSemestersFundable = creditsPerSemester > 0 ? sapCreditsRemaining / creditsPerSemester : Infinity;
+
+  const pellPctRemaining = Math.max(0, 600 - pellPctUsed);
+  const pellSemestersFundable = pellIntensity > 0 ? pellPctRemaining / pellIntensity : Infinity;
+
+  const loanRemaining = Math.max(0, aggregateCap - loanBalance);
+  const loanSemestersFundable = loanPerSemester > 0 ? loanRemaining / loanPerSemester : Infinity;
+
+  const schoSemestersRemaining = Math.max(0, schoTotal - schoUsed);
+
+  const cliffs = [
+    { key: 'pell', label: 'Pell (600% LEU)', semesters: pellSemestersFundable },
+    { key: 'loan', label: 'Federal Loan Aggregate', semesters: loanSemestersFundable },
+    { key: 'scholarship', label: 'Scholarship Cap', semesters: schoSemestersRemaining },
+    { key: 'sap', label: 'SAP 150% Timeframe', semesters: sapSemestersFundable }
+  ];
+  const binding = cliffs.reduce((a, b) => (b.semesters < a.semesters ? b : a));
+
+  const rows = [];
+  let totalGap = 0;
+  let gapSemesterFirst = null;
+  for (let s = 1; s <= semestersNeeded; s++) {
+    const sapOk = s <= sapSemestersFundable;
+    const pellOk = sapOk && s <= pellSemestersFundable;
+    const loanOk = sapOk && s <= loanSemestersFundable;
+    const schoOk = s <= schoSemestersRemaining;
+    const aidAvailable = (pellOk ? pellPerSemester : 0) + (loanOk ? loanPerSemester : 0) + (schoOk ? schoPerSemester : 0);
+    const gap = Math.max(0, coaPerSemester - aidAvailable);
+    if (gap > 0 && gapSemesterFirst === null) gapSemesterFirst = s;
+    totalGap += gap;
+    rows.push({ s, pellOk, loanOk, schoOk, sapOk, aidAvailable, coa: coaPerSemester, gap });
+  }
+
+  const leftoverPellPct = Math.max(0, pellPctRemaining - semestersNeeded * pellIntensity);
+
+  _lastCliffInputs = { dependency, pellIntensity, semestersNeeded, pellPctUsed, pellPerSemester, loanBalance, annualLoanDraw, aggregateCap, schoTotal, schoUsed, schoPerSemester, creditsAttempted, programLength, creditsPerSemester, coaPerSemester };
+  _lastCliffResults = { cliffs, binding, rows, totalGap, gapSemesterFirst, sapCreditCap, sapCreditsRemaining, pellPctRemaining, leftoverPellPct, aggregateCap, loanRemaining };
+
+  renderCliffs();
+}
+
+function renderCliffs() {
+  const r = _lastCliffResults;
+  const cliffGrid = $('cliffGrid');
+  cliffGrid.innerHTML = r.cliffs.map(c => `
+    <div class="cliff-card ${c.key === r.binding.key ? 'binding' : ''}">
+      <div class="cliff-card-label">${c.label}</div>
+      <div class="cliff-card-val">${Number.isFinite(c.semesters) ? c.semesters.toFixed(1) + ' sem.' : 'no limit'}</div>
+      <div class="cliff-card-sub">${c.key === r.binding.key ? 'Binding, runs out first' : 'still funds'}</div>
+    </div>`).join('');
+
+  $('rBindingCliff').textContent = r.binding.label;
+  $('rGapSemester').textContent = r.gapSemesterFirst ? 'Semester ' + r.gapSemesterFirst : 'None in range';
+  $('rTotalGap').textContent = fmt(r.totalGap);
+  $('rSapStatus').textContent = r.sapCreditsRemaining > 0 ? r.sapCreditsRemaining.toFixed(0) + ' credits left' : 'At limit';
+  $('rSapStatus').className = 'metric-val ' + (r.sapCreditsRemaining > 0 ? 'green' : 'orange');
+
+  $('semesterTbody').innerHTML = r.rows.map(row => `
+    <tr>
+      <td>Semester ${row.s}</td>
+      <td class="${row.pellOk ? 'cell-green' : 'cell-red'}">${row.pellOk ? 'yes' : 'no'}</td>
+      <td class="${row.loanOk ? 'cell-green' : 'cell-red'}">${row.loanOk ? 'yes' : 'no'}</td>
+      <td class="${row.schoOk ? 'cell-green' : 'cell-red'}">${row.schoOk ? 'yes' : 'no'}</td>
+      <td class="${row.sapOk ? 'cell-green' : 'cell-red'}">${row.sapOk ? 'yes' : 'no'}</td>
+      <td>${fmt(row.aidAvailable)}</td>
+      <td>${fmt(row.coa)}</td>
+      <td class="${row.gap > 0 ? 'cell-orange' : 'cell-dim'}">${row.gap > 0 ? fmt(row.gap) : '--'}</td>
+    </tr>`).join('');
+
+  $('resultsCliffs').classList.add('visible');
+
+  // Auto-fill Tab 2
+  $('totalGapInput').value = Math.round(r.totalGap);
+  $('leftoverPellPct').value = Math.round(r.leftoverPellPct);
+  $('gapSemesterCount').value = r.rows.filter(row => row.gap > 0).length;
+}
+
+/* ── CORE MATH: GAP-FILL ORDER ─────────────────────────────────────────── */
+function stdPayment(p, ratePct, years) {
+  const r = ratePct / 100 / 12;
+  const n = years * 12;
+  if (r < 0.000001) return p / n;
+  return p * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+}
+
+function calculateFill() {
+  const totalGap = numOr($('totalGapInput').value, 0);
+  const leftoverPellPct = numOr($('leftoverPellPct').value, 0);
+  const pellPerSemester2 = numOr($('pellPerSemester2').value, 3700);
+  const flatTuitionHeadroom = numOr($('flatTuitionHeadroom').value, 3);
+  const creditValue = numOr($('creditValue').value, 450);
+  const gapSemesterCount = Math.max(0, Math.round(numOr($('gapSemesterCount').value, 1)));
+  const employerBenefit = numOr($('employerBenefit').value, 0);
+  const rateLo = numOr($('privRateLo').value, 8.0);
+  const rateHi = numOr($('privRateHi').value, 13.5);
+
+  const summerPellValue = Math.min(totalGap, (leftoverPellPct / 50) * pellPerSemester2);
+  let remaining = Math.max(0, totalGap - summerPellValue);
+
+  const overloadValue = Math.min(remaining, flatTuitionHeadroom * creditValue * gapSemesterCount);
+  remaining = Math.max(0, remaining - overloadValue);
+
+  const employerValue = Math.min(remaining, employerBenefit);
+  remaining = Math.max(0, remaining - employerValue);
+
+  const strategies = [
+    { rank: 1, name: 'Summer Pell (leftover LEU headroom)', note: leftoverPellPct > 0 ? 'Uses remaining ' + leftoverPellPct.toFixed(0) + '% LEU for a summer term. Free money, use it before it expires.' : 'No LEU headroom left after your remaining semesters.', fill: summerPellValue, exhausted: leftoverPellPct <= 0 },
+    { rank: 2, name: 'Overload flat-tuition credits', note: 'Extra credits at no added tuition, worth ' + fmt(creditValue) + '/credit if paid separately.', fill: overloadValue, exhausted: flatTuitionHeadroom <= 0 },
+    { rank: 3, name: 'Employer tuition assistance (§127)', note: 'Up to $5,250/yr tax-free. See AL-53 Tuition Reimbursement True Value Calculator for the after-tax comparison.', fill: employerValue, exhausted: employerBenefit <= 0 },
+    { rank: 4, name: 'Private loan (last resort)', note: 'Covers whatever is left after the free and low-cost sources above.', fill: remaining, exhausted: remaining <= 0 }
+  ];
+
+  const rates = [rateLo, (rateLo + rateHi) / 2, rateHi];
+  const scenarios = rates.map((rate, i) => {
+    const pmt = stdPayment(remaining, rate, 10);
+    const total = pmt * 10 * 12;
+    const interest = total - remaining;
+    return { label: ['Best Rate', 'Mid Rate', 'High Rate'][i], rate, pmt, total, interest };
+  });
+
+  _lastFillInputs = { totalGap, leftoverPellPct, pellPerSemester2, flatTuitionHeadroom, creditValue, gapSemesterCount, employerBenefit, rateLo, rateHi };
+  _lastFillResults = { summerPellValue, overloadValue, employerValue, remaining, strategies, scenarios };
+
+  renderFill();
+}
+
+function renderFill() {
+  const r = _lastFillResults;
+  $('fGapStart').textContent = fmt(_lastFillInputs.totalGap);
+  $('fCoveredFree').textContent = fmt(r.summerPellValue + r.overloadValue + r.employerValue);
+  $('fGapRemaining').textContent = fmt(r.remaining);
+
+  $('strategyList').innerHTML = r.strategies.map(s => `
+    <div class="strategy-item ${s.exhausted && s.fill <= 0 ? 'exhausted' : ''}">
+      <span class="strategy-rank">${s.rank}</span>
+      <div class="strategy-body">
+        <div class="strategy-name">${s.name}</div>
+        <div class="strategy-note">${s.note}</div>
+      </div>
+      <div class="strategy-fill"><span class="lbl">covers</span>${fmt(s.fill)}</div>
+    </div>`).join('');
+
+  $('loanTbody').innerHTML = r.scenarios.map(s => `
+    <tr>
+      <td>${s.label}</td>
+      <td>${s.rate.toFixed(2)}%</td>
+      <td>${fmt(s.pmt)}</td>
+      <td>${fmt(s.total)}</td>
+      <td class="cell-orange">${fmt(s.interest)}</td>
+    </tr>`).join('');
+
+  $('resultsFill').classList.add('visible');
+}
+
+/* ── EXPORT: MARKDOWN (TAB 1) ─────────────────────────────────────────── */
+function exportMarkdown() {
+  if (!_lastCliffInputs || !_lastCliffResults) return;
+  const i = _lastCliffInputs, r = _lastCliffResults;
+  const lines = [
+    '# Extra-Semester Funding Gap Analysis',
+    `\nGenerated: ${new Date().toLocaleDateString('en-US')} | AL-183 · ApexLogics`,
+    '\n## Inputs',
+    `| Field | Value |`,
+    `|---|---|`,
+    `| Dependency | ${i.dependency} |`,
+    `| Semesters remaining | ${i.semestersNeeded} |`,
+    `| Pell % LEU used | ${i.pellPctUsed}% |`,
+    `| Federal loan balance | ${fmt(i.loanBalance)} |`,
+    `| Loan aggregate cap | ${fmt(i.aggregateCap)} |`,
+    `| Scholarship semesters used/total | ${i.schoUsed}/${i.schoTotal} |`,
+    `| Credits attempted / program length | ${i.creditsAttempted} / ${i.programLength} |`,
+    `| Cost of attendance per semester | ${fmt(i.coaPerSemester)} |`,
+    '\n## Results',
+    `- **First binding cliff:** ${r.binding.label}`,
+    `- **First semester with a gap:** ${r.gapSemesterFirst ? 'Semester ' + r.gapSemesterFirst : 'none in range'}`,
+    `- **Total funding gap:** ${fmt(r.totalGap)}`,
+    `- **SAP credits remaining:** ${r.sapCreditsRemaining.toFixed(0)} of ${r.sapCreditCap} cap`,
+    `- **Leftover Pell LEU % after remaining semesters:** ${r.leftoverPellPct.toFixed(0)}%`,
+    '\n## Semester-by-Semester',
+    '| Semester | Pell | Loan | Scholarship | SAP OK | Aid Available | COA | Gap |',
+    '|---|---|---|---|---|---|---|---|',
+    ...r.rows.map(row => `| ${row.s} | ${row.pellOk ? 'yes' : 'no'} | ${row.loanOk ? 'yes' : 'no'} | ${row.schoOk ? 'yes' : 'no'} | ${row.sapOk ? 'yes' : 'no'} | ${fmt(row.aidAvailable)} | ${fmt(row.coa)} | ${row.gap > 0 ? fmt(row.gap) : '—'} |`),
+    '\n---',
+    '_Illustrative estimate, not financial aid advice. Confirm exact Pell, loan, scholarship, and SAP figures with your financial aid office and studentaid.gov._'
+  ];
+  dlFile('extra-semester-funding-gap.md', lines.join('\n'), 'text/markdown');
+}
+
+function exportMarkdownFill() {
+  if (!_lastFillInputs || !_lastFillResults) return;
+  const i = _lastFillInputs, r = _lastFillResults;
+  const lines = [
+    '# Gap-Fill Priority Stack',
+    `\nGap: ${fmt(i.totalGap)} | AL-183 · ApexLogics`,
+    '\n## Priority Order',
+    ...r.strategies.map(s => `${s.rank}. **${s.name}**: covers ${fmt(s.fill)}. ${s.note}`),
+    `\n## Remaining Gap → Private Loan: ${fmt(r.remaining)}`,
+    '| Scenario | Rate | Monthly | Total | Interest |',
+    '|---|---|---|---|---|',
+    ...r.scenarios.map(s => `| ${s.label} | ${s.rate.toFixed(2)}% | ${fmt(s.pmt)} | ${fmt(s.total)} | ${fmt(s.interest)} |`),
+    '\n---',
+    '_Private loan rates are estimates. Compare lenders before borrowing._'
+  ];
+  dlFile('extra-semester-gap-fill.md', lines.join('\n'), 'text/markdown');
+}
+
+/* ── EXPORT: POLICY MANDATE (AP2 + OpenChainGraph) ─────────────────────── */
+async function buildAndDownloadAP2(payload, filenameStem, validMandateTypes) {
+  payload.chaingraph_version = "0.4.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/student_finance";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-183";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","tool_version","al_id","generated_at","tool_name","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+
+  /* SNAPSHOT BEFORE RELOCATION. DO NOT MOVE, DO NOT REMOVE. */
+  const _cgPreval = Object.assign({}, payload);
+
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const errs = [];
+  ['chaingraph_version','mandate_type','generated_at','inputs'].forEach(k => { if (!_cgPreval[k]) errs.push('missing ' + k); });
+  if (!validMandateTypes.includes(_cgPreval.ap2_mandate_type)) errs.push('unknown mandate_type');
+  if (errs.length) { alert('Policy Mandate validation failed: ' + errs.join('; ')); return; }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  dlFile(`AL-183_${filenameStem}_${ts}.ap2.json`, JSON.stringify(payload,null,2), 'application/json');
+}
+
+async function exportAP2() {
+  if (!_lastCliffInputs || !_lastCliffResults) return;
+  const i = _lastCliffInputs, r = _lastCliffResults;
+  const payload = {
+    mandate_type: "extra_semester_funding_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-183",
+    tool_id: "169-extra-semester-funding-gap",
+    tool_name: "Extra-Semester Funding Gap Planner",
+    inputs: {
+      dependency_status: i.dependency,
+      semesters_remaining: i.semestersNeeded,
+      pell_pct_leu_used: i.pellPctUsed,
+      pell_award_per_semester: i.pellPerSemester,
+      federal_loan_balance: i.loanBalance,
+      annual_loan_draw: i.annualLoanDraw,
+      loan_aggregate_cap: i.aggregateCap,
+      scholarship_semesters_total: i.schoTotal,
+      scholarship_semesters_used: i.schoUsed,
+      scholarship_value_per_semester: i.schoPerSemester,
+      credits_attempted: i.creditsAttempted,
+      program_length_credits: i.programLength,
+      credits_per_semester: i.creditsPerSemester,
+      cost_of_attendance_per_semester: i.coaPerSemester
+    },
+    outputs: {
+      binding_cliff: r.binding.key,
+      binding_cliff_semesters: Number.isFinite(r.binding.semesters) ? r.binding.semesters : null,
+      first_gap_semester: r.gapSemesterFirst,
+      total_funding_gap: Math.round(r.totalGap),
+      sap_credit_cap: r.sapCreditCap,
+      sap_credits_remaining: r.sapCreditsRemaining,
+      leftover_pell_leu_pct: r.leftoverPellPct,
+      semester_detail: r.rows.map(row => ({ semester: row.s, pell_ok: row.pellOk, loan_ok: row.loanOk, scholarship_ok: row.schoOk, sap_ok: row.sapOk, aid_available: Math.round(row.aidAvailable), coa: Math.round(row.coa), gap: Math.round(row.gap) }))
+    },
+    downstream_handoff_candidates: ["22-student-loan-repayment-optimizer", "113-pslf-qualifying-payment-counter", "101-rap-vs-standard-decision-engine", "102-grad-loan-cap-gap-planner", "48-tuition-reimbursement-true-value-calculator"],
+    data_sources: [
+      "Pell Grant Lifetime Eligibility Used (LEU) 600% cap, Higher Education Act",
+      "Federal Direct Loan aggregate limits, dependent $31,000 / independent $57,500 undergraduate",
+      "Satisfactory Academic Progress 150% maximum timeframe, federal minimum standard",
+      "Data vintage: 2025–26 academic year figures, overridable by user input"
+    ],
+    license: "CC-BY-4.0"
+  };
+  await buildAndDownloadAP2(payload, 'extra-semester-funding-gap', ['extra_semester_funding_record']);
+}
+
+async function exportAP2Fill() {
+  if (!_lastFillInputs || !_lastFillResults) return;
+  const i = _lastFillInputs, r = _lastFillResults;
+  const payload = {
+    mandate_type: "extra_semester_funding_record",
+    generated_at: new Date().toISOString(),
+    al_id: "AL-183",
+    tool_id: "169-extra-semester-funding-gap",
+    tool_name: "Extra-Semester Funding Gap Planner: Gap-Fill Order",
+    inputs: {
+      total_gap: i.totalGap,
+      leftover_pell_leu_pct: i.leftoverPellPct,
+      pell_award_per_semester: i.pellPerSemester2,
+      flat_tuition_overload_credits: i.flatTuitionHeadroom,
+      credit_value: i.creditValue,
+      gap_semester_count: i.gapSemesterCount,
+      employer_tuition_benefit: i.employerBenefit,
+      private_rate_low: i.rateLo,
+      private_rate_high: i.rateHi
+    },
+    outputs: {
+      summer_pell_fill: Math.round(r.summerPellValue),
+      overload_credit_fill: Math.round(r.overloadValue),
+      employer_benefit_fill: Math.round(r.employerValue),
+      remaining_gap_private_loan: Math.round(r.remaining),
+      loan_scenarios: r.scenarios.map(s => ({ label: s.label, rate_pct: s.rate, monthly_payment: Math.round(s.pmt), total_paid: Math.round(s.total), total_interest: Math.round(s.interest) }))
+    },
+    downstream_handoff_candidates: ["48-tuition-reimbursement-true-value-calculator", "22-student-loan-repayment-optimizer"],
+    data_sources: [
+      "Section 127 employer educational assistance, up to $5,250/yr tax-free",
+      "Data vintage: 2025–26 academic year figures, overridable by user input"
+    ],
+    license: "CC-BY-4.0"
+  };
+  await buildAndDownloadAP2(payload, 'extra-semester-gap-fill', ['extra_semester_funding_record']);
+}
+
+/* ── KEEP VERBATIM: apexHash ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* KEEP VERBATIM: download helper */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+const MANIFEST = {
+  "tool_id": "169-extra-semester-funding-gap",
+  "al_id": "AL-183",
+  "version": "1.0.0",
+  "title": "Extra-Semester Funding Gap Planner",
+  "description": "Models the four cliffs that hit fifth-year and extra-semester students at once: the Pell 600% Lifetime Eligibility Used cap, federal loan aggregate limits, a scholarship semester cutoff, and the SAP 150% maximum timeframe rule. Produces a semester-by-semester fundable/not-fundable breakdown and ranks the cheapest gap-fill order (summer Pell, overload flat-tuition credits, employer tuition assistance, private loan). Deterministic, zero external data. Policy Mandate: extra_semester_funding_record.",
+  "category": "student_finance_debt",
+  "journeys": [],
+  "personas": ["fifth-year undergraduate", "student changing majors or adding a program", "financial aid advisor modeling a student's remaining runway"],
+  "tags": ["pell-grant","leu","federal-loan-aggregate","sap","150-percent-rule","scholarship-cliff","fifth-year","funding-gap"],
+  "status": "active",
+  "maintenance": "T3",
+  "data_vintage": "2025–26 federal aggregate loan limits (dependent $31,000 / independent $57,500 undergraduate); Pell LEU 600% (statutory); SAP 150% maximum timeframe (federal minimum standard). User-override fields on every federal figure.",
+  "frozen_baseline": false,
+  "ap2_export": true,
+  "ap2_mandate_types": ["extra_semester_funding_record"],
+  "ap2_inbound_mandate_types": [],
+  "downstream_handoff_candidates": ["22-student-loan-repayment-optimizer", "113-pslf-qualifying-payment-counter", "101-rap-vs-standard-decision-engine", "102-grad-loan-cap-gap-planner", "48-tuition-reimbursement-true-value-calculator"],
+  "regulatory_citations": [
+    "Pell Grant Lifetime Eligibility Used (LEU) 600% cap, Higher Education Act",
+    "Federal Direct Loan aggregate limits, 34 CFR 685",
+    "Satisfactory Academic Progress 150% maximum timeframe, 34 CFR 668.34"
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "dependency_status": { "type": "string", "enum": ["dependent","independent"] },
+      "semesters_remaining": { "type": "number" },
+      "pell_pct_leu_used": { "type": "number" },
+      "cost_of_attendance_per_semester": { "type": "number" }
+    },
+    "required": ["dependency_status","semesters_remaining","pell_pct_leu_used"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "binding_cliff": { "type": "string" },
+      "total_funding_gap": { "type": "number" },
+      "first_gap_semester": { "type": ["number","null"] }
+    }
+  },
+  "execution": {
+    "type": "browser-javascript",
+    "entry": "index.html",
+    "function_name": "calculate",
+    "timeout_ms": 3000
+  },
+  "mcp_tool_definition": {
+    "name": "extra_semester_funding_gap_planner",
+    "description": "Models the Pell 600% LEU cap, federal loan aggregate limit, scholarship semester cap, and SAP 150% maximum timeframe against a student's remaining semesters, then ranks the cheapest gap-fill order. Deterministic, zero external data.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "dependency_status": { "type": "string", "enum": ["dependent","independent"] },
+        "semesters_remaining": { "type": "number" }
+      },
+      "required": ["dependency_status","semesters_remaining"]
+    }
+  },
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://postoaklabs.com",
+  "license": "CC-BY-4.0"
+};
+
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstBtn').setAttribute('aria-expanded','true');document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';document.getElementById('mfstBtn').setAttribute('aria-expanded','false');}}
+</script>
+</body>
+</html>
