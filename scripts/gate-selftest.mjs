@@ -377,6 +377,20 @@ function build() {
   claim('check-no-storage.mjs', 'check-no-storage (injected localStorage.setItem)', wentRed(join(work, 'scripts', 'check-no-storage.mjs')));
 }
 
+// ── 10a. check-copy-hallmarks: em-dash over the baselined budget ────────────
+{
+  const work = join(tmp, 'copyhallmarks');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'tools', 'zz-copyhallmarks'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-copy-hallmarks.mjs'), join(work, 'scripts', 'check-copy-hallmarks.mjs'));
+  // No baseline file in the fixture dir — an em-dash on a file absent from the
+  // baseline must fail outright (zero allowance), same as a baselined file
+  // exceeding its budget.
+  writeFileSync(join(work, 'tools', 'zz-copyhallmarks', 'index.html'),
+    '<!doctype html><html><head><title>probe</title></head><body><p>Fast — but not just fast, thorough.</p></body></html>\n');
+  claim('check-copy-hallmarks.mjs', 'check-copy-hallmarks (em-dash + "not just X but" over budget)', wentRed(join(work, 'scripts', 'check-copy-hallmarks.mjs')));
+}
+
 // ── 10b. check-a11y-results: tool with no aria-live/role="status"/"alert" ───
 {
   const work = join(tmp, 'a11yresults');
