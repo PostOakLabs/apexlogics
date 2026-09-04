@@ -27,6 +27,14 @@
  * neither was ever in the hand-written directory list. Fix: derive the surface list
  * by walking the repo root instead of hand-naming directories, so the next new
  * content directory is covered by default instead of needing a third scope patch.
+ *
+ * Scope note (AL-JSGATE-CHAINS, 2026-09-04): third occurrence — the walk only
+ * checked one level down (`<slug>/index.html` or flat `<dir>/<name>.html`), so
+ * `chaingraph/chains/*.html` (two levels deep, not named index.html) was invisible.
+ * Fix: walk is now fully recursive under every non-excluded top-level dir, so ANY
+ * depth/naming is covered. Self-test asserts the walked count matches an
+ * independently derived find-based `**\/*.html` count (minus EXCLUDE_DIRS) so the
+ * next nested subdir cannot silently escape again.
  */
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const repoRoot = path.resolve(__dirname, '..');
@@ -36,24 +44,22 @@ const JS_TYPES = ['', 'text/javascript', 'application/javascript', 'module', 'te
 // build tooling, dotfiles) and must never be walked for pages.
 const EXCLUDE_DIRS = new Set(['scripts', 'node_modules', '.git', '.github', 'ARCHIVE', 'assets']);
 
-function listDirHtml(dirName) {
-  const dir = path.join(repoRoot, dirName);
+function walkHtml(dir, relPrefix) {
   const ents = fs.readdirSync(dir, { withFileTypes: true });
-  const nested = ents.filter(e => e.isDirectory() && fs.existsSync(path.join(dir, e.name, 'index.html')))
-    .map(e => [`${dirName}/${e.name}`, path.join(dir, e.name, 'index.html')]);
-  const flat = ents.filter(e => e.isFile() && e.name.endsWith('.html'))
-    .map(e => [`${dirName}/${e.name}`, path.join(dir, e.name)]);
-  return nested.concat(flat);
+  let out = [];
+  for (const e of ents) {
+    if (e.isDirectory()) {
+      if (EXCLUDE_DIRS.has(e.name) || e.name.startsWith('.')) continue;
+      out = out.concat(walkHtml(path.join(dir, e.name), `${relPrefix}${e.name}/`));
+    } else if (e.isFile() && e.name.endsWith('.html')) {
+      out.push([`${relPrefix}${e.name}`, path.join(dir, e.name)]);
+    }
+  }
+  return out;
 }
 
 function listPages() {
-  const rootEnts = fs.readdirSync(repoRoot, { withFileTypes: true });
-  const rootHtml = rootEnts.filter(e => e.isFile() && e.name.endsWith('.html'))
-    .map(e => [e.name, path.join(repoRoot, e.name)]);
-  const subDirPages = rootEnts
-    .filter(e => e.isDirectory() && !EXCLUDE_DIRS.has(e.name) && !e.name.startsWith('.'))
-    .flatMap(e => listDirHtml(e.name));
-  return rootHtml.concat(subDirPages).sort((a, b) => a[0].localeCompare(b[0]));
+  return walkHtml(repoRoot, '').sort((a, b) => a[0].localeCompare(b[0]));
 }
 
 let bad = 0, total = 0;
