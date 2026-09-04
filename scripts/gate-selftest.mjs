@@ -5,7 +5,7 @@
 // The real repo files are never mutated. Exit 0 only if every gate went red as designed.
 //
 // Usage: node scripts/gate-selftest.mjs
-import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, cpSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, cpSync, rmSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -272,6 +272,58 @@ function build() {
   writeFileSync(join(work, 'tools', 'zz-syntax', 'index.html'),
     '<!doctype html><html><head><title>probe</title></head><body><script>const x = ;</script></body></html>\n');
   claim('check_tools.js', 'check_tools.js (injected JS syntax error)', wentRed(join(work, 'scripts', 'check_tools.js')));
+}
+
+// ── 6a. check_tools.js: inject a JS syntax error two levels deep under a
+//      non-index-named file (chaingraph/chains/*.html shape) — proves the walk
+//      actually recurses into nested subdirs, not just one level (AL-JSGATE-CHAINS,
+//      third occurrence of the surface-omission class after workflows/chaingraph
+//      2026-07-30 and showcase 2026-08-29) ───────────────────────────────────
+{
+  const work = join(tmp, 'jsgate-nested');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'chaingraph', 'chains'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check_tools.js'), join(work, 'scripts', 'check_tools.js'));
+  writeFileSync(join(work, 'chaingraph', 'chains', 'zz-nested-probe.html'),
+    '<!doctype html><html><head><title>probe</title></head><body><script>const x = ;</script></body></html>\n');
+  claim('check_tools.js', 'check_tools.js (injected JS syntax error two levels deep, non-index-named file)',
+    wentRed(join(work, 'scripts', 'check_tools.js')));
+}
+
+// ── 6b. check_tools.js: walked-page count must match an independently derived
+//      **/*.html count (same EXCLUDE_DIRS, computed by a SEPARATE walk here
+//      rather than reusing check_tools.js's own listPages()) — so the next new
+//      nested subdirectory cannot silently escape the walk again ──────────────
+{
+  const EXCLUDE_DIRS_INDEPENDENT = new Set(['scripts', 'node_modules', '.git', '.github', 'ARCHIVE', 'assets']);
+  function independentHtmlCount(dir) {
+    let n = 0;
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (e.isDirectory()) {
+        if (EXCLUDE_DIRS_INDEPENDENT.has(e.name) || e.name.startsWith('.')) continue;
+        n += independentHtmlCount(join(dir, e.name));
+      } else if (e.isFile() && e.name.endsWith('.html')) {
+        n++;
+      }
+    }
+    return n;
+  }
+  const derivedCount = independentHtmlCount(REPO);
+  let out;
+  try {
+    out = execFileSync(NODE, [join(REPO, 'scripts', 'check_tools.js')], { cwd: REPO, stdio: 'pipe' }).toString();
+  } catch (e) {
+    out = (e.stdout || '').toString(); // non-zero exit (a real syntax error) still prints the count line
+  }
+  const m = out.match(/of (\d+) pages/);
+  const walkedCount = m ? Number(m[1]) : -1;
+  claims++; covered.add('check_tools.js');
+  if (walkedCount === derivedCount) {
+    console.log(`✓ check_tools.js walked-page count (${walkedCount}) matches independently derived **/*.html count (${derivedCount})`);
+  } else {
+    console.error(`✗ check_tools.js walked ${walkedCount} pages but independent derivation found ${derivedCount} — a subdir is escaping the walk`);
+    fails++;
+  }
 }
 
 // ── 7. check-ap2-validate: 6 distinct claims (A1–A6), each a synthetic tool ──
