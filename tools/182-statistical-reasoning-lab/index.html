@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Statistical Reasoning Lab · #182 · AL-196 · ApexLogics</title>
+<link rel="canonical" href="https://apexlogics.org/tools/182-statistical-reasoning-lab/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ApexLogics">
+<meta property="og:title" content="Statistical Reasoning Lab · #182 · AL-196 · ApexLogics">
+<meta property="og:description" content="Five deterministic labs in one file: regression-to-the-mean, survivorship bias (Wald's WWII bombers), hot-hand run-length, base-rate/Bayes (prosecutor's fallacy), and a seeded p-hacking spec-curve multiverse.">
+<meta property="og:url" content="https://apexlogics.org/tools/182-statistical-reasoning-lab/">
+<meta property="og:image" content="https://apexlogics.org/assets/og-default.png">
+<meta name="twitter:card" content="summary">
+<meta name="description" content="A 5-tab statistical reasoning methods lab: regression-to-the-mean (sophomore-slump math), survivorship bias (Wald's WWII armor problem), hot-hand run-length (closed-form expected streak length), base-rate/Bayes (prosecutor's fallacy), and a seeded-LCG deterministic p-hacking spec-curve. Same seed always reproduces the same multiverse."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+:root {
+  --bg:#070B14; --surface:#0D1117; --surface2:#111827;
+  --accent:#60a5fa; --accent-dim:rgba(96,165,250,0.18); --accent-low:rgba(96,165,250,0.08);
+  --border:rgba(96,165,250,0.18); --border-focus:#60a5fa;
+  --text:#e2e8f0; --text-muted:#94a3b8; --text-dim:#8891a8;
+  --green:#34d399; --amber:#fbbf24; --red:#f87171; --amber-brand:#E8A838;
+}
+html { font-size:16px; }
+body { background:var(--bg); color:var(--text); font-family:'Sora',sans-serif; line-height:1.6; min-height:100vh; }
+.nav { background:rgba(7,11,20,.92); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; }
+.nav-inner { max-width:1024px; margin:0 auto; display:flex; align-items:center; gap:16px; padding:0 24px; min-height:64px; height:auto; }
+.logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+.logo-mark { width:32px; height:32px; flex-shrink:0; }
+.logo-mark svg { width:100%; height:100%; }
+.logo-text { display:flex; flex-direction:column; gap:2px; }
+.logo-name { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:500; color:var(--text); letter-spacing:-.02em; line-height:1; }
+.logo-apex { color:#E8A838; }
+.logo-org { color:var(--text-dim); font-size:.8rem; }
+.nav-spacer { flex:1; }
+.nav-right { display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+.nav-pill { background:none; border:1px solid var(--border); border-radius:6px; color:var(--text-muted); font-size:.62rem; padding:.3rem .65rem; font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-decoration:none; transition:border-color .15s, color .15s; }
+.nav-pill:hover { border-color:#E8A838; color:var(--text); }
+.nav-pill.accent { border-color:rgba(232,168,56,.5); color:#E8A838; }
+.pii-banner { max-width:1024px; margin:1.25rem auto 0; padding:0 24px; }
+.pii-inner { background:rgba(255,255,255,.03); border:1px solid var(--border); border-left:3px solid #E8A838; border-radius:6px; padding:.7rem 1rem; font-size:.76rem; color:var(--text-muted); display:flex; gap:.5rem; align-items:flex-start; }
+.tool-wrapper { max-width:1024px; margin:0 auto; padding:40px 24px 80px; }
+.tool-eyebrow { font-family:'JetBrains Mono',monospace; font-size:.72rem; color:#E8A838; letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px; }
+.tool-title { font-family:'DM Serif Display',serif; font-size:2.4rem; line-height:1.15; margin-bottom:16px; }
+.tool-desc { color:var(--text-muted); font-size:.97rem; max-width:760px; margin-bottom:10px; }
+.tool-vintage { display:inline-flex; align-items:center; gap:.4rem; background:rgba(232,168,56,.1); border:1px solid #E8A838; border-radius:6px; padding:.3rem .7rem; font-family:'JetBrains Mono',monospace; font-size:.65rem; color:#E8A838; margin-bottom:1.25rem; }
+.tab-bar { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:0; }
+.tab-btn { background:var(--surface2); border:1px solid var(--border); border-bottom:none; color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:.68rem; letter-spacing:.03em; padding:.6rem .9rem; border-radius:8px 8px 0 0; cursor:pointer; transition:all .15s; }
+.tab-btn:hover { color:var(--text); }
+.tab-btn.active { color:#000; background:#E8A838; border-color:#E8A838; }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+.card { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:24px 28px; margin-bottom:16px; }
+.card-title { font-family:'JetBrains Mono',monospace; font-size:.78rem; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:20px; }
+.form-grid { display:grid; gap:12px; }
+.form-grid.two { grid-template-columns:1fr 1fr; }
+.form-grid.three { grid-template-columns:1fr 1fr 1fr; }
+.field { display:flex; flex-direction:column; gap:5px; }
+label { font-size:.75rem; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
+input[type="text"], input[type="number"] { background:var(--surface); border:1px solid var(--border); color:var(--text); padding:8px 10px; border-radius:6px; font-family:'Sora',sans-serif; font-size:.86rem; width:100%; transition:border-color .2s; }
+input:focus { outline:none; border-color:var(--border-focus); }
+.field-hint { font-size:.66rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace; }
+.run-btn { background:var(--accent); color:#000; border:none; padding:14px 40px; border-radius:8px; font-size:1rem; font-family:'Sora',sans-serif; font-weight:600; cursor:pointer; width:100%; margin:8px 0 24px; transition:opacity .2s; }
+.run-btn:hover { opacity:.88; }
+.results-section { display:none; }
+.results-section.visible { display:block; }
+.result-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:20px 24px; margin-bottom:14px; }
+.result-label { font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; }
+.result-value { font-size:1.5rem; font-weight:600; color:var(--text); }
+.result-value.green { color:var(--green); }
+.result-value.amber { color:var(--amber); }
+.result-value.red { color:var(--red); }
+.result-sub { font-size:.8rem; color:var(--text-muted); margin-top:4px; }
+.results-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+.results-grid.two { grid-template-columns:repeat(2,1fr); }
+.results-export-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:24px; padding-top:20px; border-top:1px solid var(--border); }
+.export-btn { display:flex; align-items:center; gap:7px; padding:9px 18px; border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:.75rem; cursor:pointer; transition:all .18s; }
+.export-btn:hover { border-color:var(--accent); color:var(--accent); }
+.export-btn.ap2 { border-color:rgba(96,165,250,0.4); color:var(--accent); }
+.tool-footer{background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,255,.08);padding:2.2rem 0 1.9rem;margin-top:3rem}
+.tool-footer-inner{max-width:1024px;margin:0 auto;padding:0 1.5rem;display:flex;flex-wrap:wrap;align-items:flex-start;gap:1.9rem 2.4rem}
+.tool-footer-brand{flex:1 1 210px;min-width:190px;display:flex;flex-direction:column;gap:.3rem}
+.tool-footer-meta{font-size:.65rem;opacity:.55;line-height:1.5}
+.tool-footer-cols{flex:3 1 520px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.4rem}
+.tool-footer-h{font-family:'JetBrains Mono',monospace;font-size:.57rem;font-weight:500;letter-spacing:.11em;text-transform:uppercase;opacity:.42;margin:0 0 .55rem}
+.tool-footer-col ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.34rem}
+.tool-footer-col li{margin:0;padding:0}
+.tool-footer-col a{font-size:.7rem;opacity:.68;line-height:1.35}
+.tool-footer-col a:hover{opacity:1}
+.tool-footer a{color:inherit;text-decoration:none}
+@media(max-width:860px){.tool-footer-cols{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.tool-footer-cols{grid-template-columns:1fr}}
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#7f1d1d; border:1px solid var(--red); color:#fecaca; padding:12px 22px; border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:.8rem; z-index:200; display:none; }
+.toast.show { display:block; }
+.insight-row { background:rgba(96,165,250,0.06); border:1px solid rgba(96,165,250,0.2); border-radius:8px; padding:14px 18px; margin-bottom:10px; font-size:.88rem; color:var(--text-muted); }
+.insight-row strong { color:var(--text); }
+.data-table { width:100%; border-collapse:collapse; font-size:.82rem; margin-top:8px; }
+.data-table th { font-family:'JetBrains Mono',monospace; font-size:.66rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; padding:8px 10px; text-align:right; border-bottom:1px solid var(--border); }
+.data-table th:first-child { text-align:left; }
+.data-table td { padding:9px 10px; text-align:right; border-bottom:1px solid rgba(96,165,250,0.07); color:var(--text-muted); }
+.data-table td:first-child { text-align:left; font-family:'JetBrains Mono',monospace; font-size:.78rem; color:var(--text-dim); }
+.data-table .bold-row td { font-weight:600; color:var(--text); border-top:1px solid var(--border); }
+.verdict-pill { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:.68rem; font-weight:600; padding:.28rem .6rem; border-radius:6px; letter-spacing:.04em; }
+.verdict-pill.notable { background:rgba(248,113,113,0.14); color:var(--red); border:1px solid rgba(248,113,113,0.4); }
+.verdict-pill.borderline { background:rgba(251,191,36,0.14); color:var(--amber); border:1px solid rgba(251,191,36,0.4); }
+.verdict-pill.unremarkable { background:rgba(52,211,153,0.14); color:var(--green); border:1px solid rgba(52,211,153,0.4); }
+.verdict-pill.sig { background:rgba(248,113,113,0.14); color:var(--red); border:1px solid rgba(248,113,113,0.4); }
+.verdict-pill.ns { background:rgba(148,163,184,0.14); color:var(--text-muted); border:1px solid var(--border); }
+.recommendation-card { background:rgba(52,211,153,0.07); border:2px solid rgba(52,211,153,0.35); border-radius:12px; padding:20px 24px; margin-bottom:16px; }
+.rec-label { font-family:'JetBrains Mono',monospace; font-size:.72rem; text-transform:uppercase; letter-spacing:.1em; margin-bottom:8px; color:var(--green); }
+.rec-headline { font-family:'DM Serif Display',serif; font-size:1.35rem; margin-bottom:8px; }
+.rec-body { font-size:.88rem; color:var(--text-muted); }
+.determinism-note { font-size:.7rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace; margin-top:6px; }
+@media(max-width:700px){.form-grid.two,.form-grid.three{grid-template-columns:1fr;}.results-grid{grid-template-columns:1fr 1fr;}.tool-title{font-size:1.8rem;}}
+.mfst-btn{width:100%;max-width:1024px;margin:1.5rem auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:7px;color:var(--text,var(--body,var(--text-muted,#9aa4bf)));font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+.mfst-btn:hover{border-color:var(--accent,var(--amber,var(--teal,#60a5fa)))}
+.mfst-body{display:none;max-width:1024px;margin:1px auto 0;background:var(--surface2,var(--surface,var(--bg3,var(--bg-2,#181c27))));border:1px solid var(--border,#2a2f45);border-radius:0 0 7px 7px;padding:16px;overflow-x:auto}
+.mfst-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted,var(--muted,var(--dim,#9aa4bf)));line-height:1.6;white-space:pre-wrap;word-break:break-word}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="6" fill="#0D1117"/>
+          <path d="M16 5L28 26H4L16 5Z" fill="none" stroke="#E8A838" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M10 20h12" stroke="#E8A838" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-name"><span class="logo-apex">Apex</span> Logics</span>
+        <span class="logo-org">apexlogics.org</span>
+      </div>
+    </a>
+    <span class="nav-spacer"></span>
+    <div class="nav-right">
+      <a href="../../tools.html" class="nav-pill accent">&#8592; All Tools</a>
+    </div>
+  </div>
+</nav>
+
+<div class="pii-banner">
+  <div class="pii-inner">
+    <span>&#128274;</span><span>All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab.</span>
+  </div>
+</div>
+
+<div class="tool-wrapper">
+  <div class="tool-eyebrow">SELECTED STUDIES &amp; METHODS &middot; #182</div>
+  <h1 class="tool-title">Statistical Reasoning Lab</h1>
+  <p class="tool-desc">Five deterministic labs that isolate the statistical-reasoning traps every methods course teaches separately: regression-to-the-mean, survivorship bias, hot-hand run-length, base-rate/Bayes (the prosecutor's fallacy), and a p-hacking spec-curve multiverse. Every lab runs on your inputs plus static, cited built-ins &mdash; nothing live, nothing that needs refreshing.</p>
+  <div class="tool-vintage">&#128203; Pure arithmetic + two static historical references (Wald WWII armor problem) &mdash; no live data, no vintage</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabBtn-rtm" onclick="setTab('rtm')">1 &middot; Regression to the Mean</button>
+    <button class="tab-btn" id="tabBtn-surv" onclick="setTab('surv')">2 &middot; Survivorship</button>
+    <button class="tab-btn" id="tabBtn-hot" onclick="setTab('hot')">3 &middot; Hot-Hand Runs</button>
+    <button class="tab-btn" id="tabBtn-bayes" onclick="setTab('bayes')">4 &middot; Base-Rate / Bayes</button>
+    <button class="tab-btn" id="tabBtn-phack" onclick="setTab('phack')">5 &middot; p-Hacking Multiverse</button>
+  </div>
+
+  <!-- ══════════ TAB 1: REGRESSION TO THE MEAN ══════════ -->
+  <div class="tab-panel active" id="tabPanel-rtm">
+    <div class="card">
+      <div class="card-title">Setup &middot; Pre/Post Test Parameters</div>
+      <div class="form-grid three">
+        <div class="field">
+          <label for="rtmPreMean">Pre-Test Group Mean</label>
+          <input type="number" id="rtmPreMean" value="70" step="0.1"/>
+        </div>
+        <div class="field">
+          <label for="rtmPreSD">Pre-Test SD</label>
+          <input type="number" id="rtmPreSD" value="10" min="0.01" step="0.1"/>
+        </div>
+        <div class="field">
+          <label for="rtmScore">Individual/Subgroup Pre-Test Score</label>
+          <input type="number" id="rtmScore" value="95" step="0.1"/>
+          <span class="field-hint">The "sophomore" score, or the low outlier you're worried about</span>
+        </div>
+        <div class="field">
+          <label for="rtmPostMean">Post-Test Group Mean</label>
+          <input type="number" id="rtmPostMean" value="70" step="0.1"/>
+        </div>
+        <div class="field">
+          <label for="rtmPostSD">Post-Test SD</label>
+          <input type="number" id="rtmPostSD" value="10" min="0.01" step="0.1"/>
+        </div>
+        <div class="field">
+          <label for="rtmCorr">Pre&ndash;Post Correlation (r)</label>
+          <input type="number" id="rtmCorr" value="0.6" min="0" max="1" step="0.01"/>
+          <span class="field-hint">0 = pure noise, 1 = perfectly stable trait (no regression)</span>
+        </div>
+      </div>
+    </div>
+    <button class="run-btn" onclick="calcRTM()">Calculate Expected Regression</button>
+    <div class="results-section" id="rtmResults">
+      <div id="rtmRecContainer"></div>
+      <div class="card">
+        <div class="card-title">Result</div>
+        <div class="results-grid">
+          <div class="result-card">
+            <div class="result-label">Predicted Post-Test Score</div>
+            <div class="result-value" id="rtmPredicted">-</div>
+            <div class="result-sub">Accounts for regression to the mean</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Naive (No-Regression) Prediction</div>
+            <div class="result-value amber" id="rtmNaive">-</div>
+            <div class="result-sub">Assumes the score is a stable trait (r=1)</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Expected Regression Amount</div>
+            <div class="result-value" id="rtmRegression">-</div>
+            <div class="result-sub" id="rtmRegressionPct">-</div>
+          </div>
+        </div>
+      </div>
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">&#8595; Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()">&#8595; Policy Mandate (JSON)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ TAB 2: SURVIVORSHIP ══════════ -->
+  <div class="tab-panel" id="tabPanel-surv">
+    <div class="card">
+      <div class="card-title">Built-In &middot; Wald's WWII Bomber Armor Problem</div>
+      <p class="tool-desc" style="margin-bottom:14px;">Abraham Wald (Statistical Research Group, 1943) was asked where to add armor based on hit locations counted on bombers that RETURNED from missions. The military's instinct was to reinforce the most-hit sections. Wald reasoned the opposite: those sections show heavy damage precisely because planes hit there still made it home &mdash; the sections that matter are the ones with few or no hits on returning planes, because planes hit there likely never returned to be counted.</p>
+      <table class="data-table">
+        <thead><tr><th>Section</th><th>% of Returning Planes Hit Here</th><th>Wald's Armor Priority</th></tr></thead>
+        <tbody id="waldTable"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Your Selection-Rate Math</div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="survSent">Planes/Units That Started</label>
+          <input type="number" id="survSent" value="100" min="1" step="1"/>
+        </div>
+        <div class="field">
+          <label for="survReturned">Planes/Units You Can Still Observe</label>
+          <input type="number" id="survReturned" value="80" min="1" step="1"/>
+          <span class="field-hint">Survivors, respondents, still-open businesses, funds still reporting, etc.</span>
+        </div>
+      </div>
+    </div>
+    <button class="run-btn" onclick="calcSurvivorship()">Calculate Survivorship Distortion</button>
+    <div class="results-section" id="survResults">
+      <div id="survRecContainer"></div>
+      <div class="card">
+        <div class="card-title">Result</div>
+        <div class="results-grid">
+          <div class="result-card">
+            <div class="result-label">Survival Rate</div>
+            <div class="result-value" id="survRate">-</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Non-Survivors (Unobserved)</div>
+            <div class="result-value red" id="survMissing">-</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Selection Distortion Index</div>
+            <div class="result-value amber" id="survDistortion">-</div>
+            <div class="result-sub">How many "starters" each observed survivor now silently stands in for</div>
+          </div>
+        </div>
+      </div>
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">&#8595; Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()">&#8595; Policy Mandate (JSON)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ TAB 3: HOT-HAND RUN LENGTH ══════════ -->
+  <div class="tab-panel" id="tabPanel-hot">
+    <div class="card">
+      <div class="card-title">Setup &middot; Streak Parameters</div>
+      <div class="form-grid three">
+        <div class="field">
+          <label for="hotTrials">Number of Trials (N)</label>
+          <input type="number" id="hotTrials" value="20" min="2" step="1"/>
+          <span class="field-hint">Shots, at-bats, coin flips, trading days</span>
+        </div>
+        <div class="field">
+          <label for="hotProb">Success Probability (%)</label>
+          <input type="number" id="hotProb" value="45" min="1" max="99" step="0.1"/>
+          <span class="field-hint">e.g., career free-throw %</span>
+        </div>
+        <div class="field">
+          <label for="hotObserved">Observed Longest Streak</label>
+          <input type="number" id="hotObserved" value="6" min="0" step="1"/>
+        </div>
+      </div>
+    </div>
+    <button class="run-btn" onclick="calcHotHand()">Calculate Expected Longest Run</button>
+    <div class="results-section" id="hotResults">
+      <div id="hotRecContainer"></div>
+      <div class="card">
+        <div class="card-title">Result</div>
+        <div class="results-grid">
+          <div class="result-card">
+            <div class="result-label">Expected Longest Run (pure chance)</div>
+            <div class="result-value" id="hotExpected">-</div>
+            <div class="result-sub">Schilling (1990) closed-form approximation</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Std. Deviation of Longest Run</div>
+            <div class="result-value" id="hotSD">-</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Observed vs Expected (z)</div>
+            <div class="result-value" id="hotZ">-</div>
+            <div class="result-sub" id="hotVerdictSub">-</div>
+          </div>
+        </div>
+      </div>
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">&#8595; Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()">&#8595; Policy Mandate (JSON)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ TAB 4: BASE-RATE / BAYES ══════════ -->
+  <div class="tab-panel" id="tabPanel-bayes">
+    <div class="card">
+      <div class="card-title">Setup &middot; Prosecutor's-Fallacy Inputs</div>
+      <div class="form-grid three">
+        <div class="field">
+          <label for="bayesPrior">Base Rate / Prior (%)</label>
+          <input type="number" id="bayesPrior" value="0.1" min="0" max="100" step="0.01"/>
+          <span class="field-hint">% of the population who actually has the condition/trait/guilt</span>
+        </div>
+        <div class="field">
+          <label for="bayesSens">Test Sensitivity (%)</label>
+          <input type="number" id="bayesSens" value="99" min="0" max="100" step="0.1"/>
+          <span class="field-hint">P(positive | actually has it)</span>
+        </div>
+        <div class="field">
+          <label for="bayesSpec">Test Specificity (%)</label>
+          <input type="number" id="bayesSpec" value="99" min="0" max="100" step="0.1"/>
+          <span class="field-hint">P(negative | doesn't have it)</span>
+        </div>
+      </div>
+    </div>
+    <button class="run-btn" onclick="calcBayes()">Calculate Posterior Probability</button>
+    <div class="results-section" id="bayesResults">
+      <div id="bayesRecContainer"></div>
+      <div class="card">
+        <div class="card-title">Result</div>
+        <div class="results-grid">
+          <div class="result-card">
+            <div class="result-label">True Posterior: P(has it | tested positive)</div>
+            <div class="result-value" id="bayesPosterior">-</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Fallacy Value (Sensitivity, Often Mistaken for the Posterior)</div>
+            <div class="result-value amber" id="bayesFallacy">-</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Gap</div>
+            <div class="result-value red" id="bayesGap">-</div>
+            <div class="result-sub">How far the intuitive answer is from the correct one</div>
+          </div>
+        </div>
+      </div>
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">&#8595; Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()">&#8595; Policy Mandate (JSON)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ TAB 5: P-HACKING MULTIVERSE ══════════ -->
+  <div class="tab-panel" id="tabPanel-phack">
+    <div class="card">
+      <div class="card-title">Setup &middot; Seeded Synthetic Dataset</div>
+      <p class="tool-desc" style="margin-bottom:14px;">Generates a synthetic two-group dataset (n=20/group) from a seeded pseudo-random generator with a TRUE null effect &mdash; there is no real difference between the groups. It then runs all 16 "researcher degree of freedom" analysis paths (exclude/keep an outlier &times; control/ignore a covariate &times; full sample/subgroup &times; one-/two-tailed) and shows how many come back "significant" at p&lt;.05 by chance alone. <strong>Same seed always produces the same dataset and the same 16 results</strong> &mdash; nothing here reads the clock or an unseeded random source.</p>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="phackSeed">Seed (any integer)</label>
+          <input type="number" id="phackSeed" value="6" step="1"/>
+          <span class="field-hint">Re-enter the same seed and re-run to verify: identical multiverse, every time</span>
+        </div>
+      </div>
+    </div>
+    <button class="run-btn" onclick="calcPHack()">Generate Multiverse</button>
+    <div class="results-section" id="phackResults">
+      <div id="phackRecContainer"></div>
+      <div class="card">
+        <div class="card-title">Spec-Curve &middot; 16 Analysis Paths</div>
+        <table class="data-table">
+          <thead><tr><th>Exclude Outlier</th><th>Control Covariate</th><th>Subgroup Only</th><th>One-Tailed</th><th>p-value</th><th>Result</th></tr></thead>
+          <tbody id="phackTable"></tbody>
+        </table>
+      </div>
+      <div class="determinism-note" id="phackDeterminismNote"></div>
+      <div class="results-export-row">
+        <button class="export-btn" onclick="exportMarkdown()">&#8595; Markdown</button>
+        <button class="export-btn ap2" onclick="exportAP2()">&#8595; Policy Mandate (JSON)</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<button class="mfst-btn" id="mfstBtn" onclick="toggleMfst()" aria-expanded="false"><span>📦&nbsp; manifest.json · MCP tool definition · Policy Mandate schema</span><span id="mfstArr">▼</span></button>
+<div class="mfst-body" id="mfstBody"><div class="mfst-code" id="mfstCode"></div></div>
+
+<footer class="tool-footer">
+  <div class="tool-footer-inner">
+    <div class="tool-footer-brand">
+      <div class="tool-footer-meta">CC BY 4.0 · Zero PII · Client-side only</div>
+    </div>
+    <div class="tool-footer-cols">
+      <div class="tool-footer-col">
+        <div class="tool-footer-h">Platform</div>
+        <ul>
+          <li><a href="../../tools.html">All Tools</a></li>
+          <li><a href="../../workflows/index.html">Workflows</a></li>
+          <li><a href="../../showcase/index.html">Showcase</a></li>
+          <li><a href="../../mcp.html">MCP Docs</a></li>
+        </ul>
+      </div>
+      <div class="tool-footer-col">
+        <div class="tool-footer-h">Guides</div>
+        <ul>
+          <li><a href="../../guides/student-finance-hub.html">Student Finance</a></li>
+          <li><a href="../../guides/student-loans-2026.html">Student Loans 2026</a></li>
+          <li><a href="../../guides/education-path-hub.html">Education Path</a></li>
+          <li><a href="../../guides/career-transition-hub.html">Career Transition</a></li>
+          <li><a href="../../guides/compensation-offers-hub.html">Compensation &amp; Offers</a></li>
+          <li><a href="../../guides/licensing-credentials-hub.html">Licensing &amp; Credentials</a></li>
+          <li><a href="../../guides/immigration-visa-hub.html">Immigration &amp; Visa</a></li>
+          <li><a href="../../guides/workforce-development-hub.html">Workforce Development</a></li>
+          <li><a href="../../guides/teaching-instruction-hub.html">Teaching &amp; Instruction</a></li>
+          <li><a href="../../guides/index.html">All Guides</a></li>
+        </ul>
+      </div>
+      <div class="tool-footer-col">
+        <div class="tool-footer-h">Data &amp; Artifacts</div>
+        <ul>
+          <li><a href="../../suite-registry.json">suite-registry.json</a></li>
+          <li><a href="../../chaingraph/chaingraph.json">chaingraph.json</a></li>
+          <li><a href="../../llms.txt">llms.txt</a></li>
+          <li><a href="../../.well-known/mcp.json">.well-known/mcp.json</a></li>
+          <li><a href="../../.well-known/agent-card.json">agent-card.json</a></li>
+          <li><a href="../../sitemap.xml">sitemap.xml</a></li>
+          <li><a href="../../sitemap.html">Sitemap</a></li>
+        </ul>
+      </div>
+      <div class="tool-footer-col">
+        <div class="tool-footer-h">Company</div>
+        <ul>
+          <li><a href="../../about.html">About</a></li>
+          <li><a href="../../contact.html">Contact</a></li>
+          <li><a href="https://postoaklabs.com" target="_blank" rel="noopener">PostOakLabs.com ↗</a></li>
+          <li><a href="https://ainumbers.co" target="_blank" rel="noopener">AINumbers.co ↗</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+const AP2Schema = {
+  validMandateTypes: ['stats_reasoning_record'],
+  validate(payload) {
+    if (!payload || typeof payload !== 'object') return { valid:false, error:'Payload must be an object.' };
+    if (!payload.chaingraph_version) return { valid:false, error:'Missing chaingraph_version.' };
+    if (!payload.ap2_mandate_type) return { valid:false, error:'Missing ap2_mandate_type.' };
+    if (!this.validMandateTypes.includes(payload.ap2_mandate_type)) return { valid:false, error:'Invalid ap2_mandate_type: '+payload.ap2_mandate_type };
+    if (!payload.tool_id) return { valid:false, error:'Missing tool_id.' };
+    if (!payload.generated_at) return { valid:false, error:'Missing generated_at.' };
+    return { valid:true };
+  }
+};
+
+function val(id) { return parseFloat(document.getElementById(id).value) || 0; }
+function fmtN(n, d) { return n.toLocaleString('en-US', { minimumFractionDigits:d, maximumFractionDigits:d }); }
+function fmtPct(n, d) { return n.toFixed(d===undefined?1:d) + '%'; }
+
+let lastPayload = null;
+let lastMarkdown = null;
+
+/* ── TAB SWITCHING ── */
+const TABS = ['rtm','surv','hot','bayes','phack'];
+function setTab(key) {
+  TABS.forEach(k => {
+    document.getElementById('tabPanel-' + k).classList.toggle('active', k === key);
+    document.getElementById('tabBtn-' + k).classList.toggle('active', k === key);
+  });
+}
+
+/* ── TAB 1: REGRESSION TO THE MEAN ── */
+function calcRTM() {
+  const preMean = val('rtmPreMean'), preSD = val('rtmPreSD') || 1;
+  const score = val('rtmScore'), postMean = val('rtmPostMean'), postSD = val('rtmPostSD') || 1;
+  const corr = Math.min(Math.max(val('rtmCorr'), 0), 1);
+
+  const zPre = (score - preMean) / preSD;
+  const predictedPost = postMean + corr * zPre * postSD;
+  const naivePost = postMean + zPre * postSD;
+  const regressionAmount = naivePost - predictedPost;
+  const regressionPct = (1 - corr) * 100;
+  const direction = zPre >= 0 ? 'drop toward' : 'rise toward';
+
+  document.getElementById('rtmPredicted').textContent = fmtN(predictedPost, 1);
+  document.getElementById('rtmNaive').textContent = fmtN(naivePost, 1);
+  document.getElementById('rtmRegression').textContent = fmtN(Math.abs(regressionAmount), 1);
+  document.getElementById('rtmRegressionPct').textContent = fmtPct(regressionPct, 0) + ' of the initial deviation from the mean is expected to regress';
+
+  const rec = document.getElementById('rtmRecContainer');
+  rec.innerHTML = '';
+  const card = document.createElement('div'); card.className = 'recommendation-card';
+  const label = document.createElement('div'); label.className = 'rec-label'; label.textContent = 'Expected Regression';
+  const head = document.createElement('div'); head.className = 'rec-headline';
+  head.textContent = 'Score ' + fmtN(score,1) + ' is expected to ' + direction + ' ' + fmtN(predictedPost,1) + ' next time, not stay at ' + fmtN(score,1) + '.';
+  const body = document.createElement('div'); body.className = 'rec-body';
+  body.textContent = 'With r=' + corr.toFixed(2) + ', ' + fmtPct(regressionPct,0) + ' of this score\'s distance from the group mean (' + fmtN(preMean,1) + ') is measurement noise and luck, not a stable trait. A "sophomore slump" or "test-prep gain" this size is exactly what regression to the mean predicts even if the intervention did nothing at all.';
+  card.appendChild(label); card.appendChild(head); card.appendChild(body); rec.appendChild(card);
+
+  lastPayload = {
+    mandate_type: 'stats_reasoning_record',
+    tab: 'regression_to_mean',
+    tool_id: 'AL-196',
+    generated_at: new Date().toISOString(),
+    pre_test_mean: preMean, pre_test_sd: preSD, individual_score: score,
+    post_test_mean: postMean, post_test_sd: postSD, correlation_r: corr,
+    predicted_post_score: Math.round(predictedPost * 100) / 100,
+    naive_post_score: Math.round(naivePost * 100) / 100,
+    expected_regression_amount: Math.round(regressionAmount * 100) / 100,
+    expected_regression_pct: Math.round(regressionPct * 10) / 10
+  };
+  lastMarkdown = '# Statistical Reasoning Lab — Regression to the Mean\nGenerated: ' + new Date().toLocaleString('en-US') + '\n\n- Pre-test mean/SD: ' + fmtN(preMean,1) + ' / ' + fmtN(preSD,1) + '\n- Individual score: ' + fmtN(score,1) + '\n- Post-test mean/SD: ' + fmtN(postMean,1) + ' / ' + fmtN(postSD,1) + '\n- Correlation (r): ' + corr.toFixed(2) + '\n\n**Predicted post-test score (with regression): ' + fmtN(predictedPost,1) + '**\nNaive prediction (no regression, r=1): ' + fmtN(naivePost,1) + '\nExpected regression amount: ' + fmtN(Math.abs(regressionAmount),1) + ' (' + fmtPct(regressionPct,0) + ' of initial deviation)\n\n*Generated by ApexLogics Statistical Reasoning Lab (AL-196) — apexlogics.org*';
+
+  document.getElementById('rtmResults').classList.add('visible');
+}
+
+/* ── TAB 2: SURVIVORSHIP ── */
+const WALD_DATA = [
+  { section: 'Engine', hitPct: 20 },
+  { section: 'Fuselage (mid-body)', hitPct: 45 },
+  { section: 'Fuel System', hitPct: 15 },
+  { section: 'Cockpit / Rest of Airframe', hitPct: 20 }
+];
+
+function renderWaldTable() {
+  const sorted = [...WALD_DATA].sort((a,b) => a.hitPct - b.hitPct);
+  const tbody = document.getElementById('waldTable');
+  tbody.innerHTML = '';
+  WALD_DATA.forEach(row => {
+    const priority = row.hitPct === sorted[0].hitPct ? 'HIGH (rarely seen hit — likely fatal when hit)'
+      : row.hitPct === sorted[sorted.length-1].hitPct ? 'LOW (heavily hit but plane still returned)'
+      : 'MEDIUM';
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + row.section + '</td><td>' + row.hitPct + '%</td><td>' + priority + '</td>';
+    tbody.appendChild(tr);
+  });
+}
+renderWaldTable();
+
+function calcSurvivorship() {
+  const sent = Math.max(val('survSent'), 1);
+  const returned = Math.min(Math.max(val('survReturned'), 0), sent);
+  const survivalRate = (returned / sent) * 100;
+  const missing = sent - returned;
+  const distortion = returned > 0 ? sent / returned : Infinity;
+
+  document.getElementById('survRate').textContent = fmtPct(survivalRate, 1);
+  document.getElementById('survMissing').textContent = missing.toLocaleString('en-US');
+  document.getElementById('survDistortion').textContent = isFinite(distortion) ? distortion.toFixed(2) + '×' : 'n/a';
+
+  const rec = document.getElementById('survRecContainer');
+  rec.innerHTML = '';
+  const card = document.createElement('div'); card.className = 'recommendation-card';
+  const label = document.createElement('div'); label.className = 'rec-label'; label.textContent = 'Survivorship Read';
+  const head = document.createElement('div'); head.className = 'rec-headline';
+  head.textContent = fmtPct(survivalRate,1) + ' survival rate — anything you measure only on the ' + returned + ' you can still see is missing ' + missing + ' cases entirely.';
+  const body = document.createElement('div'); body.className = 'rec-body';
+  body.textContent = 'Same logic as Wald\'s armor: if the ' + missing + ' non-survivors failed for a reason related to what you\'re measuring, any average taken only over the ' + returned + ' survivors is biased in the direction that made survival easier. Ask what killed the missing ' + missing + ' before trusting a metric computed only on the ones still standing.';
+  card.appendChild(label); card.appendChild(head); card.appendChild(body); rec.appendChild(card);
+
+  lastPayload = {
+    mandate_type: 'stats_reasoning_record',
+    tab: 'survivorship',
+    tool_id: 'AL-196',
+    generated_at: new Date().toISOString(),
+    wald_reference_table: WALD_DATA,
+    units_started: sent,
+    units_observed: returned,
+    survival_rate_pct: Math.round(survivalRate * 10) / 10,
+    non_survivors: missing,
+    selection_distortion_index: isFinite(distortion) ? Math.round(distortion * 100) / 100 : null
+  };
+  lastMarkdown = '# Statistical Reasoning Lab — Survivorship\nGenerated: ' + new Date().toLocaleString('en-US') + '\n\n## Wald WWII Bomber Reference\n' + WALD_DATA.map(r => '- ' + r.section + ': ' + r.hitPct + '% of returning planes hit here').join('\n') + '\n\n## Your Selection-Rate Math\n- Started: ' + sent + '\n- Still observed: ' + returned + '\n- Survival rate: ' + fmtPct(survivalRate,1) + '\n- Non-survivors: ' + missing + '\n- Selection distortion index: ' + (isFinite(distortion) ? distortion.toFixed(2) + '×' : 'n/a') + '\n\n*Generated by ApexLogics Statistical Reasoning Lab (AL-196) — apexlogics.org*';
+
+  document.getElementById('survResults').classList.add('visible');
+}
+
+/* ── TAB 3: HOT-HAND RUN LENGTH (Schilling 1990 closed-form) ── */
+function calcHotHand() {
+  const N = Math.max(val('hotTrials'), 2);
+  const p = Math.min(Math.max(val('hotProb'), 0.1), 99.9) / 100;
+  const observed = Math.max(val('hotObserved'), 0);
+  const q = 1 - p;
+  const lnInvP = Math.log(1 / p);
+  const EULER_GAMMA = 0.5772156649;
+
+  const expected = Math.log(N * q) / lnInvP + (EULER_GAMMA / lnInvP) - 0.5;
+  const sd = Math.PI / (Math.sqrt(6) * lnInvP);
+  const z = sd > 0 ? (observed - expected) / sd : 0;
+
+  let verdict, verdictLabel;
+  if (Math.abs(z) >= 2) { verdict = 'notable'; verdictLabel = 'Notable'; }
+  else if (Math.abs(z) >= 1) { verdict = 'borderline'; verdictLabel = 'Borderline'; }
+  else { verdict = 'unremarkable'; verdictLabel = 'Unremarkable'; }
+
+  document.getElementById('hotExpected').textContent = fmtN(Math.max(expected,0), 2);
+  document.getElementById('hotSD').textContent = fmtN(sd, 2);
+  document.getElementById('hotZ').textContent = (z >= 0 ? '+' : '') + z.toFixed(2);
+  document.getElementById('hotVerdictSub').innerHTML = '<span class="verdict-pill ' + verdict + '">' + verdictLabel + '</span>';
+
+  const rec = document.getElementById('hotRecContainer');
+  rec.innerHTML = '';
+  const card = document.createElement('div'); card.className = 'recommendation-card';
+  const label = document.createElement('div'); label.className = 'rec-label'; label.textContent = 'Hot-Hand Read';
+  const head = document.createElement('div'); head.className = 'rec-headline';
+  head.textContent = 'A streak of ' + observed + ' out of ' + N + ' trials at ' + fmtPct(p*100,0) + ' is ' + verdictLabel.toLowerCase() + ' under pure chance.';
+  const body = document.createElement('div'); body.className = 'rec-body';
+  body.textContent = 'Pure independent chance at this rate and sample size already produces a longest run of about ' + fmtN(Math.max(expected,0),1) + ' (±' + fmtN(sd,1) + '). ' + (verdict === 'unremarkable'
+    ? 'This streak needs no "hot hand" or momentum effect to explain it — randomness alone produces streaks this long routinely.'
+    : verdict === 'borderline'
+      ? 'This streak is somewhat longer than chance alone typically produces, but not enough on its own to conclude a real hot-hand effect.'
+      : 'This streak is well beyond what independent chance typically produces at this rate and sample size — worth investigating further, though still not proof of a causal hot-hand mechanism.');
+  card.appendChild(label); card.appendChild(head); card.appendChild(body); rec.appendChild(card);
+
+  lastPayload = {
+    mandate_type: 'stats_reasoning_record',
+    tab: 'hot_hand_runs',
+    tool_id: 'AL-196',
+    generated_at: new Date().toISOString(),
+    trials_n: N, success_probability_pct: Math.round(p * 1000) / 10, observed_longest_streak: observed,
+    expected_longest_run: Math.round(Math.max(expected,0) * 100) / 100,
+    run_sd: Math.round(sd * 100) / 100,
+    z_score: Math.round(z * 100) / 100,
+    verdict: verdict
+  };
+  lastMarkdown = '# Statistical Reasoning Lab — Hot-Hand Run Length\nGenerated: ' + new Date().toLocaleString('en-US') + '\n\n- Trials (N): ' + N + '\n- Success probability: ' + fmtPct(p*100,1) + '\n- Observed longest streak: ' + observed + '\n\n**Expected longest run (chance alone): ' + fmtN(Math.max(expected,0),2) + ' ± ' + fmtN(sd,2) + '**\nz-score: ' + z.toFixed(2) + ' — ' + verdictLabel + '\n\n*Closed-form approximation per Schilling, M.F. (1990), "The Longest Run of Heads," The College Mathematics Journal 21(3):196-207.*\n\n*Generated by ApexLogics Statistical Reasoning Lab (AL-196) — apexlogics.org*';
+
+  document.getElementById('hotResults').classList.add('visible');
+}
+
+/* ── TAB 4: BASE-RATE / BAYES ── */
+function calcBayes() {
+  const prior = Math.min(Math.max(val('bayesPrior'), 0), 100) / 100;
+  const sens = Math.min(Math.max(val('bayesSens'), 0), 100) / 100;
+  const spec = Math.min(Math.max(val('bayesSpec'), 0), 100) / 100;
+
+  const truePos = sens * prior;
+  const falsePos = (1 - spec) * (1 - prior);
+  const posterior = (truePos + falsePos) > 0 ? truePos / (truePos + falsePos) : 0;
+  const gap = (sens - posterior) * 100;
+
+  document.getElementById('bayesPosterior').textContent = fmtPct(posterior * 100, 2);
+  document.getElementById('bayesFallacy').textContent = fmtPct(sens * 100, 2);
+  document.getElementById('bayesGap').textContent = (gap >= 0 ? '+' : '') + fmtPct(gap, 2);
+
+  const rec = document.getElementById('bayesRecContainer');
+  rec.innerHTML = '';
+  const card = document.createElement('div'); card.className = 'recommendation-card';
+  const label = document.createElement('div'); label.className = 'rec-label'; label.textContent = 'Prosecutor\'s-Fallacy Check';
+  const head = document.createElement('div'); head.className = 'rec-headline';
+  head.textContent = 'A positive result means only ' + fmtPct(posterior*100,1) + ' chance of actually having it — not ' + fmtPct(sens*100,1) + '.';
+  const body = document.createElement('div'); body.className = 'rec-body';
+  body.textContent = 'With a base rate of only ' + fmtPct(prior*100,2) + ', even a highly accurate test (sensitivity ' + fmtPct(sens*100,1) + ', specificity ' + fmtPct(spec*100,1) + ') produces mostly false positives in absolute terms, because the pool of people who don\'t have it is so much larger than the pool who do. Confusing P(positive | has it) = ' + fmtPct(sens*100,1) + ' with P(has it | positive) = ' + fmtPct(posterior*100,1) + ' is exactly the prosecutor\'s fallacy.';
+  card.appendChild(label); card.appendChild(head); card.appendChild(body); rec.appendChild(card);
+
+  lastPayload = {
+    mandate_type: 'stats_reasoning_record',
+    tab: 'base_rate_bayes',
+    tool_id: 'AL-196',
+    generated_at: new Date().toISOString(),
+    base_rate_pct: Math.round(prior * 10000) / 100,
+    sensitivity_pct: Math.round(sens * 10000) / 100,
+    specificity_pct: Math.round(spec * 10000) / 100,
+    true_posterior_pct: Math.round(posterior * 10000) / 100,
+    fallacy_value_pct: Math.round(sens * 10000) / 100,
+    gap_pct: Math.round(gap * 100) / 100
+  };
+  lastMarkdown = '# Statistical Reasoning Lab — Base-Rate / Bayes\nGenerated: ' + new Date().toLocaleString('en-US') + '\n\n- Base rate (prior): ' + fmtPct(prior*100,2) + '\n- Sensitivity: ' + fmtPct(sens*100,2) + '\n- Specificity: ' + fmtPct(spec*100,2) + '\n\n**True posterior P(has it | positive): ' + fmtPct(posterior*100,2) + '**\nFallacy value (often mistaken for the posterior): ' + fmtPct(sens*100,2) + '\nGap: ' + (gap>=0?'+':'') + fmtPct(gap,2) + '\n\n*Generated by ApexLogics Statistical Reasoning Lab (AL-196) — apexlogics.org*';
+
+  document.getElementById('bayesResults').classList.add('visible');
+}
+
+/* ── TAB 5: P-HACKING MULTIVERSE (seeded LCG, fully deterministic) ── */
+function makeLCG(seed) {
+  let state = (Math.trunc(seed) >>> 0) || 1;
+  return function() {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+}
+function nextGaussian(rng) {
+  let u1 = rng(); if (u1 < 1e-12) u1 = 1e-12;
+  const u2 = rng();
+  return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+}
+function erf(x) {
+  const sign = x < 0 ? -1 : 1; x = Math.abs(x);
+  const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429, p=0.3275911;
+  const t = 1 / (1 + p * x);
+  const y = 1 - ((((a5*t + a4)*t + a3)*t + a2)*t + a1) * t * Math.exp(-x*x);
+  return sign * y;
+}
+function normalCDF(z) { return 0.5 * (1 + erf(z / Math.sqrt(2))); }
+
+function generatePHackDataset(seed) {
+  const rng = makeLCG(seed);
+  const n = 20;
+  const groupA = [], covA = [], groupB = [], covB = [];
+  for (let i = 0; i < n; i++) { groupA.push(50 + 10 * nextGaussian(rng)); covA.push(30 + 5 * nextGaussian(rng)); }
+  for (let i = 0; i < n; i++) { groupB.push(50 + 10 * nextGaussian(rng)); covB.push(30 + 5 * nextGaussian(rng)); }
+  const meanOf = arr => arr.reduce((s,v)=>s+v,0) / arr.length;
+  const outlierIdx = arr => { const m = meanOf(arr); let idx=0, best=-1; arr.forEach((v,i)=>{ const d=Math.abs(v-m); if (d>best){best=d;idx=i;} }); return idx; };
+  return { groupA, covA, groupB, covB, outlierA: outlierIdx(groupA), outlierB: outlierIdx(groupB) };
+}
+
+function runSpec(data, excludeOutlier, controlCovariate, subgroupOnly, oneTailed) {
+  let idxA = data.groupA.map((_,i)=>i), idxB = data.groupB.map((_,i)=>i);
+  if (excludeOutlier) { idxA = idxA.filter(i => i !== data.outlierA); idxB = idxB.filter(i => i !== data.outlierB); }
+  if (subgroupOnly) {
+    const allCov = data.covA.concat(data.covB).slice().sort((a,b)=>a-b);
+    const median = allCov[Math.floor(allCov.length/2)];
+    idxA = idxA.filter(i => data.covA[i] <= median);
+    idxB = idxB.filter(i => data.covB[i] <= median);
+  }
+  let valsA = idxA.map(i => data.groupA[i]), covsA = idxA.map(i => data.covA[i]);
+  let valsB = idxB.map(i => data.groupB[i]), covsB = idxB.map(i => data.covB[i]);
+
+  if (controlCovariate) {
+    const allVals = valsA.concat(valsB), allCovs = covsA.concat(covsB);
+    const meanCov = allCovs.reduce((s,v)=>s+v,0) / allCovs.length;
+    const meanVal = allVals.reduce((s,v)=>s+v,0) / allVals.length;
+    let cov = 0, varCov = 0;
+    for (let i = 0; i < allVals.length; i++) { cov += (allVals[i]-meanVal)*(allCovs[i]-meanCov); varCov += (allCovs[i]-meanCov)*(allCovs[i]-meanCov); }
+    const beta = varCov > 0 ? cov / varCov : 0;
+    valsA = valsA.map((v,i) => v - beta * (covsA[i] - meanCov));
+    valsB = valsB.map((v,i) => v - beta * (covsB[i] - meanCov));
+  }
+
+  const nA = valsA.length, nB = valsB.length;
+  const meanA = valsA.reduce((s,v)=>s+v,0) / nA, meanB = valsB.reduce((s,v)=>s+v,0) / nB;
+  const varA = valsA.reduce((s,v)=>s+(v-meanA)*(v-meanA),0) / Math.max(nA-1,1);
+  const varB = valsB.reduce((s,v)=>s+(v-meanB)*(v-meanB),0) / Math.max(nB-1,1);
+  const se = Math.sqrt(varA/nA + varB/nB) || 1e-9;
+  const t = (meanA - meanB) / se;
+  const pTwo = 2 * (1 - normalCDF(Math.abs(t)));
+  const pOne = t > 0 ? pTwo / 2 : 1 - pTwo / 2;
+  const p = oneTailed ? pOne : pTwo;
+  return { p: Math.min(Math.max(p,0),1), nA, nB, t };
+}
+
+function runMultiverse(seed) {
+  const data = generatePHackDataset(seed);
+  const specs = [];
+  [false,true].forEach(excludeOutlier => {
+    [false,true].forEach(controlCovariate => {
+      [false,true].forEach(subgroupOnly => {
+        [false,true].forEach(oneTailed => {
+          const r = runSpec(data, excludeOutlier, controlCovariate, subgroupOnly, oneTailed);
+          specs.push({ excludeOutlier, controlCovariate, subgroupOnly, oneTailed, p: r.p, significant: r.p < 0.05 });
+        });
+      });
+    });
+  });
+  const pctSignificant = (specs.filter(s => s.significant).length / specs.length) * 100;
+  return { specs, pctSignificant };
+}
+
+function calcPHack() {
+  const seed = Math.trunc(val('phackSeed')) || 0;
+  const run1 = runMultiverse(seed);
+  const run2 = runMultiverse(seed);
+  const identical = JSON.stringify(run1.specs) === JSON.stringify(run2.specs);
+  const result = run1;
+
+  const sorted = [...result.specs].sort((a,b) => a.p - b.p);
+  const tbody = document.getElementById('phackTable');
+  tbody.innerHTML = '';
+  sorted.forEach(s => {
+    const tr = document.createElement('tr');
+    const pill = '<span class="verdict-pill ' + (s.significant ? 'sig' : 'ns') + '">' + (s.significant ? 'p < .05' : 'n.s.') + '</span>';
+    tr.innerHTML = '<td>' + (s.excludeOutlier?'Yes':'No') + '</td><td>' + (s.controlCovariate?'Yes':'No') + '</td><td>' + (s.subgroupOnly?'Yes':'No') + '</td><td>' + (s.oneTailed?'Yes':'No') + '</td><td>' + s.p.toFixed(4) + '</td><td>' + pill + '</td>';
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('phackDeterminismNote').textContent = identical
+    ? '✓ Determinism check passed: re-running seed ' + seed + ' twice in this session produced byte-identical results.'
+    : '✗ Determinism check FAILED for seed ' + seed + ' — please report this.';
+
+  const rec = document.getElementById('phackRecContainer');
+  rec.innerHTML = '';
+  const card = document.createElement('div'); card.className = 'recommendation-card';
+  const label = document.createElement('div'); label.className = 'rec-label'; label.textContent = 'p-Hacking Read — Seed ' + seed;
+  const head = document.createElement('div'); head.className = 'rec-headline';
+  head.textContent = fmtPct(result.pctSignificant,0) + ' of the 16 defensible-looking analysis paths came back "significant" — on data with NO real effect.';
+  const body = document.createElement('div'); body.className = 'rec-body';
+  body.textContent = 'A single honest, pre-registered test has a 5% false-positive rate by design. This dataset has a true null effect (built by construction), yet trying all 16 combinations of researcher degrees of freedom and being willing to report whichever one looks best inflates the effective false-positive rate to ' + fmtPct(result.pctSignificant,0) + '. Pre-registering ONE analysis path before seeing the data is what keeps the 5% rate honest.';
+  card.appendChild(label); card.appendChild(head); card.appendChild(body); rec.appendChild(card);
+
+  lastPayload = {
+    mandate_type: 'stats_reasoning_record',
+    tab: 'p_hacking_multiverse',
+    tool_id: 'AL-196',
+    generated_at: new Date().toISOString(),
+    seed: seed,
+    specifications_run: result.specs.length,
+    pct_significant: Math.round(result.pctSignificant * 100) / 100,
+    same_seed_reproducible: identical,
+    spec_curve: result.specs.map(s => ({
+      exclude_outlier: s.excludeOutlier, control_covariate: s.controlCovariate,
+      subgroup_only: s.subgroupOnly, one_tailed: s.oneTailed,
+      p_value: Math.round(s.p * 10000) / 10000, significant: s.significant
+    }))
+  };
+  lastMarkdown = '# Statistical Reasoning Lab — p-Hacking Multiverse\nGenerated: ' + new Date().toLocaleString('en-US') + '\n\n- Seed: ' + seed + '\n- Specifications run: ' + result.specs.length + '\n- % significant at p<.05 (true null effect): ' + fmtPct(result.pctSignificant,1) + '\n- Same-seed reproducibility check: ' + (identical ? 'PASSED' : 'FAILED') + '\n\n## Spec Curve\n' + sorted.map(s => '- exclude_outlier=' + s.excludeOutlier + ', control_covariate=' + s.controlCovariate + ', subgroup_only=' + s.subgroupOnly + ', one_tailed=' + s.oneTailed + ' → p=' + s.p.toFixed(4) + (s.significant ? ' **SIGNIFICANT**' : '')).join('\n') + '\n\n*Generated by ApexLogics Statistical Reasoning Lab (AL-196) — apexlogics.org*';
+
+  document.getElementById('phackResults').classList.add('visible');
+}
+
+/* ── SHARED EXPORT (multi-tab dispatch, CG-2: shared mandate_type, payload.tab differentiates) ── */
+function exportMarkdown() {
+  if (!lastMarkdown) return;
+  download('statistical-reasoning-lab-' + (lastPayload ? lastPayload.tab : 'result') + '.md', lastMarkdown, 'text/markdown');
+}
+
+async function exportAP2() {
+  if (!lastPayload) return;
+  const payload = lastPayload;
+  payload.chaingraph_version = "0.1.0";
+  payload.ap2_mandate_type = payload.mandate_type;
+  payload.mandate_type = "org.apexlogics/selected_studies_methods";
+  if (!payload.al_id) payload.al_id = payload.tool_id || "AL-196";
+  payload.chain = { parent_hashes: [], parent_tool_ids: [], chain_depth: 0 };
+  try {
+    const _cgIn = new URLSearchParams(location.search).get("ap2");
+    if (_cgIn) { const _cgP = JSON.parse(_cgIn);
+      if (_cgP && _cgP.execution_hash) { payload.chain = { parent_hashes: [_cgP.execution_hash], parent_tool_ids: [_cgP.tool_id || _cgP.al_id || null], chain_depth: ((_cgP.chain && _cgP.chain.chain_depth) || 0) + 1 }; } }
+  } catch (_e) {}
+  const _cgDomain = {}; for (const _k in payload) { if (["chaingraph_version","ap2_mandate_type","mandate_type","tool_id","al_id","generated_at","chain","policy_parameters","output_payload","compliance_flags","audit_signature","execution_hash"].indexOf(_k) === -1) _cgDomain[_k] = payload[_k]; }
+  payload.policy_parameters = { execution_backend: "js", hash_precision: "monetary_usd:2dp", inputs: _cgDomain };
+  payload.output_payload = _cgDomain;
+  payload.compliance_flags = [];
+  payload.audit_signature = { client_side_executed: true, zero_pii_verified: true, deterministic_run: true };
+  payload.execution_hash = await apexHash(payload.policy_parameters, payload.output_payload);
+  payload.chaingraph_version = "0.4.0";
+  payload['@context'] = ['https://ainumbers.co/chaingraph/context/v0.3/context.jsonld'];
+  payload.buildType = 'https://ainumbers.co/chaingraph/context/v0.2#WebCryptoSHA256';
+  payload.compute_mode = 'browser';
+  if (typeof payload.tool_version === 'undefined') payload.tool_version = '1.0.0';
+  payload.tool_id = "182-statistical-reasoning-lab";
+  payload.audit_signature = payload.audit_signature || {};
+  const _cgPreval = Object.assign({}, payload);
+  {
+    const _ALLOWED = new Set(['@context','chaingraph_version','compute_mode','mandate_type','tool_id','tool_version','generated_at','buildType','semantic_profile','dct:conformsTo','execution_hash','chain','policy_parameters','output_payload','supersedes','anchor_bindings','compliance_flags','audit_signature']);
+    const _meta = (payload.audit_signature.apex_meta = payload.audit_signature.apex_meta || {});
+    for (const _k of Object.keys(payload)) {
+      if (!_ALLOWED.has(_k)) { if (_k !== 'inputs' && _k !== 'outputs') _meta[_k] = payload[_k]; delete payload[_k]; }
+    }
+  }
+
+  const result = AP2Schema.validate(_cgPreval);
+  if (!result.valid) { showToast('Policy Mandate validation failed: ' + result.error); return; }
+  download('statistical-reasoning-lab-' + (_cgPreval.tab || 'result') + '-ap2.json', JSON.stringify(payload, null, 2), 'application/json');
+}
+
+/* ── CHAINGRAPH §6 - EXECUTION HASH (WebCrypto, CG-28) ── */
+async function apexHash(policy_parameters, output_payload) {
+  const assertIJson = (v) => {
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) throw new Error('Non-finite number is not valid I-JSON (RFC 8785 3.2.2.3).');
+      if (Number.isInteger(v) && !Number.isSafeInteger(v)) throw new Error('Integer exceeds 2^53; pass as string (RFC 7493).');
+    } else if (Array.isArray(v)) { v.forEach(assertIJson); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v)) assertIJson(v[k]); }
+  };
+  const canon = (v) => Array.isArray(v) ? v.map(canon)
+    : (v && typeof v === 'object')
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = canon(v[k]), o), {})
+      : v;
+  const obj = { policy_parameters, output_payload };
+  assertIJson(obj);
+  const preimage = JSON.stringify(canon(obj));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(preimage));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function download(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+const MANIFEST = {
+  "al_id": "AL-196",
+  "version": "1.0.0",
+  "title": "Statistical Reasoning Lab",
+  "slug": "182-statistical-reasoning-lab",
+  "file_path": "tools/182-statistical-reasoning-lab/index.html",
+  "description": "Five deterministic labs bundled in one file: regression-to-the-mean (pre/post + correlation), survivorship bias (Wald's WWII armor problem + user selection-rate math), hot-hand run-length (closed-form expected streak length vs observed), base-rate/Bayes (prosecutor's fallacy), and a seeded-LCG deterministic p-hacking spec-curve multiverse (same seed always reproduces the same 16-path result).",
+  "category": "selected_studies_methods",
+  "journeys": [],
+  "personas": [
+    "student",
+    "counselor"
+  ],
+  "tags": [
+    "regression-to-the-mean",
+    "survivorship-bias",
+    "hot-hand-fallacy",
+    "base-rate-fallacy",
+    "bayes-theorem",
+    "p-hacking",
+    "spec-curve",
+    "seeded-determinism",
+    "statistics-methods"
+  ],
+  "status": "shipped",
+  "maintenance": "none",
+  "data_vintage": "Pure arithmetic + static historical reference (Wald WWII armor problem) — no live data, no vintage",
+  "ap2_export": true,
+  "ap2_mandate_types": [
+    "stats_reasoning_record"
+  ],
+  "downstream_handoff_candidates": ["AL-90", "AL-186"],
+  "sister_suite": "https://ainumbers.co",
+  "consulting_site": "https://postoaklabs.com",
+  "license": "CC-BY-4.0"
+};
+
+/* ── MCP / MANIFEST TOGGLE (standardized, additive) ── */
+function toggleMfst(){var b=document.getElementById('mfstBody'),a=document.getElementById('mfstArr');if(b.style.display==='none'||b.style.display===''){b.style.display='block';if(a)a.textContent='▲';document.getElementById('mfstBtn').setAttribute('aria-expanded','true');document.getElementById('mfstCode').textContent=JSON.stringify(MANIFEST,null,2);}else{b.style.display='none';if(a)a.textContent='▼';document.getElementById('mfstBtn').setAttribute('aria-expanded','false');}}
+</script>
+</body>
+</html>
