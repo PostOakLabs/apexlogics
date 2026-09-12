@@ -395,6 +395,7 @@ function build() {
   cpSync(join(REPO, 'index.html'), join(work, 'index.html'));
   cpSync(join(REPO, 'tools.html'), join(work, 'tools.html'));
   cpSync(join(REPO, 'mcp.html'), join(work, 'mcp.html'));
+  cpSync(join(REPO, 'prompts.html'), join(work, 'prompts.html'));
   cpSync(join(REPO, 'llms.txt'), join(work, 'llms.txt'));
   cpSync(join(REPO, '.well-known', 'mcp.json'), join(work, '.well-known', 'mcp.json'));
   cpSync(join(REPO, '.well-known', 'agent-card.json'), join(work, '.well-known', 'agent-card.json'));

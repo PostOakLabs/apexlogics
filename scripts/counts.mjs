@@ -29,7 +29,15 @@ export function deriveCounts() {
   const workflows = countHtmlFiles('workflows');
   const guides = countHtmlFiles('guides');
 
-  return { tools, showcase, workflows, guides };
+  // Prompts catalog (AL-PROMPTS-JSON). 0 when the file is absent so consumers
+  // that never had it on disk (gate-selftest fixtures) keep their old shape.
+  let prompts = 0;
+  try {
+    const promptsDoc = JSON.parse(readFileSync(join(ROOT, 'mcp', 'showcase-prompts.json'), 'utf8').replace(/\x00+$/, ''));
+    prompts = promptsDoc.count;
+  } catch { prompts = 0; }
+
+  return { tools, showcase, workflows, guides, prompts };
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

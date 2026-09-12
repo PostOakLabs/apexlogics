@@ -178,6 +178,20 @@ const ATTR_RULES = [
   { file: 'mcp.html', key: 'workflows', label: 'workflows section prose',
     regex: /(returns ordered, deep-link URLs for )(\d+)( named multi-tool chains)/,
   },
+
+  // ── prompts.html (example prompts page, AL-PROMPTS-PAGE) ──────────────────
+  // The page renders mcp/showcase-prompts.json at runtime, but its static meta
+  // copy hand-types the prompt count — pinned here against deriveCounts()'s
+  // `prompts` key so the two can't drift apart silently.
+  { file: 'prompts.html', key: 'prompts', label: 'title',
+    regex: /(<title>Example Prompts · ApexLogics · )(\d+)( Decision Prompts That Verify<\/title>)/,
+  },
+  { file: 'prompts.html', key: 'prompts', label: 'meta description',
+    regex: /(<meta name="description" content=")(\d+)( copy-ready example prompts)/,
+  },
+  { file: 'prompts.html', key: 'prompts', label: 'og:description',
+    regex: /(<meta property="og:description" content=")(\d+)( copy-ready example prompts)/,
+  },
 ];
 
 function checkAttrRules() {
