@@ -686,6 +686,51 @@ function build() {
   claim('check-llms-entries.mjs', 'check-llms-entries (deleted one shipped AL-ID entry)', wentRed(join(work, 'scripts', 'check-llms-entries.mjs')));
 }
 
+// ── 13b. check-prompts-json: three fixtures — broken slug, count drift, and a
+//      negative control proving the unmutated catalog stays GREEN (AL-PROMPTS-JSON).
+//      One mutation per fixture, one assertion per mutation, so neither red claim
+//      can hide behind the other (AL-G2-HALFB shape). ─────────────────────────
+{
+  // Shared real-input tree for the prompts gate: script + catalog + every resolve source.
+  function mkPromptsWork(label) {
+    const work = join(tmp, 'prompts-' + label);
+    mkdirSync(join(work, 'scripts'), { recursive: true });
+    mkdirSync(join(work, 'mcp'), { recursive: true });
+    mkdirSync(join(work, 'chaingraph'), { recursive: true });
+    mkdirSync(join(work, '.well-known'), { recursive: true });
+    cpSync(join(REPO, 'scripts', 'check-prompts-json.mjs'), join(work, 'scripts', 'check-prompts-json.mjs'));
+    cpSync(join(REPO, 'suite-registry.json'), join(work, 'suite-registry.json'));
+    cpSync(join(REPO, 'chaingraph', 'chaingraph.json'), join(work, 'chaingraph', 'chaingraph.json'));
+    cpSync(join(REPO, '.well-known', 'mcp.json'), join(work, '.well-known', 'mcp.json'));
+    return work;
+  }
+  // (a) dangle one tools[] slug — the exact dead-reference defect the gate exists for.
+  {
+    const work = mkPromptsWork('slug');
+    const doc = JSON.parse(readFileSync(join(REPO, 'mcp', 'showcase-prompts.json'), 'utf8'));
+    doc.prompts[0].tools[0] = 'zz-phantom-tool-slug';
+    writeFileSync(join(work, 'mcp', 'showcase-prompts.json'), JSON.stringify(doc, null, 2));
+    claim('check-prompts-json.mjs', 'check-prompts-json (dangling tools[] slug)', wentRed(join(work, 'scripts', 'check-prompts-json.mjs')));
+  }
+  // (b) drop one prompt — count drift vs the ratified 31.
+  {
+    const work = mkPromptsWork('count');
+    const doc = JSON.parse(readFileSync(join(REPO, 'mcp', 'showcase-prompts.json'), 'utf8'));
+    doc.prompts = doc.prompts.slice(1); // top-level count left at 31: one mutation, both count claims fire
+    writeFileSync(join(work, 'mcp', 'showcase-prompts.json'), JSON.stringify(doc, null, 2));
+    claim('check-prompts-json.mjs', 'check-prompts-json (prompt count drifted from 31)', wentRed(join(work, 'scripts', 'check-prompts-json.mjs')));
+  }
+  // (c) negative control — the real, unmutated catalog must stay GREEN.
+  {
+    const work = mkPromptsWork('ok');
+    cpSync(join(REPO, 'mcp', 'showcase-prompts.json'), join(work, 'mcp', 'showcase-prompts.json'));
+    const stayedGreen = !wentRed(join(work, 'scripts', 'check-prompts-json.mjs'));
+    claims++; covered.add('check-prompts-json.mjs');
+    if (stayedGreen) console.log('✓ check-prompts-json stays GREEN on the unmutated catalog');
+    else { console.error('✗ check-prompts-json FALSE-POSITIVED on the real catalog — has too many teeth'); fails++; }
+  }
+}
+
 // ── 14. check_index_sync.py: remove a tool card from tools.html ─────────────
 {
   const work = join(tmp, 'idxsync');
