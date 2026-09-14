@@ -243,7 +243,69 @@ for (const rel of ['index.html', 'tools.html']) {
   total += checkHtmlSentinels(rel);
 }
 
+// ── 2c. llms.txt category headers vs actual entries (audit 2026-09-13) ─────
+// Every "## Category: X (N tools)" header must state the number of ### entry
+// rows actually beneath it. These headers are hand-typed prose, not generated,
+// and three had silently drifted (one by 37 — an umbrella section that grew
+// for waves without its header ever moving). Self-consistency is the rule:
+// header count == actual entry count, whatever the registry category mapping.
+function checkLlmsCategoryCounts() {
+  let total = 0;
+  const lines = read(resolve('llms.txt'), 'llms.txt').split('\n');
+  const hdrs = [];
+  lines.forEach((l, i) => { if (l.startsWith('## Category:')) hdrs.push(i); });
+  for (const [n, i] of hdrs.entries()) {
+    const e = hdrs[n + 1] ?? lines.length;
+    const claimed = parseInt((lines[i].match(/\((\d+) tools\)/) || [])[1], 10);
+    if (isNaN(claimed)) continue; // header without a count — nothing to verify
+    const actual = lines.slice(i, e).filter(x => x.startsWith('### #')).length;
+    if (actual !== claimed) {
+      console.log(`DRIFT  llms.txt  category header  claimed=${claimed} actual=${actual}  ${lines[i].slice(0, 60)}`);
+      total++;
+      if (FIX) {
+        lines[i] = lines[i].replace('(' + claimed + ' tools)', '(' + actual + ' tools)');
+        console.log(`WROTE  llms.txt  header set to ${actual}`);
+      }
+    }
+  }
+  if (FIX) write('llms.txt', lines.join('\n'));
+  return total;
+}
+
+// ── 2d. tools.html filter chips vs actual matching cards (audit 2026-09-13) ─
+// Each fc-* filter chip must state the number of .tool-card elements its
+// data-cat actually matches (fc-all = all tool cards). These are the same
+// hand-typed counts the filter UI displays, and ten of eleven had drifted.
+function checkToolsFilterChips() {
+  let total = 0;
+  const html = read(resolve('tools.html'), 'tools.html');
+  const chips = [...html.matchAll(/data-filter="([^"]+)"[\s\S]{0,200}?id="fc-\1">(\d+)</g)];
+  const totalCards = (html.match(/class="tool-card"/g) || []).length;
+  for (const [, cat, val] of chips) {
+    const actual = cat === 'all' ? totalCards
+      : (html.match(new RegExp('data-cat="' + cat + '"', 'g')) || []).length;
+    if (Number(val) !== actual) {
+      console.log(`DRIFT  tools.html  fc-${cat}  expected=${actual} got=${val}`);
+      total++;
+      if (FIX) htmlDrift.set('fc-' + cat, String(actual));
+    }
+  }
+  if (FIX && htmlDrift.size) {
+    let out = html;
+    for (const [id, val] of htmlDrift) {
+      out = out.replace(new RegExp('(id="fc-' + id + '">)\\d+(<)'), '$1' + val + '$2');
+    }
+    write('tools.html', out);
+    console.log('WROTE  tools.html (filter chips)');
+  }
+  return total;
+}
+
+const htmlDrift = new Map();
+
 total += checkAttrRules();
+total += checkLlmsCategoryCounts();
+total += checkToolsFilterChips();
 
 // ── 4. Result ────────────────────────────────────────────────────────────────
 

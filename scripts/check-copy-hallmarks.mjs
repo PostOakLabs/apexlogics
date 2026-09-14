@@ -58,9 +58,14 @@ const GLOBS = [
   'tools/*/index.html',
   'showcase/*/index.html',
   'chaingraph/*.html',
-  'workflows/*/index.html',
-  'guides/*/index.html',
+  'workflows/*.html',
+  'guides/*.html',
   '*.html',
+  'llms.txt',
+  'suite-registry.json',
+  'tools/*/manifest.json',
+  '.well-known/mcp.json',
+  '.well-known/agent-card.json',
 ];
 
 function expandGlob(pattern) {
@@ -98,7 +103,7 @@ function expandGlob(pattern) {
   }
   const suffix = filePart.replace('*', '');
   return entries
-    .filter(name => name.endsWith(suffix) && name !== suffix)
+    .filter(name => name.endsWith(suffix) && (suffix.includes('*') || name === suffix))
     .filter(name => statSync(join(baseAbs, name)).isFile())
     .map(name => join(dirPart, name));
 }
