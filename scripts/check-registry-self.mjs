@@ -32,6 +32,15 @@ let failures = 0;
 const fail = msg => { console.log(`FAIL  ${msg}`); failures++; };
 const ok = msg => console.log(`OK    ${msg}`);
 
+// ── 0. mojibake detector (audit 2026-09-12; AL-REGISTRY-MOJIBAKE class) ──
+// The registry is the agent-facing SSOT. One save through a cp1252 round-trip
+// turns §/—/→/· into Â§/â€"/â†'/Â· and ships the corruption to every consumer
+// (found 2026-09-12: 206 hits across 64 tool rows). A clean registry contains
+// none of the mis-decoded lead characters (Ã, Â, â) — fail the moment any appear.
+const mojiHits = (raw.match(/[ÃÂâ]/g) || []).length;
+if (mojiHits === 0) ok('no mojibake (Ã/Â/â lead characters) in suite-registry.json');
+else fail('mojibake: ' + mojiHits + ' mis-decoded character(s) (Ã/Â/â) — repair via the cp1252-to-UTF-8 decode map; never delete the affected rows');
+
 const tools = reg.tools;
 const shipped = tools.filter(t => t.status === 'shipped').length;
 const showcase = tools.filter(t => t.status === 'showcase').length;

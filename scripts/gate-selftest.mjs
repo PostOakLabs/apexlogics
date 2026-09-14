@@ -476,6 +476,22 @@ function build() {
   claim('check-registry-self.mjs', 'check-registry-self (mcp.json last_updated older than registry)', wentRed(join(work, 'scripts', 'check-registry-self.mjs')));
 }
 
+// ── 9e. check-registry-self: mojibake (cp1252-round-trip corruption) ────────
+{
+  const work = join(tmp, 'regself-moji');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, '.well-known'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-registry-self.mjs'), join(work, 'scripts', 'check-registry-self.mjs'));
+  cpSync(join(REPO, '.well-known', 'mcp.json'), join(work, '.well-known', 'mcp.json'));
+  const raw = readFileSync(join(REPO, 'suite-registry.json'), 'utf8').replace(/ +$/, '');
+  const reg = JSON.parse(raw);
+  // The real defect shape (audit 2026-09-12): UTF-8 §/— mis-decoded as Â§/â€" in
+  // a tool description — ships to every agent consumer, invisible to every other gate.
+  reg.tools[0].description = 'Compare federal repayment plansÃ¢Â€Â”IDR, PSLF, standardÂ§ by monthly payment.';
+  writeFileSync(join(work, 'suite-registry.json'), JSON.stringify(reg, null, 2));
+  claim('check-registry-self.mjs', 'check-registry-self (mojibake in a tool description)', wentRed(join(work, 'scripts', 'check-registry-self.mjs')));
+}
+
 // ── 10. check-no-storage: inject a localStorage write ───────────────────────
 {
   const work = join(tmp, 'nostorage');
