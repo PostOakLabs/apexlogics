@@ -67,6 +67,21 @@ jobs:
       - name: 🧪 JS syntax gate (CONTRACT §7.2 / CG-25 — blocking)
         run: node scripts/check_tools.js
 
+      - name: 🧱 HTML structural-parse gate (RC-2 / PRJ-004 — blocking)
+        # Fails the build on broken document structure: unclosed elements
+        # (implied end tags like li/p/option tolerated per HTML5), stray or
+        # premature end tags, content after </html>, duplicate attributes,
+        # early-truncated quoted attribute values, and `--` inside comments.
+        # Zero-dependency tokenizer (scripts/check-html-structure.mjs) —
+        # check_tools.js only parses the contents of <script> blocks, so the
+        # CG-36 footer restyle (4be4e80) shipped footerfooter selector damage,
+        # 41 pages of parser errors, and tool 69 rendering ~300 lines of JS as
+        # visible page text for ~111 days while every gate stayed green. Pages
+        # come from scripts/_pages.mjs (inventory gate below). No baseline, no
+        # exception list — landed baselined at 0; bulk edits must run this gate
+        # before commit (RC-2 standing order).
+        run: node scripts/check-html-structure.mjs
+
       - name: 🧾 AP2 validator-call gate (AL-TOOLS-FIX-2 — blocking)
         # check_tools.js only parses JS syntax — it never resolved AP2Schema.<member>
         # against the schema literal, which is how tools 84–88 shipped a call to a
