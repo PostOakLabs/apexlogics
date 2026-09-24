@@ -775,6 +775,93 @@ function build() {
   claim('check-chaingraph-validity.mjs', 'check-chaingraph-validity (dangling chain-step tool_id)', wentRed(join(work, 'scripts', 'check-chaingraph-validity.mjs'), { cwd: work }));
 }
 
+// ── 10g. check-html-structure: one RED fixture per violation class, plus a
+//      GREEN implied-end negative control (RC-2 / PRJ-004). The gate parses
+//      document structure with a small HTML5-flavoured tokenizer, so the
+//      fixtures below are the exact shapes of the defects it exists for:
+//      the CG-36 extra-</div> cohort, tool 69's stranded JS after </html>,
+//      tool 125's duplicate id, tool 74's backslash-escaped apostrophe, and
+//      tool 08's `<!-- ---- x ---- -->` banners. The GREEN fixture proves the
+//      gate tolerates what browsers tolerate (implied end tags li/p/option,
+//      `<` inside script strings, svg self-closing) — without that control a
+//      strictness regression would fail every shipped page and get the gate
+//      disabled instead of fixed.
+{
+  // copies the gate + the page-inventory module it imports; fixture pages use
+  // a SHAPES-listed path (tools/<slug>/index.html) so listShippedPages() sees it
+  function mkStructWork(label, pageBody) {
+    const work = join(tmp, 'struct-' + label);
+    mkdirSync(join(work, 'scripts'), { recursive: true });
+    mkdirSync(join(work, 'tools', 'zz-struct'), { recursive: true });
+    cpSync(join(REPO, 'scripts', 'check-html-structure.mjs'), join(work, 'scripts', 'check-html-structure.mjs'));
+    cpSync(join(REPO, 'scripts', '_pages.mjs'), join(work, 'scripts', '_pages.mjs'));
+    writeFileSync(join(work, 'tools', 'zz-struct', 'index.html'), pageBody);
+    return work;
+  }
+
+  // (a) stray end tag — the 26-page CG-36 cohort shape (one extra </div>)
+  claim('check-html-structure.mjs', 'check-html-structure (a: stray/premature </div> with no open <div>)',
+    wentRed(join(mkStructWork('stray',
+      '<!doctype html><html><body><div class="w"><p>x</p></div>\n</div>\n</body></html>\n'),
+      'scripts/check-html-structure.mjs')));
+
+  // (b) unclosed element — the 15-page tool-wrapper cohort shape
+  claim('check-html-structure.mjs', 'check-html-structure (b: unclosed <div> still open at </body>)',
+    wentRed(join(mkStructWork('unclosed',
+      '<!doctype html><html><body><div class="tool-wrapper"><p>x</p>\n</body></html>\n'),
+      'scripts/check-html-structure.mjs')));
+
+  // (c) content after </html> — the tool-69 shape (JS stranded outside the document)
+  claim('check-html-structure.mjs', 'check-html-structure (c: raw JS stranded after </html>)',
+    wentRed(join(mkStructWork('afterhtml',
+      '<!doctype html><html><body><script>var a = 1;</script></body></html>\nedbackText = 1;\n</script></body></html>\n'),
+      'scripts/check-html-structure.mjs')));
+
+  // (d) duplicate attribute — the tool-125 shape (id twice on one <select>)
+  claim('check-html-structure.mjs', 'check-html-structure (d: duplicate id attribute on one tag)',
+    wentRed(join(mkStructWork('dupattr',
+      '<!doctype html><html><body><select id="eligibilityPct" id="eligPct"></select></body></html>\n'),
+      'scripts/check-html-structure.mjs')));
+
+  // (e) garbage after quoted attribute value — the tool-74 shape
+  //     (backslash escape is not an HTML escape; the value ends at the first quote)
+  claim('check-html-structure.mjs', 'check-html-structure (e: backslash-escaped apostrophe truncates a quoted value)',
+    wentRed(join(mkStructWork('attrgarbage',
+      "<!doctype html><html><body><textarea placeholder='e.g. \"She don\\'t like it.\"'></textarea></body></html>\n"),
+      'scripts/check-html-structure.mjs')));
+
+  // (f) `--` inside comment content — the tool-08 banner shape
+  claim('check-html-structure.mjs', 'check-html-structure (f: `<!-- ---- x ---- -->` double-dash comment)',
+    wentRed(join(mkStructWork('comment',
+      '<!doctype html><html><body><!-- ---- INPUT GRID ---- --><p>x</p></body></html>\n'),
+      'scripts/check-html-structure.mjs')));
+
+  // (g) GREEN negative control — implied end tags (li/p/option/dd/dt/tr/td),
+  //     `<` inside script, svg `/>` self-closing, quoted `>` in attributes:
+  //     all legal HTML that a naive tag-counter would flag. Must stay GREEN.
+  const workOk = mkStructWork('implied-ok', `<!doctype html><html><body>
+  <ul>
+    <li>First
+    <li>Second has a <p>paragraph inside the item
+    <li>Third
+  </ul>
+  <select>
+    <option value="1">One
+    <option value="2">Two
+  </select>
+  <dl><dt>Term<dd>Definition</dl>
+  <table><tr><td>a<td>b<tr><td>c<td>d</table>
+  <svg width="12" height="12"><path d="M0 0 L12 12"/><circle cx="6" cy="6" r="5"/></svg>
+  <div onclick="if (a > b) go('<em>hi</em>')">attr with gt</div>
+  <script>if (a < b && c > d) { const s = "</not-a-tag>"; }</script>
+  </body></html>
+  `);
+  const stayedGreen = !wentRed(join(workOk, 'scripts', 'check-html-structure.mjs'));
+  claims++; covered.add('check-html-structure.mjs');
+  if (stayedGreen) console.log('✓ check-html-structure stays GREEN on implied end tags (li/p/option/dd/dt/tr/td), `<` in script, svg self-closing');
+  else { console.error('✗ check-html-structure FALSE-POSITIVED on implied-end HTML — has too many teeth'); fails++; }
+}
+
 // ── untestable gates — named honestly rather than silently dropped from the
 //    coverage claim (AL-AUDIT-GATE-INTEGRITY §C: gen-sitemap needs full git
 //    history, check-chaingraph-parity needs live network; neither is
