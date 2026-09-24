@@ -419,6 +419,80 @@ jobs:
             exit 1
           fi
 
+      - name: 🗞️ Trigger worker regenerate+deploy (RC-3b)
+        # The worker's served catalog is regenerated from the LIVE registry only
+        # when the worker repo deploys (generate.mjs fetches apexlogics.org).
+        # A site tool-landing therefore leaves the worker stale until someone
+        # remembers to push it — the 2026-09-12 same-day race shipped a catalog
+        # missing AL-192..195 with all-null mandate types for months (RC-3,
+        # ROOT-CAUSE-REVIEW-2026-09-24). Dispatch the worker so convergence is
+        # automatic. Inert until WORKER_DISPATCH_TOKEN (fine-grained PAT with
+        # Actions: write on PostOakLabs/apexlogics-mcp-worker) is added to repo
+        # secrets; the worker's deploy workflow listens for
+        # repository_dispatch type site-registry-changed.
+        env:
+          WORKER_DISPATCH_TOKEN: ${{ secrets.WORKER_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "${WORKER_DISPATCH_TOKEN:-}" ]; then
+            echo "::warning::WORKER_DISPATCH_TOKEN not set — worker not dispatched (RC-3b inert until Tim provisions the PAT)"
+            exit 0
+          fi
+          CODE=$(curl -s -o /tmp/dispatch.out -w "%{http_code}" -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $WORKER_DISPATCH_TOKEN" \
+            https://api.github.com/repos/PostOakLabs/apexlogics-mcp-worker/dispatches \
+            -d '{"event_type":"site-registry-changed"}')
+          if [ "$CODE" != "204" ]; then
+            echo "::warning::worker dispatch returned HTTP $CODE (see /tmp/dispatch.out) — continuing; the live probe below still gates"
+          else
+            echo "✅ worker dispatched (HTTP 204) — regenerating from the registry just deployed"
+          fi
+
+      - name: 📡 Live MCP catalog probe (RC-3a — blocking)
+        # Gates the deploy against what AGENTS actually see: the live worker
+        # catalog must agree with the registry just shipped. Fails on
+        # total_matches drift, null ap2_type on the sampled page, or mojibake
+        # in served copy. Polls up to ~5 min for worker convergence first
+        # (the dispatch above fires the worker's regenerate+deploy).
+        run: |
+          set -euo pipefail
+          REG_ROWS=$(python3 -c "import json; print(len(json.load(open('suite-registry.json'))['tools']))")
+          TOTAL=""
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            RESP=$(curl -s -m 30 -X POST https://mcp.apexlogics.org/mcp \
+              -H "accept: application/json, text/event-stream" \
+              -H "content-type: application/json" \
+              -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_apexlogics_tools","arguments":{"limit":50}}}')
+            READOUT=$(printf '%s' "$RESP" | python3 -c "
+          import sys, json
+          j = json.load(sys.stdin)
+          try:
+              d = json.loads(j['result']['content'][0]['text'])
+          except Exception as e:
+              print('PARSE_FAIL', '', '', e); raise SystemExit
+          tools = d.get('tools', [])
+          nulls = sum(1 for t in tools if not t.get('ap2_type'))
+          moji = sum(1 for t in tools if any(m in (t.get('title','') + ' ' + t.get('description','')) for m in ('â€', 'Â', 'Ã')))
+          print(d.get('total_matches'), nulls, moji)
+          ")
+            TOTAL=$(printf '%s' "$READOUT" | cut -d' ' -f1)
+            NULLS=$(printf '%s' "$READOUT" | cut -d' ' -f2)
+            MOJI=$(printf '%s' "$READOUT" | cut -d' ' -f3)
+            if [ "$TOTAL" = "$REG_ROWS" ]; then break; fi
+            echo "attempt $i: live total_matches=${TOTAL:-?} vs registry=$REG_ROWS — waiting for worker convergence"
+            sleep 30
+          done
+          echo "live total_matches=$TOTAL | registry rows=$REG_ROWS | null ap2_type on page: $NULLS | mojibake rows: $MOJI"
+          if [ "$TOTAL" != "$REG_ROWS" ]; then
+            echo "::error::live MCP catalog ($TOTAL) != registry ($REG_ROWS) — the worker is stale (RC-3). Check the worker repo's deploy."
+            exit 1
+          fi
+          if [ "${NULLS:-0}" != "0" ] || [ "${MOJI:-0}" != "0" ]; then
+            echo "::error::live catalog has $NULLS null ap2_type and $MOJI mojibake rows on the sampled page — worker generator regression (RC-3)."
+            exit 1
+          fi
+          echo "✅ live MCP catalog agrees with the registry (RC-3a)"
+
       - name: 📊 Deploy summary
         run: |
           TOOL_COUNT=$(find tools -maxdepth 2 -name "index.html" | wc -l)
