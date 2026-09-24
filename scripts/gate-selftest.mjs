@@ -16,9 +16,9 @@ const NODE = process.execPath;
 let fails = 0;
 
 // Run a node script; return true if it exited NON-zero (i.e. the gate went red).
-function wentRed(scriptPath, { env = {}, cwd = REPO } = {}) {
+function wentRed(scriptPath, { args = [], env = {}, cwd = REPO } = {}) {
   try {
-    execFileSync(NODE, [scriptPath], { cwd, env: { ...process.env, ...env }, stdio: 'pipe' });
+    execFileSync(NODE, [scriptPath, ...args], { cwd, env: { ...process.env, ...env }, stdio: 'pipe' });
     return false; // exit 0 — gate stayed green
   } catch {
     return true; // non-zero exit — gate went red
@@ -779,6 +779,18 @@ function build() {
 //    coverage claim (AL-AUDIT-GATE-INTEGRITY §C: gen-sitemap needs full git
 //    history, check-chaingraph-parity needs live network; neither is
 //    reproducible via filesystem defect injection in this harness) ─────────
+// ── _pages inventory: stray html no SHAPES entry accounts for (RC-1) ────────
+{
+  const work = join(tmp, 'pages');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'tools', '01-x'), { recursive: true });
+  cpSync(join(REPO, 'scripts', '_pages.mjs'), join(work, 'scripts', '_pages.mjs'));
+  writeFileSync(join(work, 'tools', '01-x', 'index.html'), '<html></html>');
+  writeFileSync(join(work, 'index.html'), '<html></html>');
+  // corrupt: a flat stray html in tools/ — a page shape SHAPES doesn't list
+  writeFileSync(join(work, 'tools', 'zz-stray.html'), '<html></html>');
+  claim('_pages.mjs', '_pages inventory (stray html unaccounted by SHAPES)', wentRed(join(work, 'scripts', '_pages.mjs'), { args: ['--check'], cwd: work }));
+}
 untestable.add('gen-sitemap.mjs');
 untestable.add('check-chaingraph-parity.mjs');
 console.log('⚠ gen-sitemap.mjs: UNTESTABLE by this harness — needs full git history (fetch-depth: 0), not exercisable via filesystem injection.');
