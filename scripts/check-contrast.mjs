@@ -13,59 +13,11 @@
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { resolve, dirname, relative, join } from 'path';
 import { fileURLToPath } from 'url';
+import { listShippedPages } from './_pages.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const AA_SMALL_TEXT = 4.5;
-
-const GLOBS = [
-  'tools/*/index.html',
-  'showcase/*/index.html',
-  'chaingraph/*.html',
-  'workflows/*/index.html',
-  'guides/*/index.html',
-  '*.html',
-];
-
-function expandGlob(pattern) {
-  const [dirPart, filePart] = pattern.includes('/')
-    ? [pattern.slice(0, pattern.lastIndexOf('/')), pattern.slice(pattern.lastIndexOf('/') + 1)]
-    : ['', pattern];
-
-  if (dirPart.includes('*')) {
-    const baseDir = dirPart.slice(0, dirPart.indexOf('*'));
-    const baseAbs = resolve(ROOT, baseDir);
-    let entries;
-    try {
-      entries = readdirSync(baseAbs);
-    } catch {
-      return [];
-    }
-    return entries
-      .filter(name => statSync(join(baseAbs, name)).isDirectory())
-      .map(name => join(baseDir, name, filePart))
-      .filter(p => {
-        try {
-          return statSync(resolve(ROOT, p)).isFile();
-        } catch {
-          return false;
-        }
-      });
-  }
-
-  const baseAbs = resolve(ROOT, dirPart || '.');
-  let entries;
-  try {
-    entries = readdirSync(baseAbs);
-  } catch {
-    return [];
-  }
-  const suffix = filePart.replace('*', '');
-  return entries
-    .filter(name => name.endsWith(suffix) && name !== suffix)
-    .filter(name => statSync(join(baseAbs, name)).isFile())
-    .map(name => join(dirPart, name));
-}
 
 function linearize(c) {
   c /= 255;
@@ -123,11 +75,8 @@ function scanFile(absPath) {
 }
 
 let allViolations = [];
-for (const pattern of GLOBS) {
-  const files = expandGlob(pattern);
-  for (const f of files) {
-    allViolations.push(...scanFile(resolve(ROOT, f)));
-  }
+for (const rel of listShippedPages()) {
+  allViolations.push(...scanFile(resolve(ROOT, rel)));
 }
 
 if (allViolations.length === 0) {

@@ -175,10 +175,26 @@ jobs:
         # sRGB-linearised relative luminance. No baseline, no exception list.
         run: node scripts/check-contrast.mjs
 
+      - name: 🗂️ Page-inventory gate (RC-1 — blocking)
+        # Fails the build if the canonical page inventory (scripts/_pages.mjs)
+        # disagrees with a shape-agnostic walk of every *.html on disk — i.e. a
+        # page shape exists that the inventory doesn't account for, or an
+        # inventory shape has no file behind it. Tripwire for the RC-1 defect
+        # class: check-links/check-no-storage/check-contrast each carried a
+        # copied GLOBS array whose workflows/guides shapes matched nothing on
+        # disk, leaving 54 shipped pages ungated (PRJ-001) while these comments
+        # claimed coverage. Gates import listShippedPages() from _pages.mjs;
+        # nobody declares page globs anymore.
+        run: node scripts/_pages.mjs --check
+
       - name: 🔗 Dead-link gate (AL-LINKGATE — blocking)
         # Fails the build on any href/src across tool, showcase, chaingraph,
         # workflow, guide, and root HTML that resolves to a missing target.
-        # No baseline, no exception list.
+        # Also validates fragments: href="#foo" must match an id=/name= in the
+        # same page, page.html#foo must match one in the target page, and a
+        # bare href="#" is flagged as a placeholder. Pages come from
+        # scripts/_pages.mjs (inventory gate above). No baseline, no exception
+        # list.
         run: node scripts/check-links.mjs
 
       - name: 🏷️ Brand/title gate (AL-BRAND-TITLES — blocking)
