@@ -1,0 +1,36 @@
+# Workflow YAML lint — parses every file in .github/workflows/*.yml with
+# python3/PyYAML and fails on any parse error.
+#
+# WHY THIS EXISTS (the 2026-09-24 silent-red runs): when deploy.yml itself has
+# a YAML syntax error, GitHub Actions cannot load the file at all — the whole
+# preflight gate suite silently doesn't run, PRs show no red X, and broken CI
+# can merge looking green. No step INSIDE deploy.yml can catch that class, so
+# this check lives in its own minimal file: whatever is wrong with any other
+# workflow file (including deploy.yml), this workflow still parses and runs,
+# and turns the parse error into a loud red X. This step in deploy.yml's own
+# preflight job is the complement for the cases where deploy.yml DOES parse:
+# it catches breakage in the OTHER workflow files before the gates spend
+# minutes running.
+#
+# Keep this file dependency-free (no actions beyond checkout, no install
+# steps) and single-purpose — PyYAML is preinstalled on ubuntu-latest.
+
+name: Workflow YAML Lint
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  workflow-yaml-lint:
+    name: YAML-parse every workflow file
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 YAML-parse .github/workflows/*.yml
+        run: python3 -c "import yaml,glob; [yaml.safe_load(open(f, encoding='utf-8')) for f in glob.glob('.github/workflows/*.yml')]"
