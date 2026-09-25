@@ -24,6 +24,16 @@ jobs:
           # boundary commit (AL-SITEMAP-LASTMOD).
           fetch-depth: 0
 
+      - name: 🐍 YAML-parse every workflow file (silent-red guard — RC-2 class, 2026-09-24)
+        # Fails the build if ANY .github/workflows/*.yml fails to parse, before
+        # the gates spend minutes running. This catches breakage in the other
+        # workflow files (and in deploy.yml itself, whenever deploy.yml is still
+        # parseable enough to run this step). The complement — deploy.yml so
+        # broken that this file never loads — is covered by the standalone
+        # lint.yml workflow, which parses the same globs from its own file and
+        # therefore still runs (and goes red) even when this one can't.
+        run: python3 -c "import yaml,glob; [yaml.safe_load(open(f, encoding='utf-8')) for f in glob.glob('.github/workflows/*.yml')]"
+
       - name: 🟢 Setup Node
         uses: actions/setup-node@v4
         with:
