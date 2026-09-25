@@ -467,11 +467,11 @@ jobs:
             -H "Authorization: Bearer $WORKER_DISPATCH_TOKEN" \
             https://api.github.com/repos/PostOakLabs/apexlogics-mcp-worker/dispatches \
             -d '{"event_type":"site-registry-changed"}')
-          if [ "$CODE" != "204" ]; then
-            echo "::warning::worker dispatch returned HTTP $CODE (see /tmp/dispatch.out) — continuing; the live probe below still gates"
-          else
-            echo "✅ worker dispatched (HTTP 204) — regenerating from the registry just deployed"
-          fi
+          case "$CODE" in
+            2*) echo "✅ worker dispatched (HTTP $CODE) — regenerating from the registry just deployed" ;;
+            *) echo "::error::worker dispatch returned HTTP $CODE (see /tmp/dispatch.out) — the worker will not converge; check WORKER_DISPATCH_TOKEN scope/expiry (Tier 2)"
+               exit 1 ;;
+          esac
 
       - name: 📡 Live MCP catalog probe (RC-3a — blocking)
         # Gates the deploy against what AGENTS actually see: the live worker
