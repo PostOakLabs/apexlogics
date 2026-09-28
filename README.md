@@ -85,9 +85,9 @@ Server source: [`apexlogics-mcp-worker`](https://github.com/PostOakLabs/apexlogi
 
 ## Verifiable artifacts
 
-Deterministic isn't a claim you have to take on trust here. Every tool emits a typed Policy Mandate carrying a verifiable `execution_hash` and a chain block, indexed in [`chaingraph/chaingraph.json`](chaingraph/chaingraph.json) — 151 tool nodes, 42 chains, and 13 persona journeys with verified artifact pass-through. Recompute the hash from the same inputs and you get the same value, or you learn the answer moved.
+Deterministic isn't a claim you have to take on trust here. Every tool emits a typed Policy Mandate carrying a verifiable `execution_hash` and a chain block, indexed in [`chaingraph/chaingraph.json`](chaingraph/chaingraph.json) — 148 tool nodes, 42 chains, and 13 persona journeys with verified artifact pass-through. Recompute the hash from the same inputs and you get the same value, or you learn the answer moved.
 
-**17 of those nodes go further and carry real zero-knowledge compute proofs** (risc0, `groth16-bn254` receipts), which prove the calculation itself ran as specified rather than merely hashing whatever it produced. A further 12 are proof-ready and awaiting a prover pass.
+**17 of those nodes go further and carry real zero-knowledge compute proofs** (risc0, `groth16-bn254` receipts), which prove the calculation itself ran as specified rather than merely hashing whatever it produced. A further 12 are catalog-marked `compute_proof_ready: "deferred"` - no prover pass yet; the worker repo's [`data/proof-fixtures.json`](https://github.com/PostOakLabs/apexlogics-mcp-worker/blob/master/data/proof-fixtures.json) is the authoritative proven list.
 
 The artifact format is [OpenChainGraph](https://github.com/PostOakLabs/chaingraph), the open standard shared with [AINumbers.co](https://github.com/PostOakLabs/ainumbers) and [OmegaCentauri.me](https://github.com/PostOakLabs/OCS). Receipts verify in your own CI with [`ocg-verify-action`](https://github.com/PostOakLabs/ocg-verify-action) — zero dependencies, no call back to us. Browse the graph at [`chaingraph/chaingraph-hub.html`](chaingraph/chaingraph-hub.html).
 
@@ -97,7 +97,7 @@ The artifact format is [OpenChainGraph](https://github.com/PostOakLabs/chaingrap
 
 | Item | Detail |
 |------|--------|
-| Build contract | `CLAUDE.md` in parent folder (internal) |
+| Build contract | [`CLAUDE.md`](CLAUDE.md) in this repo |
 | Storage | Minimal `sessionStorage` only - no `localStorage`, cookies, or IndexedDB |
 | Network | Zero `fetch`, CDN, WebWorker, or external API calls after page load |
 | PII banner | All tools display: *"🔒 All inputs are processed locally in your browser. Nothing is transmitted, stored, or logged. Inputs disappear when you close the tab."* |
