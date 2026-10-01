@@ -46,7 +46,7 @@ const stripBanner = (s) => norm(s).replace(
 // schema:    SHA-256 of the whole file. Source of record:
 //   AINumbers/repo/chaingraph/standard/openchain-graph-v0.4.schema.json
 const PIN = {
-  hashBody: '9d60ba8b9a14900b9cc1f4878de4e92f5d8e622a128413840be9ea94bbae1cfb',
+  hashBody: 'ef6fd5a1f28131dce8ca5ea3adcd1662e93cec682b7cecb3759a9647b6a56f04',
   schema:   'a30d57da0d4bf652144b37b4ae93bafc9f06fc6aa1dd0097bb65c6eea194a0e6',
 };
 
