@@ -12,7 +12,8 @@
    Sources (2026): IRS Rev. Proc. 2025-32 (brackets/std ded/AMT/QBI/LTCG),
    IRS Notice 2025-67 (retirement limits), IRS Rev. Proc. 2025-19 (HSA),
    SSA 2026 COLA fact sheet (wage base), IRS IR-2026 (mileage 72.5¢),
-   ED DCL GEN-26-01 (Pell), VA AY2025-26/FY2026 (GI Bill), P.L. 119-21 / OBBBA.
+   ED DCL GEN-26-01 (Pell), VA AY2025-26/FY2026 (GI Bill), P.L. 119-21 / OBBBA,
+   FHFA "Conforming Loan Limit Values for 2026" news release (Nov 25, 2025).
    ============================================================================ */
 
 const APEX_2026 = {
@@ -114,7 +115,11 @@ const APEX_2026 = {
     privateAnnualCap: 29920.95,    // [V] Post-9/11 AY2025-26 (eff. Aug 1, 2025)
     booksMonthly: 41.67,           // [S]
     mgibCh30Monthly: 2518          // [V] MGIB Ch.30 full-time FY2026 (eff. Oct 1, 2025)
-  }
+  },
+
+  /* --- FHFA conforming loan limits (2026) ----------------------------- */
+  FHFA_CLL_BASELINE: { 1: 832750, 2: 1066250, 3: 1288800, 4: 1601750 }, // [V] FHFA "Conforming Loan Limit Values for 2026" news release (Nov 25, 2025); baseline, most of the U.S.
+  FHFA_CLL_HIGH_COST_PCT: 150,     // [V] same release: high-cost ceiling = 150% of baseline (1-unit ceiling $1,249,125)
 };
 
 /* Usage: copy the needed block inline into a tool; reference APEX_2026.X.

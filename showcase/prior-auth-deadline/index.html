@@ -203,13 +203,6 @@
         </select>
       </div>
       <div class="field">
-        <label for="calendarBasis">Calendar basis</label>
-        <select id="calendarBasis">
-          <option value="calendar" selected>Calendar days</option>
-          <option value="business">Business days</option>
-        </select>
-      </div>
-      <div class="field">
         <label for="receivedDay">Received day index</label>
         <input type="number" id="receivedDay" value="1" step="1" />
         <span class="field-hint">An integer day index you control, for example day 1 of the review period. No calendar date is used, which is what keeps the hash reproducible.</span>
@@ -253,7 +246,6 @@
     <div class="card">
       <div class="card-title">Detail</div>
       <div class="row"><span class="row-label">Request type</span><span class="row-val" id="dRequestType">--</span></div>
-      <div class="row"><span class="row-label">Calendar basis</span><span class="row-val" id="dCalendar">--</span></div>
       <div class="row"><span class="row-label">Received day</span><span class="row-val" id="dReceived">--</span></div>
       <div class="row"><span class="row-label">Decision day</span><span class="row-val" id="dDecision">--</span></div>
       <div class="row"><span class="row-label">Status</span><span class="row-val" id="dStatus">--</span></div>
@@ -346,9 +338,6 @@ function calculate() {
   let requestType = $('requestType').value;
   if (requestType !== 'standard' && requestType !== 'expedited') requestType = 'standard';
 
-  let calendarBasis = $('calendarBasis').value;
-  if (calendarBasis !== 'calendar' && calendarBasis !== 'business') calendarBasis = 'calendar';
-
   let receivedDay = parseInt($('receivedDay').value, 10);
   if (!Number.isFinite(receivedDay)) receivedDay = 0;
 
@@ -357,21 +346,15 @@ function calculate() {
   const hasDecision = String(decisionRaw).trim() !== '' && Number.isFinite(decisionDay);
   if (!hasDecision) decisionDay = 0;
 
-  /* Frozen SLA table */
+  /* Frozen SLA table, calendar days (CMS-0057-F: seven calendar days standard, 72 hours expedited) */
   const slaDays = requestType === 'expedited' ? 3 : 7;
 
-  let deadlineDay;
-  if (calendarBasis === 'business') {
-    /* frozen five-in-seven expansion */
-    deadlineDay = receivedDay + Math.floor(slaDays / 5) * 7 + (slaDays % 5);
-  } else {
-    deadlineDay = receivedDay + slaDays;
-  }
+  const deadlineDay = receivedDay + slaDays;
 
   const daysToDeadline = hasDecision ? (deadlineDay - decisionDay) : (deadlineDay - receivedDay);
   const status = !hasDecision ? 'pending' : (daysToDeadline >= 0 ? 'on_time' : 'overdue');
 
-  _lastInputs = { requestType, calendarBasis, receivedDay, decisionDay, hasDecision };
+  _lastInputs = { requestType, receivedDay, decisionDay, hasDecision };
   _lastResults = { slaDays, deadlineDay, daysToDeadline, status };
 
   render();
@@ -393,7 +376,6 @@ function render() {
   $('rSla').textContent      = r.slaDays + ' days';
 
   $('dRequestType').textContent = i.requestType;
-  $('dCalendar').textContent    = i.calendarBasis;
   $('dReceived').textContent    = String(i.receivedDay);
   $('dDecision').textContent    = i.hasDecision ? String(i.decisionDay) : 'pending';
   $('dStatus').textContent      = r.status;
@@ -415,7 +397,6 @@ function exportMarkdown() {
     '## Request',
     '| Field | Value |', '|---|---|',
     `| Request type | ${i.requestType} |`,
-    `| Calendar basis | ${i.calendarBasis} |`,
     `| Received day | ${i.receivedDay} |`,
     `| Decision day | ${i.hasDecision ? i.decisionDay : 'pending'} |`,
     '\n## Results',
@@ -446,15 +427,13 @@ async function exportAP2() {
     inputs: {
       request_type: i.requestType,
       received_day: i.receivedDay,
-      decision_day: i.hasDecision ? i.decisionDay : 0,
-      calendar: i.calendarBasis
+      decision_day: i.hasDecision ? i.decisionDay : 0
     },
     outputs: {
       sla_days: r.slaDays,
       deadline_day: r.deadlineDay,
       days_to_deadline: r.daysToDeadline,
       status: r.status,
-      calendar_basis: i.calendarBasis,
       request_type: i.requestType
     },
     downstream_handoff_candidates: ["sc-pa-metrics"],
@@ -556,7 +535,7 @@ const MANIFEST = {
   "al_id": "SC-96",
   "version": "1.0.0",
   "title": "Prior-Auth Deadline Receipt",
-  "description": "Given a prior-authorization request type, received day index, optional decision day index, and calendar basis, computes the SLA days, deadline day, days to deadline, and status from a frozen SLA table using integer day arithmetic. Records timing only, not clinical merit. Deterministic, zero external data. Policy Mandate: prior_auth_deadline_record.",
+  "description": "Given a prior-authorization request type, received day index, and optional decision day index, computes the SLA days, deadline day, days to deadline, and status from a frozen SLA table using integer day arithmetic, calendar days only. Records timing only, not clinical merit. Deterministic, zero external data. Policy Mandate: prior_auth_deadline_record.",
   "category": "showcase",
   "journeys": [],
   "personas": ["payer or provider compliance lead"],
@@ -576,10 +555,9 @@ const MANIFEST = {
     "properties": {
       "request_type": { "type": "string", "enum": ["standard","expedited"] },
       "received_day": { "type": "integer" },
-      "decision_day": { "type": ["integer","null"] },
-      "calendar": { "type": "string", "enum": ["calendar","business"] }
+      "decision_day": { "type": ["integer","null"] }
     },
-    "required": ["request_type","received_day","calendar"]
+    "required": ["request_type","received_day"]
   },
   "output_schema": {
     "type": "object",
@@ -588,7 +566,6 @@ const MANIFEST = {
       "deadline_day": { "type": "integer" },
       "days_to_deadline": { "type": "integer" },
       "status": { "type": "string", "enum": ["pending","on_time","overdue"] },
-      "calendar_basis": { "type": "string" },
       "request_type": { "type": "string" }
     }
   },
@@ -600,16 +577,15 @@ const MANIFEST = {
   },
   "mcp_tool_definition": {
     "name": "compute_prior_auth_deadline",
-    "description": "Given a prior-authorization request type, received day index, optional decision day index, and calendar basis, returns the SLA days, deadline day, days to deadline, and on-time, overdue, or pending status. Records timing only, not clinical merit. Deterministic, zero external data.",
+    "description": "Given a prior-authorization request type, received day index, and optional decision day index, returns the SLA days, deadline day, days to deadline, and on-time, overdue, or pending status, computed in calendar days. Records timing only, not clinical merit. Deterministic, zero external data.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "request_type": { "type": "string", "enum": ["standard","expedited"] },
         "received_day": { "type": "integer" },
-        "decision_day": { "type": ["integer","null"] },
-        "calendar": { "type": "string", "enum": ["calendar","business"] }
+        "decision_day": { "type": ["integer","null"] }
       },
-      "required": ["request_type","received_day","calendar"]
+      "required": ["request_type","received_day"]
     }
   },
   "sister_suite": "https://ainumbers.co",
