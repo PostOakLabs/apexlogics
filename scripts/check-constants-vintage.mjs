@@ -29,6 +29,11 @@
  *       SS_WAGE_BASE was already 2026, so (a) passes on it, but STD_DEDUCTION was 2024 while
  *       every declaration said 2026 — this half catches it via the STD_DEDUCTION sensor.
  *
+ * SHOWCASE (AL-SHOWCASE-CONSTANTS): showcase/<slug>/index.html pages get the same (a)
+ * SSOT-match check, but only for the curated SHOWCASE_SENSOR_KEYS identifiers — a showcase
+ * page is held to the SSOT for exactly the constants it embeds by name. The (b) check stays
+ * a tools/ convention (showcase manifests carry no data_vintage surface this gate reads).
+ *
  * Deliberately scoped to a curated set of named constants (matched by JS identifier, not by
  * bare literal — a coincidental "16100" in an unrelated formula is not a hit). Coverage gap:
  * a tool that inlines the same values under an unrecognized variable name isn't scanned. That
@@ -63,6 +68,11 @@ function extractSsot(text) {
     AMT_EXEMPTION_mfj: num(/exemption:\s*\{[^}]*mfj:\s*(\d+)/),
     AMT_PHASEOUT_single: num(/phaseoutStart:\s*\{\s*single:\s*(\d+)/),
     AMT_PHASEOUT_mfj: num(/phaseoutStart:\s*\{[^}]*mfj:\s*(\d+)/),
+    FHFA_CLL_BASELINE_1: num(/FHFA_CLL_BASELINE:\s*\{[^}]*?\b1\s*:\s*(\d+)/),
+    FHFA_CLL_BASELINE_2: num(/FHFA_CLL_BASELINE:\s*\{[^}]*?\b2\s*:\s*(\d+)/),
+    FHFA_CLL_BASELINE_3: num(/FHFA_CLL_BASELINE:\s*\{[^}]*?\b3\s*:\s*(\d+)/),
+    FHFA_CLL_BASELINE_4: num(/FHFA_CLL_BASELINE:\s*\{[^}]*?\b4\s*:\s*(\d+)/),
+    FHFA_CLL_HIGH_COST_PCT: num(/FHFA_CLL_HIGH_COST_PCT:\s*(\d+)/),
   };
 }
 
@@ -101,7 +111,25 @@ const SENSORS = [
   { key: 'AMT_EXEMPTION_mfj',    re: /\bAMT_EXEMPTIONS?\b[^\n]*?\bmfj\s*:\s*(\d+)/ },
   { key: 'AMT_PHASEOUT_single',  re: /\bAMT_PHASEOUT\b[^\n]*?\bsingle\s*:\s*(\d+)/ },
   { key: 'AMT_PHASEOUT_mfj',     re: /\bAMT_PHASEOUT\b[^\n]*?\bmfj\s*:\s*(\d+)/ },
+  // FHFA 2026 conforming loan limits — embedded by showcase SC-108 as a four-unit table plus
+  // the high-cost derivation, matched by the identifiers that page actually uses
+  // (AL-SHOWCASE-CONSTANTS).
+  { key: 'FHFA_CLL_BASELINE_1',    re: /\bBASELINE_LIMIT_DOLLARS\b[^\n]*?\b1\s*:\s*(\d+)/ },
+  { key: 'FHFA_CLL_BASELINE_2',    re: /\bBASELINE_LIMIT_DOLLARS\b[^\n]*?\b2\s*:\s*(\d+)/ },
+  { key: 'FHFA_CLL_BASELINE_3',    re: /\bBASELINE_LIMIT_DOLLARS\b[^\n]*?\b3\s*:\s*(\d+)/ },
+  { key: 'FHFA_CLL_BASELINE_4',    re: /\bBASELINE_LIMIT_DOLLARS\b[^\n]*?\b4\s*:\s*(\d+)/ },
+  { key: 'FHFA_CLL_HIGH_COST_PCT', re: /\bbaselineLimitCents\s*\*\s*(\d+)\s*\/\s*100/ },
 ];
+
+// Showcase pages (showcase/<slug>/index.html) are not under tools/ and most embed no named
+// federal constant, so they are scanned ONLY for the sensors listed here, and only under the
+// (a) SSOT-match check — the (b) declared-vintage surfaces this gate reads (tools/<slug>/
+// manifest.json, tool-vintage-banner) are a tools/ convention. Curated and identifier-matched,
+// same tradeoff as SENSORS (AL-SHOWCASE-CONSTANTS).
+const SHOWCASE_SENSOR_KEYS = new Set([
+  'FHFA_CLL_BASELINE_1', 'FHFA_CLL_BASELINE_2', 'FHFA_CLL_BASELINE_3', 'FHFA_CLL_BASELINE_4',
+  'FHFA_CLL_HIGH_COST_PCT',
+]);
 
 const YEAR_TOKEN_RE = /\b(20[2-3]\d)\b/g;
 
@@ -148,8 +176,8 @@ const SENSOR_TOPIC_RE = {
   AMT_PHASEOUT_mfj: /\bamt\b|alternative minimum/i,
 };
 
-function expandToolDirs() {
-  const baseAbs = resolve(ROOT, 'tools');
+function expandDirs(base) {
+  const baseAbs = resolve(ROOT, base);
   let entries;
   try {
     entries = readdirSync(baseAbs);
@@ -176,16 +204,16 @@ function lineOf(htmlText, index) {
 // so one correct surface (or even an unrelated year mentioned in the SAME string, e.g. "SSA
 // 2026 wage base" sitting next to a stale std-deduction citation) masked every other surface
 // being wrong. Each surface below is checked independently in scanTool().
-function declaredVintageEntries(slug, htmlText) {
+function declaredVintageEntries(slug, htmlText, base) {
   const entries = [];
 
   // manifest.json data_vintage
   try {
-    const manifestPath = resolve(ROOT, 'tools', slug, 'manifest.json');
+    const manifestPath = resolve(ROOT, base, slug, 'manifest.json');
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
     if (typeof manifest.data_vintage === 'string') {
       entries.push({
-        file: `tools/${slug}/manifest.json`,
+        file: `${base}/${slug}/manifest.json`,
         line: null,
         label: 'manifest.json data_vintage',
         text: manifest.data_vintage,
@@ -202,7 +230,7 @@ function declaredVintageEntries(slug, htmlText) {
   let m;
   while ((m = inlineRe.exec(htmlText))) {
     entries.push({
-      file: `tools/${slug}/index.html`,
+      file: `${base}/${slug}/index.html`,
       line: lineOf(htmlText, m.index),
       label: 'inline data_vintage',
       text: m[1],
@@ -218,7 +246,7 @@ function declaredVintageEntries(slug, htmlText) {
     const raw = m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
     if (!raw) continue;
     entries.push({
-      file: `tools/${slug}/index.html`,
+      file: `${base}/${slug}/index.html`,
       line: lineOf(htmlText, m.index),
       label: 'tool-vintage-banner',
       text: raw,
@@ -229,9 +257,9 @@ function declaredVintageEntries(slug, htmlText) {
   return entries;
 }
 
-function scanTool(slug) {
+function scanTool(slug, base) {
   const violations = [];
-  const htmlPath = resolve(ROOT, 'tools', slug, 'index.html');
+  const htmlPath = resolve(ROOT, base, slug, 'index.html');
   let htmlText;
   try {
     htmlText = readFileSync(htmlPath, 'utf8');
@@ -240,9 +268,10 @@ function scanTool(slug) {
   }
 
   const lines = htmlText.split('\n');
-  const declaredEntries = declaredVintageEntries(slug, htmlText);
+  const declaredEntries = declaredVintageEntries(slug, htmlText, base);
 
   for (const sensor of SENSORS) {
+    if (base === 'showcase' && !SHOWCASE_SENSOR_KEYS.has(sensor.key)) continue;
     const ssotValue = SSOT[sensor.key];
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -255,7 +284,7 @@ function scanTool(slug) {
       // (a) SSOT match
       if (ssotValue != null && found !== ssotValue) {
         violations.push({
-          file: `tools/${slug}/index.html`,
+          file: `${base}/${slug}/index.html`,
           line: i + 1,
           kind: 'ssot-mismatch',
           detail: `${sensor.key} = ${found} but apex-constants-2026.js says ${ssotValue}`,
@@ -284,7 +313,7 @@ function scanTool(slug) {
             file: entry.file,
             line: entry.line ?? 1, // manifest.json has no meaningful line — the embedded-at line is in the detail text
             kind: 'vintage-mismatch',
-            detail: `${sensor.key} = ${found} (tax year ${fingerprintYear}, embedded at tools/${slug}/index.html:${i + 1}) but ${entry.label} names ${[...namedYears].sort().join(', ') || '(no year)'}${citationYears.size > 0 ? ' (from its Rev. Proc. citation)' : ''}`,
+            detail: `${sensor.key} = ${found} (tax year ${fingerprintYear}, embedded at ${base}/${slug}/index.html:${i + 1}) but ${entry.label} names ${[...namedYears].sort().join(', ') || '(no year)'}${citationYears.size > 0 ? ' (from its Rev. Proc. citation)' : ''}`,
           });
         }
       }
@@ -295,8 +324,11 @@ function scanTool(slug) {
 }
 
 let all = [];
-for (const slug of expandToolDirs()) {
-  all = all.concat(scanTool(slug));
+for (const slug of expandDirs('tools')) {
+  all = all.concat(scanTool(slug, 'tools'));
+}
+for (const slug of expandDirs('showcase')) {
+  all = all.concat(scanTool(slug, 'showcase'));
 }
 
 if (all.length === 0) {

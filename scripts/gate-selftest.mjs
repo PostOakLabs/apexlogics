@@ -258,7 +258,25 @@ function build() {
       '<script>\nconst CURRENT_YEAR = 2025; // stale — SSOT says 2026\n</script>\n');
     writeFileSync(join(work, 'tools', 'zz-year-mismatch', 'manifest.json'),
       JSON.stringify({ data_vintage: '2026' }));
-    claim('check-constants-vintage.mjs', 'check-constants-vintage (c: CURRENT_YEAR SSOT mismatch fixture)',
+  }
+
+  // (d) showcase SSOT mismatch (AL-SHOWCASE-CONSTANTS) - the FHFA 2026 baselines are embedded
+  // by a showcase/ page (SC-108), not under tools/. A wrong baseline in showcase/ must redden
+  // the gate; this fixture stays green under a tools/-only walk, which is exactly what proves
+  // the showcase scan has teeth. Units 2-4 match the SSOT and unit 1 carries a plausible but
+  // wrong value: the realistic single-unit-drift defect. (The genuine 2025 table is the red
+  // proof quoted in the AL-SHOWCASE-CONSTANTS PR; its one-unit literal must hold at 0 hits
+  // on the merged tree, so it cannot also live in this fixture.)
+  {
+    const work = join(tmp, 'vintage-d');
+    mkdirSync(join(work, 'scripts'), { recursive: true });
+    mkdirSync(join(work, 'data'), { recursive: true });
+    mkdirSync(join(work, 'showcase', 'zz-showcase-cll'), { recursive: true });
+    cpSync(join(REPO, 'scripts', 'check-constants-vintage.mjs'), join(work, 'scripts', 'check-constants-vintage.mjs'));
+    cpSync(join(REPO, 'data', 'apex-constants-2026.js'), join(work, 'data', 'apex-constants-2026.js'));
+    writeFileSync(join(work, 'showcase', 'zz-showcase-cll', 'index.html'),
+      '<script>\nconst BASELINE_LIMIT_DOLLARS = { 1: 800000, 2: 1066250, 3: 1288800, 4: 1601750 };\n</script>\n');
+    claim('check-constants-vintage.mjs', 'check-constants-vintage (d: showcase BASELINE_LIMIT_DOLLARS stale vs FHFA 2026 SSOT)',
       wentRed(join(work, 'scripts', 'check-constants-vintage.mjs')));
   }
 }
