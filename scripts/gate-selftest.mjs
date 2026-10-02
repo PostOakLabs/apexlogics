@@ -766,6 +766,41 @@ function build() {
   }
 }
 
+// ── 13c. gen-llms: llms.txt stale against the suite-registry.json render goes
+//      RED, the real render stays GREEN (AL-LLMS-GEN, ORCH fence extension
+//      2026-10-02). The gate reads exactly three files — scripts/gen-llms.mjs,
+//      suite-registry.json, llms.txt — so each tree copies just those from the
+//      real repo. The stale tree reverts the masthead version line to the
+//      hand-edit drift this row repaired (premise: "registry v5.6.7" against
+//      registry v5.13.0; the regex matches the line shape, not today's version,
+//      so a version bump cannot silently rot the fixture into a no-op — a
+//      no-op replace leaves the tree unmutated and the red claim fails loud);
+//      the ok tree is unmutated, proving --check is not red on everything. ───
+{
+  function mkGenllmsWork(label) {
+    const work = join(tmp, 'genllms-' + label);
+    mkdirSync(join(work, 'scripts'), { recursive: true });
+    cpSync(join(REPO, 'scripts', 'gen-llms.mjs'), join(work, 'scripts', 'gen-llms.mjs'));
+    cpSync(join(REPO, 'suite-registry.json'), join(work, 'suite-registry.json'));
+    cpSync(join(REPO, 'llms.txt'), join(work, 'llms.txt'));
+    return work;
+  }
+  {
+    const work = mkGenllmsWork('stale');
+    const stale = readFileSync(join(work, 'llms.txt'), 'utf8')
+      .replace(/^# Suite version: registry v.*$/m, '# Suite version: registry v0.0.0-fixture (stale hand-edit drift)');
+    writeFileSync(join(work, 'llms.txt'), stale);
+    claim('gen-llms.mjs', 'gen-llms (stale version header in llms.txt vs the registry render)', wentRed(join(work, 'scripts', 'gen-llms.mjs'), { args: ['--check'], cwd: work }));
+  }
+  {
+    const work = mkGenllmsWork('ok');
+    const stayedGreen = !wentRed(join(work, 'scripts', 'gen-llms.mjs'), { args: ['--check'], cwd: work });
+    claims++; covered.add('gen-llms.mjs');
+    if (stayedGreen) console.log('✓ gen-llms stays GREEN on the unmutated llms.txt render');
+    else { console.error('✗ gen-llms FALSE-POSITIVED on the real render — has too many teeth'); fails++; }
+  }
+}
+
 // ── 14. check_index_sync.py: remove a tool card from tools.html ─────────────
 {
   const work = join(tmp, 'idxsync');
