@@ -793,6 +793,42 @@ function build() {
   claim('check-chaingraph-validity.mjs', 'check-chaingraph-validity (dangling chain-step tool_id)', wentRed(join(work, 'scripts', 'check-chaingraph-validity.mjs'), { cwd: work }));
 }
 
+// ── 10bb. check-chain-fidelity: chain steps disagree with the workflow page
+//      (AL-CHAIN-FIDELITY). The exact defect the row repaired: a chain carrying
+//      stale steps while its page links the real journey. The fixture copies the
+//      REAL repaired chaingraph + the REAL 40 workflow pages, then reverts ONE
+//      chain to its pre-repair steps — if the gate stays green on that, the
+//      26-of-40 regression can ship again silently. A second, unmutated tree
+//      proves the gate stays GREEN on the real repaired inputs (so the red
+//      claim cannot hide a gate that fails on everything). ──────────────────
+{
+  function mkFidelityWork(label) {
+    const work = join(tmp, 'chainfidelity-' + label);
+    mkdirSync(join(work, 'scripts'), { recursive: true });
+    mkdirSync(join(work, 'chaingraph'), { recursive: true });
+    mkdirSync(join(work, 'workflows'), { recursive: true });
+    cpSync(join(REPO, 'scripts', 'check-chain-fidelity.mjs'), join(work, 'scripts', 'check-chain-fidelity.mjs'));
+    cpSync(join(REPO, 'workflows'), join(work, 'workflows'), { recursive: true });
+    return work;
+  }
+  {
+    const work = mkFidelityWork('stale');
+    const cg = JSON.parse(readFileSync(join(REPO, 'chaingraph', 'chaingraph.json'), 'utf8'));
+    const chain = cg.chains.find((c) => c.name === 'career-exit-restart-planner');
+    chain.steps = [{ tool_id: '50-law-school-roi-by-career-track' }, { tool_id: '03-graduate-school-roi-comparator' }, { tool_id: '39-signing-bonus-clawback-analyzer' }];
+    writeFileSync(join(work, 'chaingraph', 'chaingraph.json'), JSON.stringify(cg));
+    claim('check-chain-fidelity.mjs', 'check-chain-fidelity (chain steps reverted to stale pre-repair sequence)', wentRed(join(work, 'scripts', 'check-chain-fidelity.mjs'), { cwd: work }));
+  }
+  {
+    const work = mkFidelityWork('ok');
+    cpSync(join(REPO, 'chaingraph', 'chaingraph.json'), join(work, 'chaingraph', 'chaingraph.json'));
+    const stayedGreen = !wentRed(join(work, 'scripts', 'check-chain-fidelity.mjs'), { cwd: work });
+    claims++; covered.add('check-chain-fidelity.mjs');
+    if (stayedGreen) console.log('✓ check-chain-fidelity stays GREEN on the real repaired chaingraph + 40 workflow pages');
+    else { console.error('✗ check-chain-fidelity FALSE-POSITIVED on the real repaired inputs — has too many teeth'); fails++; }
+  }
+}
+
 // ── 10g. check-html-structure: one RED fixture per violation class, plus a
 //      GREEN implied-end negative control (RC-2 / PRJ-004). The gate parses
 //      document structure with a small HTML5-flavoured tokenizer, so the
