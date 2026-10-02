@@ -26,7 +26,7 @@ const mcp = JSON.parse(readFileSync(join(ROOT, '.well-known', 'mcp.json'), 'utf8
 // its header version (`# ... Unified Build Contract vX.Y.Z`), bumped by whoever lands
 // the CONTRACT amendment, same discipline as repo/CLAUDE.md's own hand-typed CONTRACT
 // line (AL-REG-FRESH, 2026-09-03).
-const EXPECTED_CONTRACT_VERSION = '1.12.0';
+const EXPECTED_CONTRACT_VERSION = '1.12.1';
 
 let failures = 0;
 const fail = msg => { console.log(`FAIL  ${msg}`); failures++; };
