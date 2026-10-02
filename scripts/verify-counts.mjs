@@ -98,6 +98,9 @@ const ATTR_RULES = [
   { file: 'tools.html', key: 'tools', label: 'og:description',
     regex: /(<meta property="og:description" content=")(\d+)( deterministic career and education engines)/,
   },
+  { file: 'tools.html', key: 'tools', label: 'search placeholder (no-JS fallback)',
+    regex: /(placeholder="Search )(\d+)( tools)/,
+  },
 
   // ── .well-known/mcp.json (MCP discovery shim) ─────────────────────────────
   { file: '.well-known/mcp.json', key: 'tools', label: 'suite description (tools)',
@@ -179,6 +182,33 @@ const ATTR_RULES = [
     regex: /(returns ordered, deep-link URLs for )(\d+)( named multi-tool chains)/,
   },
 
+  // ── about.html (about page, AL-COUNT-SENTINELS) ───────────────────────────
+  { file: 'about.html', key: 'tools', label: 'meta description (tools)',
+    regex: /(open-source suite of )(\d+)( deterministic career)/,
+  },
+  { file: 'about.html', key: 'tools', label: 'og:description (tools)',
+    regex: /(<meta property="og:description" content=")(\d+)( deterministic career)/,
+  },
+
+  // ── guides/index.html (guides index, AL-COUNT-SENTINELS) ──────────────────
+  { file: 'guides/index.html', key: 'guides', label: 'meta description (guides)',
+    regex: /(<meta name="description" content=")(\d+)( category guides)/,
+  },
+  { file: 'guides/index.html', key: 'guides', label: 'og:description (guides)',
+    regex: /(<meta property="og:description" content=")(\d+)( category guides)/,
+  },
+
+  // ── workflows/index.html (workflow showcase index, AL-COUNT-SENTINELS) ────
+  { file: 'workflows/index.html', key: 'workflows', label: 'meta description (workflows)',
+    regex: /(<meta name="description" content=")(\d+)( multi-tool workflows from)/,
+  },
+  { file: 'workflows/index.html', key: 'workflows', label: 'og:description (workflows)',
+    regex: /(<meta property="og:description" content=")(\d+)( workflows\. Zero PII)/,
+  },
+  { file: 'workflows/index.html', key: 'workflow_tools', label: 'og:description (underlying tools)',
+    regex: /(journeys chained from )(\d+)( underlying tools)/,
+  },
+
   // ── prompts.html (example prompts page, AL-PROMPTS-PAGE) ──────────────────
   // The page renders mcp/showcase-prompts.json at runtime, but its static meta
   // copy hand-types the prompt count — pinned here against deriveCounts()'s
@@ -239,7 +269,7 @@ function checkAttrRules() {
 
 let total = 0;
 
-for (const rel of ['index.html', 'tools.html']) {
+for (const rel of ['index.html', 'tools.html', 'about.html', 'guides/index.html', 'workflows/index.html']) {
   total += checkHtmlSentinels(rel);
 }
 
