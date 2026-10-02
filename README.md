@@ -85,7 +85,7 @@ Server source: [`apexlogics-mcp-worker`](https://github.com/PostOakLabs/apexlogi
 
 ## Verifiable artifacts
 
-Deterministic isn't a claim you have to take on trust here. Every tool emits a typed Policy Mandate carrying a verifiable `execution_hash` and a chain block, indexed in [`chaingraph/chaingraph.json`](chaingraph/chaingraph.json) — 148 tool nodes, 46 chains, and 13 persona journeys with verified artifact pass-through. Recompute the hash from the same inputs and you get the same value, or you learn the answer moved.
+Deterministic isn't a claim you have to take on trust here. Every tool emits a typed Policy Mandate carrying a verifiable `execution_hash` and a chain block, indexed in [`chaingraph/chaingraph.json`](chaingraph/chaingraph.json) — 187 tool nodes, 46 chains, and 13 persona journeys with verified artifact pass-through. Recompute the hash from the same inputs and you get the same value, or you learn the answer moved.
 
 **17 of those nodes go further and carry real zero-knowledge compute proofs** (risc0, `groth16-bn254` receipts), which prove the calculation itself ran as specified rather than merely hashing whatever it produced. A further 12 are catalog-marked `compute_proof_ready: "deferred"` - no prover pass yet; the worker repo's [`data/proof-fixtures.json`](https://github.com/PostOakLabs/apexlogics-mcp-worker/blob/master/data/proof-fixtures.json) is the authoritative proven list.
 
