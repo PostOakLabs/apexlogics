@@ -37,7 +37,26 @@ export function deriveCounts() {
     prompts = promptsDoc.count;
   } catch { prompts = 0; }
 
-  return { tools, showcase, workflows, guides, prompts };
+  // Distinct tools the workflow pages chain from (AL-COUNT-SENTINELS): the
+  // number of distinct steps[].tool_id across the chains[] of
+  // chaingraph/chaingraph.json whose name matches a workflows/<slug>.html page.
+  // 0 when chaingraph or workflows/ is absent (gate-selftest fixtures copy
+  // workflows/ but not chaingraph/ — same guard pattern as prompts above).
+  let workflow_tools = 0;
+  try {
+    const cg = JSON.parse(readFileSync(join(ROOT, 'chaingraph', 'chaingraph.json'), 'utf8').replace(/\x00+$/, ''));
+    const slugs = new Set(readdirSync(join(ROOT, 'workflows'))
+      .filter(f => f.endsWith('.html') && f !== 'index.html')
+      .map(f => f.replace(/\.html$/, '')));
+    const ids = new Set();
+    for (const chain of (cg.chains || [])) {
+      if (!slugs.has(String(chain.name || ''))) continue;
+      for (const step of (chain.steps || [])) ids.add(step.tool_id);
+    }
+    workflow_tools = ids.size;
+  } catch { workflow_tools = 0; }
+
+  return { tools, showcase, workflows, guides, prompts, workflow_tools };
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
