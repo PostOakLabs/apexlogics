@@ -15,11 +15,11 @@
  *   showcase/<slug>/index.html       (111)
  *   showcase/index.html              (1)
  *   workflows/<name>.html            (41, flat)
- *   guides/<name>.html               (10, flat)
+ *   guides/<name>.html               (11, flat)
  *   chaingraph/*.html                (14: hub + personas)
  *   chaingraph/chains/*.html         (2)
  *   *.html                           (7 root pages)
- *   → 371 shipped pages at the time of writing.
+ *   → 373 shipped pages at the time of writing.
  *
  * CLI:
  *   node scripts/_pages.mjs           → print the inventory (one path per line)
