@@ -270,6 +270,8 @@ footer.tool-footer{background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,
 
 <script>
 // 2026 AMT parameters
+// 2026 standard deduction, Rev. Proc. 2025-32 sec. 4.14(1). Regular tax is on taxable income.
+const STANDARD_DEDUCTION = { single: 16100, mfj: 32200 };
 const AMT_PARAMS = {
   single: { exemption: 90100, phaseoutStart: 500000, rate1: 0.26, rate2: 0.28, threshold: 244500 },
   mfj:    { exemption: 140200, phaseoutStart: 1000000, rate1: 0.26, rate2: 0.28, threshold: 244500 }
@@ -281,7 +283,7 @@ function fmtShares(n){ return Math.round(n).toLocaleString('en-US'); }
 function calcAMT(amti, params){
   // Phase-out: exemption reduced by $0.25 per $1 above phaseout start
   const phaseoutAmt = Math.max(0, amti - params.phaseoutStart);
-  const effectiveExemption = Math.max(0, params.exemption - phaseoutAmt * 0.25);
+  const effectiveExemption = Math.max(0, params.exemption - phaseoutAmt * 0.50);
   const amtBase = Math.max(0, amti - effectiveExemption);
   // Two-rate: 26% on first $244,500 of amtBase, 28% on rest
   let tmt;
@@ -325,7 +327,9 @@ function calcISOAMT(){
   const amti = ordIncome + isoSpread + otherAMT;
 
   const { tmt, effectiveExemption, amtBase } = calcAMT(amti, params);
-  const regularTax = calcRegularTax(ordIncome, status);
+  const standardDeduction = STANDARD_DEDUCTION[status];
+  const taxableIncome = Math.max(0, ordIncome - standardDeduction);
+  const regularTax = calcRegularTax(taxableIncome, status);
   const amtOwed = Math.max(0, tmt - regularTax);
   const amtCredit = amtOwed; // AMT paid becomes credit for future years
 
@@ -342,7 +346,7 @@ function calcISOAMT(){
   }
 
   _lastResult={ shares,strike,fmv,ordIncome,otherAMT,status,
-    isoSpread,amti,tmt,regularTax,amtOwed,amtCredit,effectiveExemption,amtBase,maxNoAMTShares };
+    isoSpread,amti,standardDeduction,taxableIncome,tmt,regularTax,amtOwed,amtCredit,effectiveExemption,amtBase,maxNoAMTShares };
 
   // Alert
   const alertBox=document.getElementById('alertBox');
@@ -374,7 +378,7 @@ function calcISOAMT(){
     ['AMT Exemption (after phase-out)','− '+fmt(effectiveExemption)],
     ['AMT Base',fmt(amtBase)],
     ['Tentative Minimum Tax (TMT)',fmt(tmt)],
-    ['Regular Tax (ordinary income only)','− '+fmt(regularTax)],
+    ['Regular Tax (on '+fmt(taxableIncome)+' taxable income after '+fmt(standardDeduction)+' standard deduction)','− '+fmt(regularTax)],
     ['AMT Owed',fmt(amtOwed)],
   ];
   document.getElementById('calcTable').innerHTML=rows.map((r,i)=>
@@ -422,6 +426,7 @@ function exportMarkdown(){
     `| AMTI | ${fmt(r.amti)} |\n`+
     `| Effective Exemption | ${fmt(r.effectiveExemption)} |\n`+
     `| Tentative Minimum Tax | ${fmt(r.tmt)} |\n`+
+    `| Taxable Income (after standard deduction) | ${fmt(r.taxableIncome)} |\n`+
     `| Regular Tax | ${fmt(r.regularTax)} |\n`+
     `| **AMT Owed** | **${fmt(r.amtOwed)}** |\n`+
     `| AMT Credit Generated | ${fmt(r.amtCredit)} |\n`+
@@ -461,6 +466,7 @@ async function exportAP2(){
       ordinary_income:r.ordIncome,other_amt_adjustments:r.otherAMT,filing_status:r.status},
     summary:{iso_spread:Math.round(r.isoSpread),amti:Math.round(r.amti),
       effective_exemption:Math.round(r.effectiveExemption),tmt:Math.round(r.tmt),
+      standard_deduction:r.standardDeduction,taxable_income:Math.round(r.taxableIncome),
       regular_tax:Math.round(r.regularTax),amt_owed:Math.round(r.amtOwed),
       amt_credit_generated:Math.round(r.amtCredit),max_shares_no_amt:r.maxNoAMTShares},
     downstream_handoff_candidates:["AL-117","AL-01"]
