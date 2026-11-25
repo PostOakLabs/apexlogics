@@ -50,7 +50,7 @@ function load(toolDir, names, extra = '') {
   const src = extractDecls(html, names) + '\n' + extra;
   const ctx = vm.createContext({ Math, Number, String, Object, JSON });
   vm.runInContext(src + `\n;globalThis.__x = { ${names.filter((n) => !/^[A-Z_0-9]+$/.test(n)).join(', ')} };`, ctx);
-  return ctx.__x;
+  return Object.assign(ctx.__x, { ctx });
 }
 
 let fail = 0, pass = 0;
@@ -78,6 +78,42 @@ const eq = (label, got, want) => {
   eq('#02 SAI 7,000 above the min-Pell band → 0', p(100000, 7000).award, 0);
   eq('#02 AGI under the max-Pell line → 7,395', p(50000, 9000).award, 7395);
   eq('#02 SAI at the 2× cutoff → 0', p(50000, 14790).award, 0);
+}
+
+// ── #164 estate tax: prior taxable gifts counted once (IRC §2001(b), §2010(c)(4)) ──
+// Tax = 40% × (taxable estate + adjusted taxable gifts − full exemption incl. DSUE).
+// The gifts are in the base, so the exemption isn't cut for them a second time.
+// The DSUE left at a death is the basic exclusion minus that same gift-inclusive base.
+{
+  const { ctx } = load('164-estate-tax-liability', ['numOr', 'dollars', 'calculate'], `
+    var _lastInputs, _lastResults, __vals = {};
+    function render() {}
+    function $(id) {
+      const v = __vals[id];
+      return typeof v === 'boolean' ? { checked: v } : { value: String(v) };
+    }
+    globalThis.__runEstate = (over) => {
+      __vals = Object.assign({
+        filingPosture: 'single', grossEstate: 18500000, debts: 1200000, adminExpenses: 220000,
+        maritalDeduction: 0, spouseIsCitizen: true, charitableDeduction: 500000,
+        adjustedTaxableGifts: 400000, dsue: 0, exemptionPerIndividual: 15000000, topRatePct: 40,
+        stateApplies: false, stateExemption: 2000000, stateRatePct: 12,
+        inheritanceApplies: false, inheritanceRatePct: 10, nonExemptHeirShare: 0,
+      }, over);
+      calculate();
+      return _lastResults;
+    };`);
+  const run = ctx.__runEstate;
+  eq('#164 default case: 40% × (16.98M − 15M) = 792,000 (was 952,000)', run({}).federalEstateTaxAdj, 792000);
+  eq('#164 default case: available exemption is the full 15M', run({}).availableExemption, 15000000);
+  eq('#164 no prior gifts: 40% × (20M − 15M) = 2,000,000',
+    run({ grossEstate: 20000000, debts: 0, adminExpenses: 0, charitableDeduction: 0, adjustedTaxableGifts: 0 }).federalEstateTaxAdj, 2000000);
+  eq('#164 married, 2M prior gifts: portable DSUE = 15M − 12M = 3M (was 1M)',
+    run({ filingPosture: 'married', grossEstate: 10000000, debts: 0, adminExpenses: 0, charitableDeduction: 0, adjustedTaxableGifts: 2000000 }).unusedExemptionAtFirstDeath, 3000000);
+  eq('#164 married with 5M DSUE: 16.98M base under 20M → no federal tax',
+    run({ filingPosture: 'married', dsue: 5000000 }).federalEstateTaxAdj, 0);
+  eq('#164 gifts above the exemption are flagged (gift tax payable not credited)',
+    run({ adjustedTaxableGifts: 16000000 }).giftsExceedExemption, true);
 }
 
 if (fail) { console.error(`\n✗ CALC-VECTORS: ${fail} failed, ${pass} passed`); process.exit(1); }
