@@ -242,5 +242,29 @@ const FAKE_DOM = `
   eq('#102 law, 3 × 50,000 under the 200,000 cap: 150,000', Math.round(r({ prog_type: 'law', coa: 75000, years: 3 }).totalFedBorrowed), 150000);
 }
 
+// ── #142 QSBS: section 1202 gain on a partial exclusion is taxed at up to 28% ───
+// (26 U.S.C. 1(h)(4),(7)), plus NIIT when the chosen rate includes it; gain above
+// the per-issuer cap stays at the LTCG rate. The kernel twin is pinned by the
+// worker's qsbs-1202-142.test.mjs and kernel-parity.
+{
+  const { ctx } = load('142-qsbs-1202-estimator', ['QSBS_CAP', 'QSBS_CAP_OBBBA', 'GROSS_ASSETS_LIMIT',
+    'GROSS_ASSETS_LIMIT_OBBBA', 'TIERS', 'obbbaTier', 'calculate'], FAKE_DOM + `
+    var _lastResult = null;
+    function renderResults() {}
+    globalThis.__run142 = (o) => {
+      __set(Object.assign({ acquireDate: 'obbba', grossAssets: 20, holdYears: 4, costBasis: 100000,
+        saleProceeds: 4000000, ltcgRate: 0.238, stateRate: 0, isCCorp: true, isOriginalIssue: true,
+        isActiveBusiness: true, cashOrService: true, notPublic: true, noRepurchase: true }, o));
+      calculate();
+      return _lastResult;
+    };`);
+  const r = (o = {}) => ctx.__run142(o);
+  eq('#142 audit case: OBBBA 75%, 3.9M gain, 23.8%: tax with exclusion 310,050', Math.round(r().federalTaxWith), 310050);
+  eq('#142 same sale at 20%: 975,000 × 28% = 273,000', Math.round(r({ ltcgRate: 0.20 }).federalTaxWith), 273000);
+  eq('#142 100% tier above the 15M cap: 4.9M × 20% = 980,000',
+    Math.round(r({ holdYears: 5, saleProceeds: 20000000, ltcgRate: 0.20 }).federalTaxWith), 980000);
+  eq('#142 not a C corp: all gain at 23.8% = 928,200', Math.round(r({ isCCorp: false }).federalTaxWith), 928200);
+}
+
 if (fail) { console.error(`\n✗ CALC-VECTORS: ${fail} failed, ${pass} passed`); process.exit(1); }
 console.log(`✓ CALC-VECTORS: all ${pass} vectors pass`);
