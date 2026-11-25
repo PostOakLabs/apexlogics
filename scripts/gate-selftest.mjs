@@ -5,7 +5,7 @@
 // The real repo files are never mutated. Exit 0 only if every gate went red as designed.
 //
 // Usage: node scripts/gate-selftest.mjs
-import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, cpSync, rmSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, cpSync, rmSync, readdirSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -966,6 +966,24 @@ function build() {
   // corrupt: a flat stray html in tools/ — a page shape SHAPES doesn't list
   writeFileSync(join(work, 'tools', 'zz-stray.html'), '<html></html>');
   claim('_pages.mjs', '_pages inventory (stray html unaccounted by SHAPES)', wentRed(join(work, 'scripts', '_pages.mjs'), { args: ['--check'], cwd: work }));
+}
+// ── check-calc-vectors: revert a corrected calculator rule (AL-AUDIT2) ─────────
+{
+  const work = join(tmp, 'calcvec');
+  mkdirSync(join(work, 'scripts'), { recursive: true });
+  mkdirSync(join(work, 'tools', '02-fafsa-sai-simulator'), { recursive: true });
+  cpSync(join(REPO, 'scripts', 'check-calc-vectors.mjs'), join(work, 'scripts', 'check-calc-vectors.mjs'));
+  for (const d of readdirSync(join(REPO, 'tools'))) {
+    const f = join(REPO, 'tools', d, 'index.html');
+    if (d === '02-fafsa-sai-simulator' || !existsSync(f)) continue;
+    mkdirSync(join(work, 'tools', d), { recursive: true });
+    cpSync(f, join(work, 'tools', d, 'index.html'));
+  }
+  // corrupt: drop the (B) max-Pell-minus-SAI branch, so SAI 0 in the min-Pell band falls to $740
+  const html = readFileSync(join(REPO, 'tools', '02-fafsa-sai-simulator', 'index.html'), 'utf8')
+    .replace('} else if (PELL_MAX - Math.max(0, sai) >= PELL_MIN) {', '} else if (false) {');
+  writeFileSync(join(work, 'tools', '02-fafsa-sai-simulator', 'index.html'), html);
+  claim('check-calc-vectors.mjs', 'check-calc-vectors (#02 Pell rule (B) removed)', wentRed(join(work, 'scripts', 'check-calc-vectors.mjs')));
 }
 untestable.add('gen-sitemap.mjs');
 untestable.add('check-chaingraph-parity.mjs');

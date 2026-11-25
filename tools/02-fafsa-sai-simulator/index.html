@@ -888,22 +888,24 @@ function determinePell(agi, familySize, sai, group, state) {
     tier = 'max';
     award = PELL_MAX;
     path = `AGI ($${fmt(agi)}) ≤ ${(maxRatio*100).toFixed(0)}% × FPL ($${fmt(fplVal)} × ${maxRatio.toFixed(2)} = $${fmt(maxPellThreshold)}). Auto-Max Pell.`;
+  } else if (PELL_MAX - Math.max(0, sai) >= PELL_MIN) {
+    // 20 USC 1070a(b)(1)(B): max Pell minus SAI (a negative SAI counts as zero),
+    // rounded to the nearest $5. This comes before the minimum-Pell rule in (C).
+    const calculated = PELL_MAX - Math.max(0, sai);
+    award = Math.round(calculated / 5) * 5;
+    tier = award >= PELL_MAX ? 'max' : 'partial';
+    path = sai <= 0
+      ? `SAI ($${fmt(sai)}) at or below $0 counts as $0: Max Pell ($${fmt(PELL_MAX)}).`
+      : `Calculated Pell: Max ($${fmt(PELL_MAX)}) − SAI ($${fmt(sai)}) = $${fmt(award)}, rounded to nearest $5.`;
   } else if (agi > 0 && agi <= minPellThreshold) {
+    // 20 USC 1070a(b)(1)(C): minimum Pell when (A) and (B) don't apply.
     tier = 'min';
     award = PELL_MIN;
-    path = `AGI ($${fmt(agi)}) ≤ ${(minRatio*100).toFixed(0)}% × FPL ($${fmt(minPellThreshold)}). Auto-Min Pell.`;
+    path = `Max Pell ($${fmt(PELL_MAX)}) − SAI ($${fmt(sai)}) is below the $${fmt(PELL_MIN)} minimum, and AGI ($${fmt(agi)}) ≤ ${(minRatio*100).toFixed(0)}% × FPL ($${fmt(minPellThreshold)}). Minimum Pell.`;
   } else {
-    // SAI-calculated Pell: max - SAI, rounded to nearest $5
-    const calculated = PELL_MAX - sai;
-    if (calculated < PELL_MIN) {
-      tier = 'none';
-      award = 0;
-      path = `Calculated Pell (Max $${fmt(PELL_MAX)} − SAI $${fmt(sai)} = $${fmt(calculated)}) below minimum award threshold. Not Pell-eligible.`;
-    } else {
-      tier = 'partial';
-      award = Math.round((calculated)/5) * 5;
-      path = `Calculated Pell: Max ($${fmt(PELL_MAX)}) − SAI ($${fmt(sai)}) = $${fmt(award)}, rounded to nearest $5.`;
-    }
+    tier = 'none';
+    award = 0;
+    path = `Calculated Pell (Max $${fmt(PELL_MAX)} − SAI $${fmt(sai)} = $${fmt(PELL_MAX - sai)}) below minimum award threshold. Not Pell-eligible.`;
   }
 
   return { tier, award, path, fplVal, maxPellThreshold, minPellThreshold };
