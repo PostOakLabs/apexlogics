@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dependent Care FSA vs. CDCTC Optimizer · ApexLogics</title>
-<meta name="description" content="Find the childcare tax strategy maximizing savings: DC-FSA alone (IRC §129, $5K MFJ, FICA 7.65% savings), CDCTC alone (IRC §21, 35%→20% phase-down), or optimal combination. $250 sweep finds best FSA split. Three-strategy compare grid. 2025 limits.">
+<meta name="description" content="Find the childcare tax strategy maximizing savings: DC-FSA alone (IRC §129, $7,500 limit, FICA 7.65% savings), CDCTC alone (IRC §21, 2026 50%→35%→20% schedule), or optimal combination. $250 sweep finds best FSA split. Three-strategy compare grid. 2026 limits.">
 <link rel="canonical" href="https://apexlogics.org/tools/130-dependent-care-fsa-cdctc-optimizer/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ApexLogics">
 <meta property="og:title" content="Dependent Care FSA vs. CDCTC Optimizer · ApexLogics">
-<meta property="og:description" content="Find the childcare tax strategy maximizing savings: DC-FSA alone (IRC §129, $5K MFJ, FICA 7.65% savings), CDCTC alone (IRC §21, 35%→20% phase-down), or optimal combination. $250 sweep finds best FSA split. Three-strategy compare grid. 2025 limits.">
+<meta property="og:description" content="Find the childcare tax strategy maximizing savings: DC-FSA alone (IRC §129, $7,500 limit, FICA 7.65% savings), CDCTC alone (IRC §21, 2026 50%→35%→20% schedule), or optimal combination. $250 sweep finds best FSA split. Three-strategy compare grid. 2026 limits.">
 <meta property="og:url" content="https://apexlogics.org/tools/130-dependent-care-fsa-cdctc-optimizer/">
 <meta property="og:image" content="https://apexlogics.org/assets/og-default.png">
 <meta name="twitter:card" content="summary">
@@ -116,7 +116,7 @@ tr:last-child td{border-bottom:none}
   <div class="card">
     <h2>Income & Tax Profile</h2>
     <div class="constants-note">
-      2026 rules (OBBBA §129): DC-FSA max $7,500 (MFJ $7,500; single $7,500; MFS $3,750). CDCTC: 20–35% credit on up to $3,000 (1 child) / $6,000 (2+ children) after subtracting FSA. Credit rate phases out: 35% at AGI ≤$15K; 20% at AGI ≥$43K+. FICA = 7.65% saved on FSA contribution (employer's FICA match also saved but not counted here). Sources: IRC §129 (DC-FSA); IRC §21 (CDCTC); IRS Pub. 503.
+      2026 rules (OBBBA §129): DC-FSA max $7,500 (MFJ $7,500; single $7,500; MFS $3,750). CDCTC: 20–35% credit on up to $3,000 (1 child) / $6,000 (2+ children) after subtracting FSA. Credit rate (2026, OBBBA): 50% at AGI ≤$15K, down 1 point per $2K (or part) to 35% above $43K; then down 1 point per $2K over $75K ($4K over $150K joint) to 20%. FICA = 7.65% saved on FSA contribution (employer's FICA match also saved but not counted here). Sources: IRC §129 (DC-FSA); IRC §21 (CDCTC); IRS Pub. 503.
     </div>
     <div class="grid-3">
       <div class="field">
@@ -242,9 +242,10 @@ tr:last-child td{border-bottom:none}
             <tr><th>AGI Range</th><th>Credit Rate</th><th>Max Credit (1 child)</th><th>Max Credit (2+ children)</th></tr>
           </thead>
           <tbody>
-            <tr><td>≤ $15,000</td><td>35%</td><td>$1,050</td><td>$2,100</td></tr>
-            <tr><td>$15,001 – $43,000</td><td>35% – 20%</td><td>$600–$1,050</td><td>$1,200–$2,100</td></tr>
-            <tr><td>$43,001+</td><td>20%</td><td>$600</td><td>$1,200</td></tr>
+            <tr><td>≤ $15,000</td><td>50%</td><td>$1,500</td><td>$3,000</td></tr>
+            <tr><td>$15,001 – $43,000</td><td>49% – 36%</td><td>$1,080–$1,470</td><td>$2,160–$2,940</td></tr>
+            <tr><td>$43,001 – $75,000 ($150,000 joint)</td><td>35%</td><td>$1,050</td><td>$2,100</td></tr>
+            <tr><td>Above that</td><td>34% – 20% (1 point per $2,000; $4,000 joint; 20% above $103,000 / $206,000 joint)</td><td>$600–$1,020</td><td>$1,200–$2,040</td></tr>
           </tbody>
         </table>
       </div>
@@ -327,18 +328,23 @@ const FICA_RATE = 0.0765; // employee share
 let _lastResult = null;
 function fmt(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
 
-function getCDCTCRate(agi) {
-  // IRC §21: phases from 35% at AGI≤15K down to 20% at AGI≥43K
-  if (agi <= 15000) return 0.35;
-  if (agi >= 43000) return 0.20;
-  // Linear phase-out: 28 steps of $1K each, each reducing rate by 1 pp
-  return 0.35 - (Math.floor((agi - 15000) / 1000) * 0.01);
+function getCDCTCRate(agi, joint) {
+  // IRC §21(a)(2) as amended by OBBBA (Pub. L. 119-21 §70405), tax years after 2025:
+  // 50%, less 1 pp per $2,000 (or fraction) of AGI over $15,000, not below 35%;
+  // then less 1 pp per $2,000 ($4,000 joint) (or fraction) of AGI over $75,000
+  // ($150,000 joint), not below 20%.
+  let rate = 0.50;
+  if (agi > 15000) rate = Math.max(0.35, rate - Math.ceil((agi - 15000) / 2000) * 0.01);
+  const from = joint ? 150000 : 75000;
+  const step = joint ? 4000 : 2000;
+  if (agi > from) rate = Math.max(0.20, rate - Math.ceil((agi - from) / step) * 0.01);
+  return Math.round(rate * 100) / 100;
 }
 
-function calcStrategy(fsaContrib, agi, numChildren, childcareCost, marginalRate, stateRate) {
+function calcStrategy(fsaContrib, agi, numChildren, childcareCost, marginalRate, stateRate, joint) {
   const expCap = numChildren >= 2 ? CDCTC_EXPENSE_CAP_2PLUS : CDCTC_EXPENSE_CAP_1;
   const cdctcBase = Math.max(0, Math.min(expCap, childcareCost) - fsaContrib);
-  const cdctcRate = getCDCTCRate(agi);
+  const cdctcRate = getCDCTCRate(agi, joint);
   const cdctcCredit = cdctcBase * cdctcRate;
   const fsaTaxSavings = fsaContrib * (marginalRate / 100 + stateRate / 100);
   const ficaSavings = fsaContrib * FICA_RATE;
@@ -361,21 +367,22 @@ function calculate() {
   let fsaContrib = parseFloat(document.getElementById('fsaContrib').value) || 0;
 
   const fsaMax = filingStatus === 'mfs' ? FSA_MAX_MFS : FSA_MAX_MFJ;
+  const joint = filingStatus === 'mfj';
 
   // Strategy 1: FSA only (max FSA, no CDCTC)
   const fsaAmt = fsaAvailable ? Math.min(fsaMax, childcareCost) : 0;
-  const stratFSA = calcStrategy(fsaAmt, agi, numChildren, childcareCost, marginalRate, stateRate);
+  const stratFSA = calcStrategy(fsaAmt, agi, numChildren, childcareCost, marginalRate, stateRate, joint);
   // Zero out CDCTC for FSA-only strategy (still show correctly — if FSA > CDCTC cap it's zero anyway)
   const stratFSAOnly = { ...stratFSA, cdctcCredit: 0, totalSavings: stratFSA.fsaTaxSavings + stratFSA.ficaSavings };
 
   // Strategy 2: CDCTC only (no FSA)
-  const stratCDCTC = calcStrategy(0, agi, numChildren, childcareCost, marginalRate, stateRate);
+  const stratCDCTC = calcStrategy(0, agi, numChildren, childcareCost, marginalRate, stateRate, joint);
 
   // Strategy 3: Optimal combo — sweep FSA contributions to find max
   let bestCombo = stratCDCTC;
   if (fsaAvailable) {
     for (let f = 0; f <= fsaMax; f += 250) {
-      const s = calcStrategy(f, agi, numChildren, childcareCost, marginalRate, stateRate);
+      const s = calcStrategy(f, agi, numChildren, childcareCost, marginalRate, stateRate, joint);
       if (s.totalSavings > bestCombo.totalSavings) bestCombo = s;
     }
   }
@@ -434,7 +441,7 @@ function renderResults(r) {
   document.getElementById('r-verdict-body').textContent =
     `Childcare cost ${fmt(r.childcareCost)}/yr. After optimal tax treatment, effective cost is ${fmt(r.bestCombo.netCost)}/yr. ` +
     `FSA saves ${(r.marginalRate + r.stateRate).toFixed(0)}% (income tax) + 7.65% (FICA) on contributions up to $${r.fsaMax.toLocaleString('en-US')}. ` +
-    `CDCTC applies a ${(getCDCTCRate(r.agi) * 100).toFixed(0)}% credit on up to ${r.numChildren >= 2 ? '$6,000' : '$3,000'} of expenses not offset by FSA.`;
+    `CDCTC applies a ${(getCDCTCRate(r.agi, r.filingStatus === 'mfj') * 100).toFixed(0)}% credit on up to ${r.numChildren >= 2 ? '$6,000' : '$3,000'} of expenses not offset by FSA.`;
 
   const tbody = document.getElementById('r-tbody');
   tbody.innerHTML = '';
@@ -450,11 +457,6 @@ function renderResults(r) {
   });
 }
 
-function getCDCTCRate(agi) {
-  if (agi <= 15000) return 0.35;
-  if (agi >= 43000) return 0.20;
-  return 0.35 - (Math.floor((agi - 15000) / 1000) * 0.01);
-}
 
 function buildMarkdown(r) {
   return `# Dependent Care FSA vs. CDCTC Optimizer\n\n## Optimal Strategy\n- FSA Contribution: ${fmt(r.optimalFSA)}\n- CDCTC Credit: ${fmt(r.bestCombo.cdctcCredit)}\n- **Total Savings: ${fmt(r.bestCombo.totalSavings)}**\n- Net Childcare Cost: ${fmt(r.bestCombo.netCost)}\n\n## Strategy Comparison\n| Strategy | Total Savings |\n|---|---|\n| FSA Only | ${fmt(r.stratFSAOnly.totalSavings)} |\n| CDCTC Only | ${fmt(r.stratCDCTC.totalSavings)} |\n| Optimal Combo | ${fmt(r.bestCombo.totalSavings)} |\n\n## Inputs\n- AGI: ${fmt(r.agi)} · Filing: ${r.filingStatus} · Childcare: ${fmt(r.childcareCost)}/yr\n\n*Generated by ApexLogics AL-137 · IRC §129 (DC-FSA); IRC §21 (CDCTC)*\n`;
