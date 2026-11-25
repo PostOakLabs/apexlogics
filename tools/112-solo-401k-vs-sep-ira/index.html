@@ -113,7 +113,7 @@ footer.tool-footer{background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,
 <div class="main">
 
 <div class="info-box">
-  <strong>2026 IRS Limits:</strong> Solo 401(k) employee deferral $24,500 · §415(c) total limit $72,000 · Catch-up age 50–59 &amp; 64+: $8,000 · Catch-up age 60–63: $11,250 · SEP-IRA: 25% of net SE comp, max $72,000 · SIMPLE IRA: $17,000 ($22,000 age 50–59/64+; $22,250 age 60–63)
+  <strong>2026 IRS Limits:</strong> Solo 401(k) employee deferral $24,500 · §415(c) total limit $72,000 · Catch-up age 50–59 &amp; 64+: $8,000 · Catch-up age 60–63: $11,250 · SEP-IRA: 20% of net SE earnings after the ½ SE-tax deduction (the 25% plan rate, reduced for the self-employed), max $72,000 · SIMPLE IRA: $17,000 ($22,000 age 50–59/64+; $22,250 age 60–63)
 </div>
 
 <div class="card">
@@ -240,12 +240,15 @@ footer.tool-footer{background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,
 // 2026 limits
 const LIMITS = {
   solo401k: { employeeDeferral: 24500, catchup5059_64plus: 8000, catchup6063: 11250, section415c: 72000 },
-  sep: { pct: 0.25, max: 72000 },
+  // Self-employed: the 25% plan rate becomes 20% (0.25 ÷ 1.25) of net earnings after
+  // the ½ SE-tax deduction (IRS Pub 560, rate table for self-employed).
+  sep: { pct: 0.20, max: 72000 },
   simple: { base: 17000, catchup5059_64plus: 4000, catchup6063: 5250 }
 };
 
 function fmt(n){ return '$' + Math.round(n).toLocaleString('en-US'); }
 const SE_FACTOR = 0.9235;
+const SS_WAGE_BASE = 184500; // 2026 (SSA)
 
 // Blank field -> default; an entered 0 is kept (AL-ZERO-INPUTS: was `value || default`).
 function _ov(id, d){ const s = String(document.getElementById(id).value).trim(); if (s === '') return d; const x = parseFloat(s); return Number.isFinite(x) ? x : d; }
@@ -256,9 +259,10 @@ function calcSERetirement(){
   const hasExistingPlan = document.getElementById('existingPlan').value === 'yes';
   const existingContrib = +document.getElementById('existingContrib').value || 0;
 
-  // Net SE comp = netIncome * 0.9235 * 0.5 deduction proxy → simplified as netIncome * 0.9235 - (SE tax / 2)
+  // SE tax: 12.4% Social Security up to the wage base, plus 2.9% Medicare on all of it.
   // For contribution calc: net compensation = netIncome - (0.5 * SE tax)
-  const seTax = netIncome * SE_FACTOR * 0.153;
+  const seEarnings = Math.max(0, netIncome * SE_FACTOR);
+  const seTax = Math.min(seEarnings, SS_WAGE_BASE) * 0.124 + seEarnings * 0.029;
   const netComp = netIncome - seTax * 0.5;
 
   // Catch-up
@@ -270,8 +274,9 @@ function calcSERetirement(){
   // === SOLO 401(k) ===
   const solo401kDeferralRoom = Math.max(0, LIMITS.solo401k.employeeDeferral + catchup - existingContrib);
   const solo401kEmployeeDeferral = Math.min(netComp, solo401kDeferralRoom);
-  // Employer: 25% of net comp (after SE deduction and after employee deferral)
-  const solo401kEmployer = Math.min(netComp * 0.25, LIMITS.solo401k.section415c - solo401kEmployeeDeferral);
+  // Employer profit sharing: 20% of net comp after the ½ SE-tax deduction (the
+  // self-employed rate for a 25% plan, Pub 560), within the §415(c) room left.
+  const solo401kEmployer = Math.min(netComp * LIMITS.sep.pct, LIMITS.solo401k.section415c - solo401kEmployeeDeferral);
   const solo401kTotal = Math.min(solo401kEmployeeDeferral + Math.max(0,solo401kEmployer), LIMITS.solo401k.section415c + catchup);
   const solo401kTaxSave = solo401kTotal * marginalRate;
 
@@ -309,7 +314,7 @@ function calcSERetirement(){
       ]},
     { key:'sep', name:'SEP-IRA', total:sepContrib, taxSave:sepTaxSave,
       rows:[
-        ['25% of net comp', fmt(netComp*0.25)],
+        ['20% of net comp', fmt(netComp*LIMITS.sep.pct)],
         ['Max cap', fmt(LIMITS.sep.max)],
         ['No employee deferral', '—'],
         ['No Roth option', '—'],
