@@ -218,12 +218,7 @@
       <div class="field">
         <label for="adjustedTaxableGifts">Adjusted taxable gifts, prior taxable gifts ($)</label>
         <input type="number" id="adjustedTaxableGifts" value="400000" min="0" max="10000000000" step="10000" />
-        <span class="field-hint">Lifetime gifts above the annual exclusion, added back to the base.</span>
-      </div>
-      <div class="field">
-        <label for="exemptionUsedByGifts">Exemption already used by lifetime gifts ($)</label>
-        <input type="number" id="exemptionUsedByGifts" value="400000" min="0" max="10000000000" step="10000" />
-        <span class="field-hint">Reduces the remaining exemption.</span>
+        <span class="field-hint">Lifetime gifts above the annual exclusion, added back to the base. Adding them back is how they use up exemption, so the full exemption is applied below (section 2001(b)).</span>
       </div>
       <div class="field" id="dsueField">
         <label for="dsue">Deceased spousal unused exemption, DSUE ($)</label>
@@ -426,7 +421,6 @@ function calculate() {
   const spouseIsCitizen = $('spouseIsCitizen').checked;
   const charitableDeduction = dollars($('charitableDeduction').value, 500000);
   const adjustedTaxableGifts = dollars($('adjustedTaxableGifts').value, 400000);
-  const exemptionUsedByGifts = dollars($('exemptionUsedByGifts').value, 400000);
   const dsueInput = dollars($('dsue').value, 0);
   const exemptionPerIndividual = dollars($('exemptionPerIndividual').value, 15000000);
   const topRatePct = Math.max(0, numOr($('topRatePct').value, 40));
@@ -453,8 +447,13 @@ function calculate() {
 
   /* step 4-5 */
   const baseExemption = isMarried ? (exemptionPerIndividual + dsue) : exemptionPerIndividual;
-  const availableExemption = Math.max(0, baseExemption - exemptionUsedByGifts);
-  const exemptionFullyConsumedByGifts = (baseExemption - exemptionUsedByGifts) < 0;
+  // Section 2001(b): tax is figured on taxable estate + adjusted taxable gifts, less the
+  // full unified credit. The gifts already sit in the base, so the exemption is NOT
+  // reduced for them a second time.
+  const availableExemption = baseExemption;
+  // Gifts above the exemption would have drawn gift tax during life, which section
+  // 2001(b)(2) subtracts; this tool doesn't take gift tax paid as an input.
+  const giftsExceedExemption = adjustedTaxableGifts > exemptionPerIndividual;
 
   /* step 6 */
   const aboveExemption = Math.max(0, taxableEstate - availableExemption);
@@ -479,17 +478,17 @@ function calculate() {
 
   /* step 14, married posture only */
   const unusedExemptionAtFirstDeath = isMarried
-    ? Math.max(0, exemptionPerIndividual - exemptionUsedByGifts - taxableEstate)
+    ? Math.max(0, exemptionPerIndividual - taxableEstate)
     : 0;
 
   _lastInputs = {
     filingPosture, grossEstate, debts, adminExpenses, maritalDeduction, spouseIsCitizen, charitableDeduction,
-    adjustedTaxableGifts, exemptionUsedByGifts, dsue: dsueInput, exemptionPerIndividual, topRatePct,
+    adjustedTaxableGifts, dsue: dsueInput, exemptionPerIndividual, topRatePct,
     stateApplies, stateExemption, stateRatePct, inheritanceApplies, inheritanceRatePct, nonExemptHeirShare
   };
   _lastResults = {
     dsueIgnoredNote, totalDeductions, deductionsExceedGross, adjustedGrossEstate, taxableEstate,
-    baseExemption, availableExemption, exemptionFullyConsumedByGifts, aboveExemption,
+    baseExemption, availableExemption, giftsExceedExemption, aboveExemption,
     federalEstateTax, stateEstateTax, taxableEstateAdj, federalEstateTaxAdj, inheritanceTax,
     totalTransferTax, netToHeirs, effectiveTransferRateBp, exemptionHeadroom, belowExemption,
     unusedExemptionAtFirstDeath, isMarried
@@ -521,7 +520,7 @@ function render() {
   if (r.deductionsExceedGross) notes.push('Deductions exceed the gross estate. The adjusted gross estate floors at 0; deductions cannot create a negative estate. The taxable estate here is driven by adjusted taxable gifts alone.');
   if (r.dsueIgnoredNote) notes.push('A deceased spousal unused exemption amount was entered, but portability requires the married-with-portability posture and a surviving spouse with a timely election. The DSUE was not applied to this run.');
   if (i.maritalDeduction > 0 && !i.spouseIsCitizen) notes.push('The marital deduction entered is above zero, but the unlimited marital deduction generally does not apply to a non-citizen surviving spouse without a QDOT. This tool does not model QDOT mechanics.');
-  if (r.exemptionFullyConsumedByGifts) notes.push('Exemption already used by lifetime gifts meets or exceeds the base exemption. Available exemption floors at 0, so the whole taxable estate is exposed.');
+  if (r.giftsExceedExemption) notes.push('Adjusted taxable gifts exceed the exemption, so gift tax was likely paid during life. Section 2001(b)(2) subtracts gift tax payable on those gifts; this tool does not, so the federal estate tax shown is overstated by that amount.');
   if (i.stateApplies && r.stateEstateTax > 0 && r.taxableEstateAdj === 0 && r.taxableEstate > 0) notes.push('State estate tax, deductible against the federal taxable estate under section 2058, was large enough on these inputs to drive the adjusted taxable estate to 0, so federal tax is 0 after the state deduction.');
   if (r.isMarried && r.unusedExemptionAtFirstDeath > 0) notes.push('The portable unused exemption row shows the amount that would carry to a surviving spouse if a timely Form 706 election is made. This is a mechanical observation, not a recommendation.');
 
@@ -568,7 +567,6 @@ function exportMarkdown() {
     `| Surviving spouse is a US citizen | ${i.spouseIsCitizen ? 'Yes' : 'No'} |`,
     `| Charitable deduction | ${fmt(i.charitableDeduction)} |`,
     `| Adjusted taxable gifts | ${fmt(i.adjustedTaxableGifts)} |`,
-    `| Exemption already used by lifetime gifts | ${fmt(i.exemptionUsedByGifts)} |`,
     `| Deceased spousal unused exemption | ${fmt(i.dsue)} |`,
     `| Federal exemption per individual | ${fmt(i.exemptionPerIndividual)} |`,
     `| Top federal estate tax rate | ${i.topRatePct}% |`,
@@ -620,7 +618,6 @@ async function exportAP2() {
       spouse_is_us_citizen: i.spouseIsCitizen,
       charitable_deduction: i.charitableDeduction,
       adjusted_taxable_gifts: i.adjustedTaxableGifts,
-      exemption_used_by_gifts: i.exemptionUsedByGifts,
       dsue: i.dsue,
       exemption_per_individual: i.exemptionPerIndividual,
       top_rate_pct: i.topRatePct,
