@@ -266,5 +266,32 @@ const FAKE_DOM = `
   eq('#142 not a C corp: all gain at 23.8% = 928,200', Math.round(r({ isCCorp: false }).federalTaxWith), 928200);
 }
 
+// ── #134 COBRA vs ACA: 2026 premium tax credit law, with the enhanced schedule ──
+// alongside. 2026 coverage uses the 2025 FPL (15,650 + 5,500); Rev. Proc. 2025-25
+// applicable percentages, linear within bands, 400% cliff. The kernel twin is pinned
+// by the worker's aca-ptc-134.test.mjs and kernel-parity.
+{
+  const { ctx } = load('134-cobra-vs-aca-optimizer', ['FPL_FOR_2026_COVERAGE', 'PTC_BANDS_2026',
+    'PTC_BANDS_ENHANCED', 'getFPL', 'applicablePct', 'getPTCContributionPct',
+    'getEnhancedContributionPct', 'calculate'], FAKE_DOM + `
+    var _lastResult = null;
+    function renderResults() {}
+    globalThis.__run134 = (o) => {
+      __set(Object.assign({ cobraMonthly: 650, benchmarkMonthly: 550, coverageMonths: 12, agi: 30000,
+        householdSize: 1, stateAK: 'lower48', hsaToggle: false }, o));
+      calculate();
+      return _lastResult;
+    };`);
+  const r = (o = {}) => ctx.__run134(o);
+  eq('#134 audit case: single, AGI 30,000: 6.20%, PTC 4,740 (was 4.0%, 5,400)',
+    `${r().contribPct} ${Math.round(r().ptcAnnual)}`, '0.062 4740');
+  eq('#134 audit case: net 155/mo; if extended 42/mo',
+    `${Math.round(r().mktNetMonthly)} ${Math.round(r().enhNetMonthly)}`, '155 42');
+  eq('#134 above 400% (AGI 70,000): no credit; if extended net 496/mo',
+    `${r({ agi: 70000 }).contribPct} ${Math.round(r({ agi: 70000 }).enhNetMonthly)}`, 'null 496');
+  eq('#134 AK family of 4, AGI 100,000: 8.40% (2026), 3.95% if extended',
+    `${r({ agi: 100000, householdSize: 4, stateAK: 'ak', benchmarkMonthly: 1800 }).contribPct} ${r({ agi: 100000, householdSize: 4, stateAK: 'ak', benchmarkMonthly: 1800 }).enhContribPct}`, '0.084 0.0395');
+}
+
 if (fail) { console.error(`\n✗ CALC-VECTORS: ${fail} failed, ${pass} passed`); process.exit(1); }
 console.log(`✓ CALC-VECTORS: all ${pass} vectors pass`);

@@ -198,7 +198,7 @@ footer.tool-footer{background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,
     <span class="toggle-label">I want an HSA-eligible (HDHP) plan on Marketplace</span>
   </div>
   <div class="vintage-note">
-    📌 <strong>2026 FPL reference:</strong> $15,960 (single) · +$5,620/additional person · AK +25% · HI +15%. Enhanced ACA subsidies expired 12/31/2025 — 400% FPL cliff is in effect for 2026.
+    📌 <strong>Poverty line for 2026 coverage</strong> (2025 HHS guidelines): $15,650 (single) · +$5,500/additional person · AK $19,550 +$6,880 · HI $17,990 +$6,330. Main results use 2026 law (enhanced subsidies expired 12/31/2025, 400% FPL cliff back); an "if extended" comparison is shown alongside.
   </div>
 </div>
 
@@ -244,6 +244,7 @@ footer.tool-footer{background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,
     </table>
 
     <div id="ptcDetail" class="info-box" style="margin-top:8px"></div>
+    <div id="enhancedDetail" class="info-box" style="display:none;margin-top:8px"></div>
     <div id="cliffWarning" class="warn-box" style="display:none"></div>
     <div id="cliffDanger" class="danger-box" style="display:none"></div>
     <div id="hsaNote" class="info-box" style="display:none;margin-top:8px">
@@ -347,41 +348,63 @@ footer.tool-footer{background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,
 
 <script>
 // ── Constants (labeled) ───────────────────────────────────────────────────────
-// HHS 2026 Federal Poverty Guidelines (effective January 13, 2026)
-// Source: federalregister.gov/documents/2026/01/15/2026-00755
-const FPL_2026 = {
-  lower48: { base: 15960, perPerson: 5620 },
-  ak:      { base: 19950, perPerson: 7020 },  // Alaska: +25% (approximate)
-  hi:      { base: 18360, perPerson: 6470 }   // Hawaii: +15% (approximate)
+// Premium tax credits for 2026 coverage use the 2025 HHS poverty guidelines
+// (the guidelines in effect at the start of open enrollment). Source: 2026 Form 8962 instructions.
+const FPL_FOR_2026_COVERAGE = {
+  lower48: { base: 15650, perPerson: 5500 },
+  ak:      { base: 19550, perPerson: 6880 },
+  hi:      { base: 17990, perPerson: 6330 }
 };
 
-// ACA §36B Baseline PTC contribution percentage table (2026)
-// Enhanced subsidies (ARP/IRA) expired 12/31/2025 — 400% FPL cliff restored
-// Source: 26 CFR 1.36B-3 (baseline table, no enhanced supplement)
-const PTC_TABLE = [
-  { maxPct: 1.33, contrib: 0.00 },
-  { maxPct: 1.50, contrib: 0.020 },
-  { maxPct: 2.00, contrib: 0.040 },
-  { maxPct: 2.50, contrib: 0.060 },
-  { maxPct: 3.00, contrib: 0.085 },
-  { maxPct: 4.00, contrib: 0.085 },
-  // Above 400% FPL: no subsidy (cliff in effect 2026)
+// 2026 applicable percentage table, Rev. Proc. 2025-25 sec. 3.01 (current law: the enhanced
+// ARPA/IRA credits expired 12/31/2025). [from, to, initial, final] as a share of FPL; the
+// percentage rises linearly within each band and is rounded to 0.01%. Above 400% FPL: no credit.
+const PTC_BANDS_2026 = [
+  [1.00, 1.33, 0.0210, 0.0210],
+  [1.33, 1.50, 0.0314, 0.0419],
+  [1.50, 2.00, 0.0419, 0.0660],
+  [2.00, 2.50, 0.0660, 0.0844],
+  [2.50, 3.00, 0.0844, 0.0996],
+  [3.00, 4.00, 0.0996, 0.0996]
+];
+
+// Enhanced ARPA/IRA schedule (2021-2025), shown only as an "if the enhanced subsidies are
+// extended" comparison. No 400% cliff: 8.5% applies above 400% FPL.
+const PTC_BANDS_ENHANCED = [
+  [1.00, 1.50, 0.000, 0.000],
+  [1.50, 2.00, 0.000, 0.020],
+  [2.00, 2.50, 0.020, 0.040],
+  [2.50, 3.00, 0.040, 0.060],
+  [3.00, 4.00, 0.060, 0.085]
 ];
 
 let _lastResult = null;
 
 function getFPL(householdSize, state) {
-  const tbl = FPL_2026[state];
+  const tbl = FPL_FOR_2026_COVERAGE[state];
   return tbl.base + (householdSize - 1) * tbl.perPerson;
 }
 
-function getPTCContributionPct(fplPct) {
-  if (fplPct > 4.0) return null; // above cliff — no subsidy
-  if (fplPct < 1.0) return null; // below Medicaid threshold — Medicaid, not PTC
-  for (const band of PTC_TABLE) {
-    if (fplPct <= band.maxPct) return band.contrib;
+// Applicable percentage for a household income ratio (AGI / FPL), or null when no credit.
+function applicablePct(fplPct, bands, cliff) {
+  if (!(fplPct >= 1.0)) return null; // below 100% FPL: Medicaid territory, not PTC
+  const last = bands[bands.length - 1];
+  if (fplPct > last[1]) return cliff ? null : last[3];
+  for (const b of bands) {
+    if (fplPct < b[1] || b === last) {
+      const pct = b[2] + (b[3] - b[2]) * (fplPct - b[0]) / (b[1] - b[0]);
+      return Math.round(pct * 10000) / 10000;
+    }
   }
-  return PTC_TABLE[PTC_TABLE.length - 1].contrib;
+  return null;
+}
+
+function getPTCContributionPct(fplPct) {
+  return applicablePct(fplPct, PTC_BANDS_2026, true); // 2026 law, 400% cliff
+}
+
+function getEnhancedContributionPct(fplPct) {
+  return applicablePct(fplPct, PTC_BANDS_ENHANCED, false); // if extended, no cliff
 }
 
 function applyBucket() {
@@ -423,6 +446,17 @@ function calculate() {
   const mktTotal   = mktNetMonthly * coverageMonths;
   const savings    = cobraTotal - mktTotal;
 
+  // ── Comparison: if the enhanced ARPA/IRA subsidies are extended (not current law) ──
+  const enhContribPct = getEnhancedContributionPct(fplPct);
+  let enhPtcAnnual = 0;
+  let enhNetMonthly = benchmarkMo;
+  if (enhContribPct !== null) {
+    enhPtcAnnual  = Math.max(0, benchmarkMo * 12 - enhContribPct * agi);
+    enhNetMonthly = Math.max(0, benchmarkMo - enhPtcAnnual / 12);
+  }
+  const enhTotal   = enhNetMonthly * coverageMonths;
+  const enhSavings = cobraTotal - enhTotal;
+
   // ── Break-even AGI (where Marketplace = COBRA) ──
   let breakEvenAGI = null;
   for (let testAGI = 5000; testAGI <= fpl * 6; testAGI += 500) {
@@ -436,7 +470,8 @@ function calculate() {
   _lastResult = {
     cobraMonthly, benchmarkMo, coverageMonths, agi, householdSize, state,
     fpl, fplPct, contribPct, ptcAnnual, mktNetMonthly, subsidized,
-    cobraTotal, mktTotal, savings, breakEvenAGI, hsaWanted
+    cobraTotal, mktTotal, savings, breakEvenAGI, hsaWanted,
+    enhContribPct, enhPtcAnnual, enhNetMonthly, enhTotal, enhSavings
   };
 
   renderResults(_lastResult);
@@ -484,15 +519,32 @@ function renderResults(r) {
       <td class="mono">${fmt(r.mktNetMonthly)}</td>
       <td class="mono">${fmt(r.mktTotal)}</td>
     </tr>
+    <tr style="color:var(--muted)">
+      <td>Marketplace if enhanced subsidies are extended (not current law)</td>
+      <td class="mono">${fmt(r.benchmarkMo)}</td>
+      <td class="mono">${r.enhContribPct !== null ? fmt(r.enhPtcAnnual / 12) + '/mo' : '—'}</td>
+      <td class="mono">${fmt(r.enhNetMonthly)}</td>
+      <td class="mono">${fmt(r.enhTotal)}</td>
+    </tr>
   `;
 
   // PTC detail
   if (r.subsidized && r.fplPct <= 4.0) {
     document.getElementById('ptcDetail').style.display = 'block';
     document.getElementById('ptcDetail').innerHTML =
-      `✅ <strong>PTC estimate:</strong> Your AGI is ${fmtPct(r.fplPct)} of FPL (${r.householdSize}-person household · FPL = $${r.fpl.toLocaleString('en-US')}). Required contribution: ${fmtPct(r.contribPct)} of AGI = ${fmt(r.contribPct * r.agi)}/yr. Annual PTC: ${fmt(r.ptcAnnual)} · Monthly: ${fmt(r.ptcAnnual / 12)}.`;
+      `✅ <strong>PTC estimate:</strong> Your AGI is ${fmtPct(r.fplPct)} of FPL (${r.householdSize}-person household · FPL = $${r.fpl.toLocaleString('en-US')}). Required contribution under 2026 law: ${(r.contribPct * 100).toFixed(2)}% of AGI = ${fmt(r.contribPct * r.agi)}/yr. Annual PTC: ${fmt(r.ptcAnnual)} · Monthly: ${fmt(r.ptcAnnual / 12)}.`;
   } else {
     document.getElementById('ptcDetail').style.display = 'none';
+  }
+
+  // If-extended comparison
+  const enh = document.getElementById('enhancedDetail');
+  if (r.enhContribPct !== null) {
+    enh.style.display = 'block';
+    enh.innerHTML =
+      `🔁 <strong>If the enhanced subsidies are extended:</strong> contribution ${(r.enhContribPct * 100).toFixed(2)}% of AGI, PTC ${fmt(r.enhPtcAnnual)}/yr, Marketplace net ${fmt(r.enhNetMonthly)}/mo (${r.enhNetMonthly < r.cobraMonthly ? 'cheaper' : 'not cheaper'} than COBRA). This is the 2021–2025 schedule with no 400% cliff. As of November 2026 no extension has been enacted, so the 2026 figures above are what applies.`;
+  } else {
+    enh.style.display = 'none';
   }
 
   // Cliff warning
@@ -564,12 +616,13 @@ function exportMarkdown() {
 - **PTC contribution rate:** ${r.contribPct !== null ? fmtPct(r.contribPct) : 'N/A (above cliff or Medicaid territory)'}
 - **Annual PTC estimate:** ${fmtDollar(r.ptcAnnual)}
 - **400% FPL cliff:** ${r.fplPct > 4.0 ? '⚠ ABOVE CLIFF — no subsidy' : 'Below cliff — subsidized'}
+- **If enhanced subsidies are extended (not current law):** ${r.enhContribPct !== null ? fmtPct(r.enhContribPct) + ' contribution · PTC ' + fmtDollar(r.enhPtcAnnual) + '/yr · net ' + fmtDollar(r.enhNetMonthly) + '/mo' : 'N/A (Medicaid territory)'}
 
 ## Recommendation
 ${r.mktNetMonthly < r.cobraMonthly ? '**ACA Marketplace**' : '**COBRA**'} saves ${fmtDollar(Math.abs(r.savings))} over the ${r.coverageMonths}-month gap.
 
 ---
-*Generated by ApexLogics AL-141 · apexlogics.org · Data: HHS 2026 FPL · ACA §36B baseline PTC*`;
+*Generated by ApexLogics AL-141 · apexlogics.org · Data: 2025 HHS FPL (2026 coverage) · Rev. Proc. 2025-25 · ARPA/IRA schedule (if extended)*`;
   const blob = new Blob([md], { type: 'text/markdown' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = 'cobra-vs-aca-AL141.md'; a.click();
@@ -599,10 +652,18 @@ async function exportAP2() {
       subsidyCliffAGI: Math.round(4.0 * r.fpl),
       aboveCliff: r.fplPct > 4.0,
       recommendedPath: r.mktNetMonthly < r.cobraMonthly ? 'marketplace' : 'cobra',
-      totalSavings: Math.round(Math.abs(r.savings))
+      totalSavings: Math.round(Math.abs(r.savings)),
+      contributionPct: r.contribPct,
+      ifEnhancedExtended: {
+        contributionPct: r.enhContribPct,
+        marketplaceNetMonthly: Math.round(r.enhNetMonthly),
+        ptcAnnual: Math.round(r.enhPtcAnnual),
+        recommendedPath: r.enhNetMonthly < r.cobraMonthly ? 'marketplace' : 'cobra',
+        totalSavings: Math.round(Math.abs(r.enhSavings))
+      }
     },
     downstream_handoff_candidates: ["AL-142", "AL-23"],
-    metadata: { license: "CC-BY-4.0", data_vintage: "HHS 2026 FPL" }
+    metadata: { license: "CC-BY-4.0", data_vintage: "2025 HHS FPL (2026 coverage) · Rev. Proc. 2025-25 · ARPA/IRA if extended" }
   };
   // ── OpenChainGraph L1 + L2 ──
   payload.chaingraph_version = "0.1.0";
@@ -717,7 +778,7 @@ const MANIFEST = {
   ],
   "status": "shipped",
   "maintenance": "low",
-  "data_vintage": "HHS 2026 FPL · baseline ACA PTC bands (400% cliff in effect 2026)",
+  "data_vintage": "2025 HHS FPL (used for 2026 coverage) · Rev. Proc. 2025-25 2026 applicable percentages (400% cliff in effect 2026) · ARPA/IRA schedule shown as an if-extended comparison",
   "ap2_export": true,
   "ap2_mandate_types": [
     "coverage_transition_record"
@@ -730,8 +791,8 @@ const MANIFEST = {
     "AL-23"
   ],
   "regulatory_citations": [
-    "HHS 2026 Federal Poverty Guidelines (eff. Jan 2026; 48-state single: $15,960)",
-    "ACA §36B baseline PTC table (enhanced subsidy expired 12/31/2025; 400% FPL cliff restored 2026)"
+    "HHS 2025 Federal Poverty Guidelines, used for 2026 coverage (48-state single: $15,650; 2026 Form 8962 instructions)",
+    "Rev. Proc. 2025-25 §3.01 2026 applicable percentage table (enhanced subsidy expired 12/31/2025; 400% FPL cliff restored 2026)"
   ],
   "sister_suite": "https://ainumbers.co",
   "consulting_site": "https://postoaklabs.com",
