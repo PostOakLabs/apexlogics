@@ -181,7 +181,7 @@
           <option value="MFJ">Married Filing Jointly</option>
           <option value="MFS">Married Filing Separately</option>
         </select>
-        <span class="field-hint">MFS uses its own two-tier structure when living apart all year</span>
+        <span class="field-hint">MFS has its own two-threshold table if you lived with your spouse at any time in the year (20 CFR 418.1120)</span>
       </div>
       <div class="field mfs-sub" id="mfsSub">
         <label for="mfsLivingApart">Lived apart from spouse all year?</label>
@@ -189,7 +189,7 @@
           <option value="yes">Yes, lived apart all year</option>
           <option value="no">No, lived together at some point</option>
         </select>
-        <span class="field-hint">If no, the single thresholds apply instead of the MFS two-tier table</span>
+        <span class="field-hint">If yes, the single thresholds apply. If no, the MFS table applies: $109,000 and $391,000.</span>
       </div>
       <div class="field">
         <label for="agi">Adjusted gross income from the look-back year ($)</label>
@@ -256,9 +256,9 @@
         <input type="text" id="cIrmaaMFJ" value="218000,274000,342000,410000,750000" />
       </div>
       <div class="field">
-        <label for="cIrmaaMFS">IRMAA thresholds, MFS living apart ($, comma-separated)</label>
-        <input type="text" id="cIrmaaMFS" value="109000,394000" />
-        <span class="field-hint">Low confidence, verify against current CMS figures</span>
+        <label for="cIrmaaMFS">IRMAA thresholds, MFS who lived with spouse ($, comma-separated)</label>
+        <input type="text" id="cIrmaaMFS" value="109000,391000" />
+        <span class="field-hint">CMS 2026. These map to the top premium tiers, not tiers 1 and 2.</span>
       </div>
       <div class="field">
         <label for="cPartB">Total monthly Part B premium by tier ($, comma-separated, 6 tiers)</label>
@@ -419,11 +419,16 @@ function parseNumList(str, fallback) {
 }
 
 /* Runs steps 3-7 of the spec against a given MAGI and threshold set */
-function tierLookup(magi, thresholds, partBByTier, partDByTier, enrolledPartD, enrollees) {
-  let tier = 0;
+function tierLookup(magi, thresholds, partBByTier, partDByTier, enrolledPartD, enrollees, tierMap) {
+  // CMS: each band starts "greater than" its threshold, except the top band, which
+  // starts at "greater than or equal to" (e.g. >= $500,000 single, >= $391,000 MFS).
+  let band = 0;
   for (let k = 0; k < thresholds.length; k++) {
-    if (magi > thresholds[k]) tier = k + 1;
+    const isTop = k === thresholds.length - 1;
+    if (isTop ? magi >= thresholds[k] : magi > thresholds[k]) band = k + 1;
   }
+  // The MFS table's bands map onto the top premium tiers (0, 4, 5), not 0, 1, 2.
+  const tier = tierMap ? tierMap[band] : band;
   const partBMonthly = partBByTier[tier];
   const partDSurchargeMonthly = enrolledPartD ? partDByTier[tier] : 0;
   const partBSurchargeMonthly = money(partBByTier[tier] - partBByTier[0]);
@@ -431,7 +436,7 @@ function tierLookup(magi, thresholds, partBByTier, partDByTier, enrolledPartD, e
   const annualSurchargePerPerson = money((partBSurchargeMonthly + partDSurchargeMonthly) * 12);
   const annualHousehold = money(annualPerPerson * enrollees);
   const annualSurchargeHousehold = money(annualSurchargePerPerson * enrollees);
-  return { tier, partBMonthly, partDSurchargeMonthly, partBSurchargeMonthly, annualPerPerson, annualSurchargePerPerson, annualHousehold, annualSurchargeHousehold };
+  return { band, tier, partBMonthly, partDSurchargeMonthly, partBSurchargeMonthly, annualPerPerson, annualSurchargePerPerson, annualHousehold, annualSurchargeHousehold };
 }
 
 /* ── CORE MATH (spec steps 1-12) ──────────────────────────────────────────── */
@@ -449,14 +454,19 @@ function calculate() {
   const cLookback = parseInt($('cLookback').value, 10) || 2;
   const cIrmaaSingle = parseNumList($('cIrmaaSingle').value, [109000,137000,171000,205000,500000]);
   const cIrmaaMFJ = parseNumList($('cIrmaaMFJ').value, [218000,274000,342000,410000,750000]);
-  const cIrmaaMFS = parseNumList($('cIrmaaMFS').value, [109000,394000]);
+  const cIrmaaMFS = parseNumList($('cIrmaaMFS').value, [109000,391000]);
   const cPartB = parseNumList($('cPartB').value, [202.90,284.10,405.80,527.50,649.20,689.90]);
   const cPartD = parseNumList($('cPartD').value, [0,14.50,37.50,60.40,83.30,91.00]);
 
   // Step 2: threshold set
-  let thresholds;
+  // 20 CFR 418.1120: married filing separately and lived with the spouse at any time
+  // in the year -> the MFS table; lived apart all year -> the single table.
+  let thresholds, tierMap = null;
   if (filingStatus === 'MFJ') thresholds = cIrmaaMFJ;
-  else if (filingStatus === 'MFS') thresholds = mfsLivingApart ? cIrmaaMFS : cIrmaaSingle;
+  else if (filingStatus === 'MFS' && !mfsLivingApart) {
+    thresholds = cIrmaaMFS;
+    tierMap = [0].concat(thresholds.map((_, k) => cPartB.length - thresholds.length + k));
+  }
   else thresholds = cIrmaaSingle;
 
   // Step 1: MAGI (clamp negative AGI at 0 for the lookup, per edge case)
@@ -464,13 +474,13 @@ function calculate() {
   const magi = money(agiClamped + taxExemptInterest);
 
   // Steps 3-7: tier lookup on current MAGI
-  const cur = tierLookup(magi, thresholds, cPartB, cPartD, enrolledPartD, enrollees);
+  const cur = tierLookup(magi, thresholds, cPartB, cPartD, enrolledPartD, enrollees, tierMap);
 
   // Step 8: distance to the next cliff
   let nextThreshold = null, distanceToNext = null, headroom = null;
-  const atTopTier = cur.tier >= thresholds.length;
+  const atTopTier = cur.band >= thresholds.length;
   if (!atTopTier) {
-    nextThreshold = thresholds[cur.tier];
+    nextThreshold = thresholds[cur.band];
     distanceToNext = money(nextThreshold - magi);
     headroom = Math.max(0, money(distanceToNext - 1));
   }
@@ -478,7 +488,7 @@ function calculate() {
   // Step 9: cost of crossing
   let crossingCostAnnual = null;
   if (!atTopTier) {
-    const nextTierIdx = cur.tier + 1;
+    const nextTierIdx = tierMap ? tierMap[cur.band + 1] : cur.band + 1;
     const nextMonthly = cPartB[nextTierIdx] + (enrolledPartD ? cPartD[nextTierIdx] : 0);
     const curMonthly = cur.partBMonthly + cur.partDSurchargeMonthly;
     crossingCostAnnual = money((nextMonthly - curMonthly) * 12 * enrollees);
@@ -486,7 +496,7 @@ function calculate() {
 
   // Step 10: effect of additional income
   const projectedMAGI = money(magi + additionalIncome);
-  const proj = tierLookup(Math.max(0, projectedMAGI), thresholds, cPartB, cPartD, enrolledPartD, enrollees);
+  const proj = tierLookup(Math.max(0, projectedMAGI), thresholds, cPartB, cPartD, enrolledPartD, enrollees, tierMap);
   const incrementalCost = money(proj.annualHousehold - cur.annualHousehold);
 
   // Step 11: implied marginal rate
