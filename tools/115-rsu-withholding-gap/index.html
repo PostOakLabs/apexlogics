@@ -134,6 +134,7 @@ footer.tool-footer{background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,
     <div class="field">
       <label for="salary">Base Salary ($)</label>
       <input type="number" id="salary" value="210000" min="0" step="1000">
+      <div class="hint">Annual salary plus any bonus. The vest is stacked on top of it, after the standard deduction, to find the brackets it falls in.</div>
     </div>
     <div class="field">
       <label for="filingStatus">Filing Status</label>
@@ -145,7 +146,7 @@ footer.tool-footer{background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,
     <div class="field">
       <label for="ytdIncome">YTD Income Before This Vest ($)</label>
       <input type="number" id="ytdIncome" value="105000" min="0" step="1000">
-      <div class="hint">Your salary/bonus received so far this year.</div>
+      <div class="hint">Wages paid so far this year, before this vest. Used for the 0.9% additional Medicare tax.</div>
     </div>
     <div class="field">
       <label for="ytdSS">YTD SS Wages ($)</label>
@@ -297,15 +298,34 @@ const NIIT_THRESHOLD = {single: 200000, mfj: 250000};
 const STATE_RATES = {none: 0, low: 0.03, mid: 0.05, high: 0.093};
 const FED_SUPP = 0.22; // federal supplemental withholding rate
 
-function calcFedMarginal(income, status){
-  const B = status==='mfj'
+const STD_DEDUCTION = {single: 16100, mfj: 32200}; // 2026, Rev. Proc. 2025-32
+function fedBrackets(status){
+  return status==='mfj'
     ? [[24800,.10],[100800,.12],[211400,.22],[403550,.24],[512450,.32],[768700,.35],[Infinity,.37]]
     : [[12400,.10],[50400,.12],[105700,.22],[201775,.24],[256225,.32],[640600,.35],[Infinity,.37]];
-  for(const [top,r] of B){ if(income<=top) return r; }
+}
+function calcFedMarginal(income, status){
+  for(const [top,r] of fedBrackets(status)){ if(income<=top) return r; }
   return .37;
+}
+// Regular federal income tax on taxable income, bracket by bracket.
+function calcFedTax(taxable, status){
+  let tax=0, lo=0;
+  for(const [top,r] of fedBrackets(status)){
+    if(taxable>lo) tax+=(Math.min(taxable,top)-lo)*r;
+    lo=top;
+  }
+  return tax;
 }
 
 function fmt(n){ return '$'+Math.round(n).toLocaleString('en-US'); }
+
+// Federal gap for this vest plus the remaining same-size vests, all stacked on salary.
+function yearGap(salary, vestIncome, moreVests, status, std){
+  const allVests=vestIncome*(1+moreVests);
+  const tax=calcFedTax(Math.max(0,salary+allVests-std),status)-calcFedTax(Math.max(0,salary-std),status);
+  return tax-allVests*FED_SUPP;
+}
 
 let _lastResult=null;
 
@@ -323,8 +343,12 @@ function calcRSUGap(){
   const vestIncome=fmv*shares;
   const totalIncome=ytdIncome+vestIncome;
 
-  // Federal: actual marginal rate at (ytdIncome + vestIncome) point
-  const fedMarginal=calcFedMarginal(totalIncome,status);
+  // Federal: the vest is stacked on the year's salary after the standard deduction,
+  // and taxed bracket by bracket (it can span several brackets).
+  const std=STD_DEDUCTION[status]||STD_DEDUCTION.single;
+  const taxableBefore=Math.max(0,salary-std);
+  const taxableAfter=Math.max(0,salary+vestIncome-std);
+  const fedMarginal=calcFedMarginal(taxableAfter,status);
 
   // FICA at vest
   // SS: applicable on amount up to wage base
@@ -339,8 +363,8 @@ function calcRSUGap(){
   // State
   const stateActual=vestIncome*stateRate;
 
-  // Actual federal tax on RSU income (incremental above ytd)
-  const fedActual=vestIncome*fedMarginal;
+  // Actual federal tax on RSU income: the increase in the year's tax from adding it
+  const fedActual=calcFedTax(taxableAfter,status)-calcFedTax(taxableBefore,status);
   const totalActual=fedActual+ficaActual+stateActual;
 
   // Withheld: 22% fed + same FICA + state at 22% approx (often same rate used)
@@ -355,14 +379,14 @@ function calcRSUGap(){
   _lastResult={fmv,shares,moreVests,salary,status,ytdIncome,ytdSS,stateKey,stateRate,
     vestIncome,totalIncome,fedMarginal,ssApplied,mcBase,mcSurcharge:Math.max(0,mcSurcharge),
     ficaActual,stateActual,fedActual,totalActual,fedWithheld,ficaWithheld,stateWithheld,
-    totalWithheld,fedGap,totalGap};
+    totalWithheld,fedGap,totalGap,totalYearGap:yearGap(salary,vestIncome,moreVests,status,std)};
 
   // Banner
   const banner=document.getElementById('gapBanner');
   if(totalGap>0){
     banner.className='gap-banner';
     document.getElementById('gapAmount').textContent=fmt(totalGap);
-    document.getElementById('gapSub').textContent=`Federal marginal rate ${(fedMarginal*100).toFixed(0)}% vs. 22% withheld — ${fmt(fedGap)} shortfall on this vest`;
+    document.getElementById('gapSub').textContent=`Federal tax on this vest ${fmt(fedActual)} (top rate ${(fedMarginal*100).toFixed(0)}%) vs. 22% withheld — ${fmt(fedGap)} shortfall`;
   } else {
     banner.className='gap-banner no-gap';
     document.getElementById('gapAmount').textContent=fmt(Math.abs(totalGap));
@@ -393,7 +417,7 @@ function calcRSUGap(){
   const actionBox=document.getElementById('actionBox');
   if(totalGap>500){
     actionBox.className='action-box';
-    const totalYearGap=totalGap*(1+moreVests);
+    const totalYearGap=_lastResult.totalYearGap;
     actionBox.innerHTML=`<strong>Action needed:</strong> Set aside ${fmt(totalGap)} for this vest. ` +
       (moreVests>0?`With ${moreVests} additional vest events, total year gap ≈ ${fmt(totalYearGap)}. `:'') +
       `Consider filing Form W-4 to increase withholding, or make a Q${Math.min(4,Math.ceil((new Date().getMonth()+1)/3))} estimated payment.`;

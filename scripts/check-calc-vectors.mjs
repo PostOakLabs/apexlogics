@@ -201,5 +201,28 @@ const FAKE_DOM = `
   eq('#23 SEP under the cap passes through', ctx.__run23(120000, 10000), '$10,000');
 }
 
+// ── #115 RSU withholding gap: the vest stacked on annual salary (2026 brackets) ──
+// Federal tax on the vest = tax(salary + vest − standard deduction) − tax(salary −
+// standard deduction), bracket by bracket, against 22% supplemental withholding.
+{
+  const { ctx } = load('115-rsu-withholding-gap',
+    ['SS_WAGE_BASE', 'SS_SUPP', 'MC_SUPP', 'MC_SURCHARGE', 'NIIT_THRESHOLD', 'STATE_RATES', 'FED_SUPP',
+     'STD_DEDUCTION', 'fedBrackets', 'calcFedMarginal', 'calcFedTax', 'fmt', 'yearGap', 'calcRSUGap'],
+    FAKE_DOM + `
+    var _lastResult = null;
+    globalThis.__run115 = (o) => {
+      __set(Object.assign({ fmv: 125, shares: 500, moreVests: 0, salary: 210000, filingStatus: 'single',
+        ytdIncome: 105000, ytdSS: 105000, state: 'none' }, o));
+      calcRSUGap();
+      return _lastResult;
+    };`);
+  const r = (o = {}) => ctx.__run115(o);
+  eq('#115 single, salary 210k, vest 62,500: gap 5,625 (was 1,250)', Math.round(r().fedGap), 5625);
+  eq('#115 the vest spans 24/32/35%: top rate 35%', r().fedMarginal, 0.35);
+  eq('#115 MFJ, salary 150k, vest 20k, all in 22%: no gap', Math.round(r({ filingStatus: 'mfj', salary: 150000, fmv: 100, shares: 200 }).fedGap), 0);
+  eq('#115 single, salary 60k, vest 10k: over-withheld by 650', Math.round(r({ salary: 60000, fmv: 100, shares: 100 }).fedGap), -650);
+  eq('#115 two vests of 62,500 on 210k: year gap 13,750', Math.round(r({ moreVests: 1 }).totalYearGap), 13750);
+}
+
 if (fail) { console.error(`\n✗ CALC-VECTORS: ${fail} failed, ${pass} passed`); process.exit(1); }
 console.log(`✓ CALC-VECTORS: all ${pass} vectors pass`);
