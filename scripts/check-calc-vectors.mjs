@@ -224,5 +224,23 @@ const FAKE_DOM = `
   eq('#115 two vests of 62,500 on 210k: year gap 13,750', Math.round(r({ moreVests: 1 }).totalYearGap), 13750);
 }
 
+// ── #102 grad loan caps: existing graduate loans reduce the $100k/$200k cap ──────
+// (Undergraduate loans count only toward the $257,500 overall limit, so the field
+// now asks for graduate/professional loans only; FSA loan-limits FAQ GPSLL-Q2.)
+{
+  const { ctx } = load('102-grad-loan-cap-gap-planner', ['PROG_CAPS', 'stdPayment', 'fmt$', 'calcGap'], FAKE_DOM + `
+    var lastGapResult = null;
+    globalThis.__run102 = (o) => {
+      __set(Object.assign({ prog_type: 'grad_other', coa: 25000, years: 5, existing_fed: 0,
+        fellowship: 0, employer_tuition: 0, savings_contrib: 0, other_aid: 0 }, o));
+      calcGap();
+      return lastGapResult;
+    };`);
+  const r = (o = {}) => ctx.__run102(o);
+  eq('#102 grad, 5 × 20,500, no prior grad loans: federal available 100,000 (cap)', Math.round(r().totalFedBorrowed), 100000);
+  eq('#102 grad, 30,000 prior graduate loans: 70,000 left', Math.round(r({ existing_fed: 30000 }).totalFedBorrowed), 70000);
+  eq('#102 law, 3 × 50,000 under the 200,000 cap: 150,000', Math.round(r({ prog_type: 'law', coa: 75000, years: 3 }).totalFedBorrowed), 150000);
+}
+
 if (fail) { console.error(`\n✗ CALC-VECTORS: ${fail} failed, ${pass} passed`); process.exit(1); }
 console.log(`✓ CALC-VECTORS: all ${pass} vectors pass`);
