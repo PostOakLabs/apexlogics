@@ -116,5 +116,44 @@ const eq = (label, got, want) => {
     run({ adjustedTaxableGifts: 16000000 }).giftsExceedExemption, true);
 }
 
+// ── #150 IRMAA: which table applies to married-filing-separately (20 CFR 418.1120) ──
+// MFS and lived with the spouse at any time in the year → the MFS table ($109,000 /
+// $391,000, mapping to the top two premium tiers); lived apart all year → the single
+// table. The top band starts at "greater than or equal to" (CMS 2026 fact sheet).
+{
+  const { ctx } = load('150-irmaa-bracket-calculator', ['money', 'bps', 'parseNumList', 'tierLookup', 'calculate'], `
+    var _lastInputs, _lastResults, __vals = {};
+    function render() {}
+    function $(id) {
+      const v = __vals[id];
+      return typeof v === 'boolean' ? { checked: v } : { value: String(v) };
+    }
+    globalThis.__runIrmaa = (over) => {
+      __vals = Object.assign({
+        filingStatus: 'Single', mfsLivingApart: 'yes', agi: 150000, taxExemptInterest: 0,
+        enrollees: 1, enrolledPartD: false, additionalIncome: 0, lifeChangingEvent: false,
+        cPremiumYear: 2026, cLookback: 2,
+        cIrmaaSingle: '109000,137000,171000,205000,500000', cIrmaaMFJ: '218000,274000,342000,410000,750000',
+        cIrmaaMFS: '109000,391000', cPartB: '202.90,284.10,405.80,527.50,649.20,689.90',
+        cPartD: '0,14.50,37.50,60.40,83.30,91.00',
+      }, over);
+      calculate();
+      return _lastResults;
+    };`);
+  const run = ctx.__runIrmaa;
+  const together = { filingStatus: 'MFS', mfsLivingApart: 'no' };
+  eq('#150 MFS lived together, MAGI 150k → Part B 649.20 (was 405.80)', run({ ...together, agi: 150000 }).partBMonthly, 649.20);
+  eq('#150 MFS lived together, MAGI 150k, Part D → surcharge 83.30', run({ ...together, agi: 150000, enrolledPartD: true }).partDSurchargeMonthly, 83.30);
+  eq('#150 MFS lived together, MAGI 100k → standard 202.90', run({ ...together, agi: 100000 }).partBMonthly, 202.90);
+  eq('#150 MFS lived together, MAGI 390,999 → 649.20', run({ ...together, agi: 390999 }).partBMonthly, 649.20);
+  eq('#150 MFS lived together, MAGI 391,000 → 689.90 (top band is >=)', run({ ...together, agi: 391000 }).partBMonthly, 689.90);
+  eq('#150 MFS lived together, next threshold 391,000', run({ ...together, agi: 150000 }).nextThreshold, 391000);
+  eq('#150 MFS lived together, crossing 391k costs (689.90 − 649.20) × 12 = 488.40', run({ ...together, agi: 150000 }).crossingCostAnnual, 488.40);
+  eq('#150 MFS lived apart all year, MAGI 150k → single table tier 2, 405.80', run({ filingStatus: 'MFS', mfsLivingApart: 'yes', agi: 150000 }).partBMonthly, 405.80);
+  eq('#150 single, MAGI exactly 500,000 → top tier 689.90', run({ agi: 500000 }).partBMonthly, 689.90);
+  eq('#150 single, MAGI 499,999 → 649.20', run({ agi: 499999 }).partBMonthly, 649.20);
+  eq('#150 MFJ, MAGI exactly 218,000 → standard 202.90', run({ filingStatus: 'MFJ', agi: 218000 }).partBMonthly, 202.90);
+}
+
 if (fail) { console.error(`\n✗ CALC-VECTORS: ${fail} failed, ${pass} passed`); process.exit(1); }
 console.log(`✓ CALC-VECTORS: all ${pass} vectors pass`);
