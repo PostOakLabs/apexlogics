@@ -15,7 +15,7 @@
  *      4 institutions / 3 agentic).
  *   2. Asserts every required field is present and non-empty, ids are unique slugs, and
  *      doorway letters stay inside the published legend.
- *   3. Asserts the honesty scope mechanically: top-level honesty_scope carries "17 of 31",
+ *   3. Asserts the honesty scope mechanically: top-level honesty_scope carries "16 of 39",
  *      and any prompt claiming the Z doorway names Groth16 AND keeps the "not zk-proven"
  *      distinction in its body (SO 11 / the SSOT's standing caveat).
  *   4. Resolves every tools[] entry against the registry (slug or tool_id union),
@@ -117,8 +117,8 @@ export function checkPromptsJson() {
     }
   }
 
-  if (typeof doc.honesty_scope !== 'string' || !doc.honesty_scope.includes('17 of 31')) {
-    errors.push('HONESTY  top-level honesty_scope must state the "17 of 31" proven-kernel scope');
+  if (typeof doc.honesty_scope !== 'string' || !doc.honesty_scope.includes('16 of 39')) {
+    errors.push('HONESTY  top-level honesty_scope must state the "16 of 39" proven-kernel scope');
   }
 
   for (const [group, expected] of Object.entries(EXPECTED_GROUP_COUNTS)) {
