@@ -367,7 +367,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(7,11,20,.92);backdrop-filt
         <div class="field">
           <label for="sep_ira" data-i18n="lbl_sep_ira">SEP-IRA contribution ($/yr)</label>
           <input type="number" id="sep_ira" value="0" step="500" min="0">
-          <span class="hint" data-i18n="hint_sep_ira">Up to 25% of net SE income, max $72,000 (2026). Reduces federal AGI.</span>
+          <span class="hint" data-i18n="hint_sep_ira">Up to 20% of net SE income after the ½ SE-tax deduction, max $72,000 (2026). Reduces federal AGI.</span>
         </div>
         <div class="field">
           <label for="hours_week" data-i18n="lbl_hours">Billable hours per week (for hourly rate)</label>
@@ -528,7 +528,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(7,11,20,.92);backdrop-filt
             <div class="ded-check"><input type="checkbox" id="ded_sep" aria-label="SEP-IRA Contributions" onchange="calcDeductions()"></div>
             <div class="ded-info">
               <div class="ded-name" data-i18n="ded_sep_name">SEP-IRA Contributions</div>
-              <div class="ded-desc" data-i18n="ded_sep_desc">Up to 25% of net SE income, max $72,000 (2026). One of the most powerful freelancer deductions.</div>
+              <div class="ded-desc" data-i18n="ded_sep_desc">Up to 20% of net SE income after the ½ SE-tax deduction, max $72,000 (2026). One of the most powerful freelancer deductions.</div>
               <div class="ded-input-wrap">
                 <input type="number" id="ded_sep_amt" aria-label="SEP-IRA contribution per year" value="10000" min="0" step="500" oninput="calcDeductions()">
                 <span class="unit" data-i18n="unit_peryear">$/yr</span>
@@ -866,7 +866,9 @@ function calcDeductions() {
     { id: 'mileage',      check: 'ded_mileage',       compute: () => (parseFloat(document.getElementById('ded_miles').value)||0) * MILEAGE_RATE, display: 'ded-mileage-amt' },
     { id: 'health',       check: 'ded_health',        compute: () => parseFloat(document.getElementById('ded_health_amt').value)||0, display: 'ded-health-display' },
     { id: 'sep',          check: 'ded_sep',           compute: () => {
-        const max = Math.min(netSE * 0.25, 72000);
+        // Self-employed SEP limit: 20% of net SE income after the ½ SE-tax
+        // deduction (the 25% plan rate reduced, IRS Pub 560), capped at $72,000.
+        const max = Math.min(Math.max(0, netSE - seTaxDed) * 0.20, 72000);
         return Math.min(parseFloat(document.getElementById('ded_sep_amt').value)||0, max);
       }, display: 'ded-sep-display' },
     { id: 'prof_dev',     check: 'ded_prof_dev',      compute: () => parseFloat(document.getElementById('ded_prof_dev_amt').value)||0, display: 'ded-prof-display' },
@@ -1158,7 +1160,7 @@ const STRINGS = {
     lbl_health_deduction:"Self-paid health insurance premiums ($/yr)",
     hint_health_ded:"100% deductible if no employer plan available (IRC §162(l))",
     lbl_sep_ira:"SEP-IRA contribution ($/yr)",
-    hint_sep_ira:"Up to 25% of net SE income, max $72,000 (2026).",
+    hint_sep_ira:"Up to 20% of net SE income after the ½ SE-tax deduction, max $72,000 (2026).",
     lbl_hours:"Billable hours per week",
     hint_hours:"Used to convert annual rate to hourly equivalent",
     lbl_billing_weeks:"Billable weeks per year",
@@ -1184,7 +1186,7 @@ const STRINGS = {
     ded_health_name:"Self-Employed Health Insurance",
     ded_health_desc:"100% deductible if no employer plan available (IRC §162(l)). Includes dental and vision.",
     ded_sep_name:"SEP-IRA Contributions",
-    ded_sep_desc:"Up to 25% of net SE income, max $72,000 (2026). One of the most powerful freelancer deductions.",
+    ded_sep_desc:"Up to 20% of net SE income after the ½ SE-tax deduction, max $72,000 (2026). One of the most powerful freelancer deductions.",
     ded_prof_dev_name:"Professional Development & Education",
     ded_prof_dev_desc:"Courses, certifications, conferences, books, and subscriptions directly related to your work.",
     ded_software_name:"Software, Tools & Subscriptions",
@@ -1224,7 +1226,7 @@ const STRINGS = {
     lbl_health_deduction:"Primas de seguro médico propias ($/año)",
     hint_health_ded:"100% deducible si no hay plan de empleador disponible (IRC §162(l))",
     lbl_sep_ira:"Aportación SEP-IRA ($/año)",
-    hint_sep_ira:"Hasta el 25% del ingreso neto SE, máx. $70,000 (est. 2026).",
+    hint_sep_ira:"Hasta el 20% del ingreso neto SE tras deducir ½ del impuesto SE, máx. $72,000 (2026).",
     lbl_hours:"Horas facturables por semana",
     hint_hours:"Para convertir tarifa anual a equivalente por hora",
     lbl_billing_weeks:"Semanas facturables al año",
@@ -1250,7 +1252,7 @@ const STRINGS = {
     ded_health_name:"Seguro de Salud para Autoempleados",
     ded_health_desc:"100% deducible sin plan de empleador disponible (IRC §162(l)).",
     ded_sep_name:"Aportaciones SEP-IRA",
-    ded_sep_desc:"Hasta el 25% del ingreso neto SE, máx. $70,000 (est. 2026).",
+    ded_sep_desc:"Hasta el 20% del ingreso neto SE tras deducir ½ del impuesto SE, máx. $72,000 (2026).",
     ded_prof_dev_name:"Desarrollo Profesional y Educación",
     ded_prof_dev_desc:"Cursos, certificaciones, conferencias, libros y suscripciones.",
     ded_software_name:"Software, Herramientas y Suscripciones",
@@ -1290,7 +1292,7 @@ const STRINGS = {
     lbl_health_deduction:"Primes d'assurance maladie propres ($/an)",
     hint_health_ded:"100% déductible sans plan employeur disponible (IRC §162(l))",
     lbl_sep_ira:"Cotisation SEP-IRA ($/an)",
-    hint_sep_ira:"Jusqu'à 25% du revenu net SE, max 70 000 $ (est. 2026).",
+    hint_sep_ira:"Jusqu'à 20% du revenu net SE après déduction de ½ de l'impôt SE, max 72 000 $ (2026).",
     lbl_hours:"Heures facturables par semaine",
     hint_hours:"Pour convertir le taux annuel en équivalent horaire",
     lbl_billing_weeks:"Semaines facturables par an",
@@ -1316,7 +1318,7 @@ const STRINGS = {
     ded_health_name:"Assurance Maladie pour Indépendants",
     ded_health_desc:"100% déductible sans plan employeur disponible.",
     ded_sep_name:"Cotisations SEP-IRA",
-    ded_sep_desc:"Jusqu'à 25% du revenu net SE, max 70 000$ (est. 2026).",
+    ded_sep_desc:"Jusqu'à 20% du revenu net SE après déduction de ½ de l'impôt SE, max 72 000 $ (2026).",
     ded_prof_dev_name:"Développement Professionnel et Éducation",
     ded_prof_dev_desc:"Cours, certifications, conférences, livres et abonnements.",
     ded_software_name:"Logiciels, Outils et Abonnements",
@@ -1352,7 +1354,7 @@ const STRINGS = {
     lbl_health_deduction:"أقساط التأمين الصحي الخاصة ($/سنة)",
     hint_health_ded:"قابل للخصم 100% إذا لم يكن هناك خطة من صاحب العمل",
     lbl_sep_ira:"مساهمة SEP-IRA ($/سنة)",
-    hint_sep_ira:"حتى 25% من صافي دخل SE، بحد أقصى 70,000 دولار (تقدير 2026).",
+    hint_sep_ira:"حتى 20% من صافي دخل SE بعد خصم نصف ضريبة SE، بحد أقصى 72,000 دولار (2026).",
     lbl_hours:"الساعات القابلة للفوترة في الأسبوع",
     hint_hours:"لتحويل المعدل السنوي إلى معادل بالساعة",
     lbl_billing_weeks:"أسابيع الفوترة في السنة",
@@ -1378,7 +1380,7 @@ const STRINGS = {
     ded_health_name:"التأمين الصحي للعمل الحر",
     ded_health_desc:"قابل للخصم 100% دون خطة من صاحب العمل.",
     ded_sep_name:"مساهمات SEP-IRA",
-    ded_sep_desc:"حتى 25% من صافي دخل SE، بحد أقصى 70,000 دولار.",
+    ded_sep_desc:"حتى 20% من صافي دخل SE بعد خصم نصف ضريبة SE، بحد أقصى 72,000 دولار.",
     ded_prof_dev_name:"التطوير المهني والتعليم",
     ded_prof_dev_desc:"دورات، شهادات، مؤتمرات، كتب واشتراكات.",
     ded_software_name:"البرامج والأدوات والاشتراكات",
@@ -1418,7 +1420,7 @@ const STRINGS = {
     lbl_health_deduction:"Prêmios de seguro de saúde próprios ($/ano)",
     hint_health_ded:"100% dedutível sem plano de empregador disponível (IRC §162(l))",
     lbl_sep_ira:"Contribuição SEP-IRA ($/ano)",
-    hint_sep_ira:"Até 25% da renda líquida SE, máx. $70.000 (est. 2026).",
+    hint_sep_ira:"Até 20% da renda líquida SE após deduzir ½ do imposto SE, máx. $72.000 (2026).",
     lbl_hours:"Horas faturáveis por semana",
     hint_hours:"Para converter taxa anual em equivalente por hora",
     lbl_billing_weeks:"Semanas faturáveis por ano",
@@ -1444,7 +1446,7 @@ const STRINGS = {
     ded_health_name:"Seguro de Saúde para Autônomos",
     ded_health_desc:"100% dedutível sem plano de empregador disponível.",
     ded_sep_name:"Contribuições SEP-IRA",
-    ded_sep_desc:"Até 25% da renda líquida SE, máx. $70.000 (est. 2026).",
+    ded_sep_desc:"Até 20% da renda líquida SE após deduzir ½ do imposto SE, máx. $72.000 (2026).",
     ded_prof_dev_name:"Desenvolvimento Profissional e Educação",
     ded_prof_dev_desc:"Cursos, certificações, conferências, livros e assinaturas.",
     ded_software_name:"Software, Ferramentas e Assinaturas",
@@ -1484,7 +1486,7 @@ const STRINGS = {
     lbl_health_deduction:"自付医疗保险费用（$/年）",
     hint_health_ded:"如无雇主计划，100%可扣除（IRC §162(l)）",
     lbl_sep_ira:"SEP-IRA供款（$/年）",
-    hint_sep_ira:"最高为净SE收入的25%，上限$70,000（2026估算）。",
+    hint_sep_ira:"最高为扣除一半SE税后净SE收入的20%，上限$72,000（2026）。",
     lbl_hours:"每周可计费小时数",
     hint_hours:"用于将年费率转换为小时等值",
     lbl_billing_weeks:"每年可计费周数",
@@ -1510,7 +1512,7 @@ const STRINGS = {
     ded_health_name:"自雇医疗保险",
     ded_health_desc:"如无雇主计划，100%可扣除。",
     ded_sep_name:"SEP-IRA供款",
-    ded_sep_desc:"最高净SE收入的25%，上限$70,000（2026估算）。",
+    ded_sep_desc:"最高为扣除一半SE税后净SE收入的20%，上限$72,000（2026）。",
     ded_prof_dev_name:"专业发展与教育",
     ded_prof_dev_desc:"课程、证书、会议、书籍和与工作直接相关的订阅。",
     ded_software_name:"软件、工具和订阅",

@@ -20,7 +20,8 @@ const REPO = join(dirname(fileURLToPath(import.meta.url)), '..');
 export function extractDecls(html, names) {
   const out = [];
   for (const name of names) {
-    const re = new RegExp(`(^|\\n)[ \\t]*(function\\s+${name}\\s*\\(|const\\s+${name}\\s*=)`);
+    const n = name.replace(/[$]/g, '\\$&');
+    const re = new RegExp(`(^|\\n)[ \\t]*(function\\s+${n}\\s*\\(|const\\s+${n}\\s*=)`);
     const m = re.exec(html);
     if (!m) throw new Error(`declaration not found: ${name}`);
     const start = m.index + m[1].length;
@@ -153,6 +154,51 @@ const eq = (label, got, want) => {
   eq('#150 single, MAGI exactly 500,000 → top tier 689.90', run({ agi: 500000 }).partBMonthly, 689.90);
   eq('#150 single, MAGI 499,999 → 649.20', run({ agi: 499999 }).partBMonthly, 649.20);
   eq('#150 MFJ, MAGI exactly 218,000 → standard 202.90', run({ filingStatus: 'MFJ', agi: 218000 }).partBMonthly, 202.90);
+}
+
+// A minimal stand-in for `document`: inputs read from __vals, everything else a sink.
+const FAKE_DOM = `
+  var __vals = {}, __els = {};
+  var document = { getElementById(id) {
+    if (!__els[id]) {
+      const v = __vals[id];
+      __els[id] = { value: v === undefined ? '' : String(v), checked: v === true, textContent: '', innerHTML: '',
+        style: {}, classList: { add() {}, remove() {}, toggle() {} }, setAttribute() {} };
+    }
+    return __els[id];
+  } };
+  var window = {};
+  function __set(vals) { __vals = vals; __els = {}; }`;
+
+// ── #112 / #23 SEP for the self-employed (IRS Pub 560) ───────────────────────────
+// A 25% plan rate becomes 20% (0.25 ÷ 1.25) of net SE earnings after the ½ SE-tax
+// deduction, capped at $72,000. SE tax: 12.4% up to the $184,500 wage base + 2.9%.
+{
+  const { ctx } = load('112-solo-401k-vs-sep-ira', ['LIMITS', 'fmt', 'SE_FACTOR', 'SS_WAGE_BASE', '_ov', 'calcSERetirement'], FAKE_DOM + `
+    globalThis.__run112 = (netIncome, age = 45) => {
+      __set({ netIncome, age, marginalRate: 24, existingPlan: 'no', existingContrib: 0 });
+      calcSERetirement();
+      return window._lastResult;
+    };`);
+  const r = (n, a) => ctx.__run112(n, a);
+  eq('#112 net SE 120k: SEP 20% of 111,522 = 22,304 (was 27,881)', Math.round(r(120000).sepContrib), 22304);
+  eq('#112 net SE 120k: Solo 401(k) employer piece 22,304', Math.round(r(120000).solo401kEmployer), 22304);
+  eq('#112 net SE 120k: Solo 401(k) total 24,500 + 22,304', Math.round(r(120000).solo401kTotal), 46804);
+  eq('#112 net SE 300k: SS tax stops at the 184,500 wage base → SEP 56,909', Math.round(r(300000).sepContrib), 56909);
+  eq('#112 net SE 500k: SEP capped at 72,000', Math.round(r(500000).sepContrib), 72000);
+}
+{
+  const { ctx } = load('23-freelance-1099-total-cost-calculator',
+    ['FED_BRACKETS', 'STD_DEDUCTION', 'SE_RATE', 'SE_NET_PCT', 'MILEAGE_RATE', 'STATE_RATES', 'fmt$', 'calcDeductions'],
+    FAKE_DOM + `
+    var dedFilingStatus = 'single';
+    globalThis.__run23 = (gross, sepAmt) => {
+      __set({ ded_gross: gross, ded_state_tier: 0, ded_sep: true, ded_sep_amt: sepAmt });
+      calcDeductions();
+      return document.getElementById('ded-sep-display').textContent;
+    };`);
+  eq('#23 1099 net 120k, SEP 50k asked → capped at $22,304 (was $30,000)', ctx.__run23(120000, 50000), '$22,304');
+  eq('#23 SEP under the cap passes through', ctx.__run23(120000, 10000), '$10,000');
 }
 
 if (fail) { console.error(`\n✗ CALC-VECTORS: ${fail} failed, ${pass} passed`); process.exit(1); }
