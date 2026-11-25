@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QBI §199A Deduction Optimizer · ApexLogics</title>
-<meta name="description" content="Calculate §199A pass-through deduction using 2026 OBBBA permanent thresholds ($201,775/$403,500). Handles below-threshold, phase-out band, W-2/UBIA limitation, SSTB exclusion, and $400 floor.">
+<meta name="description" content="Calculate §199A pass-through deduction using 2026 OBBBA permanent thresholds ($201,750/$403,500). Handles below-threshold, phase-out band, W-2/UBIA limitation, SSTB exclusion, and $400 floor.">
 <link rel="canonical" href="https://apexlogics.org/tools/137-qbi-199a-optimizer/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ApexLogics">
 <meta property="og:title" content="QBI §199A Deduction Optimizer · ApexLogics">
-<meta property="og:description" content="Calculate §199A pass-through deduction using 2026 OBBBA permanent thresholds ($201,775/$403,500). Handles below-threshold, phase-out band, W-2/UBIA limitation, SSTB exclusion, and $400 floor.">
+<meta property="og:description" content="Calculate §199A pass-through deduction using 2026 OBBBA permanent thresholds ($201,750/$403,500). Handles below-threshold, phase-out band, W-2/UBIA limitation, SSTB exclusion, and $400 floor.">
 <meta property="og:url" content="https://apexlogics.org/tools/137-qbi-199a-optimizer/">
 <meta property="og:image" content="https://apexlogics.org/assets/og-default.png">
 <meta name="twitter:card" content="summary">
@@ -121,7 +121,7 @@ footer.tool-footer{background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,
 <div class="card">
   <h2>Business Income</h2>
   <div class="vintage-note">
-    📌 <strong>2026 thresholds (OBBBA — permanent):</strong> $201,775 single / $403,500 MFJ. Phase-out band: $75,000 single / $150,000 MFJ. Minimum deduction: $400 if QBI ≥ $1,000 from active trade. Amounts labeled and user-overridable below.
+    📌 <strong>2026 thresholds (OBBBA — permanent):</strong> $201,750 single/HoH ($201,775 MFS) / $403,500 MFJ (Rev. Proc. 2025-32 §4.26). Phase-out band: $75,000 single / $150,000 MFJ. Minimum deduction: $400 if QBI ≥ $1,000 from active trade. Amounts labeled and user-overridable below.
   </div>
   <div class="grid-3" style="margin-top:18px">
     <div class="field">
@@ -172,7 +172,7 @@ footer.tool-footer{background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,
   <div class="grid-2">
     <div class="field">
       <label for="threshold">Taxable Income Threshold ($)</label>
-      <input type="number" id="threshold" value="201775" min="0" step="100">
+      <input type="number" id="threshold" value="201750" min="0" step="100">
     </div>
     <div class="field">
       <label for="phaseoutBand">Phase-out Band Width ($)</label>
@@ -219,7 +219,7 @@ footer.tool-footer{background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,
 
     <div id="phaseBarWrap" class="phase-bar-wrap" style="display:none">
       <div class="phase-bar-label">
-        <span>Threshold <span id="thresholdLabel">$201,775</span></span>
+        <span>Threshold <span id="thresholdLabel">$201,750</span></span>
         <span>Phase-out end <span id="phaseEndLabel">$276,775</span></span>
       </div>
       <div class="phase-bar"><div class="phase-bar-fill" id="phaseBarFill" style="width:0%"></div></div>
@@ -329,11 +329,11 @@ footer.tool-footer{background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,
 <script>
 // 2026 §199A default thresholds (OBBBA, signed July 4, 2025 — permanent)
 // Source: IRC §199A as amended; inflation-adjusted 2026 figures
-// Single/MFS/HoH: $201,775 threshold; $75,000 phase-out band
+// Single/HoH: $201,750 threshold (MFS $201,775); $75,000 phase-out band (Rev. Proc. 2025-32 §4.26)
 // MFJ: $403,500 threshold; $150,000 phase-out band
 // Minimum deduction: $400 if QBI ≥ $1,000 (active trade or business)
 const DEFAULTS_2026 = {
-  single: { threshold: 201775, band: 75000 },
+  single: { threshold: 201750, band: 75000 },
   mfj:    { threshold: 403500, band: 150000 }
 };
 
@@ -374,13 +374,17 @@ function calculate() {
   let calcLines = [];
   let leverW2Needed = 0;
 
+  // §199A(b)(2)-(3), (d)(3): the W-2/UBIA limit applies whenever it is lower than
+  // 20% of QBI, including when it is $0. In the phase-in range the excess over the
+  // limit is phased in; for an SSTB, QBI, W-2 wages and UBIA are first scaled by the
+  // applicable percentage (1 - phase-in %). The result is capped at 20% of taxable
+  // income (§199A(a)(1)(B); no net-capital-gain input here).
   if (taxableIncome <= threshold) {
     // Below threshold: full 20% deduction, no W-2/UBIA limit
-    deduction = Math.min(tentative, taxableIncome * 0.20); // also capped at 20% of taxable income
+    deduction = tentative;
     calcLines = [
       `Taxable income (${fmtDollar(taxableIncome)}) ≤ threshold (${fmtDollar(threshold)}) → full 20% applies`,
-      `Tentative deduction: 20% × ${fmtDollar(qbi)} = ${fmtDollar(tentative)}`,
-      `Final deduction = min(tentative, 20% × taxable income) = ${fmtDollar(deduction)}`
+      `Tentative deduction: 20% × ${fmtDollar(qbi)} = ${fmtDollar(tentative)}`
     ];
   } else if (taxableIncome >= phaseoutEnd) {
     if (isSSTB) {
@@ -392,8 +396,8 @@ function calculate() {
         `SSTB: deduction fully disallowed above phase-out ceiling.`
       ];
     } else {
-      // Non-SSTB: apply W-2/UBIA limitation
-      deduction = propertyLimit > 0 ? Math.min(tentative, propertyLimit) : tentative;
+      // Non-SSTB: apply W-2/UBIA limitation (a $0 limit means no deduction)
+      deduction = Math.min(tentative, propertyLimit);
       calcLines = [
         `Taxable income (${fmtDollar(taxableIncome)}) ≥ phase-out end (${fmtDollar(phaseoutEnd)}) → W-2/UBIA limitation applies`,
         `Tentative 20% deduction: ${fmtDollar(tentative)}`,
@@ -406,26 +410,25 @@ function calculate() {
       }
     }
   } else {
-    // In the phase-out range — interpolate
+    // In the phase-in range: phase in the W-2/UBIA limit (SSTB amounts scaled first)
     phaseoutPct = (taxableIncome - threshold) / phaseoutBand; // 0 to 1
+    const applicablePct = isSSTB ? 1 - phaseoutPct : 1;
+    const scaledTentative = tentative * applicablePct;
+    const scaledLimit = propertyLimit * applicablePct;
+    deduction = scaledTentative - phaseoutPct * Math.max(0, scaledTentative - scaledLimit);
+    calcLines = [
+      `Taxable income is ${(phaseoutPct * 100).toFixed(1)}% through the phase-in band`
+    ];
     if (isSSTB) {
-      // SSTB: linearly phase out the deduction
-      const phasedDeduction = tentative * (1 - phaseoutPct);
-      deduction = Math.max(0, phasedDeduction);
-      calcLines = [
-        `Taxable income is ${(phaseoutPct * 100).toFixed(1)}% through the phase-out band`,
-        `SSTB phase-out: tentative (${fmtDollar(tentative)}) × (1 − ${(phaseoutPct * 100).toFixed(1)}%) = ${fmtDollar(deduction)}`
-      ];
-    } else {
-      // Non-SSTB: linearly phase in the W-2/UBIA limit
-      const fullLimit = propertyLimit > 0 ? Math.min(tentative, propertyLimit) : tentative;
-      deduction = tentative - phaseoutPct * Math.max(0, tentative - fullLimit);
-      calcLines = [
-        `Taxable income is ${(phaseoutPct * 100).toFixed(1)}% through the phase-out band`,
-        `W-2/UBIA limit phases in: tentative (${fmtDollar(tentative)}) → limited deduction (${fmtDollar(deduction)})`
-      ];
+      calcLines.push(`SSTB applicable percentage ${(applicablePct * 100).toFixed(1)}%: QBI, W-2 wages and UBIA scaled → tentative ${fmtDollar(scaledTentative)}, limit ${fmtDollar(scaledLimit)}`);
     }
+    calcLines.push(`W-2/UBIA limit phases in: ${fmtDollar(scaledTentative)} − ${(phaseoutPct * 100).toFixed(1)}% × excess over limit = ${fmtDollar(deduction)}`);
   }
+  const uncapped = deduction;
+  deduction = Math.max(0, Math.min(deduction, taxableIncome * 0.20));
+  calcLines.push(deduction < uncapped
+    ? `Capped at 20% × taxable income (${fmtDollar(taxableIncome * 0.20)}) = ${fmtDollar(deduction)}`
+    : `20% × taxable income cap (${fmtDollar(taxableIncome * 0.20)}) does not bind → ${fmtDollar(deduction)}`);
 
   // Minimum deduction ($400 if QBI ≥ $1,000, active trade) — OBBBA 2026
   const minDed = (qbi >= 1000 && deduction < 400) ? 400 : 0;
@@ -515,7 +518,7 @@ function exportMarkdown() {
 ${r.leverW2Needed > 0 ? `**W-2 lever:** Pay ${fmtDollar(r.leverW2Needed)} additional in W-2 wages to fully unlock the tentative deduction.` : ''}
 
 ---
-*Generated by ApexLogics AL-144 · apexlogics.org · Data: 2026 §199A (OBBBA-permanent); thresholds $201,775/$403,500*`;
+*Generated by ApexLogics AL-144 · apexlogics.org · Data: 2026 §199A (OBBBA-permanent); thresholds $201,750/$403,500*`;
   const blob = new Blob([md], { type: 'text/markdown' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = 'qbi-optimizer-AL144.md'; a.click();
@@ -551,7 +554,7 @@ async function exportAP2() {
     downstream_handoff_candidates: ["AL-118"],
     metadata: {
       license: "CC-BY-4.0",
-      data_vintage: "2026 §199A OBBBA-permanent; thresholds $201,775/$403,500"
+      data_vintage: "2026 §199A OBBBA-permanent; thresholds $201,750/$403,500"
     }
   };
   // ── OpenChainGraph L1 + L2 ──
